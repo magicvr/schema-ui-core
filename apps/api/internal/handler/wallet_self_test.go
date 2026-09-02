@@ -10,7 +10,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
 
@@ -19,7 +22,19 @@ func newWalletSelfEnv(t *testing.T) (*authTestEnv, *walletServiceStub) {
 	env := newAuthTestEnv(t)
 	stub := &walletServiceStub{repo: walletstore.NewRepository(env.st)}
 	mountWalletRoutes(t, env, stub)
-	for _, r := range WalletSelfRoutes(env.a, stub, env.operations, "admin.wallet") {
+	for _, r := range WalletSelfRoutes(env.a, stub, env.operations, "admin.wallet", ratelimit.NewProvider()) {
+		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
+	}
+	return env, stub
+}
+
+func newWalletSelfRedeemEnv(t *testing.T) (*authTestEnv, *walletServiceStub) {
+	t.Helper()
+	env := newAuthTestEnv(t)
+	repo := walletstore.NewRepository(env.st)
+	stub := newWalletStub(env, repo)
+	mountWalletRoutes(t, env, stub)
+	for _, r := range WalletSelfRoutes(env.a, stub, env.operations, "admin.wallet", ratelimit.NewProvider()) {
 		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 	}
 	return env, stub
@@ -227,5 +242,104 @@ func TestWalletSelfEntriesOwnScope(t *testing.T) {
 	_ = json.Unmarshal(rr.Body.Bytes(), &entries)
 	if entries.Total != 1 || entries.Items[0]["memo"] != "grant alice" {
 		t.Fatalf("accountId query ignored expected alice entry, got %+v", entries)
+	}
+}
+
+func TestWalletSelfRedeemCreditsUserLedger(t *testing.T) {
+	env, stub := newWalletSelfRedeemEnv(t)
+	env.addUser(t, "editor1", "editor-password", []string{"editor"})
+	token := env.login(t, "editor1", "editor-password")
+
+	batch, err := stub.GenerateVouchers(t.Context(), "batch-self", 1, 2500, "CNY", nil, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := batch[0].Code
+
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me/redeem", `{"code":"`+code+`"}`))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("redeem = %d %s", rr.Code, rr.Body.String())
+	}
+	var out map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out["amount"].(float64) != 2500 || out["balanceAfter"].(float64) != 2500 {
+		t.Fatalf("receipt = %v", out)
+	}
+	if strings.Contains(rr.Body.String(), code) {
+		t.Fatalf("response leaked plaintext code: %s", rr.Body.String())
+	}
+
+	acct, err := stub.GetUserAccountByOwner("user-editor1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.OwnerType != walletstore.OwnerUser || acct.BalanceTotal != 2500 {
+		t.Fatalf("user account = %+v", acct)
+	}
+	if _, err := stub.repo.GetSubjectAccountByOwner("user-editor1"); err == nil {
+		t.Fatal("subject account must not exist for admin self-redeem")
+	}
+
+	ops, _, err := env.operations.ListOperationsFiltered(operationlog.OperationFilter{
+		Event: operationlog.EventWalletAdjust, Sort: "createdAt", Order: "desc", Page: 1, PageSize: 5,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, op := range ops {
+		if op.Detail != nil && strings.Contains(*op.Detail, "voucher-redeem") {
+			found = true
+			if strings.Contains(*op.Detail, code) {
+				t.Fatalf("audit leaked plaintext: %s", *op.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected wallet.adjust audit with voucher-redeem action")
+	}
+
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me/redeem", `{"code":"`+code+`"}`))
+	if rr.Code != http.StatusConflict {
+		t.Fatalf("duplicate redeem = %d %s, want 409", rr.Code, rr.Body.String())
+	}
+}
+
+func TestWalletSelfRedeemAnonymousAndEmpty(t *testing.T) {
+	env, _ := newWalletSelfRedeemEnv(t)
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/api/wallet/me/redeem", strings.NewReader(`{"code":"ABC"}`)))
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("anon redeem = %d, want 401", rr.Code)
+	}
+
+	env.addUser(t, "editor1", "editor-password", []string{"editor"})
+	token := env.login(t, "editor1", "editor-password")
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me/redeem", `{}`))
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("empty code = %d %s, want 400", rr.Code, rr.Body.String())
+	}
+}
+
+func TestWalletSelfRedeemRateLimited(t *testing.T) {
+	env, _ := newWalletSelfRedeemEnv(t)
+	env.addUser(t, "editor1", "editor-password", []string{"editor"})
+	token := env.login(t, "editor1", "editor-password")
+	for i := 0; i < walletRedeemRateLimiterMax; i++ {
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me/redeem", `{"code":"NOT-A-REAL-CODE"}`))
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("attempt %d = %d %s, want 404", i, rr.Code, rr.Body.String())
+		}
+	}
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me/redeem", `{"code":"NOT-A-REAL-CODE"}`))
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("over budget = %d %s, want 429", rr.Code, rr.Body.String())
 	}
 }

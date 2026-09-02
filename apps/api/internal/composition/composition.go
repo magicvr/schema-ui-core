@@ -574,7 +574,7 @@ func newMuxWithExtraProviders(
 			_, err := authRepository.UserByID(ownerID)
 			return err == nil
 		})
-		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists))
+		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists, rateLimiters))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

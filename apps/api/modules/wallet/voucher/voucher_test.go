@@ -417,3 +417,62 @@ func TestNoPlaintextInDatabase(t *testing.T) {
 		}
 	}
 }
+
+func TestRedeemForUserCreditsUserLedgerNotSubject(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	userID := "user-editor1"
+
+	batch, err := e.service.GenerateBatch(ctx, "batch-user", 1, 1200, "CNY", nil, now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := e.service.RedeemForUser(ctx, userID, "editor1", batch[0].Code, now().Add(time.Minute))
+	if err != nil {
+		t.Fatalf("RedeemForUser: %v", err)
+	}
+	if res.Amount != 1200 || res.Balance != 1200 {
+		t.Fatalf("res = %+v", res)
+	}
+
+	acct, err := e.walletRepo.GetUserAccountByOwner(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.OwnerType != walletstore.OwnerUser || acct.OwnerID != userID {
+		t.Fatalf("account = %+v", acct)
+	}
+	if acct.BalanceTotal != 1200 || acct.BalanceAvailable != 1200 || acct.BalanceFrozen != 0 {
+		t.Fatalf("balances = %+v", acct)
+	}
+	if _, err := e.walletRepo.GetSubjectAccountByOwner(userID); !errors.Is(err, walletstore.ErrNotFound) {
+		t.Fatalf("subject account err = %v, want ErrNotFound", err)
+	}
+
+	_, err = e.service.RedeemForUser(ctx, userID, "editor1", batch[0].Code, now().Add(2*time.Minute))
+	if !errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+		t.Fatalf("duplicate err = %v, want ErrVoucherAlreadyRedeemed", err)
+	}
+}
+
+func TestRedeemForUserDoesNotShareSubjectPath(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	sub, _, err := e.subjectStore.GetOrCreateSubject(ctx, "telegram", "tg-self", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	batch, err := e.service.GenerateBatch(ctx, "batch-split", 1, 800, "CNY", nil, now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.service.Redeem(ctx, sub.ID, batch[0].Code, now().Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.service.RedeemForUser(ctx, "user-editor1", "editor1", batch[0].Code, now().Add(2*time.Minute)); !errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+		t.Fatalf("user redeem after subject err = %v", err)
+	}
+	if _, err := e.walletRepo.GetUserAccountByOwner("user-editor1"); !errors.Is(err, walletstore.ErrNotFound) {
+		t.Fatal("user account must not be created when redeem is rejected")
+	}
+}

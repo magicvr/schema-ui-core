@@ -49,6 +49,10 @@ type WalletService interface {
 	ListVouchers(ctx context.Context, batchID, status string, page, pageSize int) ([]voucher.Voucher, int, error)
 	GetVoucher(ctx context.Context, id string) (*voucher.Voucher, error)
 	VoidVoucher(ctx context.Context, id string, now time.Time) error
+	// RedeemForUser credits the session user's owner_type=user ledger
+	// (VP-029 R5 · GOAL-005). Identity is supplied by the handler, never
+	// from the request body.
+	RedeemForUser(ctx context.Context, userID, actorName, code string, now time.Time) (*voucher.RedeemResult, error)
 }
 
 // WalletJobService is the actor-scoped async boundary consumed by wallet
@@ -866,7 +870,25 @@ func parseYuanToCents(raw json.RawMessage) (int64, bool) {
 	return cents, true
 }
 
-// writeWalletError maps wallet domain errors to the frozen wire codes.
+func writeVoucherRedeemError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, voucher.ErrNotFound):
+		writeLocalizedError(w, r, http.StatusNotFound, "VOUCHER_NOT_FOUND", "voucher not found")
+	case errors.Is(err, voucher.ErrVoucherAlreadyRedeemed), errors.Is(err, voucher.ErrVoucherConflict):
+		writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_ALREADY_REDEEMED", "voucher has already been redeemed")
+	case errors.Is(err, voucher.ErrVoucherVoid):
+		writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_VOID", "voucher has been voided")
+	case errors.Is(err, voucher.ErrVoucherExpired):
+		writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_EXPIRED", "voucher has expired")
+	case errors.Is(err, voucher.ErrInvalidInput), errors.Is(err, voucher.ErrVoucherInvalid):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with code")
+	case errors.Is(err, voucher.ErrCurrencyMismatch):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "voucher currency mismatch")
+	default:
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "voucher redeem failed")
+	}
+}
+
 func writeWalletError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, walletstore.ErrNotFound):

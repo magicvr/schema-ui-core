@@ -124,8 +124,8 @@ parent: null
 | I-029-004 | 导出格式（CSV/TXT、是否含明文、一次性下载）。 | non-blocking | 判据 5 | R3 | closed（D-001 · API 一次性返回明文数组） |
 | I-029-005 | C 端自助核销 HTTP 是否**首波**交付，或仅模块 API（Telegram 进程内调用）。若选 HTTP，本 VP 必须完成 RT-Q05 精神的限流评估，不得推到未激活的 VP-030。 | non-blocking | 当时判据面 | R1 | closed（D-002 · 仅交付 Go 模块内部 API；**不**表示 R5 禁止 HTTP） |
 | I-029-006 | 凭证哈希与双花合同：哈希算法（默认候选 = 高熵码 SHA-256 或 HMAC-SHA256+pepper；禁止 6 位恢复码或 bcrypt 当卡密默认）；码字母表与长度（熵下限）；核销常时比较；`UNIQUE(code_hash)`（或等价）+ 同事务「未用→已核销 AND 账本入金」，并发失败者 fail-closed，重复 Redeem 不双记。 | required | 判据 2/3 | R1 | closed（D-002 · 高熵码 + SHA-256 + 单事务 CAS 原子核销入金） |
-| I-029-007 | R5 HTTP 路径与服务函数形状（默认候选 = `POST /api/wallet/me/redeem`，body `{code}`，identity-scoped）。入账 `owner_type=user` 已由 reopen D-003 冻结，本项只收路径/函数名。 | required | 判据 8 · GOAL-005 S1 | R5 S1 | collecting |
-| I-029-008 | 已登录核销 HTTP 的 RT-Q05 精神限流：专用内存桶（按 user id）vs 复用现有桶 vs 书面 residual。禁止匿名面；不消耗 Redis trigger。 | required | 判据 10 · GOAL-005 S1 | R5 S1 | collecting |
+| I-029-007 | R5 HTTP 路径与服务函数形状（默认候选 = `POST /api/wallet/me/redeem`，body `{code}`，identity-scoped）。入账 `owner_type=user` 已由 reopen D-003 冻结，本项只收路径/函数名。 | required | 判据 8 · GOAL-005 S1 | R5 S1 | closed（GOAL-005 D-002） |
+| I-029-008 | 已登录核销 HTTP 的 RT-Q05 精神限流：专用内存桶（按 user id）vs 复用现有桶 vs 书面 residual。禁止匿名面；不消耗 Redis trigger。 | required | 判据 10 · GOAL-005 S1 | R5 S1 | closed（GOAL-005 D-002 · 15min/10/user id） |
 | I-029-009 | 自助核销权限模型：identity-only vs 新权限键 vs 复用 `wallet.voucher.issue`。 | required | 判据 8 · GOAL-005 S1 | R5 重开 | closed（Root D-003 · identity-only，与 `/api/wallet/me` 同款；不复用发卡键） |
 
 ## 工作区绑定

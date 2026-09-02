@@ -65,13 +65,14 @@ type GeneratedVoucher struct {
 
 // RedeemResult contains the receipt of a successful voucher redemption.
 type RedeemResult struct {
-	VoucherID string `json:"voucherId"`
-	BatchID   string `json:"batchId"`
-	Amount    int64  `json:"amount"`
-	Currency  string `json:"currency"`
-	AccountID string `json:"accountId"`
-	EntryID   string `json:"entryId"`
-	Balance   int64  `json:"balanceAfter"`
+	VoucherID  string `json:"voucherId"`
+	BatchID    string `json:"batchId"`
+	CodePrefix string `json:"codePrefix"`
+	Amount     int64  `json:"amount"`
+	Currency   string `json:"currency"`
+	AccountID  string `json:"accountId"`
+	EntryID    string `json:"entryId"`
+	Balance    int64  `json:"balanceAfter"`
 }
 
 // alphabet Crockford Base32-like (unambiguous uppercase characters: no 0/O, 1/I/L).

@@ -112,6 +112,12 @@ func (s *walletServiceStub) VoidVoucher(ctx context.Context, id string, now time
 	}
 	return s.vouchers.VoidVoucher(ctx, id, now)
 }
+func (s *walletServiceStub) RedeemForUser(ctx context.Context, userID, actorName, code string, now time.Time) (*voucher.RedeemResult, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not configured")
+	}
+	return s.vouchers.RedeemForUser(ctx, userID, actorName, code, now)
+}
 
 func newWalletStub(env *authTestEnv, repo *walletstore.Repository) *walletServiceStub {
 	subStore := subject.NewStore(env.st)

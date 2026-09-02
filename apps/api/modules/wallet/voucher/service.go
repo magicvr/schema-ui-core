@@ -119,16 +119,8 @@ func (s *Service) GenerateBatch(ctx context.Context, batchID string, count int, 
 	return generated, nil
 }
 
-// Redeem performs atomic, idempotent single-transaction voucher redemption:
-// 1. Verify that subjectID refers to an existing external subject (no orphan ledgers).
-// 2. Compute SHA-256 hash of plaintext code.
-// 3. In single database transaction:
-//    - Read voucher by code_hash.
-//    - Verify status == 'unused' and not expired.
-//    - CAS update status = 'redeemed', redeemed_by = subjectID, redeemed_at = now. If affected == 0, conflict (fail closed).
-//    - Get or create subject wallet account in tx.
-//    - Call wallet MutateInTx with entry_type = 'adjust', ref_type = 'voucher', ref_id = voucher.id, idempotency_key = voucher.id.
-// 4. Commit transaction and return receipt.
+// Redeem performs atomic, idempotent single-transaction voucher redemption
+// into an external subject's ledger (owner_type=subject).
 func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now time.Time) (*RedeemResult, error) {
 	subjectID = strings.TrimSpace(subjectID)
 	code = strings.TrimSpace(code)
@@ -136,7 +128,7 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 		return nil, ErrInvalidInput
 	}
 
-	// 1. External subject gate: unknown subject cannot redeem or auto-open account.
+	// External subject gate: unknown subject cannot redeem or auto-open account.
 	if s.subjects != nil {
 		exists, err := s.subjects.SubjectExists(ctx, subjectID)
 		if err != nil {
@@ -147,6 +139,39 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 		}
 	}
 
+	return s.redeemInto(ctx, code, now, subjectID, "Subject", func(tx kernel.Tx) (*walletstore.Account, error) {
+		account, _, err := s.walletRepo.GetOrCreateSubjectAccountInTx(tx, subjectID, now)
+		if err != nil {
+			return nil, fmt.Errorf("wallet account get-or-create: %w", err)
+		}
+		return account, nil
+	})
+}
+
+// RedeemForUser credits the Admin user's own owner_type=user ledger
+// (VP-029 R5 · GOAL-005 D-002). It MUST NOT call Redeem(subjectID) and MUST
+// NOT open a subject account.
+func (s *Service) RedeemForUser(ctx context.Context, userID, actorName, code string, now time.Time) (*RedeemResult, error) {
+	userID = strings.TrimSpace(userID)
+	code = strings.TrimSpace(code)
+	if userID == "" || code == "" {
+		return nil, ErrInvalidInput
+	}
+	if strings.TrimSpace(actorName) == "" {
+		actorName = "User"
+	}
+	return s.redeemInto(ctx, code, now, userID, actorName, func(tx kernel.Tx) (*walletstore.Account, error) {
+		account, _, err := s.walletRepo.GetOrCreateUserAccountInTx(tx, userID, now)
+		if err != nil {
+			return nil, fmt.Errorf("user wallet account get-or-create: %w", err)
+		}
+		return account, nil
+	})
+}
+
+type accountOpener func(tx kernel.Tx) (*walletstore.Account, error)
+
+func (s *Service) redeemInto(ctx context.Context, code string, now time.Time, redeemedByID, actorName string, open accountOpener) (*RedeemResult, error) {
 	codeHash := HashCode(code)
 
 	var result RedeemResult
@@ -194,7 +219,7 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 		// CAS: only transition from 'unused' to 'redeemed'.
 		res, err := tx.Exec(ctx,
 			`UPDATE vouchers SET status = ?, redeemed_by = ?, redeemed_at = ?, updated_at = ? WHERE id = ? AND status = ?`,
-			string(StatusRedeemed), subjectID, now.Unix(), now.Unix(), id, string(StatusUnused),
+			string(StatusRedeemed), redeemedByID, now.Unix(), now.Unix(), id, string(StatusUnused),
 		)
 		if err != nil {
 			return fmt.Errorf("update voucher status: %w", err)
@@ -208,13 +233,11 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 			return ErrVoucherConflict
 		}
 
-		// Auto-create or load subject wallet account inside the same transaction.
-		account, _, err := s.walletRepo.GetOrCreateSubjectAccountInTx(tx, subjectID, now)
+		account, err := open(tx)
 		if err != nil {
-			return fmt.Errorf("wallet account get-or-create: %w", err)
+			return err
 		}
 
-		// Mutate ledger atomically inside the same transaction.
 		entryID, err := walletstore.NewEntryID(now)
 		if err != nil {
 			return fmt.Errorf("generate entry id: %w", err)
@@ -226,8 +249,8 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 			RefID:          id,
 			IdempotencyKey: id, // strictly idempotent on voucher ID
 			Memo:           fmt.Sprintf("Voucher redeem %s", prefix),
-			ActorID:        subjectID,
-			ActorName:      "Subject",
+			ActorID:        redeemedByID,
+			ActorName:      actorName,
 		}
 		updatedAcct, entry, err := s.walletRepo.MutateInTx(tx, account.ID, in, entryID, now)
 		if err != nil {
@@ -235,13 +258,14 @@ func (s *Service) Redeem(ctx context.Context, subjectID string, code string, now
 		}
 
 		result = RedeemResult{
-			VoucherID: id,
-			BatchID:   batchID,
-			Amount:    amount,
-			Currency:  currency,
-			AccountID: updatedAcct.ID,
-			EntryID:   entry.ID,
-			Balance:   updatedAcct.BalanceTotal,
+			VoucherID:  id,
+			BatchID:    batchID,
+			CodePrefix: prefix,
+			Amount:     amount,
+			Currency:   currency,
+			AccountID:  updatedAcct.ID,
+			EntryID:    entry.ID,
+			Balance:    updatedAcct.BalanceTotal,
 		}
 		return nil
 	})

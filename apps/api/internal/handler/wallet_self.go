@@ -1,15 +1,15 @@
-// GOAL-022 · 我的钱包自服务面 — identity-scoped, read-only self-service.
+// GOAL-022 · 我的钱包自服务面 — identity-scoped self-service.
 // GET /api/wallet/me and GET /api/wallet/me/entries derive the owner EXCLUSIVELY
-// from the session identity (never from a client-supplied ownerId), so a user
-// can only ever read their own wallet (D-002 §1/§2). Identity-only endpoints:
-// no permission key — every authenticated user may view their own wallet, like
-// the /api/account/* self-service surface. Lazy get-or-create reuses GOAL-020
-// semantics; the first call auto-opens the zero-balance account (audited with
-// the auto marker).
+// from the session identity (never from a client-supplied ownerId). Identity-only
+// endpoints: no permission key. Lazy get-or-create reuses GOAL-020 semantics.
+// VP-029 R5 (GOAL-005): POST /api/wallet/me/redeem credits the session user's
+// owner_type=user ledger; never Redeem(subjectID).
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,8 +19,16 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
+const (
+	walletRedeemRateLimiterWindow   = 15 * time.Minute
+	walletRedeemRateLimiterMax      = 10
+	walletRedeemRateLimiterCapacity = 1 << 16
+)
+
 // WalletSelfRoutes returns the self-service wallet surface (admin.wallet).
-func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations operationlog.Recorder, moduleID string) []kernel.RouteContribution {
+func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations operationlog.Recorder, moduleID string, limiters kernel.RateLimiterProvider) []kernel.RouteContribution {
+	redeemLimiter := limiters.NewRateLimiter(walletRedeemRateLimiterWindow, walletRedeemRateLimiterMax, walletRedeemRateLimiterCapacity)
+
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, h http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -95,6 +103,61 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 			rows = append(rows, entryToMap(e))
 		}
 		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
+	})))
+
+	add("POST", "/api/wallet/me/redeem", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := selfIdentity(w, r)
+		if !ok {
+			return
+		}
+		now := time.Now().UTC()
+		if !redeemLimiter.Allow(user.ID, now) {
+			if sec := redeemLimiter.RetryAfterSeconds(user.ID, now); sec > 0 {
+				w.Header().Set("Retry-After", strconv.Itoa(sec))
+			}
+			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many voucher redeem attempts; try again later")
+			return
+		}
+		var body struct {
+			Code string `json:"code"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			redeemLimiter.Record(user.ID, now)
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with code")
+			return
+		}
+		code := strings.TrimSpace(body.Code)
+		if code == "" {
+			redeemLimiter.Record(user.ID, now)
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with code")
+			return
+		}
+		result, err := service.RedeemForUser(r.Context(), user.ID, user.Name, code, now)
+		if err != nil {
+			redeemLimiter.Record(user.ID, now)
+			writeVoucherRedeemError(w, r, err)
+			return
+		}
+		redeemLimiter.Clear(user.ID)
+		recordWalletEvent(operations, user, operationlog.EventWalletAdjust, "voucher-redeem", map[string]any{
+			"voucherId":  result.VoucherID,
+			"batchId":    result.BatchID,
+			"codePrefix": result.CodePrefix,
+			"amount":     result.Amount,
+			"accountId":  result.AccountID,
+			"entryId":    result.EntryID,
+		}, now)
+		writeJSON(w, http.StatusOK, map[string]any{
+			"voucherId":    result.VoucherID,
+			"batchId":      result.BatchID,
+			"codePrefix":   result.CodePrefix,
+			"amount":       result.Amount,
+			"currency":     result.Currency,
+			"accountId":    result.AccountID,
+			"entryId":      result.EntryID,
+			"balanceAfter": result.Balance,
+		})
 	})))
 
 	return routes

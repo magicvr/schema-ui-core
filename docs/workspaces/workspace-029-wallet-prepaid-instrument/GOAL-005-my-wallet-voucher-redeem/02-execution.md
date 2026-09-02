@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-09-02 | 子目标立项与规范骨架建立 | recorded | `02-execution/E-001-scaffold.md` |
+| E-002 | 2026-09-02 | S1 冻结与 S2/S3 实施回归 | recorded | `02-execution/E-002-s1-s3-implementation.md` |
 
 ## 事实边界
 

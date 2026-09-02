@@ -14,8 +14,8 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-029-007 / I-029-008 collecting；I-029-009 closed | 开放 required 阻断 S2 实施 |
-| 到期 required 是否已 verified / residual | **否**（S1 未到齐） | 不得实施核销 HTTP |
+| 影响本 scope 的 I-00N | I-029-007/008/009 closed | S4 仍须 independent |
+| 到期 required 是否已 verified / residual | **是**（S1 已冻） | 实施门禁已解除；关门仍待 S4 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引

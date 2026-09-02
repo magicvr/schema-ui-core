@@ -42,7 +42,7 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 | R2 | 主体接缝 + 账本入金（判据 1/3/4）：幂等 get-or-create · Redeem 原子入金 · 三余额/对账回归 | **done**（GOAL-002 完成 · 2026-09-02 交叉审计 pass 关门） |
 | R3 | Admin 批次面 + 导出（判据 2/5 + I-029-004）：生成/导出/作废/查询 · 权限键 · 操作审计 | **done**（GOAL-003 完成 · 2026-09-02 交叉审计 pass 关门） |
 | R4 | 证据与关门（判据 6/7；依赖 R1–R3） | **done**（GOAL-004 完成 · 2026-09-02 独立关门审计闭合；当时分母） |
-| R5 | Admin 已登录自助核销 HTTP + 「我的钱包」入口（判据 8/9/10 + I-029-007/008/009） | **active**（GOAL-005 立项 · 0/4；I-029-007/008 阻断实施） |
+| R5 | Admin 已登录自助核销 HTTP + 「我的钱包」入口（判据 8/9/10 + I-029-007/008/009） | **active**（GOAL-005 3/4；S4 independent 未做） |
 
 ## 信息就绪与未知项（P-005）
 
@@ -54,8 +54,8 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 | I-029-004 | non-blocking | 导出格式（CSV/TXT、是否含明文、一次性下载）。 | 判据 5 | R3 | lead 建议 + 用户确认 | closed | — | D-001：API 一次性返回明文数组作为导出数据源（明文不入库） |
 | I-029-005 | non-blocking | C 端自助核销 HTTP 是否**首波**交付，或仅模块 API。若选 HTTP，本 VP 必须完成 RT-Q05 精神的限流评估，不得推到未激活的 VP-030。 | 当时判据面 | R1 | 用户裁决 | closed | — | D-002：首波仅模块 API。**不**表示 R5 禁止 HTTP（见 I-029-007/008） |
 | I-029-006 | required | 凭证哈希与双花合同：哈希算法（默认候选 = 高熵码 SHA-256 或 HMAC-SHA256+pepper；禁止 6 位恢复码或 bcrypt 当卡密默认）；码字母表与长度（熵下限）；核销常时比较；`UNIQUE(code_hash)`（或等价）+ 同事务「未用→已核销 AND 账本入金」，并发失败者 fail-closed，重复 Redeem 不双记。 | 判据 2/3 | R1 | 用户裁决（R1 合同冻结前置） | closed | — | D-002：高熵码 + SHA-256 + 单事务 CAS 原子核销入金，并发失败 fail-closed |
-| I-029-007 | required | R5 HTTP 路径与服务函数形状（默认候选 `POST /api/wallet/me/redeem`） | 判据 8 · GOAL-005 S1 | R5 S1 | GOAL-005 S1 冻结决策（待写） | collecting | — | 入账 owner_type=user 已由 D-003 冻结 |
-| I-029-008 | required | 已登录核销 HTTP 的 RT-Q05 精神限流（内存专用桶 vs 复用 vs residual） | 判据 10 · GOAL-005 S1 | R5 S1 | GOAL-005 S1 冻结决策（待写） | collecting | — | 默认候选 = 内存限流器专用桶（user id）；不消耗 Redis trigger |
+| I-029-007 | required | R5 HTTP 路径与服务函数形状（默认候选 `POST /api/wallet/me/redeem`） | 判据 8 · GOAL-005 S1 | R5 S1 | GOAL-005 D-002 | closed | — | `POST /api/wallet/me/redeem` + `RedeemForUser` |
+| I-029-008 | required | 已登录核销 HTTP 的 RT-Q05 精神限流（内存专用桶 vs 复用 vs residual） | 判据 10 · GOAL-005 S1 | R5 S1 | GOAL-005 D-002 | closed | — | 内存专用桶 15min/10/user id；不消耗 Redis trigger |
 | I-029-009 | required | 自助核销权限：identity-only vs 新键 vs `wallet.voucher.issue` | 判据 8 | R5 重开 | 用户确认结构选型 A + D-003 | closed | — | D-003：identity-only，与 `/api/wallet/me` 同款 |
 
 ## 父目标

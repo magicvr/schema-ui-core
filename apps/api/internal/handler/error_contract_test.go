@@ -78,7 +78,7 @@ var frozenLiteralCodes = []string{
 	// VP-029 R3 (GOAL-003): prepaid voucher codes.
 	// A-008: VOUCHER_BATCH_EXISTS added with the 0065 batch registry (F-004).
 	"INVALID_VOUCHER_BODY", "INVALID_VOUCHER_PARAMS", "INVALID_VOUCHER_ID", "VOUCHER_NOT_FOUND", "VOUCHER_ALREADY_REDEEMED",
-	"VOUCHER_BATCH_EXISTS",
+	"VOUCHER_VOID", "VOUCHER_EXPIRED", "VOUCHER_BATCH_EXISTS",
 }
 
 // frozenStoredCodes are stable Job terminal codes persisted in Job.error.

@@ -265,24 +265,35 @@ func (r *Repository) CreateAccount(a Account) error {
 func (r *Repository) GetUserAccountByOwner(ownerID string) (*Account, error) {
 	var a Account
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var created, updated int64
-		err := tx.QueryRow(context.Background(),
-			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
-			OwnerUser, ownerID, DefaultCurrency,
-		).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
-		if errors.Is(err, kernel.ErrNoRows) {
-			return ErrNotFound
-		}
+		acct, err := r.GetUserAccountByOwnerInTx(tx, ownerID)
 		if err != nil {
-			return fmt.Errorf("get wallet account by owner: %w", err)
+			return err
 		}
-		a.CreatedAt = time.Unix(created, 0)
-		a.UpdatedAt = time.Unix(updated, 0)
+		a = *acct
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	return &a, nil
+}
+
+// GetUserAccountByOwnerInTx is a read-only lookup within a transaction.
+func (r *Repository) GetUserAccountByOwnerInTx(tx kernel.Tx, ownerID string) (*Account, error) {
+	var a Account
+	var created, updated int64
+	err := tx.QueryRow(context.Background(),
+		`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
+		OwnerUser, ownerID, DefaultCurrency,
+	).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
+	if errors.Is(err, kernel.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get wallet account by owner: %w", err)
+	}
+	a.CreatedAt = time.Unix(created, 0)
+	a.UpdatedAt = time.Unix(updated, 0)
 	return &a, nil
 }
 
@@ -326,6 +337,46 @@ func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Acc
 			return nil, false, fmt.Errorf("re-read wallet account after create conflict: %w", err)
 		}
 		return existing, false, nil
+	}
+	a := Account{ID: id, OwnerType: OwnerUser, OwnerID: ownerID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
+	return &a, true, nil
+}
+
+// GetOrCreateUserAccountInTx returns the user account within an ongoing
+// transaction (VP-029 R5 · GOAL-005). ON CONFLICT DO NOTHING keeps PostgreSQL
+// from aborting the Redeem tx on a concurrent first open (W9 F-001 / F-003).
+func (r *Repository) GetOrCreateUserAccountInTx(tx kernel.Tx, ownerID string, now time.Time) (*Account, bool, error) {
+	existing, err := r.GetUserAccountByOwnerInTx(tx, ownerID)
+	if err == nil {
+		return existing, false, nil
+	} else if !errors.Is(err, ErrNotFound) {
+		return nil, false, err
+	}
+
+	randBytes := make([]byte, 12)
+	if _, err := rand.Read(randBytes); err != nil {
+		return nil, false, fmt.Errorf("auto-create wallet id: %w", err)
+	}
+	id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
+	res, err := tx.Exec(context.Background(),
+		`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)
+		 ON CONFLICT (owner_type, owner_id, currency) DO NOTHING`,
+		id, OwnerUser, ownerID, DefaultCurrency, StatusActive, now.Unix(), now.Unix(),
+	)
+	if err != nil {
+		return nil, false, fmt.Errorf("insert user wallet account: %w", err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, false, err
+	}
+	if affected == 0 {
+		reloaded, reloadErr := r.GetUserAccountByOwnerInTx(tx, ownerID)
+		if reloadErr != nil {
+			return nil, false, fmt.Errorf("reload user wallet account after conflict: %w", reloadErr)
+		}
+		return reloaded, false, nil
 	}
 	a := Account{ID: id, OwnerType: OwnerUser, OwnerID: ownerID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
 	return &a, true, nil

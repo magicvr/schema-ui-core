@@ -22,8 +22,8 @@ version: 0.2.0
 | I-029-004 | non-blocking | 导出格式 | 判据 5 | R3 | 用户确认 | closed | — | D-001: API 一次性返回明文数组作为导出数据源（明文不入库） |
 | I-029-005 | non-blocking | HTTP 自助核销是否**首波**；若是则本 VP 做限流评估 | 当时判据面 | R1 | 用户裁决 | closed | — | D-002: 首波仅模块 API；R5 见 I-029-007/008 |
 | I-029-006 | required | 哈希算法 / 码熵 / 常时比较 / UNIQUE+同事务双花 | 判据 2/3 | R1 | 用户裁决 | closed | — | D-002: 高熵码 + SHA-256 + 单事务 CAS 原子核销入金 |
-| I-029-007 | required | R5 HTTP 路径 / 函数形状 | 判据 8 · GOAL-005 S1 | R5 S1 | GOAL-005 S1 | collecting | — | D-003: 入账 user 账已冻；路径待 S1 |
-| I-029-008 | required | R5 已登录核销限流评估 | 判据 10 · GOAL-005 S1 | R5 S1 | GOAL-005 S1 | collecting | — | D-003: 默认候选内存专用桶 |
+| I-029-007 | required | R5 HTTP 路径 / 函数形状 | 判据 8 · GOAL-005 S1 | R5 S1 | GOAL-005 D-002 | closed | — | POST /api/wallet/me/redeem + RedeemForUser |
+| I-029-008 | required | R5 已登录核销限流评估 | 判据 10 · GOAL-005 S1 | R5 S1 | GOAL-005 D-002 | closed | — | 内存专用桶 15min/10/user id |
 | I-029-009 | required | R5 权限模型 | 判据 8 | R5 重开 | 用户确认 A | closed | — | D-003: identity-only |
 
 ## 决策索引

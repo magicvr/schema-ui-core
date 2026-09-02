@@ -222,7 +222,9 @@ var Catalog = map[string]Entry{
 	"INVALID_VOUCHER_PARAMS":   {"error.invalidVoucherParams", "invalid count (1-1000), amount (CNY yuan with up to 2 decimal places, >0), or expiresAt (Unix seconds, or a UTC date YYYY-MM-DD valid through 23:59:59 that day, 2001-09-09 to 2099-12-31)", "数量 (1-1000)、金额（人民币元，最多 2 位小数，须大于 0）或过期时间（Unix 秒，或 UTC 日期 YYYY-MM-DD——所选日期当日 23:59:59 前有效，范围 2001-09-09 至 2099-12-31）参数无效"},
 	"INVALID_VOUCHER_ID":       {"error.invalidVoucherId", "id is required", "缺少凭证 id"},
 	"VOUCHER_NOT_FOUND":        {"error.voucherNotFound", "voucher not found", "预付凭证不存在"},
-	"VOUCHER_ALREADY_REDEEMED": {"error.voucherAlreadyRedeemed", "cannot void already redeemed voucher", "已核销的预付凭证不可作废"},
+	"VOUCHER_ALREADY_REDEEMED": {"error.voucherAlreadyRedeemed", "voucher has already been redeemed", "预付凭证已核销"},
+	"VOUCHER_VOID":             {"error.voucherVoid", "voucher has been voided", "预付凭证已作废"},
+	"VOUCHER_EXPIRED":          {"error.voucherExpired", "voucher has expired", "预付凭证已过期"},
 	"VOUCHER_BATCH_EXISTS":     {"error.voucherBatchExists", "a batch with that batchId already exists", "该 batchId 对应的批次已存在"},
 }
 

@@ -225,6 +225,14 @@ func (s *Service) VoidVoucher(ctx context.Context, id string, now time.Time) err
 	return s.vouchers.VoidVoucher(ctx, id, now)
 }
 
+// RedeemForUser implements handler.WalletService (VP-029 R5 · GOAL-005).
+func (s *Service) RedeemForUser(ctx context.Context, userID, actorName, code string, now time.Time) (*voucher.RedeemResult, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.RedeemForUser(ctx, userID, actorName, code, now)
+}
+
 // Provider implements kernel.Provider for admin.wallet.
 type Provider struct {
 	a          *auth.Authenticator
@@ -235,11 +243,12 @@ type Provider struct {
 	// paths verify the owner id against the live user table before opening an
 	// account. Wired from the composition root (auth-session repository).
 	ownerExists handler.OwnerExistsFunc
+	limiters    kernel.RateLimiterProvider
 }
 
 // New constructs the wallet provider.
-func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder, ownerExists handler.OwnerExistsFunc) *Provider {
-	return &Provider{a: a, service: service, jobs: jobs, operations: operations, ownerExists: ownerExists}
+func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder, ownerExists handler.OwnerExistsFunc, limiters kernel.RateLimiterProvider) *Provider {
+	return &Provider{a: a, service: service, jobs: jobs, operations: operations, ownerExists: ownerExists, limiters: limiters}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -265,6 +274,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/jobs/{id}/retry", "GET /api/wallet/jobs/{id}/result",
 				// GOAL-022 (D-002 §2): identity-scoped self-service surface.
 				"GET /api/wallet/me", "POST /api/wallet/me", "GET /api/wallet/me/entries",
+				"POST /api/wallet/me/redeem",
 				// VP-029 R3 (GOAL-003): prepaid vouchers surface.
 				"POST /api/wallet/vouchers/batches", "GET /api/wallet/vouchers",
 				"GET /api/wallet/vouchers/{id}", "POST /api/wallet/vouchers/{id}/void",
@@ -288,7 +298,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		}
 	}
 	// GOAL-022 (D-002 §2): identity-scoped self-service routes.
-	for _, route := range handler.WalletSelfRoutes(p.a, p.service, p.operations, ModuleID) {
+	for _, route := range handler.WalletSelfRoutes(p.a, p.service, p.operations, ModuleID, p.limiters) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
