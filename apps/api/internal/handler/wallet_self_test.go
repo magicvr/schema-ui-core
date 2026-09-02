@@ -149,7 +149,10 @@ func TestWalletSelfEntriesOwnScope(t *testing.T) {
 	env.addUser(t, "alice", "alice-password", []string{"editor"})
 	env.addUser(t, "bob", "bob-password", []string{"viewer"})
 	// 管理员分别给 alice 2500、bob 1000（不同账户）。
-	for _, tc := range []struct{ owner, memo string; delta int }{
+	for _, tc := range []struct {
+		owner, memo string
+		delta       int
+	}{
 		{"user-alice", "grant alice", 2500},
 		{"user-bob", "grant bob", 1000},
 	} {
@@ -306,6 +309,71 @@ func TestWalletSelfRedeemCreditsUserLedger(t *testing.T) {
 	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/wallet/me/redeem", `{"code":"`+code+`"}`))
 	if rr.Code != http.StatusConflict {
 		t.Fatalf("duplicate redeem = %d %s, want 409", rr.Code, rr.Body.String())
+	}
+
+	// A-001 F-003: 409 之后再读余额与流水，避免控制流改写后静默双记。
+	acct2, err := stub.GetUserAccountByOwner("user-editor1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct2.BalanceTotal != 2500 || acct2.BalanceAvailable != 2500 || acct2.BalanceFrozen != 0 {
+		t.Fatalf("user account after duplicate = %+v, want 2500/2500/0", acct2)
+	}
+	entries, total, err := stub.ListEntries(acct2.ID, "", "", 1, 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 || len(entries) != 1 {
+		t.Fatalf("ledger after duplicate total=%d entries=%d, want 1", total, len(entries))
+	}
+	if entries[0].RefType != "voucher" || entries[0].AmountDelta != 2500 {
+		t.Fatalf("ledger after duplicate = %+v", entries[0])
+	}
+}
+
+// A-001 F-001: POST /me/redeem 对偶 GET /me 的身份隔离——alice 核销后 bob
+// 余额仍为 0；body / query 多带 ownerId、accountId 仍只入会话用户账。
+func TestWalletSelfRedeemIgnoresClientOwnerAndIsolatesUsers(t *testing.T) {
+	env, stub := newWalletSelfRedeemEnv(t)
+	env.addUser(t, "alice", "alice-password", []string{"editor"})
+	env.addUser(t, "bob", "bob-password", []string{"viewer"})
+	aliceToken := env.login(t, "alice", "alice-password")
+	bobToken := env.login(t, "bob", "bob-password")
+
+	batch, err := stub.GenerateVouchers(t.Context(), "batch-isolate", 1, 1800, "CNY", nil, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := batch[0].Code
+
+	body := `{"code":"` + code + `","ownerId":"user-bob","accountId":"acct-forged"}`
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, aliceToken, http.MethodPost, "/api/wallet/me/redeem?ownerId=user-bob&accountId=acct-forged", body))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("alice redeem = %d %s", rr.Code, rr.Body.String())
+	}
+
+	aliceAcct, err := stub.GetUserAccountByOwner("user-alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if aliceAcct.OwnerType != walletstore.OwnerUser || aliceAcct.BalanceTotal != 1800 {
+		t.Fatalf("alice account = %+v", aliceAcct)
+	}
+	if _, err := stub.GetUserAccountByOwner("user-bob"); err == nil {
+		t.Fatal("bob user account must not exist after alice redeem")
+	}
+	if _, err := stub.repo.GetSubjectAccountByOwner("user-alice"); err == nil {
+		t.Fatal("alice subject account must not exist")
+	}
+	if _, err := stub.repo.GetSubjectAccountByOwner("user-bob"); err == nil {
+		t.Fatal("bob subject account must not exist")
+	}
+
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, bobToken, http.MethodGet, "/api/wallet/me", ""))
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("bob GET /me = %d %s, want 404 (no account)", rr.Code, rr.Body.String())
 	}
 }
 

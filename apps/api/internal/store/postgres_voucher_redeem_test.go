@@ -111,3 +111,93 @@ func TestPostgresVoucherRedeemAndConcurrentSubject(t *testing.T) {
 		t.Fatalf("balance after duplicate redeem = %d, want 2000 (no double credit)", acct2.BalanceTotal)
 	}
 }
+
+// A-001 F-002: PostgreSQL 对偶——两张不同卡并发入同一新 user 户。
+func TestPostgresVoucherRedeemAndConcurrentUser(t *testing.T) {
+	st := postgresScratchDB(t, "vp029userredeem") // skip when PG_TEST_* unset
+	ctx := context.Background()
+	now := time.Now().UTC()
+
+	subStore := subject.NewStore(st)
+	wRepo := walletstore.NewRepository(st)
+	svc := voucher.NewService(st, wRepo, subStore)
+	userID := "user-pg-redeem-1"
+
+	batchA, err := svc.GenerateBatch(ctx, "pg-user-batch-a", 1, 500, "CNY", nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchB, err := svc.GenerateBatch(ctx, "pg-user-batch-b", 1, 1500, "CNY", nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := []string{batchA[0].Code, batchB[0].Code}
+
+	errCh := make(chan error, len(codes))
+	var wg sync.WaitGroup
+	for _, code := range codes {
+		wg.Add(1)
+		go func(c string) {
+			defer wg.Done()
+			_, err := svc.RedeemForUser(ctx, userID, "pg-user", c, now.Add(2*time.Second))
+			errCh <- err
+		}(code)
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		if err != nil {
+			t.Fatalf("concurrent PG RedeemForUser: %v", err)
+		}
+	}
+
+	acct, err := wRepo.GetUserAccountByOwner(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.OwnerType != walletstore.OwnerUser || acct.OwnerID != userID {
+		t.Fatalf("account = %+v", acct)
+	}
+	if acct.BalanceTotal != 2000 || acct.BalanceAvailable != 2000 || acct.BalanceFrozen != 0 {
+		t.Fatalf("balance after concurrent user redeems = %+v, want total/available 2000", acct)
+	}
+	var accountRows int
+	if err := st.Run(ctx, func(tx kernel.Tx) error {
+		return tx.QueryRow(ctx,
+			`SELECT COUNT(*) FROM wallet_accounts WHERE owner_type = ? AND owner_id = ?`,
+			"user", userID,
+		).Scan(&accountRows)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if accountRows != 1 {
+		t.Fatalf("user account rows = %d, want 1", accountRows)
+	}
+	if _, err := wRepo.GetSubjectAccountByOwner(userID); !errors.Is(err, walletstore.ErrNotFound) {
+		t.Fatal("subject account must not exist for RedeemForUser")
+	}
+
+	var entryRows int
+	if err := st.Run(ctx, func(tx kernel.Tx) error {
+		return tx.QueryRow(ctx,
+			`SELECT COUNT(*) FROM wallet_ledger_entries WHERE account_id = ? AND ref_type = 'voucher'`,
+			acct.ID,
+		).Scan(&entryRows)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if entryRows != 2 {
+		t.Fatalf("voucher ledger entries = %d, want 2", entryRows)
+	}
+
+	if _, err := svc.RedeemForUser(ctx, userID, "pg-user", codes[0], now.Add(3*time.Second)); !errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+		t.Fatalf("duplicate RedeemForUser err = %v, want ErrVoucherAlreadyRedeemed", err)
+	}
+	acct2, err := wRepo.GetUserAccountByOwner(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct2.BalanceTotal != 2000 {
+		t.Fatalf("balance after duplicate RedeemForUser = %d, want 2000 (no double credit)", acct2.BalanceTotal)
+	}
+}

@@ -453,6 +453,18 @@ func TestRedeemForUserCreditsUserLedgerNotSubject(t *testing.T) {
 	if !errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
 		t.Fatalf("duplicate err = %v, want ErrVoucherAlreadyRedeemed", err)
 	}
+
+	// A-001 F-003: 重复拒绝后再读余额与流水，确认未静默双记。
+	acct2, err := e.walletRepo.GetUserAccountByOwner(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct2.BalanceTotal != 1200 || acct2.BalanceAvailable != 1200 || acct2.BalanceFrozen != 0 {
+		t.Fatalf("balances after duplicate = %+v", acct2)
+	}
+	if count := countVoucherLedger(t, e.walletRepo, acct2.ID); count != 1 {
+		t.Fatalf("voucher ledger after duplicate = %d, want 1", count)
+	}
 }
 
 func TestRedeemForUserDoesNotShareSubjectPath(t *testing.T) {
@@ -475,4 +487,136 @@ func TestRedeemForUserDoesNotShareSubjectPath(t *testing.T) {
 	if _, err := e.walletRepo.GetUserAccountByOwner("user-editor1"); !errors.Is(err, walletstore.ErrNotFound) {
 		t.Fatal("user account must not be created when redeem is rejected")
 	}
+}
+
+// A-001 F-002: user→subject 反向——先 RedeemForUser，再 Redeem(subject)
+// 必须 already-redeemed，且 subject 账余额不增、不新建 subject 户。
+func TestRedeemForUserDoesNotShareUserPath(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	userID := "user-editor1"
+	sub, _, err := e.subjectStore.GetOrCreateSubject(ctx, "telegram", "tg-after-user", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	batch, err := e.service.GenerateBatch(ctx, "batch-user-first", 1, 900, "CNY", nil, now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.service.RedeemForUser(ctx, userID, "editor1", batch[0].Code, now().Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.service.Redeem(ctx, sub.ID, batch[0].Code, now().Add(2*time.Minute)); !errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+		t.Fatalf("subject redeem after user err = %v", err)
+	}
+	if _, err := e.walletRepo.GetSubjectAccountByOwner(sub.ID); !errors.Is(err, walletstore.ErrNotFound) {
+		t.Fatal("subject account must not be created when redeem is rejected")
+	}
+	acct, err := e.walletRepo.GetUserAccountByOwner(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.BalanceTotal != 900 {
+		t.Fatalf("user balance = %d, want 900", acct.BalanceTotal)
+	}
+}
+
+func TestConcurrentRedeemForUserFailClosed(t *testing.T) {
+	tempDir := t.TempDir()
+	dbPath := filepath.Join(tempDir, "race-user.db")
+	st, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	subStore := subject.NewStore(st)
+	wRepo := walletstore.NewRepository(st)
+	svc := voucher.NewService(st, wRepo, subStore)
+	ctx := context.Background()
+	userID := "user-race-1"
+
+	batch, err := svc.GenerateBatch(ctx, "b-race-user", 1, 1000, "CNY", nil, now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := batch[0].Code
+
+	const concurrency = 20
+	var wg sync.WaitGroup
+	var successCount atomic.Int32
+	var conflictCount atomic.Int32
+	var otherErrors atomic.Int32
+	startGate := make(chan struct{})
+
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-startGate
+			_, err := svc.RedeemForUser(ctx, userID, "race-user", code, now())
+			if err == nil {
+				successCount.Add(1)
+			} else if errors.Is(err, voucher.ErrVoucherConflict) || errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+				conflictCount.Add(1)
+			} else {
+				otherErrors.Add(1)
+			}
+		}()
+	}
+	close(startGate)
+	wg.Wait()
+
+	if otherErrors.Load() > 0 {
+		t.Fatalf("unexpected other errors count: %d", otherErrors.Load())
+	}
+	if successCount.Load() != 1 {
+		t.Fatalf("success count = %d, want EXACTLY 1", successCount.Load())
+	}
+	if conflictCount.Load() != concurrency-1 {
+		t.Fatalf("conflict count = %d, want %d", conflictCount.Load(), concurrency-1)
+	}
+
+	acct, err := wRepo.GetUserAccountByOwner(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acct.OwnerType != walletstore.OwnerUser || acct.OwnerID != userID {
+		t.Fatalf("account = %+v", acct)
+	}
+	if acct.BalanceTotal != 1000 || acct.BalanceAvailable != 1000 || acct.BalanceFrozen != 0 {
+		t.Fatalf("account balance corrupted: %+v", acct)
+	}
+	if _, err := wRepo.GetSubjectAccountByOwner(userID); !errors.Is(err, walletstore.ErrNotFound) {
+		t.Fatal("subject account must not exist for concurrent RedeemForUser")
+	}
+
+	var entryCount int
+	err = st.Run(ctx, func(tx kernel.Tx) error {
+		return tx.QueryRow(ctx, "SELECT COUNT(*) FROM wallet_ledger_entries WHERE ref_type = 'voucher' AND ref_id = ?", batch[0].Voucher.ID).Scan(&entryCount)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entryCount != 1 {
+		t.Fatalf("ledger entry count = %d, want 1", entryCount)
+	}
+}
+
+func countVoucherLedger(t *testing.T, repo *walletstore.Repository, accountID string) int {
+	t.Helper()
+	entries, total, err := repo.ListEntries(accountID, "", "", 1, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for _, e := range entries {
+		if e.RefType == "voucher" {
+			n++
+		}
+	}
+	if total < n {
+		t.Fatalf("list total %d < voucher rows %d", total, n)
+	}
+	return n
 }
