@@ -1109,6 +1109,9 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 			"Mail console", "Outbound email log",
 			"File library", "Data dictionary",
 			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
+			// VP-029 R3 (GOAL-003 / GOAL-001): wallet-vouchers page joins the
+			// admin set (menu_wallet_vouchers, Order 11) after data permission.
+			"Prepaid vouchers",
 		}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {
 			t.Fatalf("sidebar = %v, want %v", labels, want)
