@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.2.0
-progress: 4/5
+version: 0.3.0
+progress: 5/5
 plan_refs:
   - VP-029-wallet-prepaid-instrument
 primary_plan: VP-029-wallet-prepaid-instrument
@@ -28,9 +28,9 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 - [x] 判据 #5（Admin 可操作）：批次生成/导出/作废有协议驱动页面 + 权限键 + 操作审计——R3
 - [x] 判据 #6（边界保持）：未改 Charter；未改 `mvp`/`admin` 默认模块集装配语义；未引入支付网关或 Telegram 依赖；未重开 VP-011——全程
 - [x] 判据 #7（审计闭合）：开放 required finding = 0（或已合法闭合）——R4 当时分母已核销；R5 仍适用
-- [ ] 判据 #8（Admin 已登录自助核销 HTTP）：会话身份入账 `owner_type=user`；禁止匿名；原子且幂等；不记入 subject 账——R5
-- [ ] 判据 #9（我的钱包入口）：`/my-wallet` 可发现预付凭证充值入口；成功刷新余额/流水——R5
-- [ ] 判据 #10（限流评估落盘）：对本 authenticated HTTP 完成 RT-Q05 精神评估——R5
+- [x] 判据 #8（Admin 已登录自助核销 HTTP）：会话身份入账 `owner_type=user`；禁止匿名；原子且幂等；不记入 subject 账——R5（GOAL-005 done）
+- [x] 判据 #9（我的钱包入口）：`/my-wallet` 可发现预付凭证充值入口；成功刷新余额/流水——R5（GOAL-005 done）
+- [x] 判据 #10（限流评估落盘）：对本 authenticated HTTP 完成 RT-Q05 精神评估——R5（GOAL-005 D-002 / I-029-008 closed）
 
 ## 纲领路线图（P-001）
 
@@ -42,7 +42,7 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 | R2 | 主体接缝 + 账本入金（判据 1/3/4）：幂等 get-or-create · Redeem 原子入金 · 三余额/对账回归 | **done**（GOAL-002 完成 · 2026-09-02 交叉审计 pass 关门） |
 | R3 | Admin 批次面 + 导出（判据 2/5 + I-029-004）：生成/导出/作废/查询 · 权限键 · 操作审计 | **done**（GOAL-003 完成 · 2026-09-02 交叉审计 pass 关门） |
 | R4 | 证据与关门（判据 6/7；依赖 R1–R3） | **done**（GOAL-004 完成 · 2026-09-02 独立关门审计闭合；当时分母） |
-| R5 | Admin 已登录自助核销 HTTP + 「我的钱包」入口（判据 8/9/10 + I-029-007/008/009） | **active**（GOAL-005 3/4；S4 independent A-001 pass；待 self/关门） |
+| R5 | Admin 已登录自助核销 HTTP + 「我的钱包」入口（判据 8/9/10 + I-029-007/008/009） | **done**（GOAL-005 done 4/4 · A-001 independent + A-003 self；Root 仍 active） |
 
 ## 信息就绪与未知项（P-005）
 

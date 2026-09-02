@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.6
+version: 0.1.7
 ---
 
 # 执行记录 · GOAL-001-wallet-prepaid-instrument
@@ -24,6 +24,7 @@ version: 0.1.6
 | E-008 | 2026-09-02 | 生成体验：批次号自动生成（可选）+ 面额单位元两位小数 | recorded | `02-execution/E-008-voucher-generation-ux.md` |
 | E-009 | 2026-09-02 | 过期时间改日期选择（datePicker）并自动换算 UTC 当日末秒 | recorded | `02-execution/E-009-voucher-expiry-date-picker.md` |
 | E-010 | 2026-09-02 | R5 重开与 GOAL-005 立项 | recorded | `02-execution/E-010-r5-reopen.md` |
+| E-011 | 2026-09-02 | R5 子目标 GOAL-005 关门 | recorded | `02-execution/E-011-goal005-closed.md` |
 
 ## 事实边界
 

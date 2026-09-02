@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-my-wallet-voucher-redeem
 title: 我的钱包预付凭证自助核销入口
-status: active
+status: done
 parent: GOAL-001-wallet-prepaid-instrument
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.2.0
-progress: 3/4
+version: 0.3.0
+progress: 4/4
 ---
 
 # GOAL-005 · 我的钱包预付凭证自助核销入口
@@ -20,11 +20,11 @@ progress: 3/4
 - [x] 1. **S1 合同冻结**：I-029-007（HTTP 路径/函数形状）与 I-029-008（限流评估）closed 或合规 residual；继承 D-003（identity-only、user 账、禁止匿名）
 - [x] 2. **S2 实施**：身份作用域核销 HTTP + 「我的钱包」可发现入口；成功刷新余额/流水；明文不进审计原文
 - [x] 3. **S3 回归**：重复核销不双记、身份隔离、user/subject 账不串、双方言相关测试与全量回归绿；go 判定（additive 则不暂挂）
-- [ ] 4. **S4 关门审计**：self + **independent**（资金路径）；开放 required = 0
+- [x] 4. **S4 关门审计**：self + **independent**（资金路径）；开放 required = 0
 
 ## 派生进度展示
 
-`progress: 3/4`（S1～S3 完成；S4 independent = A-001 pass，A-002 已响应 F-001～F-004；缺 self / 用户书面降级，检查点未勾）。
+`progress: 4/4`（S1～S4 完成。S4 = A-003 self pass + A-001 independent pass；A-001 F-001～F-005 均 `fixed`）。
 
 ## 信息就绪与未知项
 
