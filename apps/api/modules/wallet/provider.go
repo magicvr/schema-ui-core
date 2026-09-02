@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -192,6 +193,38 @@ func (s *Service) ListReconcileRuns(page, pageSize int) ([]walletstore.Reconcili
 	return s.repo.ListReconcileRuns(page, pageSize)
 }
 
+// GenerateVouchers implements handler.WalletService (VP-029 R3).
+func (s *Service) GenerateVouchers(ctx context.Context, batchID string, count int, amount int64, currency string, expiresAt *time.Time, now time.Time) ([]voucher.GeneratedVoucher, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.GenerateBatch(ctx, batchID, count, amount, currency, expiresAt, now)
+}
+
+// ListVouchers implements handler.WalletService (VP-029 R3).
+func (s *Service) ListVouchers(ctx context.Context, batchID, status string, page, pageSize int) ([]voucher.Voucher, int, error) {
+	if s.vouchers == nil {
+		return nil, 0, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.ListVouchers(ctx, batchID, status, page, pageSize)
+}
+
+// GetVoucher implements handler.WalletService (VP-029 R3).
+func (s *Service) GetVoucher(ctx context.Context, id string) (*voucher.Voucher, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.GetVoucher(ctx, id)
+}
+
+// VoidVoucher implements handler.WalletService (VP-029 R3).
+func (s *Service) VoidVoucher(ctx context.Context, id string, now time.Time) error {
+	if s.vouchers == nil {
+		return errors.New("voucher service not initialized")
+	}
+	return s.vouchers.VoidVoucher(ctx, id, now)
+}
+
 // Provider implements kernel.Provider for admin.wallet.
 type Provider struct {
 	a          *auth.Authenticator
@@ -232,10 +265,13 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/jobs/{id}/retry", "GET /api/wallet/jobs/{id}/result",
 				// GOAL-022 (D-002 §2): identity-scoped self-service surface.
 				"GET /api/wallet/me", "POST /api/wallet/me", "GET /api/wallet/me/entries",
+				// VP-029 R3 (GOAL-003): prepaid vouchers surface.
+				"POST /api/wallet/vouchers/batches", "GET /api/wallet/vouchers",
+				"GET /api/wallet/vouchers/{id}", "POST /api/wallet/vouchers/{id}/void",
 			},
 			Pages:       []string{"wallet", "wallet-entries", "my-wallet"},
 			Navigation:  []string{"menu_wallet", "menu_wallet_self"},
-			Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust"},
+			Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust", "wallet.voucher.issue"},
 			Fragments:   []string{"wallet"},
 		},
 	}
@@ -285,6 +321,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.read"}, Permission: "wallet.read", Resource: "wallet", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.write"}, Permission: "wallet.write", Resource: "wallet", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.adjust"}, Permission: "wallet.adjust", Resource: "wallet", Action: "adjust", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.voucher.issue"}, Permission: "wallet.voucher.issue", Resource: "wallet", Action: "voucher.issue", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	} {
 		if err := reg.Authorization(permission); err != nil {
 			return err

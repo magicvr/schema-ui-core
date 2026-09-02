@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,12 +20,15 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
 )
 
 // walletServiceStub adapts the wallet store to WalletService (the module
 // package imports handler, so handler tests use a store-backed double).
 type walletServiceStub struct {
-	repo *walletstore.Repository
+	repo     *walletstore.Repository
+	vouchers *voucher.Service
 }
 
 func (s *walletServiceStub) ListAccounts(q, ownerType string, page, pageSize int) ([]walletstore.Account, int, error) {
@@ -84,10 +88,47 @@ func (s *walletServiceStub) Reconcile(accountID, actorID string, now time.Time) 
 func (s *walletServiceStub) ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error) {
 	return s.repo.ListReconcileRuns(page, pageSize)
 }
+func (s *walletServiceStub) GenerateVouchers(ctx context.Context, batchID string, count int, amount int64, currency string, expiresAt *time.Time, now time.Time) ([]voucher.GeneratedVoucher, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not configured")
+	}
+	return s.vouchers.GenerateBatch(ctx, batchID, count, amount, currency, expiresAt, now)
+}
+func (s *walletServiceStub) ListVouchers(ctx context.Context, batchID, status string, page, pageSize int) ([]voucher.Voucher, int, error) {
+	if s.vouchers == nil {
+		return nil, 0, errors.New("voucher service not configured")
+	}
+	return s.vouchers.ListVouchers(ctx, batchID, status, page, pageSize)
+}
+func (s *walletServiceStub) GetVoucher(ctx context.Context, id string) (*voucher.Voucher, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not configured")
+	}
+	return s.vouchers.GetVoucher(ctx, id)
+}
+func (s *walletServiceStub) VoidVoucher(ctx context.Context, id string, now time.Time) error {
+	if s.vouchers == nil {
+		return errors.New("voucher service not configured")
+	}
+	return s.vouchers.VoidVoucher(ctx, id, now)
+}
+
+func newWalletStub(env *authTestEnv, repo *walletstore.Repository) *walletServiceStub {
+	subStore := subject.NewStore(env.st)
+	vSvc := voucher.NewService(env.st, repo, subStore)
+	return &walletServiceStub{
+		repo:     repo,
+		vouchers: vSvc,
+	}
+}
 
 func mountWalletRoutes(t *testing.T, env *authTestEnv, service WalletService) {
 	t.Helper()
-	jobService := newWalletJobTestService(t, env, service.(*walletServiceStub).repo)
+	stub, ok := service.(*walletServiceStub)
+	if ok && stub.vouchers == nil {
+		stub.vouchers = voucher.NewService(env.st, stub.repo, subject.NewStore(env.st))
+	}
+	jobService := newWalletJobTestService(t, env, stub.repo)
 	for _, r := range WalletRoutes(env.a, service, jobService, env.operations, "admin.wallet", nil) {
 		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)
 	}

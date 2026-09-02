@@ -21,6 +21,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
@@ -41,6 +42,11 @@ type WalletService interface {
 	Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, bool, error)
 	Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error)
 	ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error)
+	// Prepaid vouchers surface (VP-029 R3 · GOAL-003).
+	GenerateVouchers(ctx context.Context, batchID string, count int, amount int64, currency string, expiresAt *time.Time, now time.Time) ([]voucher.GeneratedVoucher, error)
+	ListVouchers(ctx context.Context, batchID, status string, page, pageSize int) ([]voucher.Voucher, int, error)
+	GetVoucher(ctx context.Context, id string) (*voucher.Voucher, error)
+	VoidVoucher(ctx context.Context, id string, now time.Time) error
 }
 
 // WalletJobService is the actor-scoped async boundary consumed by wallet
@@ -436,6 +442,188 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			rows = append(rows, reconcileRunToMap(run))
 		}
 		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
+	})))
+
+	// Vouchers: generate batch (audited). Requires wallet.voucher.issue.
+	add("POST", "/api/wallet/vouchers/batches", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.voucher.issue")
+		if !ok {
+			return
+		}
+		var body struct {
+			BatchID   string `json:"batchId"`
+			Count     int    `json:"count"`
+			Amount    int64  `json:"amount"`
+			Currency  string `json:"currency"`
+			ExpiresAt *int64 `json:"expiresAt"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with batchId, count, and amount")
+			return
+		}
+		if strings.TrimSpace(body.BatchID) == "" || body.Count <= 0 || body.Count > 1000 || body.Amount <= 0 {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "invalid batchId, count (1-1000), or amount (>0)")
+			return
+		}
+		now := time.Now().UTC()
+		var exp *time.Time
+		if body.ExpiresAt != nil && *body.ExpiresAt > 0 {
+			t := time.Unix(*body.ExpiresAt, 0).UTC()
+			exp = &t
+		}
+		generated, err := service.GenerateVouchers(r.Context(), strings.TrimSpace(body.BatchID), body.Count, body.Amount, strings.TrimSpace(body.Currency), exp, now)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate voucher batch")
+			return
+		}
+		// Audited without plaintext codes!
+		recordWalletEvent(operations, user, "records.create", "batch-generate", map[string]any{
+			"batchId":  body.BatchID,
+			"count":    body.Count,
+			"amount":   body.Amount,
+			"currency": body.Currency,
+		}, now)
+
+		items := make([]map[string]any, len(generated))
+		for i, g := range generated {
+			item := map[string]any{
+				"id":         g.Voucher.ID,
+				"batchId":    g.Voucher.BatchID,
+				"codePrefix": g.Voucher.CodePrefix,
+				"amount":     g.Voucher.Amount,
+				"currency":   g.Voucher.Currency,
+				"status":     string(g.Voucher.Status),
+				"code":       g.Code, // One-time plaintext returned only here
+				"createdAt":  g.Voucher.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+			}
+			if g.Voucher.ExpiresAt != nil {
+				item["expiresAt"] = g.Voucher.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+			}
+			items[i] = item
+		}
+		writeJSON(w, http.StatusCreated, map[string]any{
+			"items": items,
+			"total": len(items),
+		})
+	})))
+
+	// Vouchers: list (requires wallet.read). Never returns plaintext codes.
+	add("GET", "/api/wallet/vouchers", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
+			return
+		}
+		page, ok := intParam(r.URL.Query().Get("page"), 1)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			return
+		}
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
+		if !ok || pageSize > maxPageSize {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+			return
+		}
+		batchID := r.URL.Query().Get("batchId")
+		status := r.URL.Query().Get("status")
+		vouchers, total, err := service.ListVouchers(r.Context(), batchID, status, page, pageSize)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list vouchers")
+			return
+		}
+		rows := make([]map[string]any, len(vouchers))
+		for i, v := range vouchers {
+			row := map[string]any{
+				"id":         v.ID,
+				"batchId":    v.BatchID,
+				"codePrefix": v.CodePrefix,
+				"amount":     v.Amount,
+				"currency":   v.Currency,
+				"status":     string(v.Status),
+				"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+				"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+			}
+			if v.ExpiresAt != nil {
+				row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+			}
+			if v.RedeemedBy != nil {
+				row["redeemedBy"] = *v.RedeemedBy
+			}
+			if v.RedeemedAt != nil {
+				row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+			}
+			rows[i] = row
+		}
+		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
+	})))
+
+	// Vouchers: get by id (requires wallet.read).
+	add("GET", "/api/wallet/vouchers/{id}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
+			return
+		}
+		id := strings.TrimSpace(r.PathValue("id"))
+		if id == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_ID", "id is required")
+			return
+		}
+		v, err := service.GetVoucher(r.Context(), id)
+		if errors.Is(err, voucher.ErrNotFound) {
+			writeLocalizedError(w, r, http.StatusNotFound, "VOUCHER_NOT_FOUND", "voucher not found")
+			return
+		}
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not get voucher")
+			return
+		}
+		row := map[string]any{
+			"id":         v.ID,
+			"batchId":    v.BatchID,
+			"codePrefix": v.CodePrefix,
+			"amount":     v.Amount,
+			"currency":   v.Currency,
+			"status":     string(v.Status),
+			"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+			"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		}
+		if v.ExpiresAt != nil {
+			row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		}
+		if v.RedeemedBy != nil {
+			row["redeemedBy"] = *v.RedeemedBy
+		}
+		if v.RedeemedAt != nil {
+			row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		}
+		writeJSON(w, http.StatusOK, row)
+	})))
+
+	// Vouchers: void voucher (audited). Requires wallet.voucher.issue.
+	add("POST", "/api/wallet/vouchers/{id}/void", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.voucher.issue")
+		if !ok {
+			return
+		}
+		id := strings.TrimSpace(r.PathValue("id"))
+		if id == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_ID", "id is required")
+			return
+		}
+		now := time.Now().UTC()
+		err := service.VoidVoucher(r.Context(), id, now)
+		if errors.Is(err, voucher.ErrNotFound) {
+			writeLocalizedError(w, r, http.StatusNotFound, "VOUCHER_NOT_FOUND", "voucher not found")
+			return
+		}
+		if errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+			writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_ALREADY_REDEEMED", "cannot void already redeemed voucher")
+			return
+		}
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not void voucher")
+			return
+		}
+		recordWalletEvent(operations, user, "records.update", "voucher-void", map[string]any{"voucherId": id}, now)
+		writeJSON(w, http.StatusOK, map[string]any{"id": id, "status": "void"})
 	})))
 
 	return routes

@@ -75,6 +75,8 @@ var frozenLiteralCodes = []string{
 	"JOB_NOT_FOUND", "JOB_NOT_CANCELLABLE", "JOB_NOT_RETRYABLE", "JOB_RESULT_NOT_READY", "JOB_RESULT_EXPIRED",
 	// VP-017 R7 (workspace-017 GOAL-008): outbound-mail admin surface codes.
 	"INVALID_MAIL_CONFIG", "MAIL_SWITCH_REJECTED", "MAIL_SEND_FAILED",
+	// VP-029 R3 (GOAL-003): prepaid voucher codes.
+	"INVALID_VOUCHER_BODY", "INVALID_VOUCHER_PARAMS", "INVALID_VOUCHER_ID", "VOUCHER_NOT_FOUND", "VOUCHER_ALREADY_REDEEMED",
 }
 
 // frozenStoredCodes are stable Job terminal codes persisted in Job.error.
