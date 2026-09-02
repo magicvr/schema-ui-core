@@ -42,18 +42,18 @@ const (
 
 // Voucher is a stored prepaid voucher row.
 type Voucher struct {
-	ID          string     `json:"id"`
-	BatchID     string     `json:"batchId"`
-	CodeHash    string     `json:"-"`
-	CodePrefix  string     `json:"codePrefix"`
-	Amount      int64      `json:"amount"`
-	Currency    string     `json:"currency"`
-	Status      Status     `json:"status"`
-	ExpiresAt   *time.Time `json:"expiresAt,omitempty"`
-	RedeemedBy  *string    `json:"redeemedBy,omitempty"`
-	RedeemedAt  *time.Time `json:"redeemedAt,omitempty"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
+	ID         string     `json:"id"`
+	BatchID    string     `json:"batchId"`
+	CodeHash   string     `json:"-"`
+	CodePrefix string     `json:"codePrefix"`
+	Amount     int64      `json:"amount"`
+	Currency   string     `json:"currency"`
+	Status     Status     `json:"status"`
+	ExpiresAt  *time.Time `json:"expiresAt,omitempty"`
+	RedeemedBy *string    `json:"redeemedBy,omitempty"`
+	RedeemedAt *time.Time `json:"redeemedAt,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
 }
 
 // GeneratedVoucher pairs the created voucher metadata with its one-time plaintext code.
@@ -116,4 +116,15 @@ func newID(now time.Time) (string, error) {
 		return "", fmt.Errorf("voucher: random bytes: %w", err)
 	}
 	return fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes)), nil
+}
+
+// NewBatchID generates a fresh server-side batch identifier (E-008: the admin
+// form no longer asks the operator to invent one). Readable VB- prefix +
+// time-ordered milliseconds + random hex keeps the 0065 registry key unique.
+func NewBatchID(now time.Time) (string, error) {
+	randBytes := make([]byte, 6)
+	if _, err := rand.Read(randBytes); err != nil {
+		return "", fmt.Errorf("voucher batch id: random bytes: %w", err)
+	}
+	return fmt.Sprintf("VB-%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes)), nil
 }

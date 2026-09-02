@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
@@ -108,6 +109,26 @@ func TestGenerateBatchDuplicateIDRejected(t *testing.T) {
 	}
 	if total != 2 || len(items) != 2 {
 		t.Fatalf("batch-dup list after rejected duplicate = total %d len %d, want 2/2", total, len(items))
+	}
+}
+
+// E-008: server-generated batch ids are unique and carry the VB- prefix.
+func TestNewBatchIDUniquePrefix(t *testing.T) {
+	a, err := voucher.NewBatchID(now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := voucher.NewBatchID(now().Add(time.Millisecond))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{a, b} {
+		if !strings.HasPrefix(id, "VB-") || len(id) <= len("VB-") {
+			t.Fatalf("batch id %q does not match VB-<time><rand> shape", id)
+		}
+	}
+	if a == b {
+		t.Fatalf("batch ids collide: %s", a)
 	}
 }
 

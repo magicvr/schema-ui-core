@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,11 +19,11 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/concurrency"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // WalletService is the surface the wallet routes consume (satisfied
@@ -445,21 +446,24 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 	})))
 
 	// Vouchers: generate batch (audited). Requires wallet.voucher.issue.
+	// E-008: batchId is OPTIONAL — omitted, the server generates a unique
+	// VB-… id (operators no longer invent ids); amount is entered in CNY yuan
+	// with up to 2 decimal places and converted to min units (分) internally.
 	add("POST", "/api/wallet/vouchers/batches", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := requirePermission(w, r, "wallet.voucher.issue")
 		if !ok {
 			return
 		}
 		var body struct {
-			BatchID   string `json:"batchId"`
-			Count     int    `json:"count"`
-			Amount    int64  `json:"amount"`
-			Currency  string `json:"currency"`
-			ExpiresAt *int64 `json:"expiresAt"`
+			BatchID   string          `json:"batchId"`
+			Count     int             `json:"count"`
+			Amount    json.RawMessage `json:"amount"`
+			Currency  string          `json:"currency"`
+			ExpiresAt *int64          `json:"expiresAt"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with batchId, count, and amount")
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with count and amount")
 			return
 		}
 		currency := strings.TrimSpace(body.Currency)
@@ -467,11 +471,25 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "currency must be CNY")
 			return
 		}
-		if strings.TrimSpace(body.BatchID) == "" || body.Count <= 0 || body.Count > 1000 || body.Amount <= 0 {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "invalid batchId, count (1-1000), or amount (>0)")
+		if body.Count <= 0 || body.Count > 1000 {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "invalid count (1-1000)")
+			return
+		}
+		amountCents, okAmount := parseYuanToCents(body.Amount)
+		if !okAmount || amountCents <= 0 {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "amount must be a CNY amount in yuan with up to 2 decimal places and greater than zero (e.g. 12.5)")
 			return
 		}
 		now := time.Now().UTC()
+		batchID := strings.TrimSpace(body.BatchID)
+		if batchID == "" {
+			id, err := voucher.NewBatchID(now)
+			if err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate voucher batch id")
+				return
+			}
+			batchID = id
+		}
 		var exp *time.Time
 		if body.ExpiresAt != nil {
 			// A-005 F-005 (A-008): expiresAt is Unix SECONDS. Millisecond
@@ -489,10 +507,11 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 				exp = &t
 			}
 		}
-		generated, err := service.GenerateVouchers(r.Context(), strings.TrimSpace(body.BatchID), body.Count, body.Amount, strings.TrimSpace(body.Currency), exp, now)
+		generated, err := service.GenerateVouchers(r.Context(), batchID, body.Count, amountCents, currency, exp, now)
 		if err != nil {
 			// A-005 F-004 (A-008): repeated batchId is a conflict (0065
-			// registry), not an internal error.
+			// registry), not an internal error. Explicit batchId remains
+			// supported for API callers; the admin form omits it.
 			if errors.Is(err, voucher.ErrVoucherBatchExists) {
 				writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_BATCH_EXISTS", "a batch with that batchId already exists")
 				return
@@ -502,10 +521,10 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		}
 		// Audited without plaintext codes!
 		recordWalletEvent(operations, user, "records.create", "batch-generate", map[string]any{
-			"batchId":  body.BatchID,
+			"batchId":  batchID,
 			"count":    body.Count,
-			"amount":   body.Amount,
-			"currency": body.Currency,
+			"amount":   amountCents,
+			"currency": currency,
 		}, now)
 
 		items := make([]map[string]any, len(generated))
@@ -732,6 +751,52 @@ func walletMutate(w http.ResponseWriter, r *http.Request, service WalletService,
 		recordWalletEvent(operations, user, "wallet."+eventSuffix, eventSuffix, map[string]any{"accountId": account.ID, "entryId": entry.ID, "amountDelta": entry.AmountDelta}, now)
 	}
 	writeWalletMutation(w, *account, *entry, replayed)
+}
+
+// parseYuanToCents converts a CNY amount given in yuan (JSON number or quoted
+// string, up to 2 decimal places, e.g. 12.5 or "12.50") to integer min units
+// (分). Returns ok=false for absent, malformed, non-positive or >2-decimal
+// input. Floats are normalized through their shortest decimal representation
+// (strconv.FormatFloat -1) so binary drift can never mint a wrong cent value
+// (E-008: voucher batch generation inputs amounts in yuan).
+func parseYuanToCents(raw json.RawMessage) (int64, bool) {
+	s := strings.TrimSpace(string(raw))
+	if len(s) >= 2 && s[0] == '"' {
+		var str string
+		if err := json.Unmarshal(raw, &str); err != nil {
+			return 0, false
+		}
+		s = strings.TrimSpace(str)
+	}
+	if s == "" {
+		return 0, false
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil || f <= 0 {
+		return 0, false
+	}
+	// Shortest round-trip decimal: reject more than two fractional digits
+	// instead of silently rounding (e.g. 12.345).
+	rep := strconv.FormatFloat(f, 'f', -1, 64)
+	whole := rep
+	frac := ""
+	if dot := strings.IndexByte(rep, '.'); dot >= 0 {
+		whole, frac = rep[:dot], rep[dot+1:]
+	}
+	if strings.HasPrefix(whole, "-") || len(whole) > 15 || len(frac) > 2 {
+		return 0, false
+	}
+	yuan, err := strconv.ParseInt(whole, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	cents := yuan * 100
+	if len(frac) == 1 {
+		cents += int64(frac[0]-'0') * 10
+	} else if len(frac) == 2 {
+		cents += int64(frac[0]-'0')*10 + int64(frac[1]-'0')
+	}
+	return cents, true
 }
 
 // writeWalletError maps wallet domain errors to the frozen wire codes.

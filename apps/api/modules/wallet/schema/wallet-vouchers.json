@@ -20,7 +20,6 @@
       "method": "POST",
       "url": "/api/wallet/vouchers/batches",
       "bodyMapping": {
-        "batchId": "batchId",
         "count": "count",
         "amount": "amount",
         "currency": "currency",
@@ -46,13 +45,6 @@
         "props": {
           "fields": [
             {
-              "id": "batchId",
-              "label": "Batch ID",
-              "type": "input",
-              "required": true,
-              "labelKey": "schema.walletVouchers.field.batchId"
-            },
-            {
               "id": "count",
               "label": "Count (1-1000)",
               "type": "inputNumber",
@@ -61,9 +53,10 @@
             },
             {
               "id": "amount",
-              "label": "Amount (min units)",
+              "label": "Amount (CNY yuan, up to 2 decimals)",
               "type": "inputNumber",
               "required": true,
+              "step": 0.01,
               "labelKey": "schema.walletVouchers.field.amount"
             },
             {
@@ -178,6 +171,7 @@
               "field": "amount",
               "label": "Amount",
               "sortable": true,
+              "format": "currency",
               "labelKey": "schema.walletVouchers.column.amount"
             },
             {

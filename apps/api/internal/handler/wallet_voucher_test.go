@@ -11,9 +11,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
+	walletschema "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/schema"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
-	walletschema "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/schema"
 )
 
 func TestVouchersBatchGeneratePermissionAndAudit(t *testing.T) {
@@ -36,7 +36,7 @@ func TestVouchersBatchGeneratePermissionAndAudit(t *testing.T) {
 	adjusterTok := env.login(t, "adjuster1", "adjuster-password")
 
 	// 1. Viewer without permission should get 403.
-	body := `{"batchId":"batch-viewer","count":5,"amount":1000,"currency":"CNY"}`
+	body := `{"batchId":"batch-viewer","count":5,"amount":"10.00","currency":"CNY"}`
 	req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+viewerTok)
 	req.Header.Set("Content-Type", "application/json")
@@ -57,7 +57,7 @@ func TestVouchersBatchGeneratePermissionAndAudit(t *testing.T) {
 	}
 
 	// 3. Admin with wallet.voucher.issue should succeed (201 Created).
-	adminBody := `{"batchId":"batch-admin","count":3,"amount":2000,"currency":"CNY"}`
+	adminBody := `{"batchId":"batch-admin","count":3,"amount":"20.00","currency":"CNY"}`
 	req = httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(adminBody))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
@@ -130,7 +130,7 @@ func TestVouchersListAndGet(t *testing.T) {
 	adminTok := adminToken(t, env)
 
 	// 1. Generate a batch.
-	body := `{"batchId":"batch-list-test","count":2,"amount":500,"currency":"CNY"}`
+	body := `{"batchId":"batch-list-test","count":2,"amount":"5.00","currency":"CNY"}`
 	req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
@@ -224,7 +224,7 @@ func TestVoucherVoidAndConflict(t *testing.T) {
 	viewerTok := env.login(t, "viewer1", "viewer-password")
 
 	// 1. Generate 2 vouchers.
-	body := `{"batchId":"batch-void-test","count":2,"amount":300,"currency":"CNY"}`
+	body := `{"batchId":"batch-void-test","count":2,"amount":"3.00","currency":"CNY"}`
 	req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
@@ -327,7 +327,7 @@ func TestVoucherInvalidBodyAndParams(t *testing.T) {
 	}
 
 	// 2. Invalid count / amount -> 400 INVALID_VOUCHER_PARAMS
-	req = httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(`{"batchId":"b","count":-1,"amount":100}`))
+	req = httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(`{"batchId":"b","count":-1,"amount":"1.00"}`))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -342,7 +342,7 @@ func TestVoucherInvalidBodyAndParams(t *testing.T) {
 	}
 
 	// 3. F-002: Invalid Currency USD -> 400 INVALID_VOUCHER_PARAMS
-	req = httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(`{"batchId":"b","count":1,"amount":100,"currency":"USD"}`))
+	req = httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(`{"batchId":"b","count":1,"amount":"1.00","currency":"USD"}`))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -427,11 +427,11 @@ func TestVouchersBatchDuplicateConflict(t *testing.T) {
 		return list.Total
 	}
 
-	if w := post(`{"batchId":"batch-dup-h","count":2,"amount":500,"currency":"CNY"}`); w.Code != http.StatusCreated {
+	if w := post(`{"batchId":"batch-dup-h","count":2,"amount":"5.00","currency":"CNY"}`); w.Code != http.StatusCreated {
 		t.Fatalf("first generate = %d %s", w.Code, w.Body.String())
 	}
 
-	w := post(`{"batchId":"batch-dup-h","count":1,"amount":500,"currency":"CNY"}`)
+	w := post(`{"batchId":"batch-dup-h","count":1,"amount":"5.00","currency":"CNY"}`)
 	if w.Code != http.StatusConflict {
 		t.Fatalf("duplicate generate status = %d, want 409; body=%s", w.Code, w.Body.String())
 	}
@@ -465,7 +465,7 @@ func TestVouchersGenerateExpiresAtValidation(t *testing.T) {
 	}
 
 	// 1. Millisecond timestamp (2027-01-15T10:00:00 in ms) → 400.
-	w := post(`{"batchId":"b-exp-ms","count":1,"amount":100,"currency":"CNY","expiresAt":1800000000000}`)
+	w := post(`{"batchId":"b-exp-ms","count":1,"amount":"1.00","currency":"CNY","expiresAt":1800000000000}`)
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("milliseconds expiresAt status = %d, want 400; body=%s", w.Code, w.Body.String())
 	}
@@ -476,14 +476,156 @@ func TestVouchersGenerateExpiresAtValidation(t *testing.T) {
 	}
 
 	// 2. Pre-epoch-ish / ancient seconds value → 400.
-	w = post(`{"batchId":"b-exp-old","count":1,"amount":100,"currency":"CNY","expiresAt":999999999}`)
+	w = post(`{"batchId":"b-exp-old","count":1,"amount":"1.00","currency":"CNY","expiresAt":999999999}`)
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("out-of-range expiresAt status = %d, want 400; body=%s", w.Code, w.Body.String())
 	}
 
 	// 3. Valid future seconds (2027-01-15T10:00:00Z) → 201.
-	w = post(`{"batchId":"b-exp-ok","count":1,"amount":100,"currency":"CNY","expiresAt":1800000000}`)
+	w = post(`{"batchId":"b-exp-ok","count":1,"amount":"1.00","currency":"CNY","expiresAt":1800000000}`)
 	if w.Code != http.StatusCreated {
 		t.Fatalf("valid expiresAt status = %d, want 201; body=%s", w.Code, w.Body.String())
+	}
+}
+
+// E-008: batchId is optional — the server generates a unique VB-… id; two
+// submissions without batchId produce distinct batches.
+func TestVouchersBatchGenerateAutoBatchID(t *testing.T) {
+	env := newAuthTestEnv(t)
+	repo := walletstore.NewRepository(env.st)
+	service := newWalletStub(env, repo)
+	mountWalletRoutes(t, env, service)
+	adminTok := adminToken(t, env)
+
+	post := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminTok)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		env.mux.ServeHTTP(w, req)
+		return w
+	}
+	decodeBatchID := func(w *httptest.ResponseRecorder) string {
+		t.Helper()
+		if w.Code != http.StatusCreated {
+			t.Fatalf("generate status = %d, body=%s", w.Code, w.Body.String())
+		}
+		var res struct {
+			Items []struct {
+				BatchID string `json:"batchId"`
+			} `json:"items"`
+		}
+		if err := json.NewDecoder(w.Body).Decode(&res); err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Items) == 0 || res.Items[0].BatchID == "" {
+			t.Fatalf("no batchId in auto-generated response: %+v", res)
+		}
+		for _, item := range res.Items {
+			if !strings.HasPrefix(item.BatchID, "VB-") {
+				t.Fatalf("auto batchId %q does not start with VB-", item.BatchID)
+			}
+		}
+		return res.Items[0].BatchID
+	}
+
+	// 1. No batchId → server-generated VB-… id.
+	first := decodeBatchID(post(`{"count":2,"amount":"5.00","currency":"CNY"}`))
+
+	// 2. A second submission gets a DIFFERENT auto id.
+	second := decodeBatchID(post(`{"count":1,"amount":"2.50","currency":"CNY"}`))
+	if first == second {
+		t.Fatalf("auto batch ids collide: %s", first)
+	}
+
+	// 3. The generated batch is listable under its auto id.
+	req := httptest.NewRequest("GET", "/api/wallet/vouchers?batchId="+second, nil)
+	req.Header.Set("Authorization", "Bearer "+adminTok)
+	list := httptest.NewRecorder()
+	env.mux.ServeHTTP(list, req)
+	if list.Code != http.StatusOK {
+		t.Fatalf("list by auto batchId status = %d", list.Code)
+	}
+	var listRes struct {
+		Total int `json:"total"`
+	}
+	if err := json.NewDecoder(list.Body).Decode(&listRes); err != nil {
+		t.Fatal(err)
+	}
+	if listRes.Total != 1 {
+		t.Fatalf("auto batch list total = %d, want 1", listRes.Total)
+	}
+}
+
+// E-008: amount is CNY yuan with up to 2 decimal places (JSON number or
+// string); it is converted to min units (分) internally — the returned voucher
+// amounts stay cents (the table column formats them as currency).
+func TestVouchersGenerateAmountYuanDecimals(t *testing.T) {
+	env := newAuthTestEnv(t)
+	repo := walletstore.NewRepository(env.st)
+	service := newWalletStub(env, repo)
+	mountWalletRoutes(t, env, service)
+	adminTok := adminToken(t, env)
+
+	post := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/wallet/vouchers/batches", strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminTok)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		env.mux.ServeHTTP(w, req)
+		return w
+	}
+	firstAmount := func(w *httptest.ResponseRecorder) float64 {
+		t.Helper()
+		if w.Code != http.StatusCreated {
+			t.Fatalf("status = %d, body=%s", w.Code, w.Body.String())
+		}
+		var res struct {
+			Items []struct {
+				Amount int64 `json:"amount"`
+			} `json:"items"`
+		}
+		if err := json.NewDecoder(w.Body).Decode(&res); err != nil {
+			t.Fatal(err)
+		}
+		return float64(res.Items[0].Amount)
+	}
+
+	cases := []struct {
+		body string
+		want float64 // cents
+	}{
+		{`{"count":1,"amount":12.5}`, 1250},    // JSON number, one decimal
+		{`{"count":1,"amount":"12.55"}`, 1255}, // string, two decimals
+		{`{"count":1,"amount":0.5}`, 50},       // fractional yuan still > 0
+		{`{"count":1,"amount":"88.00"}`, 8800}, // trailing zeros
+		{`{"count":1,"amount":12.50}`, 1250},   // number with trailing zero digit
+		{`{"count":1,"amount":"0.01"}`, 1},     // smallest unit
+		{`{"count":1,"amount":1e2}`, 10000},    // JSON exponent notation → 100 yuan
+	}
+	for _, tc := range cases {
+		if got := firstAmount(post(tc.body)); got != tc.want {
+			t.Fatalf("amount %s = %v cents, want %v", tc.body, got, tc.want)
+		}
+	}
+
+	rejects := []string{
+		`{"count":1}`,                  // amount missing
+		`{"count":1,"amount":0}`,       // zero
+		`{"count":1,"amount":"0"}`,     // zero string
+		`{"count":1,"amount":"1.234"}`, // > 2 decimals
+		`{"count":1,"amount":"abc"}`,   // non-numeric
+		`{"count":1,"amount":"-1.00"}`, // negative
+	}
+	for _, body := range rejects {
+		w := post(body)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("amount %s status = %d, want 400; body=%s", body, w.Code, w.Body.String())
+		}
+		var errBody map[string]any
+		_ = json.NewDecoder(w.Body).Decode(&errBody)
+		if errBody["error"] != "INVALID_VOUCHER_PARAMS" {
+			t.Fatalf("amount %s error = %v, want INVALID_VOUCHER_PARAMS", body, errBody["error"])
+		}
 	}
 }

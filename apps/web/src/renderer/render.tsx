@@ -1241,7 +1241,11 @@ function SchemaCrudProvider({
             for (const v of vouchersWithCode) {
               const cells = columns.map((column) => {
                 if (column === "amount") {
-                  return String(v[column] ?? 0);
+                  // E-008: wire amounts are CNY min units (分); the export and
+                  // the table column (format: currency) both present yuan with
+                  // two decimals (mirrors the W16-F04 display convention).
+                  const cents = Number(v[column] ?? 0);
+                  return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
                 }
                 return `"${String(v[column] ?? "")}"`;
               });
