@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "pageId": "wallet-vouchers",
+    "title": "Prepaid Vouchers",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "actions.row.request",
+      "table.sort",
+      "form.controls.extended",
+      "form.controls.advanced"
+    ]
+  },
+  "actions": {
+    "generateBatch": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/wallet/vouchers/batches",
+      "bodyMapping": {
+        "batchId": "batchId",
+        "count": "count",
+        "amount": "amount",
+        "currency": "currency"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openGenerate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "generate-vouchers-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.voucher.issue\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "batchId",
+              "label": "Batch ID",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.walletVouchers.field.batchId"
+            },
+            {
+              "id": "count",
+              "label": "Count (1-1000)",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.walletVouchers.field.count"
+            },
+            {
+              "id": "amount",
+              "label": "Amount (min units)",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.walletVouchers.field.amount"
+            },
+            {
+              "id": "currency",
+              "label": "Currency",
+              "type": "input",
+              "defaultValue": "CNY",
+              "labelKey": "schema.walletVouchers.field.currency"
+            }
+          ],
+          "submitAction": "generateBatch",
+          "submitLabel": "Generate & Export",
+          "submitLabelKey": "schema.walletVouchers.submit.generate"
+        }
+      }
+    },
+    "voidVoucher": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/wallet/vouchers/{id}/void",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "wallet-vouchers",
+    "children": [
+      {
+        "type": "form",
+        "id": "wallet-vouchers-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "wallet-vouchers-table",
+          "fields": [
+            {
+              "id": "batchId",
+              "type": "input",
+              "labelKey": "schema.walletVouchers.search.batchId"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "schema.walletVouchers.filter.status",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.walletVouchers.filter.status.all"
+                },
+                {
+                  "value": "unused",
+                  "labelKey": "schema.walletVouchers.filter.status.unused"
+                },
+                {
+                  "value": "redeemed",
+                  "labelKey": "schema.walletVouchers.filter.status.redeemed"
+                },
+                {
+                  "value": "void",
+                  "labelKey": "schema.walletVouchers.filter.status.void"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "wallet-vouchers-table",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"wallet.voucher.issue\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "codePrefix",
+              "label": "Code Prefix",
+              "labelKey": "schema.walletVouchers.column.codePrefix"
+            },
+            {
+              "field": "batchId",
+              "label": "Batch",
+              "sortable": true,
+              "labelKey": "schema.walletVouchers.column.batchId"
+            },
+            {
+              "field": "amount",
+              "label": "Amount",
+              "sortable": true,
+              "labelKey": "schema.walletVouchers.column.amount"
+            },
+            {
+              "field": "currency",
+              "label": "Currency",
+              "labelKey": "schema.walletVouchers.column.currency"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "sortable": true,
+              "labelKey": "schema.walletVouchers.column.status"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.walletVouchers.column.created"
+            },
+            {
+              "field": "expiresAt",
+              "label": "Expires",
+              "labelKey": "schema.walletVouchers.column.expires"
+            },
+            {
+              "field": "redeemedAt",
+              "label": "Redeemed",
+              "labelKey": "schema.walletVouchers.column.redeemed"
+            }
+          ],
+          "toolbar": [
+            {
+              "key": "generate",
+              "label": "Generate vouchers",
+              "actionRef": "openGenerate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.walletVouchers.toolbar.generate"
+            }
+          ],
+          "actions": [
+            {
+              "key": "void",
+              "label": "Void",
+              "actionRef": "voidVoucher",
+              "permissionIntent": "edit",
+              "visibleWhen": {
+                "when": "$row.status == 'unused'"
+              },
+              "labelKey": "schema.walletVouchers.action.void"
+            }
+          ]
+        },
+        "data": {
+          "source": "api",
+          "url": "/api/wallet/vouchers"
+        }
+      }
+    ]
+  }
+}

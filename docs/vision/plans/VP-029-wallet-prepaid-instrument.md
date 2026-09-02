@@ -82,12 +82,12 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-029-001 | 主体落点：薄模块 vs `authsession` vs `admin.wallet` 表。公共契约必须通道无关。须同时冻结：`owner_type` 是否新增取值（现行 CHECK 仅 `user/business/system`）；`OwnerExistsFunc` 改为「已登记主体」、**禁止**回退 `UserByID`；查询/get-or-create 不依赖 `admin.wallet` 已启。W13 F-012 孤儿账本相对主体登记表。 | required | 方案冻结 + 判据 1 | R1 | open |
-| I-029-002 | 核销入金的 `entry_type`：新类型 vs `adjust` + `ref_type=voucher`。 | required | 判据 3/4 | R1 | open |
-| I-029-003 | 生成权限键：复用 `wallet.adjust` vs 新 `wallet.voucher.issue`。 | required | 判据 5 | R1 | open |
-| I-029-004 | 导出格式（CSV/TXT、是否含明文、一次性下载）。 | non-blocking | 判据 5 | R3 | open |
-| I-029-005 | C 端自助核销 HTTP 是否本波交付，或仅模块 API（Telegram 进程内调用）。若选 HTTP，本 VP 必须完成 RT-Q05 精神的限流评估，不得推到未激活的 VP-030。 | non-blocking | 判据面 | R1 | open（默认倾向：模块 API 必做，HTTP 自助核销可选） |
-| I-029-006 | 凭证哈希与双花合同：哈希算法（默认候选 = 高熵码 SHA-256 或 HMAC-SHA256+pepper；禁止 6 位恢复码或 bcrypt 当卡密默认）；码字母表与长度（熵下限）；核销常时比较；`UNIQUE(code_hash)`（或等价）+ 同事务「未用→已核销 AND 账本入金」，并发失败者 fail-closed，重复 Redeem 不双记。 | required | 判据 2/3 | R1 | open |
+| I-029-001 | 主体落点：薄模块 vs `authsession` vs `admin.wallet` 表。公共契约必须通道无关。须同时冻结：`owner_type` 是否新增取值（现行 CHECK 仅 `user/business/system`）；`OwnerExistsFunc` 改为「已登记主体」、**禁止**回退 `UserByID`；查询/get-or-create 不依赖 `admin.wallet` 已启。W13 F-012 孤儿账本相对主体登记表。 | required | 方案冻结 + 判据 1 | R1 | closed（D-002 · 独立主体表 subjects） |
+| I-029-002 | 核销入金的 `entry_type`：新类型 vs `adjust` + `ref_type=voucher`。 | required | 判据 3/4 | R1 | closed（D-002 · 复用 adjust） |
+| I-029-003 | 生成权限键：复用 `wallet.adjust` vs 新 `wallet.voucher.issue`。 | required | 判据 5 | R1 | closed（D-002 · 新增 wallet.voucher.issue） |
+| I-029-004 | 导出格式（CSV/TXT、是否含明文、一次性下载）。 | non-blocking | 判据 5 | R3 | closed（D-001 · API 一次性返回明文数组） |
+| I-029-005 | C 端自助核销 HTTP 是否本波交付，或仅模块 API（Telegram 进程内调用）。若选 HTTP，本 VP 必须完成 RT-Q05 精神的限流评估，不得推到未激活的 VP-030。 | non-blocking | 判据面 | R1 | closed（D-002 · 仅交付 Go 模块内部 API） |
+| I-029-006 | 凭证哈希与双花合同：哈希算法（默认候选 = 高熵码 SHA-256 或 HMAC-SHA256+pepper；禁止 6 位恢复码或 bcrypt 当卡密默认）；码字母表与长度（熵下限）；核销常时比较；`UNIQUE(code_hash)`（或等价）+ 同事务「未用→已核销 AND 账本入金」，并发失败者 fail-closed，重复 Redeem 不双记。 | required | 判据 2/3 | R1 | closed（D-002 · 高熵码 + SHA-256 + 单事务 CAS 原子核销入金） |
 
 ## 工作区绑定
 

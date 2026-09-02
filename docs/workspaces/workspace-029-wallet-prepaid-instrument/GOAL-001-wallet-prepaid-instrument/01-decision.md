@@ -19,7 +19,7 @@ version: 0.1.0
 | I-029-001 | required | 主体落点 + `owner_type` + `OwnerExists` 迁出 `UserByID` | 方案冻结 + 判据 1 | R1 | 用户裁决 | closed | — | D-002: 独立主体表 subjects，owner_type 扩充 subject，OwnerExists 校验主体 |
 | I-029-002 | required | 核销 `entry_type` | 判据 3/4 | R1 | 用户裁决 | closed | — | D-002: 复用 adjust + ref_type='voucher' |
 | I-029-003 | required | 生成权限键 | 判据 5 | R1 | 用户裁决 | closed | — | D-002: 新增细粒度 wallet.voucher.issue 权限键 |
-| I-029-004 | non-blocking | 导出格式 | 判据 5 | R3 | 用户确认 | open | — | 待确认（R3 前置） |
+| I-029-004 | non-blocking | 导出格式 | 判据 5 | R3 | 用户确认 | closed | — | D-001: API 一次性返回明文数组作为导出数据源（明文不入库） |
 | I-029-005 | non-blocking | HTTP 自助核销是否本波；若是则本 VP 做限流评估 | 判据面 | R1 | 用户裁决 | closed | — | D-002: 本波仅交付 Go 模块内部 API Redeem |
 | I-029-006 | required | 哈希算法 / 码熵 / 常时比较 / UNIQUE+同事务双花 | 判据 2/3 | R1 | 用户裁决 | closed | — | D-002: 高熵码 + SHA-256 + 单事务 CAS 原子核销入金 |
 

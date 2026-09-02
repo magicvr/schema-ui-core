@@ -13,6 +13,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
+	walletschema "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/schema"
 )
 
 func TestVouchersBatchGeneratePermissionAndAudit(t *testing.T) {
@@ -338,5 +339,40 @@ func TestVoucherInvalidBodyAndParams(t *testing.T) {
 	_ = json.NewDecoder(w.Body).Decode(&paramErr)
 	if paramErr["error"] != "INVALID_VOUCHER_PARAMS" {
 		t.Fatalf("error = %v, want INVALID_VOUCHER_PARAMS", paramErr["error"])
+	}
+}
+
+func TestVoucherSchemaRegistration(t *testing.T) {
+	docBytes := walletschema.SchemaDocuments()["wallet-vouchers"]
+	if len(docBytes) == 0 {
+		t.Fatal("wallet-vouchers schema document not found")
+	}
+	var doc struct {
+		Meta struct {
+			PageID string `json:"pageId"`
+		} `json:"meta"`
+		Actions map[string]any `json:"actions"`
+		Body    struct {
+			Children []struct {
+				Props struct {
+					Toolbar []map[string]any `json:"toolbar"`
+				} `json:"props"`
+			} `json:"children"`
+		} `json:"body"`
+	}
+	if err := json.Unmarshal(docBytes, &doc); err != nil {
+		t.Fatalf("unmarshal wallet-vouchers schema: %v", err)
+	}
+	if doc.Meta.PageID != "wallet-vouchers" {
+		t.Fatalf("pageId = %s, want wallet-vouchers", doc.Meta.PageID)
+	}
+	if _, ok := doc.Actions["generateBatch"]; !ok {
+		t.Fatal("missing generateBatch action in schema")
+	}
+	if _, ok := doc.Actions["openGenerate"]; !ok {
+		t.Fatal("missing openGenerate action in schema")
+	}
+	if _, ok := doc.Actions["voidVoucher"]; !ok {
+		t.Fatal("missing voidVoucher action in schema")
 	}
 }

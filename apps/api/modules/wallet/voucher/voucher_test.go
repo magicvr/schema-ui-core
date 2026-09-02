@@ -288,25 +288,50 @@ func TestConcurrentDoubleSpendFailClosed(t *testing.T) {
 }
 
 func TestNoPlaintextInDatabase(t *testing.T) {
-	e := newEnv(t)
+	tempDir := t.TempDir()
+	dbPath := filepath.Join(tempDir, "plain-check.db")
+	st, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	subStore := subject.NewStore(st)
+	wRepo := walletstore.NewRepository(st)
+	svc := voucher.NewService(st, wRepo, subStore)
 	ctx := context.Background()
 
-	batch, err := e.service.GenerateBatch(ctx, "b-secret", 3, 500, "CNY", nil, now())
+	batch, err := svc.GenerateBatch(ctx, "b-secret", 3, 500, "CNY", nil, now())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Direct raw SQL scan on vouchers table to verify plaintext codes never exist in DB.
+	// Direct raw SQL scan across all columns in vouchers table
 	for _, g := range batch {
-		v, err := e.service.GetVoucher(ctx, g.Voucher.ID)
+		var id, batchID, codeHash, codePrefix, currency, status string
+		var amount, cr, up int64
+		var exp, redAt any
+		var redBy any
+
+		err := st.Run(ctx, func(tx kernel.Tx) error {
+			return tx.QueryRow(ctx,
+				`SELECT id, batch_id, code_hash, code_prefix, amount, currency, status, expires_at, redeemed_by, redeemed_at, created_at, updated_at
+				 FROM vouchers WHERE id = ?`,
+				g.Voucher.ID,
+			).Scan(&id, &batchID, &codeHash, &codePrefix, &amount, &currency, &status, &exp, &redBy, &redAt, &cr, &up)
+		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("raw SQL scan: %v", err)
 		}
-		if v.CodePrefix != g.Code[:6] {
-			t.Fatalf("prefix mismatch: %s vs %s", v.CodePrefix, g.Code[:6])
+
+		if codeHash != voucher.HashCode(g.Code) {
+			t.Fatalf("code_hash mismatch in DB: %s vs %s", codeHash, voucher.HashCode(g.Code))
 		}
-		if v.CodeHash != "" {
-			t.Fatalf("CodeHash field must be omitted from JSON/client structs")
+		if codePrefix != g.Code[:6] {
+			t.Fatalf("code_prefix mismatch in DB: %s vs %s", codePrefix, g.Code[:6])
+		}
+		if codeHash == g.Code {
+			t.Fatalf("security violation: raw DB code_hash contains plaintext code!")
 		}
 	}
 }

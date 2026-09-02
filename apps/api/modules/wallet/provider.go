@@ -269,8 +269,8 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/vouchers/batches", "GET /api/wallet/vouchers",
 				"GET /api/wallet/vouchers/{id}", "POST /api/wallet/vouchers/{id}/void",
 			},
-			Pages:       []string{"wallet", "wallet-entries", "my-wallet"},
-			Navigation:  []string{"menu_wallet", "menu_wallet_self"},
+			Pages:       []string{"wallet", "wallet-entries", "my-wallet", "wallet-vouchers"},
+			Navigation:  []string{"menu_wallet", "menu_wallet_self", "menu_wallet_vouchers"},
 			Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust", "wallet.voucher.issue"},
 			Fragments:   []string{"wallet"},
 		},
@@ -317,6 +317,17 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet-vouchers"},
+		PageID:               "wallet-vouchers",
+		Resources:            []string{"wallet"},
+		Actions:              []string{"list", "create", "update"},
+		DataSource:           "/api/wallet/vouchers",
+		Owner:                ModuleID,
+		Document:             walletschema.SchemaDocuments()["wallet-vouchers"],
+	}); err != nil {
+		return err
+	}
 	for _, permission := range []kernel.PermissionContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.read"}, Permission: "wallet.read", Resource: "wallet", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.write"}, Permission: "wallet.write", Resource: "wallet", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -333,6 +344,18 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "wallet",
 		Order:                10,
 		Label:                "Wallet",
+		Visibility:           authsessiondata.PolicyAdmin,
+		Permission:           "wallet.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	}); err != nil {
+		return err
+	}
+	if err := reg.Navigation(kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_wallet_vouchers"},
+		NodeID:               "menu_wallet_vouchers",
+		PageID:               "wallet-vouchers",
+		Order:                11,
+		Label:                "Prepaid vouchers",
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "wallet.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

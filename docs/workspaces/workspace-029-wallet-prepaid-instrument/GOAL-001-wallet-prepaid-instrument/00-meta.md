@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-wallet-prepaid-instrument
 title: 钱包预付资金凭证与外部主体接缝
-status: active
+status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
 version: 0.1.0
-progress: 3/4
+progress: 4/4
 plan_refs:
   - VP-029-wallet-prepaid-instrument
 primary_plan: VP-029-wallet-prepaid-instrument
@@ -21,13 +21,13 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 
 ## 成功标准（对应 VP-029 七条方向级退出判据）
 
-- [ ] 判据 #1（主体接缝可用）：`(issuer, external_id) → subject_id` 幂等登记/查找有测试；未登记主体不能开户；不创建 `admin.users`；查询/get-or-create 不依赖 `admin.wallet` 已启——R1/R2
-- [ ] 判据 #2（凭证生命周期）：生成（哈希存储 + 一次性明文）/ 导出 / 作废 / 过期拒绝有测试；明文不落库、不进审计原文——R1/R3
-- [ ] 判据 #3（核销原子且幂等）：Redeem 成功则账本入金与凭证状态一致；重复核销不双记；并发双花 fail-closed——R1/R2
-- [ ] 判据 #4（账本不变式保持）：三余额恒等、流水快照链、对账 Job 仍通过既有钱包测试；新入金类型纳入 apply 表——R2
-- [ ] 判据 #5（Admin 可操作）：批次生成/导出/作废有协议驱动页面 + 权限键 + 操作审计——R3
-- [ ] 判据 #6（边界保持）：未改 Charter；未改 `mvp`/`admin` 默认模块集装配语义；未引入支付网关或 Telegram 依赖；未重开 VP-011——全程
-- [ ] 判据 #7（审计闭合）：开放 required finding = 0（或已合法闭合）——R4
+- [x] 判据 #1（主体接缝可用）：`(issuer, external_id) → subject_id` 幂等登记/查找有测试；未登记主体不能开户；不创建 `admin.users`；查询/get-or-create 不依赖 `admin.wallet` 已启——R1/R2
+- [x] 判据 #2（凭证生命周期）：生成（哈希存储 + 一次性明文）/ 导出 / 作废 / 过期拒绝有测试；明文不落库、不进审计原文——R1/R3
+- [x] 判据 #3（核销原子且幂等）：Redeem 成功则账本入金与凭证状态一致；重复核销不双记；并发双花 fail-closed——R1/R2
+- [x] 判据 #4（账本不变式保持）：三余额恒等、流水快照链、对账 Job 仍通过既有钱包测试；新入金类型纳入 apply 表——R2
+- [x] 判据 #5（Admin 可操作）：批次生成/导出/作废有协议驱动页面 + 权限键 + 操作审计——R3
+- [x] 判据 #6（边界保持）：未改 Charter；未改 `mvp`/`admin` 默认模块集装配语义；未引入支付网关或 Telegram 依赖；未重开 VP-011——全程
+- [x] 判据 #7（审计闭合）：开放 required finding = 0（或已合法闭合）——R4
 
 ## 纲领路线图（P-001）
 
@@ -38,7 +38,7 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 | R1 | 合同冻结（判据 1/2/3/5 边界）：主体落点 + `owner_type` + `OwnerExists`（I-029-001）· 哈希/熵/常时比较/UNIQUE+同事务（I-029-006）· `entry_type`（I-029-002）· 权限键（I-029-003）· HTTP 核销是否本波（I-029-005） | **done**（D-002 裁决冻结 · 2026-09-02） |
 | R2 | 主体接缝 + 账本入金（判据 1/3/4）：幂等 get-or-create · Redeem 原子入金 · 三余额/对账回归 | **done**（GOAL-002 完成 · 2026-09-02 交叉审计 pass 关门） |
 | R3 | Admin 批次面 + 导出（判据 2/5 + I-029-004）：生成/导出/作废/查询 · 权限键 · 操作审计 | **done**（GOAL-003 完成 · 2026-09-02 交叉审计 pass 关门） |
-| R4 | 证据与关门（判据 6/7；依赖 R1–R3） | 待推进（立项 GOAL-004 证据闭环） |
+| R4 | 证据与关门（判据 6/7；依赖 R1–R3） | **done**（GOAL-004 完成 · 2026-09-02 独立关门审计闭合） |
 
 ## 信息就绪与未知项（P-005）
 
@@ -57,9 +57,8 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 
 ## 台账布局
 
-`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001/E-001 已首条落盘，后续按编号递增。
+`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001/E-001/A-001 已首条落盘。
 
 ## 备注
 
-- 审计模式（D-001 已定）：阶段关门 default self；实证门禁（R2 核销并发 / R4 证据 / 关门）可按需 independent（grok build 先例，项目级默认执行路径）。资金路径 + 安全语义偏 `independent`（P-003）。
-- freshness 三字段与激活锚点（VRev-066）：消费候选 = HEAD `b5c39dfb`；`last_freshness_review_at` = 2026-09-02；`next_freshness_review_trigger` = 若实施改变共同门禁 / Profile 默认集 / 模块矩阵 / Manifest 装配 / 协议 pin，或激活 VP-031（业务域 freshness + H-002）则重做。
+- 审计模式（D-001 已定）：阶段关门 default self；实证门禁（R2 核销并发 / R4 证据 / 关门）已通过 grok build 独立审计（A-001 independent pass）。
