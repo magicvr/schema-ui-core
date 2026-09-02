@@ -230,6 +230,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateOrderRepair,
 			ApplyPostgres:        migrateOrderRepairPG,
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet_voucher_and_subject"},
+			Version:              64,
+			Name:                 "wallet_voucher_and_subject",
+			Checksum:             kernel.MigrationChecksum(walletVoucherAndSubjectDDL, "0064:wallet-voucher-and-subject:v1"),
+			Apply:                migrateWalletVoucherAndSubject,
+			ApplyPostgres:        migrateWalletVoucherAndSubjectPG,
+		},
 	}
 }
 
@@ -247,6 +255,119 @@ func migrateWalletPG(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
 			return fmt.Errorf("create wallet tables (postgres): %w", err)
 		}
+	}
+	return nil
+}
+
+// walletVoucherAndSubjectDDL (0064): establishes external subject mapping (subjects)
+// and prepaid instruments (vouchers), plus extends wallet_accounts owner_type CHECK
+// with 'subject'.
+var walletVoucherAndSubjectDDL = []string{
+	`CREATE TABLE subjects (
+  id          TEXT PRIMARY KEY,
+  issuer      TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  UNIQUE (issuer, external_id)
+)`,
+	`CREATE INDEX idx_subjects_issuer_external ON subjects(issuer, external_id)`,
+	`CREATE TABLE vouchers (
+  id           TEXT PRIMARY KEY,
+  batch_id     TEXT NOT NULL,
+  code_hash    TEXT NOT NULL,
+  code_prefix  TEXT NOT NULL,
+  amount       INTEGER NOT NULL CHECK (amount > 0),
+  currency     TEXT NOT NULL DEFAULT 'CNY',
+  status       TEXT NOT NULL DEFAULT 'unused' CHECK (status IN ('unused','redeemed','void')),
+  expires_at   INTEGER,
+  redeemed_by  TEXT,
+  redeemed_at  INTEGER,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  UNIQUE (code_hash)
+)`,
+	`CREATE INDEX idx_vouchers_batch ON vouchers(batch_id, created_at DESC)`,
+	`CREATE INDEX idx_vouchers_status ON vouchers(status)`,
+	`CREATE TABLE wallet_accounts (
+  id                TEXT PRIMARY KEY,
+  owner_type        TEXT NOT NULL CHECK (owner_type IN ('user','business','system','subject')),
+  owner_id          TEXT NOT NULL,
+  currency          TEXT NOT NULL DEFAULT 'CNY',
+  balance_total     INTEGER NOT NULL DEFAULT 0 CHECK (balance_total >= 0),
+  balance_available INTEGER NOT NULL DEFAULT 0 CHECK (balance_available >= 0),
+  balance_frozen    INTEGER NOT NULL DEFAULT 0 CHECK (balance_frozen >= 0),
+  status            TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','disabled')),
+  version           INTEGER NOT NULL DEFAULT 0,
+  created_at        INTEGER NOT NULL,
+  updated_at        INTEGER NOT NULL,
+  UNIQUE (owner_type, owner_id, currency),
+  CHECK (balance_total = balance_available + balance_frozen)
+)`,
+}
+
+var walletVoucherAndSubjectPGDDL = []string{
+	`CREATE TABLE subjects (
+  id          TEXT PRIMARY KEY,
+  issuer      TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  created_at  BIGINT NOT NULL,
+  UNIQUE (issuer, external_id)
+)`,
+	`CREATE INDEX idx_subjects_issuer_external ON subjects(issuer, external_id)`,
+	`CREATE TABLE vouchers (
+  id           TEXT PRIMARY KEY,
+  batch_id     TEXT NOT NULL,
+  code_hash    TEXT NOT NULL,
+  code_prefix  TEXT NOT NULL,
+  amount       BIGINT NOT NULL CHECK (amount > 0),
+  currency     TEXT NOT NULL DEFAULT 'CNY',
+  status       TEXT NOT NULL DEFAULT 'unused' CHECK (status IN ('unused','redeemed','void')),
+  expires_at   BIGINT,
+  redeemed_by  TEXT,
+  redeemed_at  BIGINT,
+  created_at   BIGINT NOT NULL,
+  updated_at   BIGINT NOT NULL,
+  UNIQUE (code_hash)
+)`,
+	`CREATE INDEX idx_vouchers_batch ON vouchers(batch_id, created_at DESC)`,
+	`CREATE INDEX idx_vouchers_status ON vouchers(status)`,
+}
+
+func migrateWalletVoucherAndSubject(tx kernel.Tx) error {
+	for i := 0; i < 5; i++ {
+		if _, err := tx.Exec(context.Background(), walletVoucherAndSubjectDDL[i]); err != nil {
+			return fmt.Errorf("create subject and voucher tables: %w", err)
+		}
+	}
+	// Rebuild wallet_accounts to include 'subject' in owner_type CHECK
+	if _, err := tx.Exec(context.Background(), `ALTER TABLE wallet_accounts RENAME TO wallet_accounts_old`); err != nil {
+		return fmt.Errorf("rename wallet_accounts: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), walletVoucherAndSubjectDDL[5]); err != nil {
+		return fmt.Errorf("recreate wallet_accounts: %w", err)
+	}
+	copySQL := `INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
+SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts_old`
+	if _, err := tx.Exec(context.Background(), copySQL); err != nil {
+		return fmt.Errorf("copy wallet_accounts rows: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `DROP TABLE wallet_accounts_old`); err != nil {
+		return fmt.Errorf("drop wallet_accounts_old: %w", err)
+	}
+	return nil
+}
+
+func migrateWalletVoucherAndSubjectPG(tx kernel.Tx) error {
+	for _, stmt := range walletVoucherAndSubjectPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create subject and voucher tables (postgres): %w", err)
+		}
+	}
+	if _, err := tx.Exec(context.Background(), `ALTER TABLE wallet_accounts DROP CONSTRAINT IF EXISTS wallet_accounts_owner_type_check`); err != nil {
+		return fmt.Errorf("drop wallet_accounts owner_type check: %w", err)
+	}
+	if _, err := tx.Exec(context.Background(), `ALTER TABLE wallet_accounts ADD CONSTRAINT wallet_accounts_owner_type_check CHECK (owner_type IN ('user','business','system','subject'))`); err != nil {
+		return fmt.Errorf("add wallet_accounts owner_type check: %w", err)
 	}
 	return nil
 }

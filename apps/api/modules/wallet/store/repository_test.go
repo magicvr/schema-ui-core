@@ -438,3 +438,54 @@ func TestDeductFrozenPreciseSentinels(t *testing.T) {
 		t.Fatalf("disabled deduct err = %v, want ErrDisabled", err)
 	}
 }
+
+func TestSubjectAccount(t *testing.T) {
+	repo := newRepo(t)
+	subjectID := "sub-123456"
+
+	// 1. Initially missing -> ErrNotFound.
+	if _, err := repo.GetSubjectAccountByOwner(subjectID); err != store.ErrNotFound {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+
+	// 2. GetOrCreateSubjectAccount creates row with OwnerSubject.
+	acct, created, err := repo.GetOrCreateSubjectAccount(subjectID, now())
+	if err != nil {
+		t.Fatalf("create subject account: %v", err)
+	}
+	if !created {
+		t.Fatalf("expected created=true")
+	}
+	if acct.OwnerType != store.OwnerSubject || acct.OwnerID != subjectID || acct.BalanceTotal != 0 {
+		t.Fatalf("unexpected account: %+v", acct)
+	}
+
+	// 3. Second call is idempotent.
+	acct2, created2, err := repo.GetOrCreateSubjectAccount(subjectID, now().Add(time.Hour))
+	if err != nil || created2 {
+		t.Fatalf("expected created=false, got created=%v, err=%v", created2, err)
+	}
+	if acct2.ID != acct.ID {
+		t.Fatalf("account id mismatch: %s vs %s", acct2.ID, acct.ID)
+	}
+
+	// 4. Mutate account with adjust.
+	updated, entry, err := repo.Mutate(acct.ID, store.LedgerEntryInput{
+		EntryType:   store.EntryAdjust,
+		AmountDelta: 500,
+		RefType:     "voucher",
+		RefID:       "v-1",
+		ActorID:     subjectID,
+		ActorName:   "Subject",
+		Memo:        "voucher redeem",
+	}, "entry-sub-1", now())
+	if err != nil {
+		t.Fatalf("mutate subject account: %v", err)
+	}
+	if updated.BalanceTotal != 500 || updated.BalanceAvailable != 500 || updated.BalanceFrozen != 0 {
+		t.Fatalf("unexpected balance: %+v", updated)
+	}
+	if entry.RefType != "voucher" || entry.RefID != "v-1" {
+		t.Fatalf("unexpected entry ref: %+v", entry)
+	}
+}

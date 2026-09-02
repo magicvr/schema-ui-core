@@ -558,7 +558,7 @@ func newMuxWithExtraProviders(
 	// reconciliation. Money-path mutations are gated by wallet.adjust; the
 	// module never touches the manifest/profile semantics (content extension).
 	if plan.HasModule("admin.wallet") {
-		walletService := walletmodule.NewService(walletstore.NewRepository(st))
+		walletService := walletmodule.NewService(walletstore.NewRepository(st), st)
 		walletJobs, err := walletmodule.NewJobService(walletService, jobRuntime.repository, jobRuntime.runner, operations)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("register wallet jobs: %v", err)}

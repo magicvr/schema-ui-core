@@ -20,6 +20,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/manifest"
 	walletschema "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/schema"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
 )
 
 // ModuleID is the stable admin.wallet module identifier.
@@ -27,13 +29,40 @@ const ModuleID = "admin.wallet"
 
 // Service implements handler.WalletService over the wallet store.
 type Service struct {
-	repo *walletstore.Repository
-	now  func() time.Time
+	repo     *walletstore.Repository
+	subjects *subject.Store
+	vouchers *voucher.Service
+	now      func() time.Time
 }
 
 // NewService constructs the wallet domain service.
-func NewService(repo *walletstore.Repository) *Service {
-	return &Service{repo: repo, now: time.Now}
+func NewService(repo *walletstore.Repository, runners ...walletstore.TxRunner) *Service {
+	var runner walletstore.TxRunner
+	if len(runners) > 0 {
+		runner = runners[0]
+	}
+	var subStore *subject.Store
+	var vSvc *voucher.Service
+	if runner != nil {
+		subStore = subject.NewStore(runner)
+		vSvc = voucher.NewService(runner, repo, subStore)
+	}
+	return &Service{
+		repo:     repo,
+		subjects: subStore,
+		vouchers: vSvc,
+		now:      time.Now,
+	}
+}
+
+// SubjectStore returns the external subjects store.
+func (s *Service) SubjectStore() *subject.Store {
+	return s.subjects
+}
+
+// VoucherService returns the prepaid voucher service.
+func (s *Service) VoucherService() *voucher.Service {
+	return s.vouchers
 }
 
 // newID returns a time-ordered hex id: a Unix-millisecond prefix, a
@@ -71,12 +100,22 @@ func (s *Service) GetAccount(id string) (*walletstore.Account, error) {
 // the test double); currency defaults to CNY.
 func (s *Service) CreateAccount(ownerType, ownerID, currency string, now time.Time) (*walletstore.Account, error) {
 	switch ownerType {
-	case walletstore.OwnerUser, walletstore.OwnerBusiness, walletstore.OwnerSystem:
+	case walletstore.OwnerUser, walletstore.OwnerBusiness, walletstore.OwnerSystem, walletstore.OwnerSubject:
 	default:
 		return nil, walletstore.ErrInvalidEntry
 	}
 	if ownerID == "" {
 		return nil, walletstore.ErrInvalidEntry
+	}
+	// For subject account: must reference an existing external subject (W13 F-012 principle, no orphan ledgers).
+	if ownerType == walletstore.OwnerSubject && s.subjects != nil {
+		exists, err := s.subjects.SubjectExists(context.Background(), ownerID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, walletstore.ErrNotFound
+		}
 	}
 	id, err := newID(now)
 	if err != nil {

@@ -6,7 +6,7 @@ parent: null
 created: 2026-09-02
 updated: 2026-09-02
 version: 0.1.0
-progress: 1/4
+progress: 2/4
 plan_refs:
   - VP-029-wallet-prepaid-instrument
 primary_plan: VP-029-wallet-prepaid-instrument
@@ -36,8 +36,8 @@ serves_summary: 钱包预付资金凭证 + 通道无关外部主体接缝（Admi
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
 | R1 | 合同冻结（判据 1/2/3/5 边界）：主体落点 + `owner_type` + `OwnerExists`（I-029-001）· 哈希/熵/常时比较/UNIQUE+同事务（I-029-006）· `entry_type`（I-029-002）· 权限键（I-029-003）· HTTP 核销是否本波（I-029-005） | **done**（D-002 裁决冻结 · 2026-09-02） |
-| R2 | 主体接缝 + 账本入金（判据 1/3/4）：幂等 get-or-create · Redeem 原子入金 · 三余额/对账回归 | 待推进（立项 GOAL-002） |
-| R3 | Admin 批次面 + 导出（判据 2/5 + I-029-004）：生成/导出/作废/查询 · 权限键 · 操作审计 | 待 R2 |
+| R2 | 主体接缝 + 账本入金（判据 1/3/4）：幂等 get-or-create · Redeem 原子入金 · 三余额/对账回归 | **done**（GOAL-002 完成 · 2026-09-02 交叉审计 pass 关门） |
+| R3 | Admin 批次面 + 导出（判据 2/5 + I-029-004）：生成/导出/作废/查询 · 权限键 · 操作审计 | 待推进（立项 GOAL-003） |
 | R4 | 证据与关门（判据 6/7；依赖 R1–R3） | 待 R1–R3 |
 
 ## 信息就绪与未知项（P-005）

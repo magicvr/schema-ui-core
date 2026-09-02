@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
@@ -75,7 +76,20 @@ const (
 	OwnerUser     = "user"
 	OwnerBusiness = "business"
 	OwnerSystem   = "system"
+	OwnerSubject  = "subject"
 )
+
+var entryIDSeq atomic.Uint64
+
+// NewEntryID generates a millisecond + sequence + random hex entry ID.
+func NewEntryID(now time.Time) (string, error) {
+	buf := make([]byte, 12)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	seq := entryIDSeq.Add(1) & 0xFFFFFFFF
+	return fmt.Sprintf("%016x%08x%s", now.UnixMilli(), seq, hex.EncodeToString(buf)), nil
+}
 
 // DefaultCurrency is the v1 single-currency default.
 const DefaultCurrency = "CNY"
@@ -317,6 +331,98 @@ func (r *Repository) GetOrCreateUserAccount(ownerID string, now time.Time) (*Acc
 	return &a, true, nil
 }
 
+// GetSubjectAccountByOwner is a read-only lookup for a subject account. Missing → ErrNotFound.
+func (r *Repository) GetSubjectAccountByOwner(subjectID string) (*Account, error) {
+	var a Account
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		acct, err := r.GetSubjectAccountByOwnerInTx(tx, subjectID)
+		if err != nil {
+			return err
+		}
+		a = *acct
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// GetSubjectAccountByOwnerInTx is a read-only lookup within a transaction.
+func (r *Repository) GetSubjectAccountByOwnerInTx(tx kernel.Tx, subjectID string) (*Account, error) {
+	var a Account
+	var created, updated int64
+	err := tx.QueryRow(context.Background(),
+		`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE owner_type = ? AND owner_id = ? AND currency = ?`,
+		OwnerSubject, subjectID, DefaultCurrency,
+	).Scan(&a.ID, &a.OwnerType, &a.OwnerID, &a.Currency, &a.BalanceTotal, &a.BalanceAvailable, &a.BalanceFrozen, &a.Status, &a.Version, &created, &updated)
+	if errors.Is(err, kernel.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get subject wallet account: %w", err)
+	}
+	a.CreatedAt = time.Unix(created, 0)
+	a.UpdatedAt = time.Unix(updated, 0)
+	return &a, nil
+}
+
+// GetOrCreateSubjectAccountInTx returns the subject account within an ongoing transaction.
+func (r *Repository) GetOrCreateSubjectAccountInTx(tx kernel.Tx, subjectID string, now time.Time) (*Account, bool, error) {
+	existing, err := r.GetSubjectAccountByOwnerInTx(tx, subjectID)
+	if err == nil {
+		return existing, false, nil
+	} else if !errors.Is(err, ErrNotFound) {
+		return nil, false, err
+	}
+
+	randBytes := make([]byte, 12)
+	if _, err := rand.Read(randBytes); err != nil {
+		return nil, false, fmt.Errorf("auto-create wallet id: %w", err)
+	}
+	id := fmt.Sprintf("%016x%s", now.UnixMilli(), hex.EncodeToString(randBytes))
+	_, err = tx.Exec(context.Background(),
+		`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, 0, 0, 0, ?, 0, ?, ?)`,
+		id, OwnerSubject, subjectID, DefaultCurrency, StatusActive, now.Unix(), now.Unix(),
+	)
+	if err != nil {
+		if isUniqueViolation(err) {
+			reloaded, reloadErr := r.GetSubjectAccountByOwnerInTx(tx, subjectID)
+			if reloadErr != nil {
+				return nil, false, fmt.Errorf("reload subject wallet account after conflict: %w", reloadErr)
+			}
+			return reloaded, false, nil
+		}
+		return nil, false, fmt.Errorf("insert subject wallet account: %w", err)
+	}
+	a := Account{ID: id, OwnerType: OwnerSubject, OwnerID: subjectID, Currency: DefaultCurrency, Status: StatusActive, CreatedAt: now, UpdatedAt: now}
+	return &a, true, nil
+}
+
+// GetOrCreateSubjectAccount returns the subject account, auto-creating it if absent.
+func (r *Repository) GetOrCreateSubjectAccount(subjectID string, now time.Time) (*Account, bool, error) {
+	if existing, err := r.GetSubjectAccountByOwner(subjectID); err == nil {
+		return existing, false, nil
+	} else if !errors.Is(err, ErrNotFound) {
+		return nil, false, fmt.Errorf("get subject wallet account: %w", err)
+	}
+	var account *Account
+	var created bool
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		var err error
+		account, created, err = r.GetOrCreateSubjectAccountInTx(tx, subjectID, now)
+		return err
+	})
+	if err != nil {
+		if existing, retryErr := r.GetSubjectAccountByOwner(subjectID); retryErr == nil {
+			return existing, false, nil
+		}
+		return nil, false, err
+	}
+	return account, created, nil
+}
+
 // UpdateStatus flips account status (active/disabled) with the optimistic
 // lock: the caller passes the version observed when loading the row.
 func (r *Repository) UpdateStatus(id, status string, version int64, now time.Time) (*Account, error) {
@@ -408,98 +514,104 @@ func Apply(prev Account, in LedgerEntryInput) (total, available, frozen int64, e
 	return total, available, frozen, nil
 }
 
+// MutateInTx applies one balance mutation inside an existing transaction:
+// idempotency check → account load → apply-table validation → optimistic-lock update →
+// immutable ledger insert. Returns the updated account and the recorded entry.
+func (r *Repository) MutateInTx(tx kernel.Tx, id string, in LedgerEntryInput, entryID string, now time.Time) (*Account, *LedgerEntry, error) {
+	var account Account
+	var entry LedgerEntry
+
+	// Idempotency check inside tx.
+	if in.IdempotencyKey != "" {
+		existing, err := readIdempotentEntry(tx, id, in.IdempotencyKey)
+		if err == nil {
+			if sameIdempotencyPayload(existing, in) {
+				entry = existing
+				acct, err := readAccount(tx, id)
+				if err != nil {
+					return nil, nil, fmt.Errorf("reload wallet account: %w", err)
+				}
+				return &acct, &entry, nil
+			}
+			return nil, nil, ErrIdempotencyConflict
+		}
+		if !errors.Is(err, kernel.ErrNoRows) {
+			return nil, nil, fmt.Errorf("check idempotency key: %w", err)
+		}
+	}
+
+	// Load the account inside the transaction.
+	var cr, up int64
+	err := tx.QueryRow(context.Background(),
+		`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
+		id,
+	).Scan(&account.ID, &account.OwnerType, &account.OwnerID, &account.Currency, &account.BalanceTotal, &account.BalanceAvailable, &account.BalanceFrozen, &account.Status, &account.Version, &cr, &up)
+	if errors.Is(err, kernel.ErrNoRows) {
+		return nil, nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("load wallet account: %w", err)
+	}
+	account.CreatedAt = time.Unix(cr, 0)
+	account.UpdatedAt = time.Unix(up, 0)
+	if account.Status != StatusActive {
+		return nil, nil, ErrDisabled
+	}
+	total, available, frozen, err := Apply(account, in)
+	if err != nil {
+		return nil, nil, err
+	}
+	res, err := tx.Exec(context.Background(),
+		`UPDATE wallet_accounts SET balance_total = ?, balance_available = ?, balance_frozen = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?`,
+		total, available, frozen, now.Unix(), id, account.Version,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("update wallet balances: %w", err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, nil, err
+	}
+	if affected == 0 {
+		return nil, nil, ErrVersionConflict
+	}
+	_, err = tx.Exec(context.Background(),
+		`INSERT INTO wallet_ledger_entries (id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		entryID, id, in.EntryType, in.AmountDelta, total, available, frozen,
+		nullIfEmpty(in.RefType), nullIfEmpty(in.RefID), nullIfEmpty(in.IdempotencyKey),
+		in.Memo, in.ActorID, in.ActorName, now.Unix(),
+	)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, nil, errIdempotencyRace
+		}
+		return nil, nil, fmt.Errorf("insert wallet ledger entry: %w", err)
+	}
+	account.BalanceTotal = total
+	account.BalanceAvailable = available
+	account.BalanceFrozen = frozen
+	account.Version++
+	account.UpdatedAt = now
+	entry = LedgerEntry{
+		ID: entryID, AccountID: id, EntryType: in.EntryType, AmountDelta: in.AmountDelta,
+		BalanceAfterTotal: total, BalanceAfterAvail: available, BalanceAfterFrozen: frozen,
+		RefType: in.RefType, RefID: in.RefID, IdempotencyKey: in.IdempotencyKey,
+		Memo: in.Memo, ActorID: in.ActorID, ActorName: in.ActorName, CreatedAt: now,
+	}
+	return &account, &entry, nil
+}
+
 // Mutate applies one balance mutation atomically: idempotency check → account
 // load → apply-table validation → optimistic-lock update → immutable ledger
 // insert. Returns the updated account and the recorded entry.
 func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now time.Time) (*Account, *LedgerEntry, error) {
-	var account Account
-	var entry LedgerEntry
+	var account *Account
+	var entry *LedgerEntry
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		// Idempotency: same account + same key + same payload → return the
-		// existing entry; same key + different payload → conflict. Lookups
-		// always carry the account id (D-002 v1.1.0 §1: no bare-key reads).
-		if in.IdempotencyKey != "" {
-			existing, err := readIdempotentEntry(tx, id, in.IdempotencyKey)
-			if err == nil {
-				if sameIdempotencyPayload(existing, in) {
-					entry = existing
-					// Return the current account too so the caller can report
-					// the idempotent replay without a second read.
-					acct, err := readAccount(tx, id)
-					if err != nil {
-						return fmt.Errorf("reload wallet account: %w", err)
-					}
-					account = acct
-					return nil
-				}
-				return ErrIdempotencyConflict
-			}
-			if !errors.Is(err, kernel.ErrNoRows) {
-				return fmt.Errorf("check idempotency key: %w", err)
-			}
-		}
-		// Load the account inside the transaction.
-		var cr, up int64
-		err := tx.QueryRow(context.Background(),
-			`SELECT id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at FROM wallet_accounts WHERE id = ?`,
-			id,
-		).Scan(&account.ID, &account.OwnerType, &account.OwnerID, &account.Currency, &account.BalanceTotal, &account.BalanceAvailable, &account.BalanceFrozen, &account.Status, &account.Version, &cr, &up)
-		if errors.Is(err, kernel.ErrNoRows) {
-			return ErrNotFound
-		}
-		if err != nil {
-			return fmt.Errorf("load wallet account: %w", err)
-		}
-		account.CreatedAt = time.Unix(cr, 0)
-		account.UpdatedAt = time.Unix(up, 0)
-		if account.Status != StatusActive {
-			return ErrDisabled
-		}
-		total, available, frozen, err := Apply(account, in)
-		if err != nil {
-			return err
-		}
-		res, err := tx.Exec(context.Background(),
-			`UPDATE wallet_accounts SET balance_total = ?, balance_available = ?, balance_frozen = ?, version = version + 1, updated_at = ? WHERE id = ? AND version = ?`,
-			total, available, frozen, now.Unix(), id, account.Version,
-		)
-		if err != nil {
-			return fmt.Errorf("update wallet balances: %w", err)
-		}
-		affected, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if affected == 0 {
-			return ErrVersionConflict
-		}
-		_, err = tx.Exec(context.Background(),
-			`INSERT INTO wallet_ledger_entries (id, account_id, entry_type, amount_delta, balance_after_total, balance_after_available, balance_after_frozen, ref_type, ref_id, idempotency_key, memo, actor_id, actor_name, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			entryID, id, in.EntryType, in.AmountDelta, total, available, frozen,
-			nullIfEmpty(in.RefType), nullIfEmpty(in.RefID), nullIfEmpty(in.IdempotencyKey),
-			in.Memo, in.ActorID, in.ActorName, now.Unix(),
-		)
-		if err != nil {
-			if isUniqueViolation(err) {
-				// Roll back our balance update before re-reading the winning
-				// operation outside this transaction.
-				return errIdempotencyRace
-			}
-			return fmt.Errorf("insert wallet ledger entry: %w", err)
-		}
-		account.BalanceTotal = total
-		account.BalanceAvailable = available
-		account.BalanceFrozen = frozen
-		account.Version++
-		account.UpdatedAt = now
-		entry = LedgerEntry{
-			ID: entryID, AccountID: id, EntryType: in.EntryType, AmountDelta: in.AmountDelta,
-			BalanceAfterTotal: total, BalanceAfterAvail: available, BalanceAfterFrozen: frozen,
-			RefType: in.RefType, RefID: in.RefID, IdempotencyKey: in.IdempotencyKey,
-			Memo: in.Memo, ActorID: in.ActorID, ActorName: in.ActorName, CreatedAt: now,
-		}
-		return nil
+		var txErr error
+		account, entry, txErr = r.MutateInTx(tx, id, in, entryID, now)
+		return txErr
 	})
 	if errors.Is(err, errIdempotencyRace) && in.IdempotencyKey != "" {
 		return r.replayAfterIdempotencyRace(id, in)
@@ -507,7 +619,7 @@ func (r *Repository) Mutate(id string, in LedgerEntryInput, entryID string, now 
 	if err != nil {
 		return nil, nil, err
 	}
-	return &account, &entry, nil
+	return account, entry, nil
 }
 
 type rowQueryer interface {
