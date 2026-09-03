@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.1.1
-progress: 0/4
+version: 0.1.2
+progress: 1/4
 plan_refs:
   - VP-030-telegram-channel-runtime
 primary_plan: VP-030-telegram-channel-runtime
@@ -36,8 +36,8 @@ serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 i
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
-| R1 | 合同冻结（判据 1/2/3/6 + I-030-001/002/003/006）：无 token 启动策略 · Bot HTTP vs SDK · 桶分母 · 请求计数 vs 失败预算映射 · 分发 API / mock | **进行中**（GOAL-002 · C1 已关门；合同正文 D-002 v0.1.0；C2 端口代码待落地） |
-| R2 | webhook + 分发 + 身份（判据 1/2/4 + I-030-007）：secret 路由 · Register 分发 · 主体映射（不要求钱包 HTTP 已启）；**入站三桶限流随 webhook 落地** | 待 R1 |
+| R1 | 合同冻结（判据 1/2/3/6 + I-030-001/002/003/006）：无 token 启动策略 · Bot HTTP vs SDK · 桶分母 · 请求计数 vs 失败预算映射 · 分发 API / mock | **已关门**（GOAL-002 done 3/3 · D-002 冻结 + E-002 端口代码与快测全绿 + A-001 pass） |
+| R2 | webhook + 分发 + 身份（判据 1/2/4 + I-030-007）：secret 路由 · Register 分发 · 主体映射（不要求钱包 HTTP 已启）；**入站三桶限流随 webhook 落地** | **进行中**（待立项 GOAL-003） |
 | R3 | 出站 + 设置 + 限流核账（判据 3/5 + I-030-005）：SendMessage mock/生产隔离 · Admin bot tab · 入站限流核账（使用点已随 R2） | 待 R2 |
 | R4 | 证据与关门（判据 7/8；依赖 R1–R3）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R3 |
 

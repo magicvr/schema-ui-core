@@ -1,23 +1,23 @@
 ---
 id: GOAL-002-r1-contract-freeze
 title: R1 合同冻结（Telegram 通道端口 / webhook / 分发 / 限流映射）
-status: active
+status: done
 parent: GOAL-001-telegram-channel-runtime
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.1.0
-progress: 1/3
+version: 1.0.0
+progress: 3/3
 plan_refs:
   - VP-030-telegram-channel-runtime
 primary_plan: VP-030-telegram-channel-runtime
-serves_summary: 承载 VP-030 R1：冻结无 token 启动策略、stdlib HTTP、三桶请求计数映射、模块 id、分发 API / mock / webhook 路径；合同正文 = D-002；端口本体落地归 C2。
+serves_summary: 承载 VP-030 R1：冻结无 token 启动策略、stdlib HTTP、三桶请求计数映射、模块 id、分发 API / mock / webhook 路径；合同正文 = D-002；端口本体与快测已落地（E-002）并关门（A-001 pass）。
 ---
 
 # GOAL-002 · R1 合同冻结
 
 ## 概述
 
-执行 Root 纲领 **R1**：在 VP-017 `kernel.MailSender` 与 VP-027 `kernel.RateLimiter` 先例之上，冻结 Telegram Bot 通道运行时的**合同分母**——入站 webhook（secret fail-closed）· 内核级命令/callback 分发 · `SendMessage` 文本端口 · 无 token mock · 限流桶与 Record/Clear 映射。**合同正文 = 本目标 D-002**。端口本体（`apps/api/kernel/telegram.go` + 合同级快测）归 C2；webhook 路由 / 身份映射归 R2；Admin 设置 / 出站生产适配器归 R3。
+执行 Root 纲领 **R1**：在 VP-017 `kernel.MailSender` 与 VP-027 `kernel.RateLimiter` 先例之上，冻结 Telegram Bot 通道运行时的**合同分母**——入站 webhook（secret fail-closed）· 内核级命令/callback 分发 · `SendMessage` 文本端口 · 无 token mock · 限流桶与 Record/Clear 映射。**合同正文 = 本目标 D-002**。端口本体（`apps/api/kernel/telegram.go` + 合同级快测 `apps/api/kernel/telegram_test.go`）归 C2 并已实施通过；自审 A-001 pass 关门。
 
 对齐递归：GOAL-002 → Root GOAL-001（R1）→ VP-030（判据 1/2/3/6）→ Charter @0.4.0。不进入 Mini App / Stars / 对话 FSM / 付费命令 / 独立 Bot 进程。
 
@@ -26,10 +26,10 @@ serves_summary: 承载 VP-030 R1：冻结无 token 启动策略、stdlib HTTP、
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | **信息裁决**：I-030-001/002/003/006 required + I-030-004 与分发/mock 建议包（P-004） | **已关门**（2026-09-03 用户书面全部采纳建议项——D-001） |
-| C2 | **合同正文 + 端口落地**：D-002 冻结；`kernel/telegram.go`（Sender / Dispatcher / Update 薄类型 + Validate）+ 合同级快测绿 | **进行中**（D-002 正文已冻；端口代码未落地） |
-| C3 | **审视与关门**：合同自审（self A-001）；无开放 required；Root 信息台账回写 | 待 C2 |
+| C2 | **合同正文 + 端口落地**：D-002 冻结；`kernel/telegram.go`（Sender / Dispatcher / Update 薄类型 + Validate）+ 合同级快测绿 | **已关门**（D-002 冻结 + E-002 端口代码与快测绿） |
+| C3 | **审视与关门**：合同自审（self A-001）；无开放 required；Root 信息台账回写 | **已关门**（A-001 self `pass`，0 required） |
 
-`progress` = 已关门检查点数 / 3。当前 **1/3**。
+`progress` = 已关门检查点数 / 3。当前 **3/3**。
 
 ## 成功标准（方向级）
 
