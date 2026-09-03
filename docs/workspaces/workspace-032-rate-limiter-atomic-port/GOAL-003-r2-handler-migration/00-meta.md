@@ -6,7 +6,7 @@ parent: GOAL-001-rate-limiter-atomic-port
 created: 2026-09-03
 updated: 2026-09-03
 version: 0.1.0
-progress: 0/3
+progress: 2/3
 plan_refs:
   - VP-032-rate-limiter-atomic-port
 primary_plan: VP-032-rate-limiter-atomic-port
@@ -24,11 +24,11 @@ serves_summary: 承载 VP-032 R2：依据 D-002 冻结合同将 14 处生产 All
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | **14 处生产调用点迁移**：按立即消费（4 处）与失败预算（10 处）两口径完成代码改造，生产代码消除 Allow→Record 配对 | 待开始 |
-| C2 | **测试套件回归与并发验证**：handler / channel 既有限流单测全绿；验证立即消费单请求等价与失败预算 Clear 后净状态等价 | 待 C1 后 |
-| C3 | **审视与阶段关门**：自审（A-001）对照 14 处分母与红线，达成无开放 required 关门 | 待 C2 后 |
+| C1 | **14 处生产调用点迁移**：按立即消费（4 处）与失败预算（10 处）两口径完成代码改造，生产代码消除 Allow→Record 配对 | **已完成**（E-002 · 14 处全迁） |
+| C2 | **测试套件回归与并发验证**：handler / channel 既有限流单测全绿；验证立即消费单请求等价与失败预算 Clear 后净状态等价 | **已完成**（E-002 · 并发无穿透与 Clear 测试通过） |
+| C3 | **审视与阶段关门**：自审（A-001）对照 14 处分母与红线，达成无开放 required 关门 | 进行中（待自审与独立审计） |
 
-`progress` = 已关门检查点数 / 3。当前 **0/3**。
+`progress` = 已关门检查点数 / 3。当前 **2/3**。
 
 ## 成功标准（对应 VP-032 退出判据 #2 / #3 / #4）
 
