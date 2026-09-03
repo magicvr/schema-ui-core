@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-wallet-prepaid-instrument
 doc: execution
-status: active
+status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.8
+version: 0.2.0
 ---
 
 # 执行记录 · GOAL-001-wallet-prepaid-instrument
@@ -26,6 +26,7 @@ version: 0.1.8
 | E-010 | 2026-09-02 | R5 重开与 GOAL-005 立项 | recorded | `02-execution/E-010-r5-reopen.md` |
 | E-011 | 2026-09-02 | R5 子目标 GOAL-005 关门 | recorded | `02-execution/E-011-goal005-closed.md` |
 | E-012 | 2026-09-02 | 已核销隐藏作废 + 我的钱包余额按元展示 | recorded | `02-execution/E-012-void-button-and-my-wallet-yuan.md` |
+| E-013 | 2026-09-02 | 根目标 GOAL-001 全量结项与工作区 029 关门 | recorded | `02-execution/E-013-root-r5-closeout.md` |
 
 ## 事实边界
 

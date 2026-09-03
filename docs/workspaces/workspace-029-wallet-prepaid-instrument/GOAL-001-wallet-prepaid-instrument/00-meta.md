@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-wallet-prepaid-instrument
 title: 钱包预付资金凭证与外部主体接缝
-status: active
+status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.3.0
+version: 0.4.0
 progress: 5/5
 plan_refs:
   - VP-029-wallet-prepaid-instrument

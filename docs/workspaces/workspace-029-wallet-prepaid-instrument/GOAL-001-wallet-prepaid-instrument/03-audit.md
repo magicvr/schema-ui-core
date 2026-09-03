@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-wallet-prepaid-instrument
 doc: audit
-status: active
+status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.1.6
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001-wallet-prepaid-instrument
@@ -14,8 +14,8 @@ version: 0.1.6
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-029-001 by-owner 门禁与冻结合同一致 | A-007：OwnerExists 只查 user 表（F-001 independently **fixed**）；主体校验在 `CreateAccount(subject)`/`Redeem` |
-| 到期 required 是否已 verified / residual | **是** | A-002 三条 required 维持 closed（A-004）；A-005 F-001 → A-007 independent **fixed**；F-002～F-005 recommended → A-008 全部 `fixed`（含 0065 批次注册表 / PG e2e / expiresAt 范围 / 声明化导出） |
+| 影响本 scope 的 I-00N | I-029-001～009 全部 closed | S4 self（A-009）复核 9 项信息门禁全部达成 |
+| 到期 required 是否已 verified / residual | **是** | 历史 required 全部合法闭合；R5 independent（GOAL-005 A-001 pass）+ 本次 A-009 self pass；开放 required = 0 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -30,11 +30,8 @@ version: 0.1.6
 | A-006 | 2026-09-02 | self | A-005 合并响应与 F-001 闭合核验 | **pass** | 主张 F-001 `fixed`（A-007 核验） | `03-audit/A-006-a005-closure-response.md` |
 | A-007 | 2026-09-02 | independent | A-005 F-001 关闭证据复审 | **pass** | **0** required（F-002～F-005 recommended 处置见 A-008） | `03-audit/A-007-a005-f001-closure-independent.md` |
 | A-008 | 2026-09-02 | self | A-007 登记 + A-005 F-002～F-005 recommended 闭合核验 | **pass** | **0** required；recommended 全 `fixed` | `03-audit/A-008-a007-closure-response.md` |
+| A-009 | 2026-09-02 | self | Root 根目标全量关门自审（含 R5 增量） | **pass** | **0** required | `03-audit/A-009-root-r5-closeout-self.md` |
 
 ## 结论状态
 
-A-005 F-001（required）经 A-006 self → A-007 independent `pass` 合法闭合；F-002～F-005（recommended）由 **A-008** 全部按 `fixed` 处置：F-002 导出改为协议声明（downloadCsv）；F-003 PG Redeem/并发 e2e 落地并实证（docker postgres:15 PASS）；F-004 0065 `voucher_batches` 批次注册表（重复 batchId → 409）；F-005 expiresAt Unix 秒范围 fail-closed + 标签提示。**open required = 0 · recommended = 0**（R1～R4 当时分母）。本索引不改写 A-001～A-008 原文与 verdict。
-
-> **E-010 重开注记（2026-09-02 · 用户确认结构选型 A）**：Root `done → active`（4/5）；R5 = GOAL-005。历史 A 条目不构成现行「无 HTTP 核销」成功交付。R5 开放 required 信息项 = I-029-007 / I-029-008（阻断 GOAL-005 实施，不回溯闭合 R4 findings）。
-
-> **E-007 修订注记（2026-09-02 · 用户反馈修复）**：A-008 F-002 的**实现载体**原为 `generateBatch.onSuccess.downloadCsv`，违反 pinned `OutcomeBehavior`（additionalProperties:false）→ 页面文档 D-VAL 失败（页面 Schema 错误）。已按 upstream pin 约束修订：声明改放生成表单节点的**业务 props**（node schema 允许），renderer/类型同步，onSuccess 还原纯 `reload`；语义不变（声明驱动 CSV 导出）。同时补齐 voucher 导航图标（card→Ticket）与 DefaultNavigationOrder 排序（menu_wallet 下一位）。详情见 `02-execution/E-007-vouchers-page-fixes.md`；11 件 pinned docs/schemas 未改动。
+R1～R4 历史 required 经 A-004 / A-007 independent pass 全部合法闭合；R5 增量经 GOAL-005 A-001 independent pass 与 A-003 self pass 闭环并关门。**A-009** 关门自审复核十条退出判据全部满足，信息门禁 9 项全部 closed，后端测试与前端 1195 测试全量 PASS。**open required = 0 · recommended = 0**。Root `GOAL-001` 满足正式关门条件（`status: done` · `progress: 5/5`）。

@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-029-wallet-prepaid-instrument
 title: 钱包预付资金凭证与外部主体接缝
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-029-wallet-prepaid-instrument
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.4.0
+version: 0.5.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-02 · v0.4.0 · 用户确认结构选型 **A**：reopen；不新开 VP / 不新开区） |
-| lead_workspace | `workspace-029-wallet-prepaid-instrument`（唯一 delivery；Root 同步 `done → active`，加 R5） |
-| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活独立审视 = [VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) `pass`；首波关门就绪 = [VRev-067](../reviews/VRev-067-vp029-wallet-prepaid-instrument-close-out.md) self `pass`（0 required；**原文与 verdict 不改写**）；reopen 就绪 = [VRev-068](../reviews/VRev-068-vp029-reopen-my-wallet-self-redeem.md) self `pass`（0 required） |
+| status | **`closed`**（2026-09-02 · v0.5.0 · 全量交付关门 · 用户指令授权） |
+| lead_workspace | `workspace-029-wallet-prepaid-instrument`（唯一 delivery；Root `GOAL-001` `done` 5/5） |
+| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活独立审视 = [VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) `pass`；首波关门就绪 = [VRev-067](../reviews/VRev-067-vp029-wallet-prepaid-instrument-close-out.md) self `pass`；reopen 就绪 = [VRev-068](../reviews/VRev-068-vp029-reopen-my-wallet-self-redeem.md) self `pass`；全量关门就绪 = [VRev-069](../reviews/VRev-069-vp029-wallet-prepaid-instrument-r5-close-out.md) self `pass`（0 required） |
 | 组合位置 | **Admin 功能分支** · 扩展已交付的 `admin.wallet`（VP-011 S-14），**不是**支付/结算业务域 |
 
 ## 重开（2026-09-02 · 结构选型 A）
@@ -136,7 +136,8 @@ parent: null
 
 ## 关门记录
 
-2026-09-02 · 当时 **`active → closed` v0.3.0**（用户书面确认 · VRev-067）。相对当时分母（判据 #1～#7、无 HTTP Redeem）的证据链保留。**现行 status = `active` v0.4.0**（R5 重开）；再次关门须满足判据 #6～#10 且用户确认。
+- 2026-09-02 · 当时 **`active → closed` v0.3.0**（用户书面确认 · VRev-067）。相对当时分母（判据 #1～#7、无 HTTP Redeem）的证据链保留。
+- 2026-09-02 · **全量关门 `active → closed` v0.5.0**（用户指令授权 · VRev-069）。十条方向级退出判据（#1～#7 历史 verified + #8～#10 现行 verified）全量满足，Root `GOAL-001` `done` 5/5（A-009 self pass），子目标 GOAL-002～GOAL-005 全部 `done`，开放 required = 0。
 
 ## 规划修订短史
 
@@ -146,3 +147,4 @@ parent: null
 | 2026-09-02 | **激活** `planned → active` v0.2.0（用户指令：独立审视通过则激活并开区）。[VRev-066](../reviews/VRev-066-vp029-wallet-prepaid-instrument-independent.md) independent `pass`（0 required）。Admin 类 freshness **PASS**（`29727510` → `b5c39dfb`）。lead `workspace-029-wallet-prepaid-instrument`。 |
 | 2026-09-02 | **首波关门** `active → closed` v0.3.0（用户书面确认）。[VRev-067](../reviews/VRev-067-vp029-wallet-prepaid-instrument-close-out.md) self `pass`（0 required）。Root 当时 done 4/4。 |
 | 2026-09-02 | **reopen** `closed → active` v0.4.0（用户确认结构选型 A）。R5 = Admin 已登录自助核销 HTTP + 「我的钱包」入口。VRev-068 self `pass`。不新开区、不新开 VP、不放 workspace-010。 |
+| 2026-09-02 | **全量关门** `active → closed` v0.5.0（用户指令授权）。十条判据全量 verified，GOAL-005 独立审与 Root 关门自审（A-009）全部 pass，lead workspace-029 结项。 |

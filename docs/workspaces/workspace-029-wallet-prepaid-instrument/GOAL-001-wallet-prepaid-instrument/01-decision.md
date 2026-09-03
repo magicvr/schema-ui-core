@@ -1,18 +1,18 @@
 ---
 id: GOAL-001-wallet-prepaid-instrument
 doc: decision
-status: active
+status: done
 parent: null
 created: 2026-09-02
 updated: 2026-09-02
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策记录 · GOAL-001-wallet-prepaid-instrument
 
 ## 信息需求与阶段门禁
 
-> 权威表在 `00-meta.md`。R1 历史 required 已闭合。R5 现行开放 required = I-029-007 / I-029-008，阻断 GOAL-005 实施（最晚 S1）。
+> 权威表在 `00-meta.md`。全部 9 项 required/non-blocking 信息项均已 closed。
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
@@ -33,3 +33,4 @@ version: 0.2.0
 | D-001 | 2026-09-02 | 工作区 / Root 建立与开区决策 | accepted | `01-decision/D-001-workspace-root-establishment.md` |
 | D-002 | 2026-09-02 | R1 核心合同冻结与技术选型裁决 | accepted | `01-decision/D-002-r1-contract-freeze.md` |
 | D-003 | 2026-09-02 | R5 重开：我的钱包预付凭证自助核销 | accepted | `01-decision/D-003-r5-reopen-my-wallet-self-redeem.md` |
+| D-004 | 2026-09-02 | 根目标 GOAL-001 与工作区 029 结项关门裁决 | accepted | `01-decision/D-004-root-r5-closeout.md` |
