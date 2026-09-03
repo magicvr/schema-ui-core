@@ -103,8 +103,10 @@ func (h *authHandler) login() http.HandlerFunc {
 		// D-001 P1: the bucket key is the real client IP (trusted reverse proxy
 		// X-Real-IP) plus the attempted username, so one attacker spraying many
 		// usernames cannot lock out unrelated clients behind the same proxy.
+		// VP-032: atomic AllowRecord (optimistic slot reservation) eliminates
+		// TOCTOU between check and record. Success clears the bucket.
 		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
-		if h.rateLimiter != nil && !h.rateLimiter.Allow(limiterKey, h.now().UTC()) {
+		if h.rateLimiter != nil && !h.rateLimiter.AllowRecord(limiterKey, h.now().UTC()) {
 			if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -117,6 +119,9 @@ func (h *authHandler) login() http.HandlerFunc {
 		// code; failures do not count against the lockout budget.
 		if h.captcha != nil && h.captcha.Required() {
 			if err := h.captcha.Verify(creds.CaptchaID, creds.CaptchaAnswer, h.now().UTC()); err != nil {
+				if h.rateLimiter != nil {
+					h.rateLimiter.Clear(limiterKey)
+				}
 				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CAPTCHA", "captcha verification failed")
 				return
 			}
@@ -131,20 +136,13 @@ func (h *authHandler) login() http.HandlerFunc {
 		// locked/disabled" from "does not exist" (account-enumeration oracle).
 		// Fail-closed: no lock/disable status leak on the login surface.
 		// W11 F-007 (D2 residual): these terminal states now also count
-		// against the client's failure bucket — otherwise an attacker could
-		// probe lock/disable transitions without ever being rate-limited
-		// (a missing user and a locked user differ by ~6 timing probes).
+		// against the client's failure bucket. With entrance AllowRecord,
+		// the slot is already recorded.
 		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
-			if h.rateLimiter != nil {
-				h.rateLimiter.Record(limiterKey, h.now().UTC())
-			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {
-			if h.rateLimiter != nil {
-				h.rateLimiter.Record(limiterKey, h.now().UTC())
-			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
@@ -159,28 +157,12 @@ func (h *authHandler) login() http.HandlerFunc {
 				return
 			}
 			// W11 F-003: the "password passed, awaiting second factor" state
-			// is rate-limited like the password factor itself — each proof
-			// issuance consumes one slot of the same IP|username bucket, so
-			// an attacker with the password cannot mint an unlimited number
-			// of fresh 5-guess proofs. Proofs stay one-shot and 5-failure
-			// capped in the service, but the bucket bounds the TOTAL guess
-			// budget (proofs issued per 15 min).
-			if h.rateLimiter != nil {
-				if !h.rateLimiter.Allow(limiterKey, h.now().UTC()) {
-					if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
-						w.Header().Set("Retry-After", strconv.Itoa(sec))
-					}
-					writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many login attempts; try again later")
-					return
-				}
-			}
+			// is rate-limited like the password factor itself. With entrance
+			// AllowRecord, this attempt was already counted in limiterKey.
 			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
 			if perr != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
-			}
-			if h.rateLimiter != nil {
-				h.rateLimiter.Record(limiterKey, h.now().UTC())
 			}
 			writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "mfaProof": proof})
 			return

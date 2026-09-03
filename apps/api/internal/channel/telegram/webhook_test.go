@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
@@ -466,5 +468,50 @@ func TestWebhook_SubjectMappingIdempotency(t *testing.T) {
 	}
 	if capturedSubjectIDs[0] == "" || capturedSubjectIDs[0] != capturedSubjectIDs[1] {
 		t.Fatalf("expected identical non-empty SubjectID on repeated webhook, got %v", capturedSubjectIDs)
+	}
+}
+
+// VP-032 C2: verify that concurrent requests cannot penetrate the Telegram webhook
+// IP rate limit budget (zero TOCTOU penetration).
+func TestWebhook_RateLimiting_ConcurrentNoTOCTOU(t *testing.T) {
+	rlProvider := ratelimit.NewProvider()
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "correct-sec" },
+		RateLimiters: rlProvider,
+	})
+
+	const total = 100
+	const budget = RateLimitMaxIP // 60
+
+	var passCount, rateLimitCount int32
+	var wg sync.WaitGroup
+	wg.Add(total)
+
+	for i := 0; i < total; i++ {
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader([]byte(`{}`)))
+			req.Header.Set(HeaderTelegramSecretToken, "wrong-sec")
+			req.RemoteAddr = "203.0.113.88:12345"
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, req)
+			switch w.Code {
+			case http.StatusUnauthorized:
+				atomic.AddInt32(&passCount, 1)
+			case http.StatusTooManyRequests:
+				atomic.AddInt32(&rateLimitCount, 1)
+			default:
+				t.Errorf("unexpected status code %d", w.Code)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if passCount != budget {
+		t.Fatalf("passCount = %d, want exactly %d", passCount, budget)
+	}
+	if rateLimitCount != total-budget {
+		t.Fatalf("rateLimitCount = %d, want %d", rateLimitCount, total-budget)
 	}
 }

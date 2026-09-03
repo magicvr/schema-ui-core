@@ -90,7 +90,7 @@ func (h *recoveryHandler) start() http.HandlerFunc {
 			return
 		}
 		key := h.limiterKey(r, body.Account)
-		if !h.rateLimiter.Allow(key, h.now().UTC()) {
+		if !h.rateLimiter.AllowRecord(key, h.now().UTC()) {
 			if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -101,7 +101,7 @@ func (h *recoveryHandler) start() http.HandlerFunc {
 			switch {
 			case errors.Is(err, authsession.ErrRecoveryNotAvailable):
 				// Enumeration-neutral: identical shape, nothing was sent.
-				h.rateLimiter.Record(key, h.now().UTC())
+				// VP-032: entrance AllowRecord already recorded this attempt.
 			case errors.Is(err, authsession.ErrRecoveryCooldown):
 				writeLocalizedError(w, r, http.StatusTooManyRequests, "EMAIL_RESEND_COOLDOWN", "please wait before requesting another code")
 				return
@@ -112,6 +112,9 @@ func (h *recoveryHandler) start() http.HandlerFunc {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process the recovery request")
 				return
 			}
+		}
+		if h.rateLimiter != nil {
+			h.rateLimiter.Clear(key)
 		}
 		writeJSON(w, http.StatusAccepted, map[string]string{"status": "dispatched"})
 	}
@@ -140,7 +143,7 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			return
 		}
 		key := h.limiterKey(r, body.Account)
-		if !h.rateLimiter.Allow(key, h.now().UTC()) {
+		if !h.rateLimiter.AllowRecord(key, h.now().UTC()) {
 			if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -185,6 +188,9 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		if h.gate != nil && h.gate.Required(target.UserID) {
 			code2, rec2 := strings.TrimSpace(body.SecondFactorCode), strings.TrimSpace(body.RecoveryCode)
 			if code2 == "" && rec2 == "" {
+				if h.rateLimiter != nil {
+					h.rateLimiter.Clear(key)
+				}
 				writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_SECOND_FACTOR_REQUIRED", "your second factor is required to finish recovery")
 				return
 			}
@@ -199,6 +205,9 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		newPassword := body.NewPassword
 		length := len([]byte(newPassword))
 		if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(newPassword) == "" {
+			if h.rateLimiter != nil {
+				h.rateLimiter.Clear(key)
+			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password must be a non-whitespace string of 8 to 72 bytes")
 			return
 		}
@@ -206,6 +215,9 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		// the four policy enforcement points (complexity/history on top of the
 		// baseline; does NOT consume a challenge attempt — A-001 F-004 note).
 		if err := h.repo.ValidateNewPassword(target.UserID, newPassword); err != nil {
+			if h.rateLimiter != nil {
+				h.rateLimiter.Clear(key)
+			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password violates the active password policy")
 			return
 		}
@@ -221,6 +233,9 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process the recovery request")
 			return
+		}
+		if h.rateLimiter != nil {
+			h.rateLimiter.Clear(key)
 		}
 		if h.operations != nil {
 			h.recordRecoveryEvent(target.UserID)
@@ -265,10 +280,8 @@ func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request,
 // limiter bucket (D-001 §2 · A-001 F-001). Deliberately NOT called for the
 // second-factor demand (missing field, not a guess) or INVALID_PASSWORD after
 // a matched code (legitimate user mid-flow) — see D-001 §2 write-back.
+// VP-032: no-op under AllowRecord entrance; optimistic slot is already occupied.
 func (h *recoveryHandler) recordFailure(key string) {
-	if h.rateLimiter != nil {
-		h.rateLimiter.Record(key, h.now().UTC())
-	}
 }
 
 // recordRecoveryEvent appends the audit row under the existing

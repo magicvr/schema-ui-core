@@ -53,15 +53,12 @@ func CaptchaRoutes(a *auth.Authenticator, service CaptchaService, operations ope
 				// W7 F-006: rate-limit challenge generation (per real client IP)
 				// so the public preflight cannot be used as an unlimited
 				// solve-and-retry oracle or a table-filling pump.
-				if !limiter.Allow(loginClientIP(r), time.Now().UTC()) {
+				// VP-032: atomic AllowRecord bounds anonymous client to 10 challenges
+				// per minute without TOCTOU.
+				if !limiter.AllowRecord(loginClientIP(r), time.Now().UTC()) {
 					writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many captcha requests; try again later")
 					return
 				}
-				// W7 F-006: record this generation attempt so the sliding window
-				// actually counts requests (allow() only checks; record() creates
-				// the entry). This bounds an anonymous client to 10 challenges per
-				// minute.
-				limiter.Record(loginClientIP(r), time.Now().UTC())
 				id, question, expiresInSeconds, err := service.Generate()
 				if err != nil {
 					writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate captcha")

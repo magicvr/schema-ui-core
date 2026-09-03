@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -352,5 +354,81 @@ func TestLoginClientIPTrustsXRealIPOnlyFromTrustedPeer(t *testing.T) {
 	spoofed.Header.Set("X-Real-IP", "198.51.100.1")
 	if got := loginClientIP(spoofed); got != "203.0.113.99" {
 		t.Fatalf("untrusted peer X-Real-IP = %q, want direct peer 203.0.113.99", got)
+	}
+}
+
+// VP-032 C2: verify that concurrent failed login requests cannot penetrate
+// the 20-attempt rate limit budget (zero TOCTOU penetration).
+func TestLoginRateLimit_ConcurrentNoTOCTOUPenetration(t *testing.T) {
+	env := newAuthTestEnv(t)
+	const total = 50
+	const budget = 20
+
+	var passCount, rateLimitCount int32
+	var wg sync.WaitGroup
+	wg.Add(total)
+
+	for i := 0; i < total; i++ {
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+				strings.NewReader(`{"username":"concurrent-user","password":"wrong-password"}`))
+			req.Header.Set("Content-Type", "application/json")
+			req.RemoteAddr = "192.168.1.100:54321"
+			rr := httptest.NewRecorder()
+			env.mux.ServeHTTP(rr, req)
+			switch rr.Code {
+			case http.StatusUnauthorized:
+				atomic.AddInt32(&passCount, 1)
+			case http.StatusTooManyRequests:
+				atomic.AddInt32(&rateLimitCount, 1)
+			default:
+				t.Errorf("unexpected status %d", rr.Code)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if passCount != budget {
+		t.Fatalf("passCount = %d, want exactly %d (budget)", passCount, budget)
+	}
+	if rateLimitCount != total-budget {
+		t.Fatalf("rateLimitCount = %d, want %d", rateLimitCount, total-budget)
+	}
+}
+
+// VP-032 C2: verify that a successful login clears the failure bucket, restoring
+// full budget for subsequent attempts (net-state equivalence).
+func TestLoginRateLimit_SuccessfulLoginClearsFailureBucket(t *testing.T) {
+	env := newAuthTestEnv(t)
+	username := testSeedUsername
+	password := testSeedPassword
+
+	// Repeat 10 cycles of 3 failed logins (< 5-attempt account lock threshold)
+	// followed by 1 successful login. Total failed attempts = 30, which exceeds
+	// the 20-attempt rate limit budget.
+	// If the successful login did not clear the failure bucket, this would trip
+	// 429 RATE_LIMITED after 20 attempts.
+	for cycle := 0; cycle < 10; cycle++ {
+		for i := 0; i < 3; i++ {
+			req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+				strings.NewReader(`{"username":"`+username+`","password":"wrong-password"}`))
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			env.mux.ServeHTTP(rr, req)
+			if rr.Code != http.StatusUnauthorized {
+				t.Fatalf("cycle %d fail %d status = %d, want 401", cycle, i, rr.Code)
+			}
+		}
+
+		// 1 successful login clears the rate limit bucket (and resets consecutive failures).
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+			strings.NewReader(`{"username":"`+username+`","password":"`+password+`"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("cycle %d successful login status = %d, want 200", cycle, rr.Code)
+		}
 	}
 }

@@ -324,7 +324,7 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limit
 		}
 		key := loginClientIP(r)
 		now := time.Now().UTC()
-		if !limiter.Allow(key, now) {
+		if !limiter.AllowRecord(key, now) {
 			if sec := limiter.RetryAfterSeconds(key, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -334,7 +334,6 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limit
 		// F-001 ordering gate: dead tokens are rejected here, before any
 		// password policy or bcrypt work.
 		if err := repo.PeekInviteToken(strings.TrimSpace(body.Token), now); err != nil {
-			limiter.Record(key, now)
 			writeInviteDomainError(w, r, err)
 			return
 		}
@@ -353,10 +352,10 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limit
 			return
 		}
 		if _, aerr := repo.AcceptInvite(strings.TrimSpace(body.Token), body.Username, body.Name, hash, now); aerr != nil {
-			limiter.Record(key, now)
 			writeInviteDomainError(w, r, aerr)
 			return
 		}
+		limiter.Clear(key)
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

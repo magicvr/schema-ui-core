@@ -65,12 +65,12 @@ func mfaStepUpKey(op string, r *http.Request, userID string) string {
 	return op + "|" + loginClientIP(r) + "|" + userID
 }
 
-// guardMFAStepUp runs the allow-check for a second-factor step-up attempt.
+// guardMFAStepUp runs the atomic allow+record check for a second-factor step-up attempt.
 // It writes the 429 response (with Retry-After) and returns false when the
 // bucket for this operation/IP/user is exhausted.
 func guardMFAStepUp(limiter kernel.RateLimiter, op string, w http.ResponseWriter, r *http.Request, userID string) bool {
 	key := mfaStepUpKey(op, r, userID)
-	if limiter.Allow(key, time.Now().UTC()) {
+	if limiter.AllowRecord(key, time.Now().UTC()) {
 		return true
 	}
 	if sec := limiter.RetryAfterSeconds(key, time.Now().UTC()); sec > 0 {
@@ -140,7 +140,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		// user; an IP key still stops a replay-spray from a single host).
 		limiterKey := loginClientIP(r)
 		now := time.Now().UTC()
-		if !mfaVerifyLimiter.Allow(limiterKey, now) {
+		if !mfaVerifyLimiter.AllowRecord(limiterKey, now) {
 			if sec := mfaVerifyLimiter.RetryAfterSeconds(limiterKey, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -159,13 +159,12 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		userID, err := service.Verify(body.Proof, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
-			// Failed verifications count against the limiter bucket so that a
-			// spray of invalid codes from one IP is bounded at the HTTP layer
-			// independently of the service-level proof exhaustion counter.
-			mfaVerifyLimiter.Record(limiterKey, now)
+			// Failed verifications count against the limiter bucket. With
+			// entrance AllowRecord, this attempt is already recorded.
 			writeMFAError(w, r, err)
 			return
 		}
+		mfaVerifyLimiter.Clear(limiterKey)
 		access, refresh, user, err := a.IssueTokensFor(userID, time.Now().UTC())
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "authentication unavailable")
@@ -222,7 +221,6 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			return
 		}
 		if !auth.VerifyPassword(current.PasswordHash, body.CurrentPassword) {
-			mfaStepUpLimiter.Record(stepUpKey, time.Now().UTC())
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "current password is incorrect")
 			return
 		}
@@ -284,9 +282,6 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			return
 		}
 		if err := service.Disable(user.ID, body.Code, body.RecoveryCode, now); err != nil {
-			if errors.Is(err, ErrMFAInvalid) {
-				mfaStepUpLimiter.Record(mfaStepUpKey("disable", r, user.ID), now)
-			}
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
@@ -321,9 +316,6 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		codes, err := service.RotateRecovery(user.ID, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
-			if errors.Is(err, ErrMFAInvalid) {
-				mfaStepUpLimiter.Record(mfaStepUpKey("recovery-rotate", r, user.ID), time.Now().UTC())
-			}
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}

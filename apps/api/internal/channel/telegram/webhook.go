@@ -99,16 +99,15 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	now := h.now()
 
-	// 2. IP Rate Limiting (60/min): Allow check, then Record (even if secret/parse fails).
+	// 2. IP Rate Limiting (60/min): atomic check+record (even if secret/parse fails).
 	clientIP := handler.LoginClientIP(r)
 	ipKey := "tg:webhook:" + clientIP
 	if h.ipLimiter != nil {
-		if !h.ipLimiter.Allow(ipKey, now) {
+		if !h.ipLimiter.AllowRecord(ipKey, now) {
 			w.Header().Set("Retry-After", strconv.Itoa(h.ipLimiter.RetryAfterSeconds(ipKey, now)))
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
-		h.ipLimiter.Record(ipKey, now)
 	}
 
 	// 3. Secret Token Verification (fail-closed, constant-time compare).
@@ -175,23 +174,21 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 6. Chat Rate Limiting (30/min).
 	if h.chatLimiter != nil && chatID != "" {
 		chatKey := "tg:chat:" + chatID
-		if !h.chatLimiter.Allow(chatKey, now) {
+		if !h.chatLimiter.AllowRecord(chatKey, now) {
 			w.Header().Set("Retry-After", strconv.Itoa(h.chatLimiter.RetryAfterSeconds(chatKey, now)))
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
-		h.chatLimiter.Record(chatKey, now)
 	}
 
 	// 7. User Rate Limiting (20/min).
 	if h.userLimiter != nil && userID != "" {
 		userKey := "tg:user:" + userID
-		if !h.userLimiter.Allow(userKey, now) {
+		if !h.userLimiter.AllowRecord(userKey, now) {
 			w.Header().Set("Retry-After", strconv.Itoa(h.userLimiter.RetryAfterSeconds(userKey, now)))
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
-		h.userLimiter.Record(userKey, now)
 	}
 
 	// 8. Subject Identity Mapping: GetOrCreateSubject("telegram", userID).
