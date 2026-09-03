@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-030-telegram-channel-runtime
 title: Telegram Bot 通道运行时
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace:
+lead_workspace: workspace-030-telegram-channel-runtime
 created: 2026-09-02
-updated: 2026-09-02
-version: 0.1.0
+updated: 2026-09-03
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-09-02 · v0.1.0 · 0 区） |
-| lead_workspace | 未绑定（激活时按惯例 `workspace-030-telegram-channel-runtime`） |
-| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活前另做**架构类** freshness + 激活审视 |
+| status | **`active`**（2026-09-03 · v0.2.0 · 用户指令激活 · lead `workspace-030-telegram-channel-runtime`） |
+| lead_workspace | `workspace-030-telegram-channel-runtime`（2026-09-03 开区） |
+| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活就绪 = [VRev-070](../reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass`（0 required · 架构类 freshness PASS · 限流评估落盘） |
 | 组合位置 | **架构分支 · C 端通道**（对标 VP-017 出站邮件：内核端口 + 一方模块 + Admin 设置）。**不是**业务域，**不是**付费产品 |
 
 ## 意图
@@ -35,6 +35,17 @@ parent: null
 5. **限流**：消费 VP-027 端口，按 webhook IP / `chat_id` / `telegram_user_id` 分桶（R1 冻结桶分母）。
 
 本模块是 **C 端 ingress**，即使尚未激活 VP-031，只要 webhook 对公网开放就有 C 端流量。因此 **激活前必须评估**进程内 RateLimiter 是否覆盖上述桶；可结论「不需要 Redis」，但评估本身不可跳过（H-002 / RT-Q05 的 C 端接入精神适用于通道，不把本 VP 误标成业务域）。
+
+## 限流评估（激活前 · 判据 6 · 2026-09-03）
+
+权威全文：[VRev-070](../reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) §6。摘要：
+
+| 项 | 结论 |
+|----|------|
+| 端口覆盖 | `kernel.RateLimiter` 不透明键可组 webhook IP / `chat_id` / `telegram_user_id` 三桶 |
+| 进程内 | 同进程单实例 + `1<<16` 容量 FIFO 驱逐 → **本波够用** |
+| Redis | **不需要**；不消耗 RT-Q05 trigger |
+| R1 仍须冻 | I-030-003 哪些桶必做；I-030-006 请求计数 vs 失败预算的 Record/Clear 映射 |
 
 ## 首波冻结（退出分母）
 
@@ -66,10 +77,10 @@ parent: null
 | **VP-003 / VP-004** | 通道模块按「横切 + 设置面」显式豁免业务导航；内核不得 import `channel.telegram` 实现细节 |
 | **VP-008 `go`** | 架构类 freshness（pin / 锁 / 迁移 / Profile 默认集 / provenance） |
 | **VP-021** | webhook handler 遵守停机 drain；不得在 SIGTERM 后继续调 Bot API 死循环 |
-| **VP-027** | 必消费限流端口；激活前评估进程内是否够用并登记路线图位置 |
+| **VP-027** | 必消费限流端口；激活前评估已落盘（进程内够用、不需要 Redis）；桶分母与 Record/Clear 映射仍 R1 |
 | **VP-026** | 无硬依赖。Update 去重若用缓存，评估后可选，不预制 Redis |
 | **VP-028** | 不把 Bot Update 当领域事件总线；需要 fan-out 时再评估 typed event（仍 gated） |
-| **VP-029** | **硬前置**：主体接缝必须已可用（本 VP 不自建用户表） |
+| **VP-029** | **硬前置已交付**（`closed` v0.5.0）：`GetOrCreateSubject("telegram", id)`。消费路径 **不得要求** `admin.wallet` HTTP 已启（V-F109 / V-F115）；主体 Persistence 随编译候选 |
 | **VP-031** | 业务命令的注册者，不是本 VP 的退出分母 |
 
 ## 方向级退出判据
@@ -79,7 +90,7 @@ parent: null
 3. **出站端口**：`SendMessage` 文本可测（mock 供应商）；生产供应商不把 Bot 客户端类型漏进模块公共契约。
 4. **身份映射**：同一 `telegram_user_id` 多次 get-or-create 得到同一 `subject_id`；不写 `admin.users`。
 5. **设置与密钥**：Admin 可配置 token/secret；密钥 fail-closed；不进配置包明文。
-6. **限流评估落盘**：激活前书面评估 VP-027 进程内 limiter 对 webhook/`chat_id`/`telegram_user_id` 是否足够；结论允许「不需要 Redis」，评估不可缺。
+6. **限流评估落盘**：激活前书面评估 VP-027 进程内 limiter 对 webhook/`chat_id`/`telegram_user_id` 是否足够；结论允许「不需要 Redis」，评估不可缺。**（本条已由 VRev-070 §6 核销）**
 7. **边界保持**：未改 Charter；未进 `mvp`/`admin` 默认集；未做 Mini App / Stars / 对话引擎 / 付费命令；未重开历史 VP。
 8. **审计闭合**：开放 required finding = 0（或已合法闭合）。
 
@@ -94,12 +105,14 @@ parent: null
 | I-030-003 | 限流桶分母：webhook IP / chat_id / telegram_user_id 哪些本波必做。 | required | 判据 6 | R1 | open |
 | I-030-004 | 模块 id 最终字符串（建议 `channel.telegram`）。 | non-blocking | 装配 | R1 | open |
 | I-030-005 | 设置是否热切换 token（mail 有热切换先例）还是重启生效。 | non-blocking | 判据 5 | R3 | open |
+| I-030-006 | 入站 Update 如何映射 VP-027 失败预算：独立 limiter 对每次请求 `Record`（不 `Clear`）当计数器 vs 只 Record secret/parse 失败。须与 I-030-003 同裁决。 | required | 判据 6 实施 | R1 | open |
+| I-030-007 | 主体 Store 消费路径：直接 import `modules/wallet/subject` vs 抽中性端口。无论哪条，**不得要求** `admin.wallet` HTTP 已启。 | non-blocking | 判据 4 | R2 | open |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；硬前置 VP-029 主体接缝 |
+| workspace-030-telegram-channel-runtime | GOAL-001-telegram-channel-runtime | lead | 2026-09-03 | 唯一 delivery；VRev-070 self `pass`；架构类 freshness `b5c39dfb`→`42036a3c` |
 
 ## 关门记录
 
@@ -110,3 +123,4 @@ parent: null
 | date | change |
 |------|--------|
 | 2026-09-02 | 初创 `planned`：用户确认同进程 + 需要一方 Telegram 通道运行时（通道而非业务域）。Offer 顺延为 VP-031。 |
+| 2026-09-03 | 用户指令激活：`planned → active` v0.2.0。VRev-070 self `pass`（0 required）。架构类 freshness PASS（`b5c39dfb`→`42036a3c`，不暂挂 `go`）。限流评估落盘：进程内够用、不需要 Redis。I-030-006/007 增补（V-F114/115 → fixed）。lead `workspace-030-telegram-channel-runtime` 交 `/govern` 开区。 |
