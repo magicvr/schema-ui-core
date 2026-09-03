@@ -602,7 +602,7 @@ func newMuxWithExtraProviders(
 			Dispatcher:   tgDispatcher,
 			Sender:       tgSender,
 		})
-		tgSettings := telegraminternal.NewSettingsHandler(tgRuntime)
+		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(tgRuntime))
 		providers = append(providers, telegrammodule.New(tgWebhook, tgSettings))
 	}
 	providers = append(providers, extra...)

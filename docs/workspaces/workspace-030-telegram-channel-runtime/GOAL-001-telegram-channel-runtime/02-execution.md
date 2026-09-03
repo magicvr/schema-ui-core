@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.1.4
+version: 1.0.0
 ---
 
 # GOAL-001-telegram-channel-runtime · 02-execution 索引
@@ -17,6 +17,7 @@ version: 0.1.4
 | [E-003-r1-closeout](02-execution/E-003-r1-closeout.md) | 2026-09-03 | R1 阶段关门 | GOAL-002 完成 3/3 关门；`kernel/telegram.go` 与快测通过；Root progress 1/4 | recorded |
 | [E-004-r2-closeout](02-execution/E-004-r2-closeout.md) | 2026-09-03 | R2 阶段关门 | GOAL-003 完成 3/3 关门；grok 独立审 F-001 闭合；Webhook/分发/身份/三桶限流落地；Root progress 2/4 | recorded |
 | [E-005-r3-closeout](02-execution/E-005-r3-closeout.md) | 2026-09-03 | R3 阶段关门 | GOAL-004 完成 3/3 关门；出站 HTTP 适配器、RuntimeManager 热切换、设置端点及限流核账落地；Root progress 3/4 | recorded |
+| [E-006-root-closeout](02-execution/E-006-root-closeout.md) | 2026-09-03 | Root 关门结项 | GOAL-005 完成 3/3 关门；证据矩阵通过；grok 独立审通过（0 required）；Root progress 4/4 正式关门 | recorded |
 
 ## 执行记录（ledger）
 

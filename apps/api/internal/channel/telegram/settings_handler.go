@@ -3,7 +3,10 @@ package telegram
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
 
 // SettingsHandler exposes Admin diagnostic status and hot-switch management endpoints.
@@ -23,10 +26,24 @@ type updateSettingsRequest struct {
 }
 
 func (h *SettingsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	user, ok := auth.IdentityFrom(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized: authentication required", http.StatusUnauthorized)
+		return
+	}
+
 	switch r.Method {
 	case http.MethodGet:
+		if !slices.Contains(user.Permissions, "settings.read") {
+			http.Error(w, "Forbidden: permission required: settings.read", http.StatusForbidden)
+			return
+		}
 		h.handleGet(w, r)
 	case http.MethodPatch, http.MethodPut:
+		if !slices.Contains(user.Permissions, "settings.write") {
+			http.Error(w, "Forbidden: permission required: settings.write", http.StatusForbidden)
+			return
+		}
 		h.handleUpdate(w, r)
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)

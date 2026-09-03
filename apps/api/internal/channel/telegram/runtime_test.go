@@ -7,6 +7,9 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 )
 
 func TestRuntimeManager_HotSwitch(t *testing.T) {
@@ -58,12 +61,52 @@ func TestRuntimeManager_HotSwitch(t *testing.T) {
 	}
 }
 
-func TestSettingsHandler(t *testing.T) {
+func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 	rm := NewRuntimeManager("token123456", "secret789012", nil)
 	handler := NewSettingsHandler(rm)
 
-	// 1. GET settings returns masked secrets
+	// 1. Unauthenticated GET -> 401
+	reqUnauth := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)
+	wUnauth := httptest.NewRecorder()
+	handler.ServeHTTP(wUnauth, reqUnauth)
+	if wUnauth.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated expected 401, got %d", wUnauth.Code)
+	}
+
+	// 2. Unauthenticated PATCH -> 401
+	reqPatchUnauth := httptest.NewRequest(http.MethodPatch, "/api/channel/telegram/settings", bytes.NewReader([]byte(`{"bot_token":"hacked"}`)))
+	wPatchUnauth := httptest.NewRecorder()
+	handler.ServeHTTP(wPatchUnauth, reqPatchUnauth)
+	if wPatchUnauth.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated PATCH expected 401, got %d", wPatchUnauth.Code)
+	}
+
+	// 3. User lacking settings.read -> 403
+	userNoPerm := account.User{ID: "user-1", Permissions: []string{"users.read"}}
+	reqForbidden := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)
+	reqForbidden = reqForbidden.WithContext(auth.WithIdentity(reqForbidden.Context(), userNoPerm))
+	wForbidden := httptest.NewRecorder()
+	handler.ServeHTTP(wForbidden, reqForbidden)
+	if wForbidden.Code != http.StatusForbidden {
+		t.Fatalf("forbidden expected 403, got %d", wForbidden.Code)
+	}
+
+	// 4. User with settings.read only attempting PATCH -> 403
+	userReadOnly := account.User{ID: "user-2", Permissions: []string{"settings.read"}}
+	reqPatchForbidden := httptest.NewRequest(http.MethodPatch, "/api/channel/telegram/settings", bytes.NewReader([]byte(`{"bot_token":"hacked"}`)))
+	reqPatchForbidden = reqPatchForbidden.WithContext(auth.WithIdentity(reqPatchForbidden.Context(), userReadOnly))
+	wPatchForbidden := httptest.NewRecorder()
+	handler.ServeHTTP(wPatchForbidden, reqPatchForbidden)
+	if wPatchForbidden.Code != http.StatusForbidden {
+		t.Fatalf("read-only PATCH expected 403, got %d", wPatchForbidden.Code)
+	}
+
+	// 5. Admin with settings.read and settings.write:
+	admin := account.User{ID: "admin-1", Permissions: []string{"settings.read", "settings.write"}}
+
+	// GET settings returns masked secrets
 	reqGet := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)
+	reqGet = reqGet.WithContext(auth.WithIdentity(reqGet.Context(), admin))
 	wGet := httptest.NewRecorder()
 	handler.ServeHTTP(wGet, reqGet)
 
@@ -79,9 +122,10 @@ func TestSettingsHandler(t *testing.T) {
 		t.Fatalf("unexpected status: %+v", status)
 	}
 
-	// 2. PATCH settings updates secrets
+	// PATCH settings updates secrets
 	patchBody := `{"bot_token":"updated-token-9999"}`
 	reqPatch := httptest.NewRequest(http.MethodPatch, "/api/channel/telegram/settings", bytes.NewReader([]byte(patchBody)))
+	reqPatch = reqPatch.WithContext(auth.WithIdentity(reqPatch.Context(), admin))
 	wPatch := httptest.NewRecorder()
 	handler.ServeHTTP(wPatch, reqPatch)
 
@@ -93,7 +137,6 @@ func TestSettingsHandler(t *testing.T) {
 	if rm.GetToken() != "updated-token-9999" {
 		t.Fatalf("expected updated token, got %s", rm.GetToken())
 	}
-	// Webhook secret should remain untouched
 	if rm.GetSecret() != "secret789012" {
 		t.Fatalf("expected secret to remain unchanged, got %s", rm.GetSecret())
 	}

@@ -61,7 +61,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			Method:  "GET",
 			Pattern: "/api/channel/telegram/settings",
 			Handler: p.settingsHandler,
-			Public:  true,
+			Public:  false,
 		}); err != nil {
 			return err
 		}
@@ -73,7 +73,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			Method:  "PATCH",
 			Pattern: "/api/channel/telegram/settings",
 			Handler: p.settingsHandler,
-			Public:  true,
+			Public:  false,
 		}); err != nil {
 			return err
 		}

@@ -104,9 +104,9 @@ parent: null
 | I-030-002 | Bot API 调用：标准库 HTTP vs 引入第三方 SDK。默认倾向标准库，避免 SDK 泄漏进公共面。 | required | 判据 3 | R1 | **verified**（2026-09-03：stdlib `net/http` · GOAL-002 D-001） |
 | I-030-003 | 限流桶分母：webhook IP / chat_id / telegram_user_id 哪些本波必做。 | required | 判据 6 | R1 | **verified**（2026-09-03：三桶全做 · GOAL-002 D-001） |
 | I-030-004 | 模块 id 最终字符串（建议 `channel.telegram`）。 | non-blocking | 装配 | R1 | **verified**（2026-09-03：`channel.telegram` · GOAL-002 D-001） |
-| I-030-005 | 设置是否热切换 token（mail 有热切换先例）还是重启生效。 | non-blocking | 判据 5 | R3 | open |
+| I-030-005 | 设置是否热切换 token（mail 有热切换先例）还是重启生效。 | non-blocking | 判据 5 | R3 | **verified**（2026-09-03：热切换 · GOAL-004 D-001） |
 | I-030-006 | 入站 Update 如何映射 VP-027 失败预算：独立 limiter 对每次请求 `Record`（不 `Clear`）当计数器 vs 只 Record secret/parse 失败。须与 I-030-003 同裁决。 | required | 判据 6 实施 | R1 | **verified**（2026-09-03：每次入站 Record，永不 Clear · GOAL-002 D-001） |
-| I-030-007 | 主体 Store 消费路径：直接 import `modules/wallet/subject` vs 抽中性端口。无论哪条，**不得要求** `admin.wallet` HTTP 已启。 | non-blocking | 判据 4 | R2 | open |
+| I-030-007 | 主体 Store 消费路径：直接 import `modules/wallet/subject` vs 抽中性端口。无论哪条，**不得要求** `admin.wallet` HTTP 已启。 | non-blocking | 判据 4 | R2 | **verified**（2026-09-03：直接复用 subject.Store，纯 TxRunner 依赖 · GOAL-003 D-001） |
 
 ## 工作区绑定
 
