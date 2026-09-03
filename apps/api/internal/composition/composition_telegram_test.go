@@ -44,7 +44,7 @@ func TestTelegramChannelComposition(t *testing.T) {
 	// 2. Custom profile with channel.telegram enabled
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
-		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "channel.telegram"},
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", "channel.telegram"},
 		TelegramBotToken:      "test-token",
 		TelegramWebhookSecret: "test-secret",
 	}
@@ -76,7 +76,7 @@ func TestTelegramChannelComposition(t *testing.T) {
 		ID:             "channel.telegram",
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
-		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability"},
+		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"},
 		Requires:       []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
@@ -333,32 +333,25 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
-		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "channel.telegram"},
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", "channel.telegram"},
 		TelegramBotToken:      "live-bot-token",
 		TelegramWebhookSecret: "correct-secret",
 		TelegramMasterKey:     "test-master-key",
 	}
 
-	desc := kernel.Module{
-		ID:             "channel.telegram",
-		Version:        "2.0.0",
-		KernelAPIRange: ">=2.0 <3.0",
-		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability"},
-		Requires:       []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
-		Contributions: kernel.ContributionKeys{
-			Routes: []string{
-				"GET /api/channel/telegram/settings",
-				"PATCH /api/channel/telegram/settings",
-				"POST /api/channel/telegram/webhook",
-			},
-			Pages:      []string{"telegram-settings"},
-			Navigation: []string{"menu_telegram"},
-			Fragments:  []string{"telegram-settings"},
-		},
+	// Resolve through the registry so channel.telegram's DependsOn pulls in
+	// admin.settings (whose settings.read permission menu_telegram references)
+	// exactly as production does (R-001 / A-002).
+	reg, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatal(err)
 	}
-	plan := kernel.Plan{
-		Capabilities: []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation, kernel.CapabilityManifest},
-		Modules:      []kernel.Module{desc},
+	plan, err := reg.Resolve([]string{
+		"core.server-registration", "core.auth-session", "core.schema-render",
+		"core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", "channel.telegram",
+	})
+	if err != nil {
+		t.Fatalf("registry.Resolve: %v", err)
 	}
 
 	// Construct single shared TelegramRuntime (F-001)
@@ -457,7 +450,7 @@ func TestTelegramFxInjection_SameRuntime(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "telegram_fx_test.db")
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
-		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "channel.telegram"},
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", "channel.telegram"},
 		TelegramBotToken:      "live-bot-token",
 		TelegramWebhookSecret: "correct-secret",
 		TelegramMasterKey:     "test-master-key",
@@ -524,5 +517,92 @@ func TestTelegramFxInjection_SameRuntime(t *testing.T) {
 	}
 	if !commandCalled {
 		t.Fatalf("Fx-injected dispatcher did NOT serve the webhook command — runtime duplication still present")
+	}
+}
+
+// TestTelegramSettingsSchema_MountAndDisable (R-003 / A-002): through the real
+// composition-root mux, the telegram-settings schema document answers 200 when
+// channel.telegram is enabled and 404 when it is not (the module is not in the
+// default profiles). This probes the RegisterSchemas(set.Pages) wiring path the
+// same way s2_access_drill does for probe modules.
+func TestTelegramSettingsSchema_MountAndDisable(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "telegram_schema_mount_test.db")
+
+	// Enabled: schema document served through the composition root.
+	st, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	cfgEnabled := &config.Config{
+		ProfileName:           string(kernel.ProfileCustom),
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", "channel.telegram"},
+		TelegramBotToken:      "live-bot-token",
+		TelegramWebhookSecret: "correct-secret",
+		TelegramMasterKey:     "test-master-key",
+	}
+	planEnabled, err := ResolvePlan(cfgEnabled)
+	if err != nil {
+		t.Fatalf("ResolvePlan(enabled): %v", err)
+	}
+	// W13 F-010: schemas are authenticated — dev-session authenticator so the
+	// probe reaches the handler (s2_access_drill precedent).
+	a := auth.New([]byte("test-secret-at-least-32-chars-long!!"), 0, 0, st, true)
+	authRepo := authsession.NewRepository(st)
+	opRepo := operationlog.NewRepository(st)
+	setRepo := settingsrepository.New(st)
+	jobs, err := newJobRuntime(st)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cachePort, err := newCache(&config.Config{ProfileName: string(kernel.ProfileCustom)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventBusPort := newEventBus(&config.Config{ProfileName: string(kernel.ProfileCustom)}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	rateLimiters := newRateLimiters()
+	tr, err := newTelegramRuntime(planEnabled, cfgEnabled, st, rateLimiters)
+	if err != nil {
+		t.Fatalf("newTelegramRuntime: %v", err)
+	}
+	muxEnabled, err := newMux(
+		cfgEnabled, a, st, authRepo, opRepo, setRepo, planEnabled, &readinessGate{},
+		jwtSecret("test-secret-at-least-32-chars-long!!"), jobs, nil, slog.New(slog.NewTextHandler(io.Discard, nil)),
+		cachePort, eventBusPort, rateLimiters, tr,
+	)
+	if err != nil {
+		t.Fatalf("newMux(enabled): %v", err)
+	}
+	reqEnabled := httptest.NewRequest(http.MethodGet, "/api/schema/telegram-settings", nil)
+	wEnabled := httptest.NewRecorder()
+	muxEnabled.ServeHTTP(wEnabled, reqEnabled)
+	if wEnabled.Code != http.StatusOK {
+		t.Fatalf("enabled module: /api/schema/telegram-settings status = %d, want 200", wEnabled.Code)
+	}
+
+	// Disabled: default mvp profile has no channel.telegram → schema 404.
+	planDisabled, err := ResolvePlan(&config.Config{ProfileName: string(kernel.ProfileMVP)})
+	if err != nil {
+		t.Fatalf("ResolvePlan(disabled): %v", err)
+	}
+	a2 := auth.New([]byte("test-secret-at-least-32-chars-long!!"), 0, 0, st, true)
+	jobs2, err := newJobRuntime(st)
+	if err != nil {
+		t.Fatal(err)
+	}
+	muxDisabled, err := newMux(
+		&config.Config{ProfileName: string(kernel.ProfileMVP)}, a2, st, authRepo, opRepo, setRepo,
+		planDisabled, &readinessGate{}, jwtSecret("test-secret-at-least-32-chars-long!!"), jobs2, nil,
+		slog.New(slog.NewTextHandler(io.Discard, nil)), cachePort, eventBusPort, newRateLimiters(), nil,
+	)
+	if err != nil {
+		t.Fatalf("newMux(disabled): %v", err)
+	}
+	reqDisabled := httptest.NewRequest(http.MethodGet, "/api/schema/telegram-settings", nil)
+	wDisabled := httptest.NewRecorder()
+	muxDisabled.ServeHTTP(wDisabled, reqDisabled)
+	if wDisabled.Code != http.StatusNotFound {
+		t.Fatalf("disabled module: /api/schema/telegram-settings status = %d, want 404", wDisabled.Code)
 	}
 }

@@ -118,4 +118,37 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     const token = container.querySelector("#telegram-bot-token") as HTMLInputElement;
     expect(token.value).toBe(""); // cleared after successful save
   });
+
+  it("offers a two-step clear action that PATCHes empty strings (R-004)", async () => {
+    const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
+    const container = renderTab(async (input, init) => {
+      const url = String(input);
+      calls.push({ url, method: init?.method, body: init?.body === undefined ? undefined : JSON.parse(String(init.body)) });
+      if (url.startsWith("/api/channel/telegram/settings") && init?.method === "PATCH") {
+        return jsonResponse({ configured: false, token_set: false, secret_set: false, captured_messages_count: 0 });
+      }
+      return jsonResponse(STATUS);
+    });
+    await settle();
+
+    // Clear button only appears when configured.
+    const clearButton = [...container.querySelectorAll("button")].find((b) => b.textContent === "Clear saved secrets");
+    expect(clearButton).toBeDefined();
+
+    // First click arms confirmation (no request yet).
+    await act(async () => clearButton!.click());
+    expect(calls.find((c) => c.method === "PATCH")).toBeUndefined();
+
+    // Confirm sends empty strings.
+    const confirmButton = [...container.querySelectorAll("button")].find((b) => b.textContent === "Clear");
+    expect(confirmButton).toBeDefined();
+    await act(async () => confirmButton!.click());
+
+    const patch = calls.find((c) => c.method === "PATCH");
+    expect(patch).toBeDefined();
+    expect(patch!.body).toEqual({ bot_token: "", webhook_secret: "" });
+
+    // After clearing, the configured badge flips to "Not configured".
+    expect(container.textContent).toContain("Not configured");
+  });
 });

@@ -34,6 +34,8 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const [tokenInput, setTokenInput] = useState("");
   const [secretInput, setSecretInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
 
   const loadStatus = useCallback(async () => {
@@ -99,6 +101,33 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     }
   }
 
+  // R-004 / A-002: an explicit clear action sends empty strings so the admin
+  // can disable the bot; an empty input on save means "keep current" instead.
+  async function clearSecrets() {
+    setClearing(true);
+    setFeedback(null);
+    try {
+      const response = await fetcher("/api/channel/telegram/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bot_token: "", webhook_secret: "" }),
+      });
+      if (!response.ok) {
+        setFeedback({ kind: "error", message: await extractError(response) });
+        return;
+      }
+      setStatus((await response.json()) as TelegramSettingsStatus);
+      setTokenInput("");
+      setSecretInput("");
+      setConfirmClear(false);
+      setFeedback({ kind: "success", message: t("schema.telegram.feedback.cleared") });
+    } catch {
+      setFeedback({ kind: "error", message: t("schema.telegram.feedback.saveFailed") });
+    } finally {
+      setClearing(false);
+    }
+  }
+
   if (loadState === "error") {
     return (
       <section data-telegram-admin-tab className="space-y-3 rounded-xl border border-border/70 bg-card/85 p-4">
@@ -154,9 +183,43 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         />
       </div>
 
-      <button type="button" disabled={saving || loadState !== "ready"} onClick={() => void save()} className={buttonClass}>
-        {saving ? t("feedback.submitting") : t("schema.telegram.action.save")}
-      </button>
+      <div className="flex items-center gap-3">
+        <button type="button" disabled={saving || loadState !== "ready"} onClick={() => void save()} className={buttonClass}>
+          {saving ? t("feedback.submitting") : t("schema.telegram.action.save")}
+        </button>
+        {status?.configured ? (
+          confirmClear ? (
+            <span className="inline-flex items-center gap-2 text-sm">
+              <span className="text-destructive">{t("schema.telegram.clear.confirm")}</span>
+              <button
+                type="button"
+                disabled={clearing}
+                onClick={() => void clearSecrets()}
+                className="rounded-md border border-destructive/60 px-2.5 py-1 text-sm text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {clearing ? t("feedback.submitting") : t("schema.telegram.clear.confirmAction")}
+              </button>
+              <button
+                type="button"
+                disabled={clearing}
+                onClick={() => setConfirmClear(false)}
+                className="rounded-md border border-input/80 px-2.5 py-1 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t("schema.telegram.clear.cancel")}
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              disabled={saving || clearing}
+              onClick={() => setConfirmClear(true)}
+              className="rounded-md border border-input/80 px-2.5 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t("schema.telegram.clear.action")}
+            </button>
+          )
+        ) : null}
+      </div>
 
       {status !== null && typeof status.captured_messages_count === "number" ? (
         <p className="text-xs text-muted-foreground">

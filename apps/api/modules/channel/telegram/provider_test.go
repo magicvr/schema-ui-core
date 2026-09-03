@@ -125,15 +125,22 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 		}
 	}
 
-	// Build a plan with channel.telegram enabled
-	plan := kernel.Plan{
-		Capabilities: []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation, kernel.CapabilityManifest},
-		Modules: []kernel.Module{
-			p.Descriptor(),
-		},
+	// Resolve a plan with channel.telegram enabled through the registry: its
+	// DependsOn pulls in admin.settings (whose settings.read permission the
+	// menu_telegram nav references — R-001 / A-002).
+	registry, err := kernel.NewRegistry(kernel.BuiltinModules())
+	if err != nil {
+		t.Fatalf("NewRegistry: %v", err)
+	}
+	plan, err := registry.Resolve([]string{
+		"core.server-registration", "core.auth-session", "core.schema-render",
+		"core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", moduletg.ModuleID,
+	})
+	if err != nil {
+		t.Fatalf("registry.Resolve: %v", err)
 	}
 
-	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{p})
+	set, err := kernel.RegisterContributions(context.Background(), plan, []kernel.Provider{p, settingsPermissionStub{}})
 	if err != nil {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
@@ -147,7 +154,41 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 	if len(set.Navigation) != 1 || set.Navigation[0].NodeID != "menu_telegram" {
 		t.Fatalf("expected menu_telegram navigation in ContributionSet, got %+v", set.Navigation)
 	}
+	if set.Navigation[0].Permission != "settings.read" {
+		t.Fatalf("expected menu_telegram to ride settings.read, got %q", set.Navigation[0].Permission)
+	}
 	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "telegram-settings" {
 		t.Fatalf("expected telegram-settings fragment in ContributionSet, got %+v", set.Fragments)
 	}
+}
+
+// settingsPermissionStub contributes the settings.read permission on behalf of
+// admin.settings so the module unit test can assert menu_telegram rides it
+// without wiring the whole settings module (production wires the real provider).
+type settingsPermissionStub struct{}
+
+func (settingsPermissionStub) Descriptor() kernel.Module {
+	// Match the canonical admin.settings descriptor from BuiltinModules so
+	// descriptorsMatch passes when both are in the same ContributionSet.
+	for _, m := range kernel.BuiltinModules() {
+		if m.ID == "admin.settings" {
+			return m
+		}
+	}
+	panic("admin.settings missing from BuiltinModules")
+}
+
+func (settingsPermissionStub) CompiledPersistence() ([]kernel.MigrationContribution, error) {
+	return nil, nil
+}
+
+func (settingsPermissionStub) Register(_ context.Context, reg kernel.Registrar) error {
+	return reg.Authorization(kernel.PermissionContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.settings", Key: "settings.read"},
+		Permission:           "settings.read",
+		Resource:             "settings",
+		Action:               "read",
+		PolicyID:             "system.admin",
+		SystemDataVersion:    1,
+	})
 }

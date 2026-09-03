@@ -26,6 +26,8 @@ func TestDefaultNavigationOrderSnapshot(t *testing.T) {
 		// W26 (GOAL-038 D-001 §2.2): standalone mail pages after settings.
 		"menu_mail",
 		"menu_mail_outbox",
+		// GOAL-006 R5: Telegram channel settings page in the settings/mail cluster.
+		"menu_telegram",
 		"menu_notifications",
 		"menu_files",
 		"menu_dictionary",

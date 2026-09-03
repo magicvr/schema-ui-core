@@ -420,6 +420,9 @@ var DefaultNavigationOrder = []string{
 	// settings entry they split off from.
 	"menu_mail",
 	"menu_mail_outbox",
+	// GOAL-006 R5 (判据 #5 补做): the Telegram channel settings page sits in
+	// the settings/mail cluster, right after the outbound-mail log.
+	"menu_telegram",
 	"menu_notifications",
 	"menu_files",
 	"menu_dictionary",

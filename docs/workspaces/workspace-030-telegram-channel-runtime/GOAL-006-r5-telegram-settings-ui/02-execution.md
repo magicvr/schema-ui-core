@@ -16,6 +16,7 @@ version: 1.0.0
 |------|------|------|------|------|
 | E-001 | 2026-09-03 | C1 后端 Schema/Nav 贡献落地 | recorded | `02-execution/E-001-r5-backend-schema-nav.md` |
 | E-002 | 2026-09-03 | C2 前端 telegram-admin-tab 组件 + i18n | recorded | `02-execution/E-002-r5-frontend-tab.md` |
+| E-003 | 2026-09-03 | A-002 意见响应（R-001～R-004 fixed） | recorded | `02-execution/E-003-a002-response.md` |
 
 ## 事实边界
 

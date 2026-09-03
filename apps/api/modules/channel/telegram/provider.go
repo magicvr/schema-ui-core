@@ -39,8 +39,13 @@ func (p *Provider) Descriptor() kernel.Module {
 		ID:             ModuleID,
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
-		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability"},
-		Requires:       []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
+		// admin.settings is a hard dependency so its settings.read/settings.write
+		// permission contributions are always in the same ContributionSet as
+		// menu_telegram (R-001 / A-002): nav.Permission must be declared by some
+		// provider in the set, and permission keys are globally unique — we reuse
+		// admin.settings's rather than mint a new key (no-new-permission red line).
+		DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"},
+		Requires:  []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/channel/telegram/settings",
@@ -116,9 +121,9 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
-	// Visibility gated by PolicyAdmin; the permission field stays empty because
-	// settings.read is owned by admin.settings (permission keys are globally
-	// unique) and the settings API itself enforces settings.read/write.
+	// R-001 / A-002: menu_telegram rides settings.read — declared by the
+	// admin.settings provider (DependsOn above) in the same ContributionSet,
+	// so the nav permission reference resolves without minting a new key.
 	if err := reg.Navigation(kernel.NavigationContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_telegram"},
 		NodeID:               "menu_telegram",
@@ -126,6 +131,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		Order:                2,
 		Label:                "Telegram channel",
 		Visibility:           authsessiondata.PolicyAdmin,
+		Permission:           "settings.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}); err != nil {
 		return err
