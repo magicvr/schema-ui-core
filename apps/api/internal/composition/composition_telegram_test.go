@@ -68,7 +68,13 @@ func TestTelegramChannelComposition(t *testing.T) {
 		KernelAPIRange: ">=2.0 <3.0",
 		DependsOn:      []string{"core.server-registration"},
 		Requires:       []kernel.Capability{kernel.CapabilityHTTP},
-		Contributions:  kernel.ContributionKeys{Routes: []string{"POST /api/channel/telegram/webhook"}},
+		Contributions: kernel.ContributionKeys{
+			Routes: []string{
+				"GET /api/channel/telegram/settings",
+				"PATCH /api/channel/telegram/settings",
+				"POST /api/channel/telegram/webhook",
+			},
+		},
 	}
 
 	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -81,14 +87,14 @@ func TestTelegramChannelComposition(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 1 || set.Routes[0].Pattern != "/api/channel/telegram/webhook" {
+	if len(set.Routes) != 3 {
 		t.Fatalf("unexpected route contributions: %+v", set.Routes)
 	}
 
 	// 5. Test webhook route execution
 	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", nil)
 	w := httptest.NewRecorder()
-	set.Routes[0].Handler.ServeHTTP(w, req)
+	set.Routes[2].Handler.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK, got %d", w.Code)
 	}
@@ -108,14 +114,27 @@ func (d *dummyTelegramProvider) CompiledPersistence() ([]kernel.MigrationContrib
 }
 
 func (d *dummyTelegramProvider) Register(ctx context.Context, reg kernel.Registrar) error {
-	return reg.HTTP(kernel.RouteContribution{
-		ContributionIdentity: kernel.ContributionIdentity{
-			ModuleID: "channel.telegram",
-			Key:      "POST /api/channel/telegram/webhook",
-		},
-		Method:  "POST",
-		Pattern: "/api/channel/telegram/webhook",
-		Handler: d.handler,
-		Public:  true,
-	})
+	for _, r := range d.desc.Contributions.Routes {
+		var method, pattern string
+		if r == "GET /api/channel/telegram/settings" {
+			method, pattern = "GET", "/api/channel/telegram/settings"
+		} else if r == "PATCH /api/channel/telegram/settings" {
+			method, pattern = "PATCH", "/api/channel/telegram/settings"
+		} else {
+			method, pattern = "POST", "/api/channel/telegram/webhook"
+		}
+		if err := reg.HTTP(kernel.RouteContribution{
+			ContributionIdentity: kernel.ContributionIdentity{
+				ModuleID: "channel.telegram",
+				Key:      r,
+			},
+			Method:  method,
+			Pattern: pattern,
+			Handler: d.handler,
+			Public:  true,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

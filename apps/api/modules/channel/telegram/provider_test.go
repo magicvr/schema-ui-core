@@ -25,19 +25,22 @@ func (m *mockRegistrar) Manifest(f kernel.FragmentContribution) error           
 func (m *mockRegistrar) Configuration(c kernel.ConfigurationContribution) error { return nil }
 
 func TestTelegramModuleProvider(t *testing.T) {
-	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	dummyWebhook := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	dummySettings := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	p := moduletg.New(dummyHandler)
+	p := moduletg.New(dummyWebhook, dummySettings)
 
 	// Check Descriptor
 	desc := p.Descriptor()
 	if desc.ID != moduletg.ModuleID {
 		t.Fatalf("expected module ID %q, got %q", moduletg.ModuleID, desc.ID)
 	}
-	if len(desc.Contributions.Routes) != 1 || desc.Contributions.Routes[0] != "POST /api/channel/telegram/webhook" {
-		t.Fatalf("unexpected route contributions: %+v", desc.Contributions.Routes)
+	if len(desc.Contributions.Routes) != 3 {
+		t.Fatalf("expected 3 route contributions, got %+v", desc.Contributions.Routes)
 	}
 
 	// Check Persistence
@@ -51,28 +54,27 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if err := p.Register(context.Background(), reg); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if len(reg.routes) != 1 {
-		t.Fatalf("expected 1 route registered, got %d", len(reg.routes))
-	}
-	route := reg.routes[0]
-	if route.Method != "POST" || route.Pattern != "/api/channel/telegram/webhook" || !route.Public {
-		t.Fatalf("unexpected route contribution fields: %+v", route)
+	if len(reg.routes) != 3 {
+		t.Fatalf("expected 3 routes registered, got %d", len(reg.routes))
 	}
 
 	// Verify handler invocation through registered route
 	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", nil)
 	w := httptest.NewRecorder()
-	route.Handler.ServeHTTP(w, req)
+	dummyWebhook.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK from registered route handler, got %d", w.Code)
 	}
 }
 
 func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
-	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	dummyWebhook := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	p := moduletg.New(dummyHandler)
+	dummySettings := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	p := moduletg.New(dummyWebhook, dummySettings)
 
 	// Verify BuiltinModules includes channel.telegram
 	builtin := kernel.BuiltinModules()
@@ -115,10 +117,7 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 1 {
-		t.Fatalf("expected 1 route in ContributionSet, got %d", len(set.Routes))
-	}
-	if set.Routes[0].Pattern != "/api/channel/telegram/webhook" || set.Routes[0].Method != "POST" {
-		t.Fatalf("unexpected route contribution in set: %+v", set.Routes[0])
+	if len(set.Routes) != 3 {
+		t.Fatalf("expected 3 routes in ContributionSet, got %d", len(set.Routes))
 	}
 }

@@ -586,21 +586,24 @@ func newMuxWithExtraProviders(
 			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 		}
 	}
-	// VP-030 (GOAL-003 R2): channel.telegram — Telegram channel runtime.
+	// VP-030 (GOAL-003 R2 / GOAL-004 R3): channel.telegram — Telegram channel runtime.
 	// Assembled by plan enablement (custom profile or explicit app.modules).
 	if plan.HasModule("channel.telegram") {
 		subStore := subject.NewStore(st)
 		tgDispatcher := telegraminternal.NewDispatcher()
-		tgSender := telegraminternal.NewCaptureSender()
+		tgMockSender := telegraminternal.NewCaptureSender()
+		tgRuntime := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, tgMockSender)
+		tgSender := telegraminternal.NewHTTPSender(tgRuntime, nil, "")
 		tgWebhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
-			TokenGetter:  func() string { return cfg.TelegramBotToken },
-			SecretGetter: func() string { return cfg.TelegramWebhookSecret },
+			TokenGetter:  tgRuntime.GetToken,
+			SecretGetter: tgRuntime.GetSecret,
 			RateLimiters: rateLimiters,
 			SubjectStore: subStore,
 			Dispatcher:   tgDispatcher,
 			Sender:       tgSender,
 		})
-		providers = append(providers, telegrammodule.New(tgWebhook))
+		tgSettings := telegraminternal.NewSettingsHandler(tgRuntime)
+		providers = append(providers, telegrammodule.New(tgWebhook, tgSettings))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
