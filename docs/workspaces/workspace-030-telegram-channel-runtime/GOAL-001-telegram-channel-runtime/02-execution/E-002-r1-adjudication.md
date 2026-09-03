@@ -20,6 +20,12 @@ version: 0.1.0
 - `GOAL-002-r1-contract-freeze/` 五件套 + D-001 + D-002
 - 本目标 `01-decision/D-002-r1-info-adjudication.md`
 
+## Git checkpoint
+
+- hash：`b4ed2676`
+- scope：workspace-030 + VP-030 信息表回写
+- 验证：I-030-001/002/003/004/006 verified；GOAL-002 C1 关门
+
 ## 下一步（计划）
 
 - GOAL-002 C2：`apps/api/kernel/telegram.go` 端口 + 合同级快测。

@@ -22,6 +22,12 @@ version: 0.1.0
 - `GOAL-002-r1-contract-freeze/01-decision/D-001-info-adjudication.md`
 - `GOAL-002-r1-contract-freeze/01-decision/D-002-telegram-channel-contract.md`
 
+## Git checkpoint
+
+- hash：`b4ed2676`
+- scope：`docs/workspaces/workspace-030-telegram-channel-runtime/` + `docs/vision/plans/VP-030-telegram-channel-runtime.md`
+- 验证：信息裁决 + 合同正文落盘；未跑代码测试（C2 未开始）
+
 ## 下一步（计划）
 
 - C2：`apps/api/kernel/telegram.go` + `kernel/telegram_test.go` 合同级快测绿。
