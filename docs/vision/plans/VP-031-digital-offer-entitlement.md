@@ -6,8 +6,8 @@ status: planned
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace:
 created: 2026-09-02
-updated: 2026-09-02
-version: 0.1.0
+updated: 2026-09-03
+version: 0.1.1
 parent: null
 ---
 
@@ -69,6 +69,7 @@ parent: null
 | **VP-026 / VP-027** | **业务域 VP 激活即触发**评估义务：缓存是否需要（Offer 读取可结论「不需要」）；限流是否已被 VP-030 覆盖。评估不可跳过 |
 | **VP-029** | **硬前置**：主体 + 钱包资金原语（至少 freeze/deduct/unfreeze；购买扣款不走凭证核销） |
 | **VP-030** | 软前置：无通道时本域仍可经 API 测通；有通道时本模块注册命令。不把 webhook 当本 VP 范围 |
+| **VP-033** | 占用位的典型占用者：本模块 Register 之后，033 人工台入口必须隐藏。不把运营台/轮询模式当本 VP 范围 |
 | **VP-009 / VP-010** | 购买/核销安全与符合性 gap 归持续程序 |
 
 ## 方向级退出判据
@@ -109,3 +110,4 @@ parent: null
 | date | change |
 |------|--------|
 | 2026-09-02 | 初创 `planned`：用户否决电商类目/商品/订单三件套；确认基座一方数字 Offer+权益；H-002 同进程。业务域分支首个 VP。 |
+| 2026-09-03 | 边界指针：Register 后占用 VP-033 人工台入口；运营台不在本 VP。 |

@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-030-telegram-channel-runtime
 created: 2026-09-02
 updated: 2026-09-03
-version: 0.2.1
+version: 0.2.2
 parent: null
 ---
 
@@ -82,6 +82,7 @@ parent: null
 | **VP-028** | 不把 Bot Update 当领域事件总线；需要 fan-out 时再评估 typed event（仍 gated） |
 | **VP-029** | **硬前置已交付**（`closed` v0.5.0）：`GetOrCreateSubject("telegram", id)`。消费路径 **不得要求** `admin.wallet` HTTP 已启（V-F109 / V-F115）；主体 Persistence 随编译候选 |
 | **VP-031** | 业务命令的注册者，不是本 VP 的退出分母 |
+| **VP-033** | Admin 运营台（连接状态 / 入站模式 / 占用位 / 人工 IM）。**不重开本 VP**、不改本 VP 八条判据；单实例 `getUpdates` 有界解禁归 033 |
 
 ## 方向级退出判据
 
@@ -125,3 +126,4 @@ parent: null
 | 2026-09-02 | 初创 `planned`：用户确认同进程 + 需要一方 Telegram 通道运行时（通道而非业务域）。Offer 顺延为 VP-031。 |
 | 2026-09-03 | 用户指令激活：`planned → active` v0.2.0。VRev-070 self `pass`（0 required）。架构类 freshness PASS（`b5c39dfb`→`42036a3c`，不暂挂 `go`）。限流评估落盘：进程内够用、不需要 Redis。I-030-006/007 增补（V-F114/115 → fixed）。lead `workspace-030-telegram-channel-runtime` 交 `/govern` 开区。 |
 | 2026-09-03 | R1 信息裁决（`/govern`）：I-030-001/002/003/004/006 **verified**（用户书面全部采纳建议项）。合同正文 = workspace-030 GOAL-002 D-002 v0.1.0。入站限流使用点随 R2 webhook。I-030-005/007 仍 open。 |
+| 2026-09-03 | 边界指针：人工控制台 / 入站模式开关登记为 [VP-033](VP-033-telegram-operator-console.md) `planned`（结构选型 A）；**不**把该意图并入本 VP 分母，**不**重开本 VP。 |
