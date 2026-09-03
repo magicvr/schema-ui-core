@@ -134,6 +134,9 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newCache,
 			newEventBus,
 			newRateLimiters,
+			newTelegramRuntime,
+			func(tr *TelegramRuntime) kernel.TelegramDispatcher { return tr.Dispatcher },
+			func(tr *TelegramRuntime) kernel.TelegramSender { return tr.Sender },
 			newMux,
 			newServer,
 		),
@@ -295,8 +298,13 @@ func newMux(
 	cachePort kernel.Cache,
 	eventBusPort kernel.EventBus,
 	rateLimiters kernel.RateLimiterProvider,
+	trs ...*TelegramRuntime,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, eventBusPort, rateLimiters)
+	var tr *TelegramRuntime
+	if len(trs) > 0 {
+		tr = trs[0]
+	}
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, eventBusPort, rateLimiters, tr)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -321,6 +329,7 @@ func newMuxWithExtraProviders(
 	cachePort kernel.Cache,
 	eventBusPort kernel.EventBus,
 	rateLimiters kernel.RateLimiterProvider,
+	trs ...*TelegramRuntime,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
 	// interception point — central handler registrations (Handle/HandleFunc)
@@ -586,24 +595,18 @@ func newMuxWithExtraProviders(
 			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 		}
 	}
+	var tr *TelegramRuntime
+	if len(trs) > 0 && trs[0] != nil {
+		tr = trs[0]
+	} else {
+		tr = newTelegramRuntime(plan, cfg, st, rateLimiters)
+	}
+
 	// VP-030 (GOAL-003 R2 / GOAL-004 R3 / F-001 / F-002): channel.telegram — Telegram channel runtime.
 	// Assembled by plan enablement (custom profile or explicit app.modules).
-	if plan.HasModule("channel.telegram") {
-		subStore := subject.NewStore(st)
-		tgDispatcher := telegraminternal.NewDispatcher()
-		tgMockSender := telegraminternal.NewCaptureSender()
-		tgRuntime := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, tgMockSender, st)
-		tgSender := telegraminternal.NewHTTPSender(tgRuntime, nil, "")
-		tgWebhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
-			TokenGetter:  tgRuntime.GetToken,
-			SecretGetter: tgRuntime.GetSecret,
-			RateLimiters: rateLimiters,
-			SubjectStore: subStore,
-			Dispatcher:   tgDispatcher,
-			Sender:       tgSender,
-		})
-		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(tgRuntime))
-		providers = append(providers, telegrammodule.New(tgWebhook, tgSettings))
+	if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil {
+		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(tr.Manager))
+		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
@@ -802,18 +805,47 @@ func newEventBus(cfg *config.Config, logger *slog.Logger) kernel.EventBus {
 	return eventbus.NewMemory(buffer, logger)
 }
 
-// ResolveTelegramPorts returns the process-level TelegramDispatcher and TelegramSender (D-002 §1 / F-001).
-// If channel.telegram is enabled in plan, it returns live implementations; otherwise it returns
-// the disabled no-op dispatcher and fail-closed sender.
-func ResolveTelegramPorts(plan kernel.Plan, cfg *config.Config, st kernel.Store) (kernel.TelegramDispatcher, kernel.TelegramSender) {
+// TelegramRuntime holds the process-level Telegram ports and state (F-001).
+type TelegramRuntime struct {
+	Dispatcher kernel.TelegramDispatcher
+	Sender     kernel.TelegramSender
+	Manager    *telegraminternal.RuntimeManager
+	Webhook    *telegraminternal.WebhookHandler
+}
+
+// newTelegramRuntime builds the shared TelegramRuntime for the process (F-001).
+func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider) *TelegramRuntime {
 	if plan.HasModule("channel.telegram") {
-		tgDispatcher := telegraminternal.NewDispatcher()
-		tgMockSender := telegraminternal.NewCaptureSender()
-		tgRuntime := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, tgMockSender, st)
-		tgSender := telegraminternal.NewHTTPSender(tgRuntime, nil, "")
-		return tgDispatcher, tgSender
+		subStore := subject.NewStore(st)
+		disp := telegraminternal.NewDispatcher()
+		mockSender := telegraminternal.NewCaptureSender()
+		rt := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, mockSender, st)
+		sender := telegraminternal.NewHTTPSender(rt, nil, "")
+		webhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
+			TokenGetter:  rt.GetToken,
+			SecretGetter: rt.GetSecret,
+			RateLimiters: rateLimiters,
+			SubjectStore: subStore,
+			Dispatcher:   disp,
+			Sender:       sender,
+		})
+		return &TelegramRuntime{
+			Dispatcher: disp,
+			Sender:     sender,
+			Manager:    rt,
+			Webhook:    webhook,
+		}
 	}
-	return telegraminternal.NewDisabledDispatcher(), telegraminternal.NewDisabledSender()
+	return &TelegramRuntime{
+		Dispatcher: telegraminternal.NewDisabledDispatcher(),
+		Sender:     telegraminternal.NewDisabledSender(),
+	}
+}
+
+// ResolveTelegramPorts returns the process-level TelegramDispatcher and TelegramSender (D-002 §1 / F-001).
+func ResolveTelegramPorts(plan kernel.Plan, cfg *config.Config, st kernel.Store) (kernel.TelegramDispatcher, kernel.TelegramSender) {
+	tr := newTelegramRuntime(plan, cfg, st, newRateLimiters())
+	return tr.Dispatcher, tr.Sender
 }
 
 // newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /

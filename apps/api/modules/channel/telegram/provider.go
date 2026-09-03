@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	telegrammigration "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/migration"
 )
 
 // ModuleID is the official module identifier for the Telegram channel.
@@ -48,7 +49,7 @@ func (p *Provider) Descriptor() kernel.Module {
 }
 
 func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error) {
-	return nil, nil
+	return telegrammigration.Descriptors()
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {

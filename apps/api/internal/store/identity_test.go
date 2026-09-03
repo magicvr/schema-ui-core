@@ -38,7 +38,7 @@ func TestClassifyIdentity(t *testing.T) {
 		{"empty", nil, nil, false, identityEmpty},
 		{"ledger", []string{"schema_migrations", "users"}, ledger, true, identityOursLedger},
 		{"r2", []string{"users", "refresh_tokens"}, nil, true, identityOursR2},
-		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges", "password_policy", "user_password_history", "user_invites", "login_failures", "subjects", "vouchers", "voucher_batches"}, nil, true, identityOursCompleteNoLedger},
+		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges", "password_policy", "user_password_history", "user_invites", "login_failures", "subjects", "vouchers", "voucher_batches", "telegram_config"}, nil, true, identityOursCompleteNoLedger},
 		{"four tables without catalog head", []string{"users", "refresh_tokens", "operation_log", "jobs", "roles"}, nil, true, identityLostLedgerUnsafe},
 		{"partial users only", []string{"users"}, nil, true, identityOursPartialNoLedger},
 		{"foreign users", []string{"users"}, nil, false, identityForeign},
@@ -114,6 +114,7 @@ var lockedHeadExtraTables = map[int][]string{
 	63: {},                                // R4 演练（GOAL-005 S2）: CREATE INDEX IF NOT EXISTS only (no new objects)
 	64: {"subjects", "vouchers"},          // workspace-029 R2: external subject and prepaid voucher tables
 	65: {"voucher_batches"},               // workspace-029 A-005 F-004 (A-008): batch registry
+	66: {"telegram_config"},               // workspace-030 (GOAL-004/005 F-002): persistent encrypted channel configuration
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

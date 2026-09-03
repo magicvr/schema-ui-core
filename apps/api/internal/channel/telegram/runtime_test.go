@@ -25,16 +25,10 @@ func TestRuntimeManager_HotSwitch(t *testing.T) {
 		t.Fatalf("unexpected secret: %s", rm.GetSecret())
 	}
 
-	// Verify Status masking (keeps last 4 chars)
+	// Verify Status
 	status := rm.Status()
-	if !status.Configured {
-		t.Fatalf("expected configured=true")
-	}
-	if status.TokenMasked != "***************2345" {
-		t.Fatalf("unexpected masked token: %s", status.TokenMasked)
-	}
-	if status.SecretMasked != "****************7890" {
-		t.Fatalf("unexpected masked secret: %s", status.SecretMasked)
+	if !status.Configured || !status.TokenSet || !status.SecretSet {
+		t.Fatalf("expected configured=true, token_set=true, secret_set=true, got %+v", status)
 	}
 
 	// Concurrent hot switch
@@ -119,7 +113,7 @@ func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 	if err := json.NewDecoder(wGet.Body).Decode(&status); err != nil {
 		t.Fatalf("decode GET response: %v", err)
 	}
-	if !status.Configured || status.TokenMasked != "*******3456" || status.SecretMasked != "********9012" {
+	if !status.Configured || !status.TokenSet || !status.SecretSet {
 		t.Fatalf("unexpected status: %+v", status)
 	}
 

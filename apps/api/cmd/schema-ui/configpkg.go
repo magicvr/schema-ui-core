@@ -143,6 +143,10 @@ type treeFile struct {
 	Log struct {
 		Level *string `yaml:"level"`
 	} `yaml:"log"`
+	Telegram struct {
+		BotToken      *string `yaml:"bot_token"`
+		WebhookSecret *string `yaml:"webhook_secret"`
+	} `yaml:"telegram"`
 }
 
 // sensitiveNameRe 是实现宽规则的保守匹配（合同 §1：键名含 secret/password/
@@ -236,6 +240,8 @@ func buildExportTree(path string) (cfgTree, []secretEntry, error) {
 	fields := []sensitiveField{
 		{path: "auth.jwt_secret", srcFile: file.Auth.JWTSecret, srcDefault: def.Auth.JWTSecret},
 		{path: "admin.initial_password", srcFile: file.Admin.InitialPassword, srcDefault: def.Admin.InitialPassword},
+		{path: "telegram.bot_token", srcFile: file.Telegram.BotToken, srcDefault: def.Telegram.BotToken},
+		{path: "telegram.webhook_secret", srcFile: file.Telegram.WebhookSecret, srcDefault: def.Telegram.WebhookSecret},
 	}
 	exclude := []secretEntry{}
 	for _, f := range fields {

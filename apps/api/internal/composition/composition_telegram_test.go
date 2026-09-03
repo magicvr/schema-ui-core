@@ -5,11 +5,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
+	"log/slog"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
+	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
 )
 
 func TestTelegramChannelComposition(t *testing.T) {
@@ -196,17 +202,16 @@ func TestTelegramRuntime_PersistenceAcrossRestart(t *testing.T) {
 	}
 	plan := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
 
-	// Start first process instance and hot-switch via settings
-	_, sender1 := ResolveTelegramPorts(plan, cfg1, st1)
-	_ = sender1
+	// Start first process instance and hot-switch via RuntimeManager.Update (F-002)
+	tr1 := newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
+	if tr1.Manager == nil {
+		t.Fatalf("expected non-nil manager when channel.telegram enabled")
+	}
 
-	// Simulate PATCH settings update
 	ctx := context.Background()
-	_ = st1.Run(ctx, func(tx kernel.Tx) error {
-		_, err := tx.Exec(ctx, `UPDATE telegram_config SET bot_token = ?, webhook_secret = ? WHERE id = 1`,
-			"persisted-live-token", "persisted-live-secret")
-		return err
-	})
+	if err := tr1.Manager.Update(ctx, "persisted-live-token", "persisted-live-secret"); err != nil {
+		t.Fatalf("Update failed: %v", err)
+	}
 
 	_ = st1.Close()
 
@@ -222,19 +227,134 @@ func TestTelegramRuntime_PersistenceAcrossRestart(t *testing.T) {
 		TelegramWebhookSecret: "seed-secret",
 	}
 
-	_, _ = ResolveTelegramPorts(plan, cfg2, st2)
+	// New process runtime initialized with old seed should reload persisted token from DB
+	tr2 := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
+	if tr2.Manager == nil {
+		t.Fatalf("expected non-nil manager after restart")
+	}
 
-	// Verify DB retains persisted values
-	var dbToken, dbSecret string
-	var updatedAt int64
-	err = st2.Run(ctx, func(tx kernel.Tx) error {
-		row := tx.QueryRow(ctx, `SELECT bot_token, webhook_secret, updated_at FROM telegram_config WHERE id = 1`)
-		return row.Scan(&dbToken, &dbSecret, &updatedAt)
+	if tr2.Manager.GetToken() != "persisted-live-token" {
+		t.Fatalf("expected persisted token to survive restart, got %q", tr2.Manager.GetToken())
+	}
+	if tr2.Manager.GetSecret() != "persisted-live-secret" {
+		t.Fatalf("expected persisted secret to survive restart, got %q", tr2.Manager.GetSecret())
+	}
+}
+
+func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "telegram_real_mount_test.db")
+	st, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	cfg := &config.Config{
+		ProfileName:           string(kernel.ProfileCustom),
+		ModulesEnabled:        []string{"core.server-registration", "channel.telegram"},
+		TelegramBotToken:      "live-bot-token",
+		TelegramWebhookSecret: "correct-secret",
+	}
+
+	desc := kernel.Module{
+		ID:             "channel.telegram",
+		Version:        "2.0.0",
+		KernelAPIRange: ">=2.0 <3.0",
+		DependsOn:      []string{"core.server-registration"},
+		Requires:       []kernel.Capability{kernel.CapabilityHTTP},
+		Contributions: kernel.ContributionKeys{
+			Routes: []string{
+				"GET /api/channel/telegram/settings",
+				"PATCH /api/channel/telegram/settings",
+				"POST /api/channel/telegram/webhook",
+			},
+		},
+	}
+	plan := kernel.Plan{
+		Capabilities: []kernel.Capability{kernel.CapabilityHTTP},
+		Modules:      []kernel.Module{desc},
+	}
+
+	// Construct single shared TelegramRuntime (F-001)
+	rateLimiters := newRateLimiters()
+	tr := newTelegramRuntime(plan, cfg, st, rateLimiters)
+
+	// Register command on the SAME dispatcher that webhook dispatches to
+	commandCalled := false
+	err = tr.Dispatcher.RegisterCommand("status", func(ctx context.Context, upd kernel.TelegramUpdate) error {
+		commandCalled = true
+		return nil
 	})
 	if err != nil {
-		t.Fatalf("query telegram_config after restart: %v", err)
+		t.Fatalf("RegisterCommand failed: %v", err)
 	}
-	if dbToken != "persisted-live-token" || dbSecret != "persisted-live-secret" {
-		t.Fatalf("expected persisted token and secret to survive restart, got token=%q, secret=%q", dbToken, dbSecret)
+
+	// Mount real mux with real tr (R-002)
+	a := auth.New([]byte("test-secret-at-least-32-chars-long!!"), 0, 0, st, false)
+	authRepo := authsession.NewRepository(st)
+	opRepo := operationlog.NewRepository(st)
+	setRepo := settingsrepository.New(st)
+	jobs, err := newJobRuntime(st)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux, err := newMuxWithExtraProviders(
+		cfg,
+		a,
+		st,
+		authRepo,
+		opRepo,
+		setRepo,
+		plan,
+		&readinessGate{},
+		jwtSecret("test-secret-at-least-32-chars-long!!"),
+		jobs,
+		nil,
+		nil,
+		slog.Default(),
+		nil,
+		nil,
+		rateLimiters,
+		tr,
+	)
+	if err != nil {
+		t.Fatalf("newMuxWithExtraProviders failed: %v", err)
+	}
+
+	// 1. Webhook with wrong secret -> 401
+	reqWrongSec := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", strings.NewReader(`{}`))
+	reqWrongSec.Header.Set("X-Telegram-Bot-Api-Secret-Token", "wrong-secret")
+	wWrongSec := httptest.NewRecorder()
+	mux.ServeHTTP(wWrongSec, reqWrongSec)
+	if wWrongSec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on wrong secret, got %d", wWrongSec.Code)
+	}
+
+	// 2. Webhook with correct secret calling /status command -> 200 and dispatches to registered handler
+	reqValid := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", strings.NewReader(`{
+		"update_id": 1,
+		"message": {
+			"chat": {"id": 12345},
+			"from": {"id": 67890},
+			"text": "/status"
+		}
+	}`))
+	reqValid.Header.Set("X-Telegram-Bot-Api-Secret-Token", "correct-secret")
+	wValid := httptest.NewRecorder()
+	mux.ServeHTTP(wValid, reqValid)
+	if wValid.Code != http.StatusOK {
+		t.Fatalf("expected 200 on valid webhook, got %d", wValid.Code)
+	}
+	if !commandCalled {
+		t.Fatalf("expected command handler on shared dispatcher to be called via mounted webhook")
+	}
+
+	// 3. Settings endpoint without auth -> 401 Unauthorized
+	reqSettings := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)
+	wSettings := httptest.NewRecorder()
+	mux.ServeHTTP(wSettings, reqSettings)
+	if wSettings.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated settings request, got %d", wSettings.Code)
 	}
 }
