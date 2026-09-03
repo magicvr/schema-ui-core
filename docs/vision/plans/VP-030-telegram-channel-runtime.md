@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-030-telegram-channel-runtime
 created: 2026-09-02
 updated: 2026-09-03
-version: 0.2.0
+version: 0.2.1
 parent: null
 ---
 
@@ -94,18 +94,18 @@ parent: null
 7. **边界保持**：未改 Charter；未进 `mvp`/`admin` 默认集；未做 Mini App / Stars / 对话引擎 / 付费命令；未重开历史 VP。
 8. **审计闭合**：开放 required finding = 0（或已合法闭合）。
 
-建议 Root 纲领：R1 合同（路由/secret/分发 API/桶分母/mock）→ R2 webhook + 分发 + 身份 → R3 出站 + 设置 + 限流接入 → R4 证据与关门。
+建议 Root 纲领：R1 合同（路由/secret/分发 API/桶分母/mock）→ R2 webhook + 分发 + 身份（入站三桶随 webhook）→ R3 出站 + 设置 + 限流核账 → R4 证据与关门。
 
 ## 信息需求（P-005）
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-030-001 | 无 token 时：拒绝进程启动 vs 启动但 webhook 503。 | required | 判据 1/3 | R1 | open |
-| I-030-002 | Bot API 调用：标准库 HTTP vs 引入第三方 SDK。默认倾向标准库，避免 SDK 泄漏进公共面。 | required | 判据 3 | R1 | open |
-| I-030-003 | 限流桶分母：webhook IP / chat_id / telegram_user_id 哪些本波必做。 | required | 判据 6 | R1 | open |
-| I-030-004 | 模块 id 最终字符串（建议 `channel.telegram`）。 | non-blocking | 装配 | R1 | open |
+| I-030-001 | 无 token 时：拒绝进程启动 vs 启动但 webhook 503。 | required | 判据 1/3 | R1 | **verified**（2026-09-03：进程可启动；webhook 503；出站 mock · GOAL-002 D-001） |
+| I-030-002 | Bot API 调用：标准库 HTTP vs 引入第三方 SDK。默认倾向标准库，避免 SDK 泄漏进公共面。 | required | 判据 3 | R1 | **verified**（2026-09-03：stdlib `net/http` · GOAL-002 D-001） |
+| I-030-003 | 限流桶分母：webhook IP / chat_id / telegram_user_id 哪些本波必做。 | required | 判据 6 | R1 | **verified**（2026-09-03：三桶全做 · GOAL-002 D-001） |
+| I-030-004 | 模块 id 最终字符串（建议 `channel.telegram`）。 | non-blocking | 装配 | R1 | **verified**（2026-09-03：`channel.telegram` · GOAL-002 D-001） |
 | I-030-005 | 设置是否热切换 token（mail 有热切换先例）还是重启生效。 | non-blocking | 判据 5 | R3 | open |
-| I-030-006 | 入站 Update 如何映射 VP-027 失败预算：独立 limiter 对每次请求 `Record`（不 `Clear`）当计数器 vs 只 Record secret/parse 失败。须与 I-030-003 同裁决。 | required | 判据 6 实施 | R1 | open |
+| I-030-006 | 入站 Update 如何映射 VP-027 失败预算：独立 limiter 对每次请求 `Record`（不 `Clear`）当计数器 vs 只 Record secret/parse 失败。须与 I-030-003 同裁决。 | required | 判据 6 实施 | R1 | **verified**（2026-09-03：每次入站 Record，永不 Clear · GOAL-002 D-001） |
 | I-030-007 | 主体 Store 消费路径：直接 import `modules/wallet/subject` vs 抽中性端口。无论哪条，**不得要求** `admin.wallet` HTTP 已启。 | non-blocking | 判据 4 | R2 | open |
 
 ## 工作区绑定
@@ -124,3 +124,4 @@ parent: null
 |------|--------|
 | 2026-09-02 | 初创 `planned`：用户确认同进程 + 需要一方 Telegram 通道运行时（通道而非业务域）。Offer 顺延为 VP-031。 |
 | 2026-09-03 | 用户指令激活：`planned → active` v0.2.0。VRev-070 self `pass`（0 required）。架构类 freshness PASS（`b5c39dfb`→`42036a3c`，不暂挂 `go`）。限流评估落盘：进程内够用、不需要 Redis。I-030-006/007 增补（V-F114/115 → fixed）。lead `workspace-030-telegram-channel-runtime` 交 `/govern` 开区。 |
+| 2026-09-03 | R1 信息裁决（`/govern`）：I-030-001/002/003/004/006 **verified**（用户书面全部采纳建议项）。合同正文 = workspace-030 GOAL-002 D-002 v0.1.0。入站限流使用点随 R2 webhook。I-030-005/007 仍 open。 |

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.1.0
+version: 0.1.1
 progress: 0/4
 plan_refs:
   - VP-030-telegram-channel-runtime
@@ -36,21 +36,21 @@ serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 i
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
-| R1 | 合同冻结（判据 1/2/3/6 + I-030-001/002/003/006）：无 token 启动策略 · Bot HTTP vs SDK · 桶分母 · 请求计数 vs 失败预算映射 · 分发 API / mock | **待裁决**（P-004；创建 GOAL-002 前须用户书面冻结） |
-| R2 | webhook + 分发 + 身份（判据 1/2/4 + I-030-007）：secret 路由 · Register 分发 · 主体映射（不要求钱包 HTTP 已启） | 待 R1 |
-| R3 | 出站 + 设置 + 限流接入（判据 3/5 + I-030-005）：SendMessage mock/生产隔离 · Admin bot tab · VP-027 使用点 | 待 R2 |
+| R1 | 合同冻结（判据 1/2/3/6 + I-030-001/002/003/006）：无 token 启动策略 · Bot HTTP vs SDK · 桶分母 · 请求计数 vs 失败预算映射 · 分发 API / mock | **进行中**（GOAL-002 · C1 已关门；合同正文 D-002 v0.1.0；C2 端口代码待落地） |
+| R2 | webhook + 分发 + 身份（判据 1/2/4 + I-030-007）：secret 路由 · Register 分发 · 主体映射（不要求钱包 HTTP 已启）；**入站三桶限流随 webhook 落地** | 待 R1 |
+| R3 | 出站 + 设置 + 限流核账（判据 3/5 + I-030-005）：SendMessage mock/生产隔离 · Admin bot tab · 入站限流核账（使用点已随 R2） | 待 R2 |
 | R4 | 证据与关门（判据 7/8；依赖 R1–R3）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R3 |
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-030-001 | required | 无 token 时：拒绝进程启动 vs 启动但 webhook 503。 | 方案冻结 + 退出判据 1/3 | R1 | 用户裁决（R1 前置） | open | — | 待确认 |
-| I-030-002 | required | Bot API 调用：标准库 HTTP vs 引入第三方 SDK。默认倾向标准库，避免 SDK 泄漏进公共面。 | 退出判据 3 | R1 | 用户裁决（R1 前置） | open | — | 待确认 |
-| I-030-003 | required | 限流桶分母：webhook IP / chat_id / telegram_user_id 哪些本波必做。 | 退出判据 6 实施 | R1 | 用户裁决（R1 前置） | open | — | 待确认 |
-| I-030-004 | non-blocking | 模块 id 最终字符串（建议 `channel.telegram`）。 | 装配 | R1 | lead 建议 + 用户确认 | open | — | 待确认 |
+| I-030-001 | required | 无 token 时：拒绝进程启动 vs 启动但 webhook 503。 | 方案冻结 + 退出判据 1/3 | R1 | 用户裁决（R1 前置） | **verified** | — | 2026-09-03：进程可启动；webhook 503；出站 mock（GOAL-002 D-001） |
+| I-030-002 | required | Bot API 调用：标准库 HTTP vs 引入第三方 SDK。默认倾向标准库，避免 SDK 泄漏进公共面。 | 退出判据 3 | R1 | 用户裁决（R1 前置） | **verified** | — | 2026-09-03：stdlib `net/http`，不引入 Telegram SDK（GOAL-002 D-001） |
+| I-030-003 | required | 限流桶分母：webhook IP / chat_id / telegram_user_id 哪些本波必做。 | 退出判据 6 实施 | R1 | 用户裁决（R1 前置） | **verified** | — | 2026-09-03：三桶全做（GOAL-002 D-001） |
+| I-030-004 | non-blocking | 模块 id 最终字符串（建议 `channel.telegram`）。 | 装配 | R1 | lead 建议 + 用户确认 | **verified** | — | 2026-09-03：`channel.telegram`（GOAL-002 D-001） |
 | I-030-005 | non-blocking | 设置是否热切换 token（mail 有热切换先例）还是重启生效。 | 退出判据 5 | R3 | 用户裁决或沿用 mail 先例 | open | — | 待确认 |
-| I-030-006 | required | 入站 Update 如何映射 VP-027 失败预算：独立 limiter 对每次请求 `Record`（不 `Clear`）当计数器 vs 只 Record secret/parse 失败。须与 I-030-003 同裁决。（V-F114） | 退出判据 6 实施 | R1 | 用户裁决（R1 前置） | open | — | 待确认 |
+| I-030-006 | required | 入站 Update 如何映射 VP-027 失败预算：独立 limiter 对每次请求 `Record`（不 `Clear`）当计数器 vs 只 Record secret/parse 失败。须与 I-030-003 同裁决。（V-F114） | 退出判据 6 实施 | R1 | 用户裁决（R1 前置） | **verified** | — | 2026-09-03：每次入站 Record，永不 Clear（GOAL-002 D-001） |
 | I-030-007 | non-blocking | 主体 Store 消费路径：直接 import `modules/wallet/subject` vs 抽中性端口。无论哪条，**不得要求** `admin.wallet` HTTP 已启。（V-F115） | 退出判据 4 | R2 | R2 方案记录 | open | — | 待确认 |
 
 ## 父目标
@@ -66,3 +66,4 @@ serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 i
 - **开区（2026-09-03 · 用户指令）**：VP-030 `planned → active` v0.2.0（VRev-070 self `pass` 0 required · 架构类 freshness PASS `b5c39dfb`→`42036a3c` · 限流评估 = 进程内够用、不需要 Redis · 不暂挂 `go`）；lead `workspace-030-telegram-channel-runtime`。
 - 审计模式（D-001 已定）：阶段关门 default self；R2 webhook secret / R4 证据与关门按需 independent（grok build 先例，项目级默认执行路径）。
 - freshness 三字段与激活锚点见 D-001：消费候选 = HEAD `42036a3c`；next trigger = 首个 C 端业务域 VP 激活（H-002）或多实例部署评估。
+- **R1 信息裁决（2026-09-03）**：I-030-001/002/003/004/006 用户书面全部采纳建议项；合同正文 [GOAL-002 D-002](../GOAL-002-r1-contract-freeze/01-decision/D-002-telegram-channel-contract.md) v0.1.0。入站限流使用点随 R2 webhook，不拆到公开之后。

@@ -1,25 +1,25 @@
 ---
-id: GOAL-001-telegram-channel-runtime
-title: Telegram Bot 通道运行时
+id: GOAL-002-r1-contract-freeze
+title: R1 合同冻结（Telegram 通道端口 / webhook / 分发 / 限流映射）
 status: active
-parent: null
+parent: GOAL-001-telegram-channel-runtime
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.1.1
+version: 0.1.0
 ---
 
-# GOAL-001-telegram-channel-runtime · 03-audit 索引
+# GOAL-002-r1-contract-freeze · 03-audit 索引
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
-| — | — | — | — | — | — | 尚未产生审计意见（开区记录见 02-execution/E-001；阶段关门审计自 R1 起） | — |
+| — | — | — | — | — | — | 尚未产生审计意见。C3 自审在 C2 端口落地之后 | — |
 
 ## 信息就绪核对（按 scope）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-00N | I-030-001/002/003/004/006 **verified**（GOAL-002 D-001） | I-030-005（R3）/ I-030-007（R2）仍 open，不阻断 R1 |
-| 到期 required 是否已 verified / residual | 是（R1 到期 required 已 verified） | R1 方案冻结门禁已解除；C2 端口落地不依赖新 required |
+| 影响本 scope 的 I-00N | I-030-001/002/003/004/006 **verified**（D-001） | I-030-005 R3、I-030-007 R2 不阻断本目标 |
+| 到期 required 是否已 verified / residual | 是（C1 到期项已 verified） | C2 不依赖新的 required 信息项 |
 | 资料引用（若有）是否固定且用户确认 | 无 | shared_materials_catalog = none |
 
 ## 审计记录（ledger）

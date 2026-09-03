@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-030-telegram-channel-runtime](../../vision/plans/VP-030-telegram-channel-runtime.md)（**`active`** v0.2.0 · 2026-09-03 用户指令激活）的唯一 lead delivery workspace。**架构分支 · C 端通道**（对标 VP-017：内核端口 + 一方模块 + Admin 设置）：交付 Telegram Bot 通道运行时——HTTPS webhook（secret fail-closed）+ Update 分发端口（命令/callback Register）+ `SendMessage` 文本端口 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域，**不是**付费命令实现。
 
-- **Root** `GOAL-001-telegram-channel-runtime`：`active` · **0/4**（R1 合同冻结 → R2 webhook+分发+身份 → R3 出站+设置+限流接入 → R4 证据与关门），纲领见 Root `00-meta.md`。
+- **Root** `GOAL-001-telegram-channel-runtime`：`active` · **0/4**（R1 合同冻结 **进行中** GOAL-002 1/3 → R2 webhook+分发+身份 → R3 出站+设置+限流核账 → R4 证据与关门），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-03）：[VRev-070](../../vision/reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass`（0 required；V-F114/115 → 开区事务内 fixed）；**架构类轻量 freshness PASS**（`b5c39dfb` → `42036a3c`：协议 pin / 依赖锁 / Profile 默认集 / provenance 零变更；区间代码 = VP-029 已审结目）不暂挂 `go`；**限流评估落盘**：进程内够用、不需要 Redis，不消耗 RT-Q05 trigger。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - **消费基线**：VP-017 通道形态（端口 + 设置 + mock）· VP-027 RateLimiter 端口（已 closed）· VP-029 `GetOrCreateSubject`（已 closed；不得要求 `admin.wallet` HTTP 已启）· VP-021 停机 drain · VP-003/004 模块契约（横切 + 设置面，豁免业务导航）。
@@ -30,7 +30,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-030-telegram-channel-runtime` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-telegram-channel-runtime` | `parent: null`；active · 0/4 |
+| Root Goal | `GOAL-001-telegram-channel-runtime` | `parent: null`；active · 0/4（R1 = GOAL-002 active 1/3） |
 | canonical 范围 | `docs/workspaces/workspace-030-telegram-channel-runtime/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-030 lead（active）；不改变 Charter primary workspace |
@@ -45,9 +45,9 @@ VP-030：Telegram Bot 通道运行时（vision_ref @0.4.0）——八条方向�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | **合同冻结**（判据 1/2/3/6 + I-030-001/002/003/006 裁决）：无 token 启动策略 · HTTP vs SDK · 桶分母 · 请求计数 vs 失败预算映射 · 分发 API / mock | 待裁决（P-004） |
-| R2 | **webhook + 分发 + 身份**（判据 1/2/4 + I-030-007）：secret fail-closed 路由 · Register 分发 · `GetOrCreateSubject("telegram", id)`（不要求钱包 HTTP 已启） | 待 R1 |
-| R3 | **出站 + 设置 + 限流接入**（判据 3/5 + I-030-005）：SendMessage mock/生产供应商隔离 · Admin bot tab · 使用点接入 VP-027 | 待 R2 |
+| R1 | **合同冻结**（判据 1/2/3/6 + I-030-001/002/003/006 裁决）：无 token 启动策略 · HTTP vs SDK · 桶分母 · 请求计数 vs 失败预算映射 · 分发 API / mock | **进行中**（GOAL-002 C1 已关门；D-002 v0.1.0；C2 端口代码待落地） |
+| R2 | **webhook + 分发 + 身份**（判据 1/2/4 + I-030-007）：secret fail-closed 路由 · Register 分发 · `GetOrCreateSubject("telegram", id)`（不要求钱包 HTTP 已启）；入站三桶随 webhook 落地 | 待 R1 |
+| R3 | **出站 + 设置 + 限流核账**（判据 3/5 + I-030-005）：SendMessage mock/生产供应商隔离 · Admin bot tab · 入站限流核账 | 待 R2 |
 | R4 | **证据与关门**（判据 7/8）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R3 |
 
 ## 固定共享资料引用
