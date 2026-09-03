@@ -6,14 +6,15 @@ import (
 	"errors"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 func openTestStore(t *testing.T) *store.Store {
@@ -298,4 +299,62 @@ func TestNeedsBootstrapTracksUserPresence(t *testing.T) {
 	if needed {
 		t.Fatal("NeedsBootstrap after bootstrap must be false")
 	}
+}
+
+// TestEnsureTestAdmin covers the optional TEST_ADMIN_* upsert: it creates the
+// user on first boot, resets the password + clears must_change_password on
+// later boots (without touching "admin"), and is a strict no-op when the
+// password is empty.
+func TestEnsureTestAdmin(t *testing.T) {
+	t.Run("creates and resets on later boots without touching admin", func(t *testing.T) {
+		st := openTestStore(t)
+		if err := Bootstrap(context.Background(), st, "admin", "admin-hash"); err != nil {
+			t.Fatalf("bootstrap: %v", err)
+		}
+		if err := EnsureTestAdmin(context.Background(), st, "testadmin", "test-hash-v1"); err != nil {
+			t.Fatalf("EnsureTestAdmin create: %v", err)
+		}
+		repo := authsession.NewRepository(st)
+		u, err := repo.UserByUsername("testadmin")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if u.PasswordHash != "test-hash-v1" || u.MustChangePassword {
+			t.Fatalf("created test admin = hash %q must_change %v", u.PasswordHash, u.MustChangePassword)
+		}
+		if !slices.Contains(u.Roles, "admin") {
+			t.Fatalf("test admin roles = %v, want admin", u.Roles)
+		}
+
+		// Second boot with a different hash resets it and clears the flag.
+		if err := EnsureTestAdmin(context.Background(), st, "testadmin", "test-hash-v2"); err != nil {
+			t.Fatalf("EnsureTestAdmin reset: %v", err)
+		}
+		u2, err := repo.UserByUsername("testadmin")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if u2.PasswordHash != "test-hash-v2" || u2.MustChangePassword {
+			t.Fatalf("reset test admin = hash %q must_change %v", u2.PasswordHash, u2.MustChangePassword)
+		}
+
+		// The "admin" bootstrap user is untouched.
+		admin, err := repo.UserByUsername("admin")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if admin.PasswordHash != "admin-hash" {
+			t.Fatalf("EnsureTestAdmin touched admin password: %q", admin.PasswordHash)
+		}
+	})
+
+	t.Run("empty password is a no-op", func(t *testing.T) {
+		st := openTestStore(t)
+		if err := EnsureTestAdmin(context.Background(), st, "testadmin", ""); err != nil {
+			t.Fatalf("EnsureTestAdmin no-op: %v", err)
+		}
+		if got := queryInt(t, st, `SELECT COUNT(*) FROM users`); got != 0 {
+			t.Fatalf("no-op EnsureTestAdmin created %d users", got)
+		}
+	})
 }

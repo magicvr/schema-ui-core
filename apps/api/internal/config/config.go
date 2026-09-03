@@ -117,6 +117,17 @@ type Config struct {
 	AdminInitialPassword  string
 	AuthDevSessionEnabled bool
 
+	// TestAdminUsername / TestAdminPassword are an OPTIONAL test-only
+	// bootstrap account pair (TEST_ADMIN_USERNAME / TEST_ADMIN_PASSWORD; only
+	// the PASSWORD gates it — empty password = feature off). When configured,
+	// the composition root upserts this admin at startup (creating it if
+	// absent, resetting its password to the env value and clearing
+	// must_change_password on every boot), so local/CI verification has a
+	// stable credential WITHOUT touching the existing "admin" bootstrap user
+	// (whose password may have been rotated). Zero behavior change when unset.
+	TestAdminUsername string
+	TestAdminPassword string
+
 	UploadAllowedTypes    string
 	UploadMaxFilesPerUser int
 	UploadMaxBytesPerUser int
@@ -704,6 +715,8 @@ func Load() *Config {
 	cfg.DBPoolMaxIdle = nonNegIntEnv("DB_POOL_MAX_IDLE", cfg.DBPoolMaxIdle)
 	cfg.DBConnLifetime = durationEnv("DB_CONN_MAX_LIFETIME", cfg.DBConnLifetime)
 	cfg.AdminInitialPassword = envOr("ADMIN_INITIAL_PASSWORD", cfg.AdminInitialPassword)
+	cfg.TestAdminUsername = strings.TrimSpace(envOr("TEST_ADMIN_USERNAME", cfg.TestAdminUsername))
+	cfg.TestAdminPassword = envOr("TEST_ADMIN_PASSWORD", cfg.TestAdminPassword)
 	cfg.ProfileName = profile
 	cfg.UploadAllowedTypes = envOr("UPLOAD_ALLOWED_TYPES", cfg.UploadAllowedTypes)
 	cfg.UploadMaxFilesPerUser = positiveIntEnv("UPLOAD_MAX_FILES_PER_USER", cfg.UploadMaxFilesPerUser)

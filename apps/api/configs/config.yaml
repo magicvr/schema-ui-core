@@ -32,16 +32,43 @@ app:
   # development | production | test. Empty keeps the explicit-set requirement
   # of ValidateProd (APP_ENV must be set explicitly, refusing to guess).
   env: ""
-  # mvp | admin | demo. Selects the built-in preset when app.modules is absent.
-  profile: mvp
   # T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only — either a
   # preset (builtin name or a custom preset file path) or an inline list.
   # preset and list are mutually exclusive. APP_PROFILE / APP_MODULES_ENABLED
   # env vars and the legacy app.modules_enabled comma string are NOT read.
-  # modules:
-  #   preset: admin            # builtin: mvp | admin | demo
-  #   preset: ./configs/modules/my-company.yaml   # custom preset file
-  #   list: [core.server-registration, admin.users, admin.roles]
+  #
+  # VP-030 / GOAL-006 R5: the operator profile is a custom list = the full
+  # admin preset PLUS channel.telegram (Telegram Bot channel runtime, whose
+  # settings UI is the「Telegram channel」sidebar entry — 判据 #5 补做).
+  # channel.telegram is intentionally NOT in any default profile (VP-030 red
+  # line); it must be enumerated here to surface its admin console.
+  profile: custom
+  modules:
+    list:
+      - core.server-registration
+      - core.auth-session
+      - core.manifest-route
+      - core.navigation-capability
+      - core.schema-render
+      - core.operationlog
+      - admin.users
+      - admin.roles
+      - admin.settings
+      - admin.activity
+      - admin.account
+      - admin.data-transfer
+      - admin.dashboard
+      - admin.notifications
+      - admin.file-library
+      - admin.data-dictionary
+      - admin.system-monitoring
+      - admin.scheduled-tasks
+      - admin.login-captcha
+      - admin.recycle-bin
+      - admin.data-permission
+      - admin.mfa
+      - admin.wallet
+      - channel.telegram
 
 http:
   addr: ":25080"

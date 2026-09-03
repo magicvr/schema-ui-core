@@ -22,6 +22,7 @@ version: 1.0.0
 | [E-008-a004-final-closure](02-execution/E-008-a004-final-closure.md) | 2026-09-03 | A-004 复审整改 | 响应 A-004：同一 dispatcher 接进 newMux，F-002 纳入 catalog 迁移 66 + AES-GCM 加密，彻底删除运行时 DDL，重启重载测试全绿 | recorded |
 | [E-009-a006-response](02-execution/E-009-a006-response.md) | 2026-09-03 | A-006 复审整改 | 响应 A-006：`*TelegramRuntime` 改非 variadic 必选参数并删 fallback；新增经 NewApp/fx `fx.Populate` 同一实例测试；主密钥离开源码（`TELEGRAM_MASTER_KEY`/密钥文件），`initPersistence` fail-closed。全量测试绿 | recorded |
 | [E-010-a008-response-and-r5](02-execution/E-010-a008-response-and-r5.md) | 2026-09-03 | A-008 响应 + 遗留 recommended 处置 + R5 | 响应 A-008（independent pass · F-001/F-002 closed）；R-004/informational fixed；R-009 accepted-residual（用户书面）；R-007 登记 VP-032（用户书面）；判据 #5 补做 Admin UI tab 由 GOAL-006 交付，Root 回归 done | recorded |
+| [E-011-operator-config-and-test-admin](02-execution/E-011-operator-config-and-test-admin.md) | 2026-09-03 | Operator 配置 + 测试账户 | `configs/config.yaml` 改 custom profile 启用 channel.telegram；新增可选 TEST_ADMIN_USERNAME/TEST_ADMIN_PASSWORD upsert 机制（不碰既有 admin）；端到端验证 menu_telegram=True + schema 200 | recorded |
 
 ## 执行记录（ledger）
 

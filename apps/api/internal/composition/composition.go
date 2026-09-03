@@ -232,6 +232,24 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 			return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("bootstrap auth data: %v", err)}
 		}
 	}
+	// TEST_ADMIN_USERNAME / TEST_ADMIN_PASSWORD (optional): a stable test-only
+	// admin credential upserted on every boot — does not touch the "admin"
+	// bootstrap user. Empty TEST_ADMIN_PASSWORD = feature off.
+	if cfg.TestAdminPassword != "" {
+		username := cfg.TestAdminUsername
+		if strings.TrimSpace(username) == "" {
+			username = "testadmin"
+		}
+		testHash, err := auth.HashPassword(cfg.TestAdminPassword, 10)
+		if err != nil {
+			_ = st.Close()
+			return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("hash test-admin password: %v", err)}
+		}
+		if err := authsessiondata.EnsureTestAdmin(context.Background(), st, username, testHash); err != nil {
+			_ = st.Close()
+			return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("upsert test admin: %v", err)}
+		}
+	}
 	return st, nil
 }
 

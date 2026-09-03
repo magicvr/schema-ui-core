@@ -70,6 +70,59 @@ func Bootstrap(ctx context.Context, runner TxRunner, username, passwordHash stri
 	})
 }
 
+// EnsureTestAdmin upserts an OPTIONAL test-only bootstrap admin (TEST_ADMIN_
+// USERNAME / TEST_ADMIN_PASSWORD). When the password is non-empty it (re)creates
+// the user with the given bcrypt hash and resets must_change_password to 0 on
+// every boot, so local/CI verification has a stable credential without touching
+// the existing "admin" bootstrap user. Empty password = no-op. It never runs on
+// its own: the composition root calls it only when the env pair is configured.
+func EnsureTestAdmin(ctx context.Context, runner TxRunner, username, passwordHash string) error {
+	if username == "" || passwordHash == "" {
+		return nil
+	}
+	return runner.Run(ctx, func(tx kernel.Tx) error {
+		now := time.Now().UTC().Unix()
+		if err := ensureSystemRoles(tx, now); err != nil {
+			return err
+		}
+		var id string
+		err := tx.QueryRow(context.Background(), `SELECT id FROM users WHERE username = ?`, username).Scan(&id)
+		switch {
+		case errors.Is(err, kernel.ErrNoRows):
+			roles, marshalErr := json.Marshal([]string{"admin", "editor"})
+			if marshalErr != nil {
+				return fmt.Errorf("marshal test-admin roles: %w", marshalErr)
+			}
+			id = "user-" + username
+			if _, execErr := tx.Exec(context.Background(),
+				`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
+				 VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+				id, username, username, string(roles), passwordHash, now, now,
+			); execErr != nil {
+				return fmt.Errorf("insert test admin: %w", execErr)
+			}
+		case err != nil:
+			return fmt.Errorf("lookup test admin: %w", err)
+		default:
+			// User exists: reset password to the env value and clear the
+			// must-change flag so the configured credential always works.
+			if _, execErr := tx.Exec(context.Background(),
+				`UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?`,
+				passwordHash, now, id,
+			); execErr != nil {
+				return fmt.Errorf("update test admin: %w", execErr)
+			}
+		}
+
+		for _, key := range []string{"admin", "editor"} {
+			if err := linkUserRole(tx, id, key); err != nil {
+				return fmt.Errorf("link test-admin role %s: %w", key, err)
+			}
+		}
+		return nil
+	})
+}
+
 func ensureSystemRoles(tx kernel.Tx, now int64) error {
 	for _, key := range []string{"admin", "editor", "viewer"} {
 		if _, err := tx.Exec(context.Background(),
