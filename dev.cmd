@@ -22,12 +22,14 @@ rem   dev ports as a fallback) - it never matches window titles, so unrelated
 rem   console windows (Claude Code, other CLIs) are never touched.
 rem
 rem Usage:
-rem   dev.cmd start [profile] [options]   start API+Web (default profile: admin)
+rem   dev.cmd start [profile] [options]   start API+Web (default profile: config)
 rem   dev.cmd stop                        stop API+Web
 rem   dev.cmd status                      show listening state
 rem   dev.cmd help                        this help
 rem
-rem profile:  mvp | admin | demo | custom  (default admin)
+rem profile:  config | mvp | admin | demo | custom  (default config)
+rem   config reads apps/api/configs/config.yaml directly (full operator config
+rem          incl. db/mail/telegram/upload; only the port is overridden).
 rem   custom requires --modules "core.xxx,module.yyy" (full explicit module closure)
 rem options:
 rem   --profile <name>      explicit profile
@@ -49,7 +51,10 @@ set "API_DIR=%ROOT%apps\api"
 set "WEB_DIR=%ROOT%apps\web"
 
 rem ---- defaults ----
-set "PROFILE=admin"
+rem Default profile "config" = read apps/api/configs/config.yaml directly (the
+rem full operator config: profile/modules + db + mail + telegram + upload ...).
+rem Explicit --profile/--modules still write a small overlay for override.
+set "PROFILE=config"
 set "MODULES="
 set "OPEN_BROWSER=1"
 if "%API_PORT%"=="" set "API_PORT=25080"
@@ -82,13 +87,14 @@ shift
 goto :parse_start
 
 :start_validated
-rem normalize case for known profiles
+rem normalize case for known profiles; "config" = read configs/config.yaml
+if /i "%PROFILE%"=="config" set "PROFILE=config"
 if /i "%PROFILE%"=="mvp"    set "PROFILE=mvp"
 if /i "%PROFILE%"=="admin"  set "PROFILE=admin"
 if /i "%PROFILE%"=="demo"   set "PROFILE=demo"
 if /i "%PROFILE%"=="custom" set "PROFILE=custom"
-if not "%PROFILE%"=="mvp" if not "%PROFILE%"=="admin" if not "%PROFILE%"=="demo" if not "%PROFILE%"=="custom" (
-  echo ERROR: unknown profile '%PROFILE%' -- expected mvp, admin, demo or custom
+if not "%PROFILE%"=="config" if not "%PROFILE%"=="mvp" if not "%PROFILE%"=="admin" if not "%PROFILE%"=="demo" if not "%PROFILE%"=="custom" (
+  echo ERROR: unknown profile '%PROFILE%' -- expected config, mvp, admin, demo or custom
   goto :usage
 )
 if /i "%PROFILE%"=="custom" if "%MODULES%"=="" (
@@ -122,29 +128,40 @@ echo.
 echo == schema-ui-core dev ^| profile=%PROFILE% ==
 echo   API  :%API_PORT%   %API_DIR%
 echo   Web  :%WEB_PORT%   %WEB_DIR%
+if /i "%PROFILE%"=="config" echo   config: %API_DIR%\configs\config.yaml
 if defined MODULES echo   app.modules.list=%MODULES%
 echo.
 
 rem ---- launch API ----
-rem T-06 (GOAL-013 D-007): the module-enabled set is YAML-only. dev.cmd
-rem writes a small overlay config (profile + optional modules) to %TEMP% and
-rem points CONFIG_FILE at it; APP_PROFILE / APP_MODULES_ENABLED env vars are
-rem no longer read by the API.
-set "DEV_CONFIG=%TEMP%\schema-ui-dev-config.yaml"
-(
-  echo app:
-  echo   env: development
-  echo   profile: %PROFILE%
-  if "%PROFILE%"=="custom" (
-    echo   modules:
-    echo     list: [%MODULES%]
-  ) else (
-    echo   modules:
-    echo     preset: %PROFILE%
-  )
-  echo http:
-  echo   addr: ":%API_PORT%"
-) > "%DEV_CONFIG%"
+rem T-06 (GOAL-013 D-007): the module-enabled set is YAML-only.
+rem   * Default profile "config": point CONFIG_FILE at the real operator file
+rem     (apps/api/configs/config.yaml) so EVERY section (profile/modules, db,
+rem     mail, telegram, upload, ...) is honored — only the port is overridden
+rem     via the HTTP_ADDR env (env wins over YAML in config.Load).
+rem   * Explicit --profile/--modules: write a small overlay to %TEMP% with the
+rem     profile/modules (and HTTP addr) and point CONFIG_FILE at it. Note the
+rem     overlay intentionally drops the other config.yaml sections (embedded
+rem     defaults apply) — that is the documented override behavior.
+if /i "%PROFILE%"=="config" (
+  set "DEV_CONFIG=%API_DIR%\configs\config.yaml"
+  set "HTTP_ADDR=:%API_PORT%"
+) else (
+  set "DEV_CONFIG=%TEMP%\schema-ui-dev-config.yaml"
+  (
+    echo app:
+    echo   env: development
+    echo   profile: %PROFILE%
+    if "%PROFILE%"=="custom" (
+      echo   modules:
+      echo     list: [%MODULES%]
+    ) else (
+      echo   modules:
+      echo     preset: %PROFILE%
+    )
+    echo http:
+    echo   addr: ":%API_PORT%"
+  ) > "%DEV_CONFIG%"
+)
 
 rem Wrapper so a crash pauses the window (otherwise cmd /c flashes and
 rem vanishes) and writes an exit-code file the wait loop can fail-fast on.
@@ -346,15 +363,18 @@ echo.
 echo schema-ui-core dev launcher (local two-process)
 echo.
 echo Usage:
-echo   dev.cmd start [profile] [options]   Start API+Web locally (default profile: admin)
+echo   dev.cmd start [profile] [options]   Start API+Web locally (default profile: config)
 echo   dev.cmd stop                        Stop API+Web
 echo   dev.cmd status                      Show listening state
 echo   dev.cmd help                        This help
 echo.
-echo profile:   mvp ^| admin ^| demo ^| custom   (default admin)
+echo profile:   config ^| mvp ^| admin ^| demo ^| custom   (default config)
+echo   config = read apps/api/configs/config.yaml directly (full operator
+echo            config incl. db/mail/telegram/upload; only the port is
+echo            overridden by HTTP_ADDR). Recommended default.
 echo options:
 echo   --profile ^<name^>      explicit profile
-echo   --modules ^<a,b,c^>     app.modules list (config.yaml); REQUIRED for custom
+echo   --modules ^<a,b,c^>     app.modules list; REQUIRED for custom
 echo   --browser               open web UI in browser (default)
 echo   --no-browser            do not open browser
 echo env:
@@ -363,7 +383,7 @@ echo   ADMIN_INITIAL_PASSWORD  dev seed password default "admin"
 echo.
 echo examples:
 echo   dev.cmd start
-echo   dev.cmd start demo --no-browser
+echo   dev.cmd start --profile demo --no-browser
 echo   dev.cmd start custom --modules core.server-registration,users
 echo   dev.cmd stop
 echo.
