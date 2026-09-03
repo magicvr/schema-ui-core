@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -42,7 +43,7 @@ func TestRuntimeManager_HotSwitch(t *testing.T) {
 		wg.Add(2)
 		go func(idx int) {
 			defer wg.Done()
-			rm.Update("new-token-abc", "new-secret-xyz")
+			_ = rm.Update(context.Background(), "new-token-abc", "new-secret-xyz")
 		}(i)
 		go func(idx int) {
 			defer wg.Done()

@@ -84,7 +84,10 @@ func (h *SettingsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		newSecret = strings.TrimSpace(*req.WebhookSecret)
 	}
 
-	h.runtime.Update(newToken, newSecret)
+	if err := h.runtime.Update(r.Context(), newToken, newSecret); err != nil {
+		http.Error(w, "failed to persist telegram settings: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(h.runtime.Status())

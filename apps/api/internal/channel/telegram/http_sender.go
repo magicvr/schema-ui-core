@@ -60,6 +60,12 @@ type inlineKeyboardButton struct {
 	CallbackData string `json:"callback_data"`
 }
 
+type botAPIResponse struct {
+	OK          bool   `json:"ok"`
+	Description string `json:"description,omitempty"`
+	ErrorCode   int    `json:"error_code,omitempty"`
+}
+
 // Send delivers one message to Telegram Bot API or falls back to CaptureSender.
 func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error {
 	// 1. Contract-level validation fails closed immediately.
@@ -124,9 +130,18 @@ func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error
 	}
 	defer resp.Body.Close()
 
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
+
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return fmt.Errorf("telegram: sendMessage failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	// 6. Check Telegram Bot API response payload "ok": true (R-004).
+	var apiResp botAPIResponse
+	if err := json.Unmarshal(respBody, &apiResp); err == nil {
+		if !apiResp.OK {
+			return fmt.Errorf("telegram: sendMessage returned ok=false: %s (code %d)", apiResp.Description, apiResp.ErrorCode)
+		}
 	}
 
 	return nil

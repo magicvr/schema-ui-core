@@ -586,13 +586,13 @@ func newMuxWithExtraProviders(
 			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 		}
 	}
-	// VP-030 (GOAL-003 R2 / GOAL-004 R3): channel.telegram — Telegram channel runtime.
+	// VP-030 (GOAL-003 R2 / GOAL-004 R3 / F-001 / F-002): channel.telegram — Telegram channel runtime.
 	// Assembled by plan enablement (custom profile or explicit app.modules).
 	if plan.HasModule("channel.telegram") {
 		subStore := subject.NewStore(st)
 		tgDispatcher := telegraminternal.NewDispatcher()
 		tgMockSender := telegraminternal.NewCaptureSender()
-		tgRuntime := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, tgMockSender)
+		tgRuntime := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, tgMockSender, st)
 		tgSender := telegraminternal.NewHTTPSender(tgRuntime, nil, "")
 		tgWebhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
 			TokenGetter:  tgRuntime.GetToken,
@@ -800,6 +800,20 @@ func newEventBus(cfg *config.Config, logger *slog.Logger) kernel.EventBus {
 		buffer = config.DefaultEventBusBuffer
 	}
 	return eventbus.NewMemory(buffer, logger)
+}
+
+// ResolveTelegramPorts returns the process-level TelegramDispatcher and TelegramSender (D-002 §1 / F-001).
+// If channel.telegram is enabled in plan, it returns live implementations; otherwise it returns
+// the disabled no-op dispatcher and fail-closed sender.
+func ResolveTelegramPorts(plan kernel.Plan, cfg *config.Config, st kernel.Store) (kernel.TelegramDispatcher, kernel.TelegramSender) {
+	if plan.HasModule("channel.telegram") {
+		tgDispatcher := telegraminternal.NewDispatcher()
+		tgMockSender := telegraminternal.NewCaptureSender()
+		tgRuntime := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, tgMockSender, st)
+		tgSender := telegraminternal.NewHTTPSender(tgRuntime, nil, "")
+		return tgDispatcher, tgSender
+	}
+	return telegraminternal.NewDisabledDispatcher(), telegraminternal.NewDisabledSender()
 }
 
 // newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /

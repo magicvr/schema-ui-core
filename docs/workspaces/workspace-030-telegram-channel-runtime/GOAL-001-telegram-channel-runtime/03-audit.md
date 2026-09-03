@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-09-03
 updated: 2026-09-03
-version: 1.0.0
+version: 1.0.1
 ---
 
 # GOAL-001-telegram-channel-runtime · 03-audit 索引
@@ -13,6 +13,8 @@ version: 1.0.0
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
 | [A-001-root-closeout-audit](03-audit/A-001-root-closeout-audit.md) | 2026-09-03 | self | Root GOAL-001 全量交付与工作区关门审计 | pass | 0 | 判据 1～8 全部达成；子目标审计全闭环（GOAL-003/005 grok independent pass）；红线合规；测试全绿；Root 关门结项 | [03-audit/A-001-root-closeout-audit.md](03-audit/A-001-root-closeout-audit.md) |
+| [A-002-independent-design-code-audit](03-audit/A-002-independent-design-code-audit.md) | 2026-09-03 | independent | 方案设计与代码实现独立交叉审计（不以治理结论为证据） | conditional | 2 | 入站/出站/身份包级实现扎实；F-001 端口未进进程装配；F-002 Admin 设置不持久。不改 status | [03-audit/A-002-independent-design-code-audit.md](03-audit/A-002-independent-design-code-audit.md) |
+| [A-003-independent-audit-response](03-audit/A-003-independent-audit-response.md) | 2026-09-03 | self | A-002 独立审计意见合并响应 | pass | 0 | F-001（进程级端口装配与 disabled stub）与 F-002（数据库持久化）全部 fixed 闭合；R-001～R-008 全部处置完成；开放 required 归零 | [03-audit/A-003-independent-audit-response.md](03-audit/A-003-independent-audit-response.md) |
 
 ## 信息就绪核对（按 scope）
 
@@ -24,7 +26,7 @@ version: 1.0.0
 
 ## 结论状态
 
-全量交付完成，退出判据 1～8 全部达成，开放 required = 0。Root 目标 `GOAL-001-telegram-channel-runtime` 正式关门（`status: done`，4/4）。工作区 `workspace-030-telegram-channel-runtime` 结项。
+A-002 中提出的 2 项必改项 F-001 与 F-002 已按 fixed 路径完全闭合，全部 recommended 项目 R-001～R-008 均已实施落地或合法留痕（见 A-003），开放必改项为 0。全仓测试全部通过，Root 关门状态确立。
 
 ## 审计记录（ledger）
 

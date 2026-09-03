@@ -1,9 +1,11 @@
 package telegram
 
 import (
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -120,7 +122,9 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gotSecret := r.Header.Get(HeaderTelegramSecretToken)
-	if subtle.ConstantTimeCompare([]byte(gotSecret), []byte(expectedSecret)) != 1 {
+	gotHash := sha256.Sum256([]byte(gotSecret))
+	expectedHash := sha256.Sum256([]byte(expectedSecret))
+	if subtle.ConstantTimeCompare(gotHash[:], expectedHash[:]) != 1 {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -214,7 +218,9 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Text:         text,
 			CallbackData: callbackData,
 		}
-		_ = h.dispatcher.Dispatch(r.Context(), upd, h.sender)
+		if err := h.dispatcher.Dispatch(r.Context(), upd, h.sender); err != nil {
+			slog.Warn("telegram: dispatch handler error", "err", err, "command", command, "chat_id", chatID)
+		}
 	}
 
 	// 10. Return 200 OK with empty body.

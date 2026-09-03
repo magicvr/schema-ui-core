@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -115,6 +116,51 @@ func TestHTTPSender_APIErrorResponse(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error on 400 Bad Request, got nil")
 	}
+}
+
+func TestHTTPSender_Status200_ButOKFalse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"ok": false, "error_code": 403, "description": "Forbidden: bot was blocked by the user"}`))
+	}))
+	defer server.Close()
+
+	rm := NewRuntimeManager("my-bot-token", "", nil)
+	sender := NewHTTPSender(rm, server.Client(), server.URL)
+
+	msg := kernel.TelegramMessage{
+		ChatID: "123456",
+		Text:   "Test message",
+	}
+
+	err := sender.Send(context.Background(), msg)
+	if err == nil {
+		t.Fatalf("expected error when ok=false, got nil")
+	}
+	if !strings.Contains(err.Error(), "bot was blocked by the user") {
+		t.Fatalf("expected error message to contain description, got %v", err)
+	}
+}
+
+func TestDisabledSenderAndDispatcher(t *testing.T) {
+	sender := NewDisabledSender()
+	msg := kernel.TelegramMessage{
+		ChatID: "123",
+		Text:   "Hello",
+	}
+	if err := sender.Send(context.Background(), msg); !errors.Is(err, kernel.ErrTelegramDisabled) {
+		t.Fatalf("expected ErrTelegramDisabled from DisabledSender, got %v", err)
+	}
+
+	disp := NewDisabledDispatcher()
+	if err := disp.RegisterCommand("start", func(ctx context.Context, upd kernel.TelegramUpdate) error { return nil }); err != nil {
+		t.Fatalf("expected nil from DisabledDispatcher RegisterCommand, got %v", err)
+	}
+	disp.UnregisterCommand("start")
+	if err := disp.RegisterCallback("cb", func(ctx context.Context, upd kernel.TelegramUpdate) error { return nil }); err != nil {
+		t.Fatalf("expected nil from DisabledDispatcher RegisterCallback, got %v", err)
+	}
+	disp.UnregisterCallback("cb")
 }
 
 func TestHTTPSender_TimeoutBudget(t *testing.T) {
