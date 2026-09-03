@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "telegram-settings",
+      "title": "Telegram channel",
+      "schemaUrl": "/api/schema/telegram-settings",
+      "route": "/telegram-settings",
+      "titleKey": "manifest.title.telegramSettings"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "telegram-settings",
+        "label": "Telegram channel",
+        "icon": "send",
+        "visibleWhen": {
+          "when": "$context.features.menu_telegram == true"
+        },
+        "labelKey": "manifest.nav.telegram"
+      }
+    ]
+  }
+}

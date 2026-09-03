@@ -142,6 +142,32 @@ func TestHTTPSender_Status200_ButOKFalse(t *testing.T) {
 	}
 }
 
+// TestHTTPSender_Status200_NonJSONBodyFailsClosed (R-004 / A-008): a 200 with a
+// body that is not valid Bot API JSON must be treated as a failure, not success.
+func TestHTTPSender_Status200_NonJSONBodyFailsClosed(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`<html>not json</html>`))
+	}))
+	defer server.Close()
+
+	rm := newTestRuntimeManager(t, "my-bot-token", "", nil)
+	sender := NewHTTPSender(rm, server.Client(), server.URL)
+
+	msg := kernel.TelegramMessage{
+		ChatID: "123456",
+		Text:   "Test message",
+	}
+
+	err := sender.Send(context.Background(), msg)
+	if err == nil {
+		t.Fatalf("expected error on non-JSON 200 body, got nil")
+	}
+	if !strings.Contains(err.Error(), "non-JSON") {
+		t.Fatalf("expected error to mention non-JSON body, got %v", err)
+	}
+}
+
 func TestDisabledSenderAndDispatcher(t *testing.T) {
 	sender := NewDisabledSender()
 	msg := kernel.TelegramMessage{

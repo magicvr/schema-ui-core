@@ -44,7 +44,7 @@ func TestTelegramChannelComposition(t *testing.T) {
 	// 2. Custom profile with channel.telegram enabled
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
-		ModulesEnabled:        []string{"core.server-registration", "channel.telegram"},
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "channel.telegram"},
 		TelegramBotToken:      "test-token",
 		TelegramWebhookSecret: "test-secret",
 	}
@@ -76,14 +76,17 @@ func TestTelegramChannelComposition(t *testing.T) {
 		ID:             "channel.telegram",
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
-		DependsOn:      []string{"core.server-registration"},
-		Requires:       []kernel.Capability{kernel.CapabilityHTTP},
+		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability"},
+		Requires:       []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/channel/telegram/settings",
 				"PATCH /api/channel/telegram/settings",
 				"POST /api/channel/telegram/webhook",
 			},
+			Pages:      []string{"telegram-settings"},
+			Navigation: []string{"menu_telegram"},
+			Fragments:  []string{"telegram-settings"},
 		},
 	}
 
@@ -259,6 +262,67 @@ func TestTelegramRuntime_PersistenceAcrossRestart(t *testing.T) {
 	}
 }
 
+// TestTelegramRuntime_ClearSurvivesRestart (A-008 informational): an admin
+// clearing the token/secret must survive restart instead of reverting to the
+// env seed — the persisted row is authoritative even when its values are empty.
+func TestTelegramRuntime_ClearSurvivesRestart(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "telegram_clear_test.db")
+	st1, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg1 := &config.Config{
+		TelegramBotToken:      "seed-token",
+		TelegramWebhookSecret: "seed-secret",
+		TelegramMasterKey:     "test-master-key",
+	}
+	plan := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
+
+	tr1, err := newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime: %v", err)
+	}
+	if tr1.Manager == nil {
+		t.Fatalf("expected non-nil manager when channel.telegram enabled")
+	}
+
+	// Admin clears both secrets.
+	ctx := context.Background()
+	if err := tr1.Manager.Update(ctx, "", ""); err != nil {
+		t.Fatalf("Update(clear) failed: %v", err)
+	}
+	if tr1.Manager.GetToken() != "" || tr1.Manager.GetSecret() != "" {
+		t.Fatalf("expected cleared in-memory state, got token=%q secret=%q", tr1.Manager.GetToken(), tr1.Manager.GetSecret())
+	}
+
+	_ = st1.Close()
+
+	// Reopen with a NON-EMPTY env seed: the persisted (cleared) row must win.
+	st2, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+
+	cfg2 := &config.Config{
+		TelegramBotToken:      "seed-token", // must NOT resurrect after clear
+		TelegramWebhookSecret: "seed-secret",
+		TelegramMasterKey:     "test-master-key",
+	}
+
+	tr2, err := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime(restart): %v", err)
+	}
+	if tr2.Manager.GetToken() != "" {
+		t.Fatalf("cleared token resurrected to env seed %q", tr2.Manager.GetToken())
+	}
+	if tr2.Manager.GetSecret() != "" {
+		t.Fatalf("cleared secret resurrected to env seed %q", tr2.Manager.GetSecret())
+	}
+}
+
 func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "telegram_real_mount_test.db")
 	st, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
@@ -269,7 +333,7 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
-		ModulesEnabled:        []string{"core.server-registration", "channel.telegram"},
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "channel.telegram"},
 		TelegramBotToken:      "live-bot-token",
 		TelegramWebhookSecret: "correct-secret",
 		TelegramMasterKey:     "test-master-key",
@@ -279,18 +343,21 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 		ID:             "channel.telegram",
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
-		DependsOn:      []string{"core.server-registration"},
-		Requires:       []kernel.Capability{kernel.CapabilityHTTP},
+		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability"},
+		Requires:       []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/channel/telegram/settings",
 				"PATCH /api/channel/telegram/settings",
 				"POST /api/channel/telegram/webhook",
 			},
+			Pages:      []string{"telegram-settings"},
+			Navigation: []string{"menu_telegram"},
+			Fragments:  []string{"telegram-settings"},
 		},
 	}
 	plan := kernel.Plan{
-		Capabilities: []kernel.Capability{kernel.CapabilityHTTP},
+		Capabilities: []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation, kernel.CapabilityManifest},
 		Modules:      []kernel.Module{desc},
 	}
 
@@ -390,7 +457,7 @@ func TestTelegramFxInjection_SameRuntime(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "telegram_fx_test.db")
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
-		ModulesEnabled:        []string{"core.server-registration", "channel.telegram"},
+		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "channel.telegram"},
 		TelegramBotToken:      "live-bot-token",
 		TelegramWebhookSecret: "correct-secret",
 		TelegramMasterKey:     "test-master-key",

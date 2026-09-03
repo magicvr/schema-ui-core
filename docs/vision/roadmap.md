@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-03
 parent: null
-version: 0.69.0
+version: 0.70.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -48,6 +48,7 @@ version: 0.69.0
 | 29 | [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) | Admin 功能 · **钱包预付资金凭证 + 外部主体接缝**：`(issuer, external_id) → subject_id`（不创建 `admin.users`）+ 卡密批次生成/导出/作废/核销入账（哈希存储、幂等 Redeem）。**R5**：Admin 已登录自助核销 HTTP + 「我的钱包」入口（入账 `owner_type=user`）。扩展 `admin.wallet`，**不是**支付业务域。 | 继承 VP-011 钱包账本；不重开 VP-011；与 VP-030/031 同批；硬前置于 030 身份与 031 扣款主体 | **closed**（2026-09-02 · v0.5.0 · 用户指令授权 · VRev-069 self `pass` · 十条判据全量 verified · Root done 5/5 · GOAL-005 独立审与 Root 关门自审 pass；lead `workspace-029-wallet-prepaid-instrument` 结项） |
 | 30 | [VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) | 架构 · **C 端 Telegram 通道运行时**（对标 VP-017）：webhook + Update 分发端口 + SendMessage 文本 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域、**不是**付费命令实现。 | 硬前置 = VP-029 主体接缝（已交付）；消费 VP-027 限流；激活前评估 C 端桶已落盘（进程内够用、不需要 Redis）；与 VP-009/010 正交 | **active**（2026-09-03 · v0.2.0 · VRev-070 self `pass` · 架构类 freshness PASS `b5c39dfb`→`42036a3c` · lead `workspace-030-telegram-channel-runtime`） |
 | 31 | [VP-031-digital-offer-entitlement](plans/VP-031-digital-offer-entitlement.md) | 业务域 · **数字 Offer + 薄购买凭证 + 权益**（本仓首个业务域 VP）。服务视为可售 Offer，不是电商类目/SKU/税/库存/物流订单。 | 硬前置 = VP-029 资金原语；软前置 = VP-030 命令注册；激活前业务域 freshness + H-002 同进程再确认 + RT-Q03/Q05 评估 | **planned**（2026-09-02 · v0.1.0 · 0 区 · VRev-065 self；建议激活序第三） |
+| 32 | [VP-032-rate-limiter-atomic-port](plans/VP-032-rate-limiter-atomic-port.md) | 架构 · **限流器端口原子化**（GOAL-001 A-008 R-007 residual 承接）：`kernel.RateLimiter` 新增原子 `AllowRecord`（check+record 单锁）并迁移全仓 10+ 使用点，消除 Allow→Record TOCTOU；`Allow`/`Record` 保留兼容；内存供应商实现；Redis 仍 RT-Q05 trigger-gated。 | 继承 VP-027 端口语义（**不重开** VP-027 关门事实）；VP-030 三桶限流直接受益；与 VP-009/010 正交 | **planned**（2026-09-03 · v0.1.0 · 0 区 · VRev-071 self · 用户书面裁决登记；激活前 `/vision` 冻结退出分母） |
 
 ## 组合门闩（用户 2026-08-08）
 

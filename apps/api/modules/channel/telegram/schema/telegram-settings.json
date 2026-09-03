@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "pageId": "telegram-settings",
+    "title": "Telegram channel",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "telegram-settings",
+    "children": [
+      {
+        "type": "custom",
+        "id": "telegram-admin-tab",
+        "component": "telegram-admin-tab",
+        "props": {}
+      }
+    ]
+  }
+}

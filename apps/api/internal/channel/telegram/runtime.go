@@ -74,6 +74,10 @@ func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, master
 // initPersistence loads (or seeds) the encrypted telegram_config row. Any DB or
 // decryption failure is returned so the composition root fails closed instead of
 // silently staying on the seed values (F-002 / A-006).
+//
+// Once a row exists it is authoritative: the decrypted values are applied
+// verbatim, including empty ones, so an admin clearing a token/secret survives
+// restart instead of reverting to the env seed (A-008 informational).
 func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) error {
 	ctx := context.Background()
 	return r.runner.Run(ctx, func(tx kernel.Tx) error {
@@ -109,12 +113,8 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) error {
 			return fmt.Errorf("telegram: decrypt persisted config: %v / %v", err1, err2)
 		}
 		r.mu.Lock()
-		if strings.TrimSpace(decToken) != "" {
-			r.token = strings.TrimSpace(decToken)
-		}
-		if strings.TrimSpace(decSecret) != "" {
-			r.secret = strings.TrimSpace(decSecret)
-		}
+		r.token = strings.TrimSpace(decToken)
+		r.secret = strings.TrimSpace(decSecret)
 		r.mu.Unlock()
 		return nil
 	})

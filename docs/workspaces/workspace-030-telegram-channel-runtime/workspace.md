@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-030-telegram-channel-runtime](../../vision/plans/VP-030-telegram-channel-runtime.md)（**`active`** v0.2.0 · 2026-09-03 用户指令激活）的唯一 lead delivery workspace。**架构分支 · C 端通道**（对标 VP-017：内核端口 + 一方模块 + Admin 设置）：交付 Telegram Bot 通道运行时——HTTPS webhook（secret fail-closed）+ Update 分发端口（命令/callback Register）+ `SendMessage` 文本端口 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域，**不是**付费命令实现。**工作区已顺利结项关门。**
 
-- **Root** `GOAL-001-telegram-channel-runtime`：**`done`** · **4/4**（R1 合同冻结 GOAL-002 3/3 → R2 webhook+分发+身份 GOAL-003 3/3 → R3 出站+设置+限流核账 GOAL-004 3/3 → R4 证据与关门 GOAL-005 3/3 全量达成关门），纲领见 Root `00-meta.md`。
+- **Root** `GOAL-001-telegram-channel-runtime`：**`done`** · **4/4 + R5**（R1 合同冻结 GOAL-002 3/3 → R2 webhook+分发+身份 GOAL-003 3/3 → R3 出站+设置+限流核账 GOAL-004 3/3 → R4 证据与关门 GOAL-005 3/3 全量达成关门；A-006/A-008 审计闭环后，判据 #5 补做 Admin UI tab 由 GOAL-006 3/3 完成，Root 回归 done），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-03）：[VRev-070](../../vision/reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass`（0 required；V-F114/115 → 开区事务内 fixed）；**架构类轻量 freshness PASS**（`b5c39dfb` → `42036a3c`：协议 pin / 依赖锁 / Profile 默认集 / provenance 零变更；区间代码 = VP-029 已审结目）不暂挂 `go`；**限流评估落盘**：进程内够用、不需要 Redis，不消耗 RT-Q05 trigger。
 - 不改变 Charter `primary_workspace`（仍为 workspace-001）。
 - **消费基线**：VP-017 通道形态（端口 + 设置 + mock）· VP-027 RateLimiter 端口（已 closed）· VP-029 `GetOrCreateSubject`（已 closed；不得要求 `admin.wallet` HTTP 已启）· VP-021 停机 drain · VP-003/004 模块契约（横切 + 设置面，豁免业务导航）。

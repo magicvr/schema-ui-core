@@ -207,8 +207,9 @@ func BuiltinModules() []Module {
 		{ID: "dev.examples", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.schema-render", "core.navigation-capability"}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions", "form-with-upload", "data-display", "admin-list-batch"}, Fragments: []string{"examples"}}},
 		// VP-030 (GOAL-003/GOAL-004): channel.telegram — Telegram bot channel runtime.
 		// Exposes public webhook POST /api/channel/telegram/webhook and settings endpoints.
+		// GOAL-006 R5 (判据 #5 补做): telegram-settings page + menu_telegram.
 		// Compiled candidate; not enabled in mvp/admin defaults (channel extension).
-		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration"}, Requires: []Capability{CapabilityHTTP}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/webhook"}}},
+		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability"}, Requires: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityNavigation}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/webhook"}, Pages: []string{"telegram-settings"}, Navigation: []string{"menu_telegram"}, Fragments: []string{"telegram-settings"}}},
 	}
 }
 

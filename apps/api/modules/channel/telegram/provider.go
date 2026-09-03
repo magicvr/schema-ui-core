@@ -7,7 +7,10 @@ import (
 	"net/http"
 
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
+	telegrammanifest "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/manifest"
 	telegrammigration "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/migration"
+	telegramschema "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/schema"
 )
 
 // ModuleID is the official module identifier for the Telegram channel.
@@ -36,14 +39,20 @@ func (p *Provider) Descriptor() kernel.Module {
 		ID:             ModuleID,
 		Version:        "2.0.0",
 		KernelAPIRange: ">=2.0 <3.0",
-		DependsOn:      []string{"core.server-registration"},
-		Requires:       []kernel.Capability{kernel.CapabilityHTTP},
+		DependsOn:      []string{"core.server-registration", "core.schema-render", "core.navigation-capability"},
+		Requires:       []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation},
 		Contributions: kernel.ContributionKeys{
 			Routes: []string{
 				"GET /api/channel/telegram/settings",
 				"PATCH /api/channel/telegram/settings",
 				"POST /api/channel/telegram/webhook",
 			},
+			// GOAL-006 R5 (判据 #5 补做 Admin UI tab): the telegram-settings
+			// page + menu ride the settings.read gate (mail W26 red line: no
+			// new permission keys).
+			Pages:      []string{"telegram-settings"},
+			Navigation: []string{"menu_telegram"},
+			Fragments:  []string{"telegram-settings"},
 		},
 	}
 }
@@ -93,5 +102,39 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			return err
 		}
 	}
-	return nil
+	// GOAL-006 R5 (判据 #5 补做 Admin UI tab): the telegram-settings page is
+	// always contributed (schema documents are static); the underlying
+	// GET/PATCH settings APIs keep their own per-route auth gates.
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram-settings"},
+		PageID:               "telegram-settings",
+		Resources:            []string{"telegram-settings"},
+		Actions:              []string{"list", "update"},
+		DataSource:           "/api/channel/telegram/settings",
+		Owner:                ModuleID,
+		Document:             telegramschema.SchemaDocuments()["telegram-settings"],
+	}); err != nil {
+		return err
+	}
+	// Visibility gated by PolicyAdmin; the permission field stays empty because
+	// settings.read is owned by admin.settings (permission keys are globally
+	// unique) and the settings API itself enforces settings.read/write.
+	if err := reg.Navigation(kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_telegram"},
+		NodeID:               "menu_telegram",
+		PageID:               "telegram-settings",
+		Order:                2,
+		Label:                "Telegram channel",
+		Visibility:           authsessiondata.PolicyAdmin,
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	}); err != nil {
+		return err
+	}
+	return reg.Manifest(kernel.FragmentContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram-settings"},
+		FragmentID:           "telegram-settings",
+		ProtocolVersion:      "2.7",
+		RequiredCapabilities: []string{"manifest", "navigation"},
+		JSON:                 telegrammanifest.FragmentJSON,
+	})
 }

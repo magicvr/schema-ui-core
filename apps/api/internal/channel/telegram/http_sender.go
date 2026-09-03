@@ -46,9 +46,9 @@ func NewHTTPSender(runtime *RuntimeManager, client *http.Client, apiBaseURL stri
 
 // Telegram Bot API sendMessage wire request types.
 type sendMessagePayload struct {
-	ChatID      string                 `json:"chat_id"`
-	Text        string                 `json:"text"`
-	ReplyMarkup *inlineKeyboardMarkup  `json:"reply_markup,omitempty"`
+	ChatID      string                `json:"chat_id"`
+	Text        string                `json:"text"`
+	ReplyMarkup *inlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
 type inlineKeyboardMarkup struct {
@@ -136,12 +136,15 @@ func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error
 		return fmt.Errorf("telegram: sendMessage failed with status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	// 6. Check Telegram Bot API response payload "ok": true (R-004).
+	// 6. Check Telegram Bot API response payload "ok": true (R-004 / A-008).
+	// Fail closed on a non-JSON 200 body: the Bot API always answers JSON, so a
+	// body that cannot be unmarshalled is treated as a failure, not success.
 	var apiResp botAPIResponse
-	if err := json.Unmarshal(respBody, &apiResp); err == nil {
-		if !apiResp.OK {
-			return fmt.Errorf("telegram: sendMessage returned ok=false: %s (code %d)", apiResp.Description, apiResp.ErrorCode)
-		}
+	if err := json.Unmarshal(respBody, &apiResp); err != nil {
+		return fmt.Errorf("telegram: sendMessage returned non-JSON 200 body: %w: %s", err, strings.TrimSpace(string(respBody)))
+	}
+	if !apiResp.OK {
+		return fmt.Errorf("telegram: sendMessage returned ok=false: %s (code %d)", apiResp.Description, apiResp.ErrorCode)
 	}
 
 	return nil

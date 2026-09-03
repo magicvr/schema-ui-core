@@ -11,16 +11,24 @@ import (
 )
 
 type mockRegistrar struct {
-	routes []kernel.RouteContribution
+	routes     []kernel.RouteContribution
+	pages      []kernel.PageContribution
+	navigation []kernel.NavigationContribution
 }
 
 func (m *mockRegistrar) HTTP(r kernel.RouteContribution) error {
 	m.routes = append(m.routes, r)
 	return nil
 }
-func (m *mockRegistrar) Schema(p kernel.PageContribution) error                 { return nil }
-func (m *mockRegistrar) Authorization(a kernel.PermissionContribution) error    { return nil }
-func (m *mockRegistrar) Navigation(n kernel.NavigationContribution) error       { return nil }
+func (m *mockRegistrar) Schema(p kernel.PageContribution) error {
+	m.pages = append(m.pages, p)
+	return nil
+}
+func (m *mockRegistrar) Authorization(a kernel.PermissionContribution) error { return nil }
+func (m *mockRegistrar) Navigation(n kernel.NavigationContribution) error {
+	m.navigation = append(m.navigation, n)
+	return nil
+}
 func (m *mockRegistrar) Manifest(f kernel.FragmentContribution) error           { return nil }
 func (m *mockRegistrar) Configuration(c kernel.ConfigurationContribution) error { return nil }
 
@@ -42,6 +50,13 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if len(desc.Contributions.Routes) != 3 {
 		t.Fatalf("expected 3 route contributions, got %+v", desc.Contributions.Routes)
 	}
+	// GOAL-006 R5: telegram-settings page + menu_telegram navigation declared.
+	if len(desc.Contributions.Pages) != 1 || desc.Contributions.Pages[0] != "telegram-settings" {
+		t.Fatalf("expected telegram-settings page contribution, got %+v", desc.Contributions.Pages)
+	}
+	if len(desc.Contributions.Navigation) != 1 || desc.Contributions.Navigation[0] != "menu_telegram" {
+		t.Fatalf("expected menu_telegram navigation contribution, got %+v", desc.Contributions.Navigation)
+	}
 
 	// Check Persistence
 	contribs, err := p.CompiledPersistence()
@@ -56,6 +71,12 @@ func TestTelegramModuleProvider(t *testing.T) {
 	}
 	if len(reg.routes) != 3 {
 		t.Fatalf("expected 3 routes registered, got %d", len(reg.routes))
+	}
+	if len(reg.pages) != 1 || reg.pages[0].PageID != "telegram-settings" || reg.pages[0].DataSource != "/api/channel/telegram/settings" {
+		t.Fatalf("unexpected page contributions: %+v", reg.pages)
+	}
+	if len(reg.navigation) != 1 || reg.navigation[0].NodeID != "menu_telegram" || reg.navigation[0].PageID != "telegram-settings" {
+		t.Fatalf("unexpected navigation contributions: %+v", reg.navigation)
 	}
 
 	// Verify handler invocation through registered route
@@ -106,7 +127,7 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 
 	// Build a plan with channel.telegram enabled
 	plan := kernel.Plan{
-		Capabilities: []kernel.Capability{kernel.CapabilityHTTP},
+		Capabilities: []kernel.Capability{kernel.CapabilityHTTP, kernel.CapabilitySchema, kernel.CapabilityNavigation, kernel.CapabilityManifest},
 		Modules: []kernel.Module{
 			p.Descriptor(),
 		},
@@ -119,5 +140,14 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 
 	if len(set.Routes) != 3 {
 		t.Fatalf("expected 3 routes in ContributionSet, got %d", len(set.Routes))
+	}
+	if len(set.Pages) != 1 || set.Pages[0].PageID != "telegram-settings" {
+		t.Fatalf("expected telegram-settings page in ContributionSet, got %+v", set.Pages)
+	}
+	if len(set.Navigation) != 1 || set.Navigation[0].NodeID != "menu_telegram" {
+		t.Fatalf("expected menu_telegram navigation in ContributionSet, got %+v", set.Navigation)
+	}
+	if len(set.Fragments) != 1 || set.Fragments[0].FragmentID != "telegram-settings" {
+		t.Fatalf("expected telegram-settings fragment in ContributionSet, got %+v", set.Fragments)
 	}
 }

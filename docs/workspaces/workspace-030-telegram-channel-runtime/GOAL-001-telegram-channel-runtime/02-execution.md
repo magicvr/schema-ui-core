@@ -21,6 +21,7 @@ version: 1.0.0
 | [E-007-a002-response](02-execution/E-007-a002-response.md) | 2026-09-03 | A-002 审计响应 | F-001（进程级端口装配与 disabled stub）与 F-002（数据库持久化）fixed 闭合；R-001～R-008 全项整改完成 | recorded |
 | [E-008-a004-final-closure](02-execution/E-008-a004-final-closure.md) | 2026-09-03 | A-004 复审整改 | 响应 A-004：同一 dispatcher 接进 newMux，F-002 纳入 catalog 迁移 66 + AES-GCM 加密，彻底删除运行时 DDL，重启重载测试全绿 | recorded |
 | [E-009-a006-response](02-execution/E-009-a006-response.md) | 2026-09-03 | A-006 复审整改 | 响应 A-006：`*TelegramRuntime` 改非 variadic 必选参数并删 fallback；新增经 NewApp/fx `fx.Populate` 同一实例测试；主密钥离开源码（`TELEGRAM_MASTER_KEY`/密钥文件），`initPersistence` fail-closed。全量测试绿 | recorded |
+| [E-010-a008-response-and-r5](02-execution/E-010-a008-response-and-r5.md) | 2026-09-03 | A-008 响应 + 遗留 recommended 处置 + R5 | 响应 A-008（independent pass · F-001/F-002 closed）；R-004/informational fixed；R-009 accepted-residual（用户书面）；R-007 登记 VP-032（用户书面）；判据 #5 补做 Admin UI tab 由 GOAL-006 交付，Root 回归 done | recorded |
 
 ## 执行记录（ledger）
 

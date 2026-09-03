@@ -5,12 +5,12 @@ status: done
 parent: null
 created: 2026-09-03
 updated: 2026-09-03
-version: 1.0.0
+version: 1.2.0
 progress: 4/4
 plan_refs:
   - VP-030-telegram-channel-runtime
 primary_plan: VP-030-telegram-channel-runtime
-serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 ingress · 对标 VP-017）：webhook + Update 分发端口 + SendMessage 文本 + issuer=telegram 主体映射 + Admin bot 设置。退出判据 1～8 全部达成，工作区顺利关门结项。
+serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 ingress · 对标 VP-017）：webhook + Update 分发端口 + SendMessage 文本 + issuer=telegram 主体映射 + Admin bot 设置。R1～R4 已关门；R5 判据 #5 补做 Admin UI tab（用户 2026-09-03 裁决）已由 GOAL-006 完成，全量关门。
 ---
 
 # GOAL-001 · Telegram Bot 通道运行时
@@ -25,7 +25,7 @@ serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 i
 - [x] 判据 #2（分发端口）：命令与 callback 的 Register/Unregister + 分发有测试；未知命令有确定回落（不 panic）——已由 GOAL-003 完成
 - [x] 判据 #3（出站端口）：`SendMessage` 文本可测（mock 供应商）；生产供应商不把 Bot 客户端类型漏进模块公共契约——已由 GOAL-004 完成
 - [x] 判据 #4（身份映射）：同一 `telegram_user_id` 多次 get-or-create 得到同一 `subject_id`；不写 `admin.users`——已由 GOAL-003 完成
-- [x] 判据 #5（设置与密钥）：Admin 可配置 token/secret；密钥 fail-closed；不进配置包明文——已由 GOAL-004 完成，F-001 鉴权整改落地
+- [x] 判据 #5（设置与密钥）：Admin 可配置 token/secret；密钥 fail-closed；不进配置包明文——已由 GOAL-004 完成，F-001 鉴权整改落地；**R5（GOAL-006，2026-09-03 用户裁决）补做 Admin UI tab**（Schema/Nav/Manifest + telegram-admin-tab 组件）
 - [x] 判据 #6（限流评估落盘）：激活前书面评估 VP-027 进程内 limiter 对 webhook/`chat_id`/`telegram_user_id` 是否足够——**已核销**（2026-09-03 · VRev-070 §6：进程内够用、不需要 Redis）。桶分母与 Record/Clear 映射已随 GOAL-002/003 落地。
 - [x] 判据 #7（边界保持）：未改 Charter；未进默认集；未做 Mini App / Stars / 对话引擎 / 付费命令；未重开历史 VP——全量红线保持合规
 - [x] 判据 #8（审计闭合）：开放 required finding = 0（或已合法闭合）——GOAL-005 grok independent pass 闭合
@@ -40,6 +40,9 @@ serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 i
 | R2 | webhook + 分发 + 身份（判据 1/2/4 + I-030-007）：secret 路由 · Register 分发 · 主体映射（不要求钱包 HTTP 已启）；**入站三桶限流随 webhook 落地** | **已关门**（GOAL-003 done 3/3 · grok 独立审 A-002 pass/闭合 + Webhook/分发/身份/限流落地） |
 | R3 | 出站 + 设置 + 限流核账（判据 3/5 + I-030-005）：SendMessage mock/生产隔离 · Admin bot tab · 入站限流核账（使用点已随 R2） | **已关门**（GOAL-004 done 3/3 · HTTPSender + RuntimeManager 热切换 + 设置端点 + 限流核账） |
 | R4 | 证据与关门（判据 7/8；依赖 R1–R3）：证据矩阵 / 越界核账 / 审计闭合 | **已关门**（GOAL-005 done 3/3 · 证据矩阵全项 PASS + grok 独立复审 A-003 pass） |
+| R5 | 判据 #5 补做 Admin UI tab（用户 2026-09-03 裁决，A-008 处置）：后端 Schema/Page/Nav/Manifest + 前端 telegram-admin-tab 组件 + i18n + 测试 | **已关门**（GOAL-006 done 3/3 · A-001 self `pass` · 判据 #5 完整交付） |
+
+> `progress` = 已完成纲领阶段 / 4 保持 4/4；R5 为判据 #5 补做，不计入原 4 阶段分母（新增交付由 GOAL-006 检查点承载）。
 
 ## 信息就绪与未知项（P-005）
 
