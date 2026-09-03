@@ -12,6 +12,7 @@ import {
   PanelLeft,
   Pencil,
   Search,
+  Send,
   Settings,
   Shield,
   Table2,
@@ -72,6 +73,9 @@ const iconRegistry: Record<string, LucideIcon> = {
   pen: Pencil,
   reaction: Zap,
   search: Search,
+  // Telegram channel nav semantic icon (fragment icon name "send" → paper-plane
+  // glyph; see channel/telegram manifest fragment).
+  send: Send,
   settings: Settings,
   shield: Shield,
   table: Table2,
