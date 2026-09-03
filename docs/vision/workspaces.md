@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-03
 parent: null
-version: 0.47.0
+version: 0.48.0
 ---
 
 # 工作区贡献图
@@ -41,7 +41,8 @@ version: 0.47.0
 | workspace-027-rate-limiter-port | docs/workspaces/workspace-027-rate-limiter-port/ | GOAL-001-rate-limiter-port | delivery | VP-027-rate-limiter-port | **done**（2026-09-01 激活开区 · 四轮同日全链关门：R1 合同冻结 → R2 供应商+7 处迁移 → R3 接缝与登记 → R4 证据与关门，Root `GOAL-001-rate-limiter-port` `done` 4/4（GOAL-002～005 全 done）；**VP-027 `closed` v0.3.0（2026-09-01 用户书面确认 · VRev-063 pass）**；七条判据 7/7 verified · I-027 四项全 verified · 红线零触碰 · 全量回归绿；RT-Q05 Redis 实现仍 trigger-gated（短文 §4 跟踪项）） |
 | workspace-028-event-bus-port | docs/workspaces/workspace-028-event-bus-port/ | GOAL-001-event-bus-port | delivery | VP-028-event-bus-port | **done**（2026-09-01 激活开区 · 四轮同日/随后全链关门：Root `GOAL-001-event-bus-port` `done` 4/4；**VP-028 `closed` v0.3.0**；outbox/broker 仍 trigger-gated，不消耗 RT-Q02） |
 | workspace-029-wallet-prepaid-instrument | docs/workspaces/workspace-029-wallet-prepaid-instrument/ | GOAL-001-wallet-prepaid-instrument | delivery | VP-029-wallet-prepaid-instrument | **done**（2026-09-02 激活开区 · 当日全量交付结项：Root `GOAL-001-wallet-prepaid-instrument` `done` 5/5；**VP-029 `closed` v0.5.0（用户指令授权 · VRev-069 pass）**；判据 #1～#10 全量 verified；GOAL-002～005 全 done） |
-| workspace-030-telegram-channel-runtime | docs/workspaces/workspace-030-telegram-channel-runtime/ | GOAL-001-telegram-channel-runtime | delivery | VP-030-telegram-channel-runtime | **active**（2026-09-03 激活开区：VP-030 `active` v0.2.0 · VRev-070 self `pass` · 架构类 freshness PASS `b5c39dfb`→`42036a3c` · 限流评估 = 进程内够用、不需要 Redis；Root `GOAL-001-telegram-channel-runtime` active · 0/4） |
+| workspace-030-telegram-channel-runtime | docs/workspaces/workspace-030-telegram-channel-runtime/ | GOAL-001-telegram-channel-runtime | delivery | VP-030-telegram-channel-runtime | **done**（2026-09-03 激活开区 · 同日全链结项：Root `GOAL-001-telegram-channel-runtime` `done` 4/4+R5；VP-030 文件仍 `active` v0.2.2（V-F117 recommended：另轮 `/vision` 关门）） |
+| workspace-032-rate-limiter-atomic-port | docs/workspaces/workspace-032-rate-limiter-atomic-port/ | GOAL-001-rate-limiter-atomic-port | delivery | VP-032-rate-limiter-atomic-port | **active**（2026-09-03 激活开区：VP-032 `active` v0.2.0 · VRev-073 self `pass` · 架构类 freshness PASS `42036a3c`→`b1c03acd` · I-032-001/002 冻结；Root `GOAL-001-rate-limiter-atomic-port` active · 0/3） |
 
 ## 说明
 
@@ -66,7 +67,8 @@ version: 0.47.0
 - **workspace-027（2026-09-01 激活开区 · 当日全链关门）**：VP-027（通用限流器端口 · 架构分支 · 三端口第二个）唯一 lead delivery 工作区；H-002 同进程基座基础设施端口早期化（Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）。激活门禁 = VRev-062 self `pass`（0 required · VRev-058/059 全闭合）+ 架构类轻量 freshness PASS（`54fb57e7` → `5744868d`：五域零变更，不暂挂 `go`）。**已结项**：Root `GOAL-001-rate-limiter-port` **`done` 4/4**；**VP-027 `closed` v0.3.0（2026-09-01 用户书面确认 · VRev-063 `pass`）**。Redis 轨道约定继承 workspace-026 owner 文档（cache-redis-seam-and-track.md · `rl` 首条登记）。不改变 Charter `primary_workspace`。不重开 workspace-013/014/017/026。
 - **workspace-028（2026-09-01 激活开区 · 随后全链关门）**：VP-028（进程内事件总线运输端口 · 架构分支 · 三端口第三个）唯一 lead delivery 工作区。**已结项**：Root `GOAL-001-event-bus-port` **`done` 4/4**；**VP-028 `closed` v0.3.0**。outbox/broker 仍 trigger-gated（不消耗 RT-Q02 trigger）。不改变 Charter `primary_workspace`。不重开 workspace-012/013/014/017/026/027。
 - **workspace-029（2026-09-02 激活开区 · 当日全量交付结项）**：VP-029（钱包预付资金凭证与外部主体接缝 · Admin 功能分支）唯一 lead delivery 工作区；扩展已交付的 `admin.wallet`（不重开 VP-011，不是支付域）。激活门禁 = VRev-066 independent `pass` + Admin 类 freshness PASS。首波曾 `closed` v0.3.0（VRev-067），同日用户确认结构选型 A reopen 承接 R5 自助核销增量。现已完成 R1～R5 全量交付：Root `GOAL-001-wallet-prepaid-instrument` `done` 5/5（A-009 关门自审 pass），**VP-029 `closed` v0.5.0（用户指令授权 · VRev-069 pass）**。十条方向级退出判据全量 verified，GOAL-002～005 全部 `done`。不改变 Charter `primary_workspace`。不重开 workspace-011。不把本增量放入 workspace-010。
-- **workspace-030（2026-09-03 激活开区）**：VP-030（Telegram Bot 通道运行时 · 架构分支 · C 端通道）唯一 lead delivery 工作区；对标 VP-017（端口 + 设置 + mock）。激活门禁 = VRev-070 self `pass`（0 required；V-F114/115 → 开区事务内 fixed）+ 架构类轻量 freshness PASS（`b5c39dfb` → `42036a3c`，不暂挂 `go`）+ 限流评估落盘（进程内够用、不需要 Redis，不消耗 RT-Q05 trigger）。Root `GOAL-001-telegram-channel-runtime` `active` · 0/4（R1 合同冻结 → R2 webhook+分发+身份 → R3 出站+设置+限流接入 → R4 证据与关门）。不改变 Charter `primary_workspace`。不重开 workspace-017/027/029。
+- **workspace-030（2026-09-03 激活开区 · 同日全链结项）**：VP-030（Telegram Bot 通道运行时 · 架构分支 · C 端通道）唯一 lead delivery 工作区。Root `GOAL-001-telegram-channel-runtime` **`done` 4/4+R5**。VP-030 文件仍 `active`（VRev-073 V-F117 recommended：另轮 `/vision` 关门，不阻断 VP-032）。不改变 Charter `primary_workspace`。不重开 workspace-017/027/029。
+- **workspace-032（2026-09-03 激活开区）**：VP-032（限流器端口原子化 · 架构分支 · 承接 VP-027 residual R-007）唯一 lead delivery 工作区。激活门禁 = VRev-073 self `pass`（0 required；I-032-001/002 冻结）+ 架构类轻量 freshness PASS（`42036a3c` → `b1c03acd`，不暂挂 `go`）。Root `GOAL-001-rate-limiter-atomic-port` `active` · 0/3（R1 合同落盘 → R2 内存实现+14 处迁移+并发回归 → R3 证据与关门）。不改变 Charter `primary_workspace`。不重开 workspace-027/030。
 - 首个工作区由 `/govern` 于 2026-07-31 开区；与 Charter `primary_workspace`、工作区 `workspace.md` 的 `vision_role: primary` 一致。
 - 第二个工作区由用户于 2026-08-01 确认，经 `/vision` 完成 VP-002 激活与绑定、由 `/govern` 建立实现层；它是 VP-002 当前唯一 lead workspace，角色为 `delivery`。
 - 新 delivery 工作区不改变 Charter 的 `primary_workspace`，也不重开 VP-001 或旧 Root。

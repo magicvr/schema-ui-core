@@ -9,8 +9,9 @@ import (
 // implementable by stubs, i.e. the contract is not an unimplementable fiction.
 type stubRateLimiter struct{}
 
-func (stubRateLimiter) Allow(string, time.Time) bool { return true }
-func (stubRateLimiter) Record(string, time.Time)     {}
+func (stubRateLimiter) Allow(string, time.Time) bool       { return true }
+func (stubRateLimiter) Record(string, time.Time)           {}
+func (stubRateLimiter) AllowRecord(string, time.Time) bool { return true }
 func (stubRateLimiter) RetryAfterSeconds(string, time.Time) int {
 	return 0
 }

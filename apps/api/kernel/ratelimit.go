@@ -1,19 +1,24 @@
 package kernel
 
-// Kernel rate-limiter port (VP-027 / workspace-027 GOAL-002 D-002, R1).
+// Kernel rate-limiter port (VP-027 / workspace-027 GOAL-002 D-002, R1;
+// VP-032 / workspace-032 GOAL-002 D-002 additive AllowRecord).
 //
 // The port is the only rate-limiter contract for the kernel and every module:
 // a process-local sliding-window failure budget keyed by opaque strings, with
 // the Allow/Record/Clear split that keeps Allow side-effect free (D-001 P1 —
-// spraying distinct keys cannot grow the map). Handlers obtain limiters from
-// an injected kernel.RateLimiterProvider factory; public types carry neither
-// provider handles nor key structure (the existing `IP|identifier`, `op|IP|user`
-// and bare-IP key shapes are caller-side conventions, D-002 §2).
+// spraying distinct keys cannot grow the map). AllowRecord is the TOCTOU-free
+// equivalent of Allow-then-Record under one lock (VP-032). Handlers obtain
+// limiters from an injected kernel.RateLimiterProvider factory; public types
+// carry neither provider handles nor key structure (the existing
+// `IP|identifier`, `op|IP|user` and bare-IP key shapes are caller-side
+// conventions, VP-027 D-002 §2).
 //
-// Contract frozen by workspace-027 GOAL-002 D-002:
+// Contract frozen by workspace-027 GOAL-002 D-002 + workspace-032 GOAL-002 D-002:
 //
 //   - Allow never registers a key; Record is the only path that creates map
 //     entries, so the capacity eviction in Record stays reachable.
+//   - AllowRecord is atomic Allow-then-Record: false does not register; true
+//     uses Record's map-growth / eviction path.
 //   - Window semantics are sliding with in-path pruning; the executable
 //     predicates RateLimiterInWindow and RateLimiterRetryAfterSeconds below
 //     are the single semantic authority every provider MUST use (W12 D-002:
@@ -37,10 +42,18 @@ type RateLimiter interface {
 	// needed. Bounded: implementations evict the oldest key when capacity is
 	// reached (D-001 P1 memory guard).
 	Record(key string, now time.Time)
+	// AllowRecord atomically reports whether key may attempt now and, if so,
+	// records that attempt. Sequential semantics match Allow followed by
+	// Record (VP-032 / workspace-032 GOAL-002 D-002): an absent key is always
+	// allowed then registered; a key whose in-window count is already >= max
+	// is denied and not recorded. Callers MUST invoke RetryAfterSeconds only
+	// after AllowRecord (or Allow) returned false. New call sites SHOULD use
+	// AllowRecord; Allow and Record remain for compatibility.
+	AllowRecord(key string, now time.Time) bool
 	// RetryAfterSeconds is the remaining window after the oldest in-window
-	// failure. Callers MUST invoke it only after Allow returned false (W12
-	// D-002: Retry-After header semantic); the value follows
-	// RateLimiterRetryAfterSeconds.
+	// failure. Callers MUST invoke it only after Allow or AllowRecord
+	// returned false (W12 D-002: Retry-After header semantic); the value
+	// follows RateLimiterRetryAfterSeconds.
 	RetryAfterSeconds(key string, now time.Time) int
 	// Clear drops every failure for key. Called after a successful attempt so
 	// a legitimate client never accumulates a poisoned bucket.

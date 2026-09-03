@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -170,6 +171,7 @@ func TestMemoryConcurrent(t *testing.T) {
 				key := "ip|user"
 				_ = l.Allow(key, now)
 				l.Record(key, now)
+				_ = l.AllowRecord(key, now)
 				_ = l.RetryAfterSeconds(key, now)
 				if j%7 == 0 {
 					l.Clear(key)
@@ -178,6 +180,84 @@ func TestMemoryConcurrent(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+// VP-032 D-002 §1: sequential AllowRecord ≡ Allow-then-Record, including
+// the deny path (no extra timestamp) and the absent-key register path.
+func TestMemoryAllowRecordSequentialEquivalence(t *testing.T) {
+	now := time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)
+	split := limiter(t, 15*time.Minute, 2, 1<<16)
+	atomicL := limiter(t, 15*time.Minute, 2, 1<<16)
+
+	step := func(key string, n time.Time) {
+		t.Helper()
+		want := split.Allow(key, n)
+		if want {
+			split.Record(key, n)
+		}
+		got := atomicL.AllowRecord(key, n)
+		if got != want {
+			t.Fatalf("AllowRecord(%s) = %v, want %v (Allow-then-Record)", key, got, want)
+		}
+	}
+
+	step("k", now)     // 1/2
+	step("k", now)     // 2/2
+	step("k", now)     // deny
+	step("other", now) // independent key
+	if !atomicL.AllowRecord("k", now.Add(16*time.Minute)) {
+		t.Fatal("AllowRecord after window must allow (and record)")
+	}
+	if got := len(atomicL.attempts["k"]); got != 1 {
+		t.Fatalf("after window AllowRecord must replace pruned list, got %d", got)
+	}
+}
+
+// VP-032 D-002 §2: AllowRecord false must not register a previously absent
+// key. (Unreachable for max > 0 on a fresh key — absent is always allowed —
+// so seed to the budget first, then deny.)
+func TestMemoryAllowRecordDenyDoesNotGrow(t *testing.T) {
+	l := limiter(t, 15*time.Minute, 1, 8)
+	now := time.Now().UTC()
+	if !l.AllowRecord("k", now) {
+		t.Fatal("first AllowRecord must allow")
+	}
+	if l.AllowRecord("k", now) {
+		t.Fatal("second AllowRecord at max=1 must deny")
+	}
+	if got := len(l.attempts["k"]); got != 1 {
+		t.Fatalf("deny must not append, got %d timestamps", got)
+	}
+	before := len(l.attempts)
+	if l.AllowRecord("k", now) {
+		t.Fatal("repeated deny must stay denied")
+	}
+	if len(l.attempts) != before {
+		t.Fatal("deny must not grow the map")
+	}
+}
+
+// VP-032 D-002 §3: N concurrent AllowRecord on one key cannot penetrate max.
+func TestMemoryAllowRecordConcurrentBudget(t *testing.T) {
+	const max = 8
+	const n = 64
+	l := NewProvider().NewRateLimiter(time.Minute, max, 1<<16)
+	now := time.Now().UTC()
+	var allowed atomic.Int32
+	var wg sync.WaitGroup
+	wg.Add(n)
+	for range n {
+		go func() {
+			defer wg.Done()
+			if l.AllowRecord("k", now) {
+				allowed.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if got := allowed.Load(); got != max {
+		t.Fatalf("concurrent AllowRecord allowed = %d, want %d (no TOCTOU penetration)", got, max)
+	}
 }
 
 func itoa(i int) string {

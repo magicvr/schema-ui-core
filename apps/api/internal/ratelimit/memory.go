@@ -1,15 +1,17 @@
 package ratelimit
 
 // Memory provider for the kernel rate-limiter port (VP-027 / workspace-027
-// GOAL-003 D-001, R2): the legacy loginRateLimiter semantics (handler
-// package) evolved into the port implementation — sliding-window failure
-// budget, Allow that never registers a key, Record-only map growth with FIFO
-// capacity eviction, Retry-After with the frozen minimum-second behavior,
-// Clear on success. Window pruning and Retry-After computation delegate to
-// the kernel executable predicates (D-002 §3/§5) so every provider stays
-// bit-identical to the frozen contract. Safe for concurrent use; no
-// background goroutine (D-002 §7). D-001 P1: spraying distinct keys cannot
-// grow the map — only Record reaches the capacity eviction.
+// GOAL-003 D-001, R2; VP-032 / workspace-032 GOAL-002 D-002 AllowRecord):
+// the legacy loginRateLimiter semantics (handler package) evolved into the
+// port implementation — sliding-window failure budget, Allow that never
+// registers a key, Record-only map growth with FIFO capacity eviction,
+// AllowRecord as atomic Allow-then-Record under one lock, Retry-After with
+// the frozen minimum-second behavior, Clear on success. Window pruning and
+// Retry-After computation delegate to the kernel executable predicates
+// (D-002 §3/§5) so every provider stays bit-identical to the frozen
+// contract. Safe for concurrent use; no background goroutine (D-002 §7).
+// D-001 P1: spraying distinct keys cannot grow the map — only Record (and
+// AllowRecord's true path) reaches the capacity eviction.
 
 import (
 	"sync"
@@ -67,6 +69,10 @@ type Memory struct {
 func (l *Memory) Allow(key string, now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	return l.allowLocked(key, now)
+}
+
+func (l *Memory) allowLocked(key string, now time.Time) bool {
 	list, exists := l.attempts[key]
 	if !exists {
 		return true
@@ -87,8 +93,8 @@ func (l *Memory) Allow(key string, now time.Time) bool {
 
 // RetryAfterSeconds is the remaining window after the oldest in-window
 // failure (D-002 §5; the kernel predicate is the single semantic authority).
-// Zero when the key is allowed; callers invoke it only after Allow returned
-// false.
+// Zero when the key is allowed; callers invoke it only after Allow or
+// AllowRecord returned false.
 func (l *Memory) RetryAfterSeconds(key string, now time.Time) int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -112,6 +118,10 @@ func (l *Memory) RetryAfterSeconds(key string, now time.Time) int {
 func (l *Memory) Record(key string, now time.Time) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.recordLocked(key, now)
+}
+
+func (l *Memory) recordLocked(key string, now time.Time) {
 	if _, exists := l.attempts[key]; !exists {
 		if len(l.attempts) >= l.capacity {
 			if len(l.order) > 0 {
@@ -123,6 +133,19 @@ func (l *Memory) Record(key string, now time.Time) {
 		l.order = append(l.order, key)
 	}
 	l.attempts[key] = append(l.attempts[key], now)
+}
+
+// AllowRecord is the TOCTOU-free equivalent of Allow followed by Record
+// under a single lock (VP-032 / workspace-032 GOAL-002 D-002). False does
+// not register a new key; true uses Record's map-growth path.
+func (l *Memory) AllowRecord(key string, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if !l.allowLocked(key, now) {
+		return false
+	}
+	l.recordLocked(key, now)
+	return true
 }
 
 // Clear drops every failure for the key. Called after a successful attempt so
