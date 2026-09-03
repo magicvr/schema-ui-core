@@ -72,6 +72,7 @@ func metricsDrillMux(t *testing.T, cfg *config.Config) (*http.ServeMux, *obs.Obs
 		cachePort,
 		eventBusPort,
 		ratelimit.NewProvider(),
+		nil, // tr: this plan has no channel.telegram
 	)
 	if err != nil {
 		t.Fatalf("instrumented composition: %v", err)

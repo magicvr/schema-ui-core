@@ -214,6 +214,7 @@ func TestS2AccessDrill_ProbeModuleSurfacesThroughComposition(t *testing.T) {
 		cachePort,
 		eventBusPort,
 		ratelimit.NewProvider(),
+		nil, // tr: this plan has no channel.telegram
 	)
 	if err != nil {
 		t.Fatalf("newMuxWithExtraProviders with probe: %v", err)

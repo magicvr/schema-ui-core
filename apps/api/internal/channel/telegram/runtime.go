@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,9 +10,6 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
-
-// defaultMasterKey is the deterministic fallback key when no explicit master key is supplied.
-var defaultMasterKey = sha256.Sum256([]byte("schema-ui-core:channel:telegram:master-key:v1"))
 
 // RuntimeStatus contains diagnostic and status information about the Telegram channel.
 // Sensitive secrets are never exposed in plaintext or partial masks (F-002 / R-005 / R-008).
@@ -42,8 +38,13 @@ type RuntimeManager struct {
 }
 
 // NewRuntimeManager constructs a RuntimeManager initialized with the given token and secret,
-// loading any persisted state from the database if available.
-func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, runners ...TxRunner) *RuntimeManager {
+// loading any persisted state from the database if available. masterKey is the at-rest
+// encryption key — required, and NEVER derived from a source constant (F-002 / A-006:
+// "主密钥离开源码"). A nil/empty key is a construction error (fail-closed).
+func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, masterKey []byte, runners ...TxRunner) (*RuntimeManager, error) {
+	if len(masterKey) == 0 {
+		return nil, fmt.Errorf("telegram: master key is required")
+	}
 	if mock == nil {
 		mock = NewCaptureSender()
 	}
@@ -58,29 +59,40 @@ func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, runner
 		secret:    strings.TrimSpace(seedSecret),
 		mock:      mock,
 		runner:    runner,
-		masterKey: defaultMasterKey[:],
+		masterKey: masterKey,
 	}
 
 	if runner != nil {
-		rm.initPersistence(seedToken, seedSecret)
+		if err := rm.initPersistence(seedToken, seedSecret); err != nil {
+			return nil, fmt.Errorf("telegram: init persistence: %w", err)
+		}
 	}
 
-	return rm
+	return rm, nil
 }
 
-func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) {
+// initPersistence loads (or seeds) the encrypted telegram_config row. Any DB or
+// decryption failure is returned so the composition root fails closed instead of
+// silently staying on the seed values (F-002 / A-006).
+func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) error {
 	ctx := context.Background()
-	_ = r.runner.Run(ctx, func(tx kernel.Tx) error {
+	return r.runner.Run(ctx, func(tx kernel.Tx) error {
 		var count int
 		row := tx.QueryRow(ctx, `SELECT COUNT(*) FROM telegram_config WHERE id = 1`)
-		if err := row.Scan(&count); err != nil || count == 0 {
-			// Seed row if table exists but empty
+		if err := row.Scan(&count); err != nil {
+			return fmt.Errorf("telegram: read config presence: %w", err)
+		}
+		if count == 0 {
+			// Seed row if the table is empty.
 			tokenEnc, err1 := mail.EncryptSecret(r.masterKey, strings.TrimSpace(seedToken))
 			secretEnc, err2 := mail.EncryptSecret(r.masterKey, strings.TrimSpace(seedSecret))
-			if err1 == nil && err2 == nil {
-				now := time.Now().Unix()
-				_, _ = tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, updated_at) VALUES (1, ?, ?, ?)`,
-					tokenEnc, secretEnc, now)
+			if err1 != nil || err2 != nil {
+				return fmt.Errorf("telegram: encrypt seed secrets: %v / %v", err1, err2)
+			}
+			now := time.Now().Unix()
+			if _, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, updated_at) VALUES (1, ?, ?, ?)`,
+				tokenEnc, secretEnc, now); err != nil {
+				return fmt.Errorf("telegram: seed config: %w", err)
 			}
 			return nil
 		}
@@ -88,20 +100,22 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) {
 		var dbTokenEnc, dbSecretEnc string
 		var updatedAt int64
 		row2 := tx.QueryRow(ctx, `SELECT bot_token_enc, webhook_secret_enc, updated_at FROM telegram_config WHERE id = 1`)
-		if err := row2.Scan(&dbTokenEnc, &dbSecretEnc, &updatedAt); err == nil {
-			decToken, err1 := mail.DecryptSecret(r.masterKey, dbTokenEnc)
-			decSecret, err2 := mail.DecryptSecret(r.masterKey, dbSecretEnc)
-			if err1 == nil && err2 == nil {
-				r.mu.Lock()
-				if strings.TrimSpace(decToken) != "" {
-					r.token = strings.TrimSpace(decToken)
-				}
-				if strings.TrimSpace(decSecret) != "" {
-					r.secret = strings.TrimSpace(decSecret)
-				}
-				r.mu.Unlock()
-			}
+		if err := row2.Scan(&dbTokenEnc, &dbSecretEnc, &updatedAt); err != nil {
+			return fmt.Errorf("telegram: read persisted config: %w", err)
 		}
+		decToken, err1 := mail.DecryptSecret(r.masterKey, dbTokenEnc)
+		decSecret, err2 := mail.DecryptSecret(r.masterKey, dbSecretEnc)
+		if err1 != nil || err2 != nil {
+			return fmt.Errorf("telegram: decrypt persisted config: %v / %v", err1, err2)
+		}
+		r.mu.Lock()
+		if strings.TrimSpace(decToken) != "" {
+			r.token = strings.TrimSpace(decToken)
+		}
+		if strings.TrimSpace(decSecret) != "" {
+			r.secret = strings.TrimSpace(decSecret)
+		}
+		r.mu.Unlock()
 		return nil
 	})
 }

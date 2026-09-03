@@ -2,12 +2,16 @@ package composition
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
-	"log/slog"
+	"time"
+
+	"go.uber.org/fx"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
@@ -160,7 +164,10 @@ func TestResolveTelegramPorts_EnabledAndDisabled(t *testing.T) {
 
 	// 1. When module is disabled in plan: returns disabled no-op dispatcher and fail-closed sender
 	planDisabled := kernel.Plan{Modules: []kernel.Module{}}
-	dispDisabled, senderDisabled := ResolveTelegramPorts(planDisabled, cfg, st)
+	dispDisabled, senderDisabled, err := ResolveTelegramPorts(planDisabled, cfg, st)
+	if err != nil {
+		t.Fatalf("ResolveTelegramPorts(disabled): %v", err)
+	}
 
 	msg := kernel.TelegramMessage{ChatID: "123", Text: "Hello"}
 	if err := senderDisabled.Send(context.Background(), msg); err != kernel.ErrTelegramDisabled {
@@ -172,7 +179,10 @@ func TestResolveTelegramPorts_EnabledAndDisabled(t *testing.T) {
 
 	// 2. When module is enabled in plan: returns live dispatcher and sender
 	planEnabled := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
-	dispEnabled, senderEnabled := ResolveTelegramPorts(planEnabled, cfg, st)
+	dispEnabled, senderEnabled, err := ResolveTelegramPorts(planEnabled, cfg, st)
+	if err != nil {
+		t.Fatalf("ResolveTelegramPorts(enabled): %v", err)
+	}
 
 	if senderEnabled == nil || dispEnabled == nil {
 		t.Fatalf("expected non-nil live sender and dispatcher")
@@ -199,11 +209,15 @@ func TestTelegramRuntime_PersistenceAcrossRestart(t *testing.T) {
 	cfg1 := &config.Config{
 		TelegramBotToken:      "seed-token",
 		TelegramWebhookSecret: "seed-secret",
+		TelegramMasterKey:     "test-master-key",
 	}
 	plan := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
 
 	// Start first process instance and hot-switch via RuntimeManager.Update (F-002)
-	tr1 := newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
+	tr1, err := newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime: %v", err)
+	}
 	if tr1.Manager == nil {
 		t.Fatalf("expected non-nil manager when channel.telegram enabled")
 	}
@@ -225,10 +239,14 @@ func TestTelegramRuntime_PersistenceAcrossRestart(t *testing.T) {
 	cfg2 := &config.Config{
 		TelegramBotToken:      "seed-token", // seed is old, but DB has updated value!
 		TelegramWebhookSecret: "seed-secret",
+		TelegramMasterKey:     "test-master-key",
 	}
 
 	// New process runtime initialized with old seed should reload persisted token from DB
-	tr2 := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
+	tr2, err := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime(restart): %v", err)
+	}
 	if tr2.Manager == nil {
 		t.Fatalf("expected non-nil manager after restart")
 	}
@@ -254,6 +272,7 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 		ModulesEnabled:        []string{"core.server-registration", "channel.telegram"},
 		TelegramBotToken:      "live-bot-token",
 		TelegramWebhookSecret: "correct-secret",
+		TelegramMasterKey:     "test-master-key",
 	}
 
 	desc := kernel.Module{
@@ -277,7 +296,10 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 
 	// Construct single shared TelegramRuntime (F-001)
 	rateLimiters := newRateLimiters()
-	tr := newTelegramRuntime(plan, cfg, st, rateLimiters)
+	tr, err := newTelegramRuntime(plan, cfg, st, rateLimiters)
+	if err != nil {
+		t.Fatalf("newTelegramRuntime: %v", err)
+	}
 
 	// Register command on the SAME dispatcher that webhook dispatches to
 	commandCalled := false
@@ -356,5 +378,84 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 	mux.ServeHTTP(wSettings, reqSettings)
 	if wSettings.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401 on unauthenticated settings request, got %d", wSettings.Code)
+	}
+}
+
+// TestTelegramFxInjection_SameRuntime proves F-001 / A-006 closure THROUGH the
+// real Fx graph: the *TelegramRuntime that NewApp's fx graph injects into
+// newMux (and exposes as kernel.TelegramDispatcher) is the SAME instance whose
+// dispatcher the mounted webhook uses. It does NOT hand-pass tr to newMux —
+// the previous test's flaw the audit rejected.
+func TestTelegramFxInjection_SameRuntime(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "telegram_fx_test.db")
+	cfg := &config.Config{
+		ProfileName:           string(kernel.ProfileCustom),
+		ModulesEnabled:        []string{"core.server-registration", "channel.telegram"},
+		TelegramBotToken:      "live-bot-token",
+		TelegramWebhookSecret: "correct-secret",
+		TelegramMasterKey:     "test-master-key",
+		HTTPAddr:              "127.0.0.1:0",
+		DBPath:                dbPath,
+	}
+
+	// Populate the injected graph values: the single *TelegramRuntime and the
+	// *http.ServeMux that NewApp builds. No tr is passed by hand anywhere.
+	var injected *TelegramRuntime
+	var mux *http.ServeMux
+	app, err := newAppWithOptions(
+		cfg,
+		"test-secret",
+		"hash",
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		fx.Populate(&injected),
+		fx.Populate(&mux),
+	)
+	if err != nil {
+		t.Fatalf("newAppWithOptions: %v", err)
+	}
+
+	startCtx, startCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer startCancel()
+	if err := app.Start(startCtx); err != nil {
+		t.Fatalf("app.Start: %v", err)
+	}
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer stopCancel()
+	defer func() { _ = app.Stop(stopCtx) }()
+
+	if injected == nil || injected.Webhook == nil {
+		t.Fatalf("expected live *TelegramRuntime injected by Fx graph")
+	}
+	if mux == nil {
+		t.Fatalf("expected *http.ServeMux injected by Fx graph")
+	}
+
+	// Register a command on the INJECTED dispatcher, then hit the webhook route
+	// served by the SAME mux — the command must be dispatched. If Fx had built a
+	// second runtime for the webhook, this registration would be invisible.
+	commandCalled := false
+	if err := injected.Dispatcher.RegisterCommand("status", func(ctx context.Context, upd kernel.TelegramUpdate) error {
+		commandCalled = true
+		return nil
+	}); err != nil {
+		t.Fatalf("RegisterCommand on injected dispatcher: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", strings.NewReader(`{
+		"update_id": 1,
+		"message": {
+			"chat": {"id": 12345},
+			"from": {"id": 67890},
+			"text": "/status"
+		}
+	}`))
+	req.Header.Set("X-Telegram-Bot-Api-Secret-Token", "correct-secret")
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 on valid webhook through Fx-built mux, got %d", w.Code)
+	}
+	if !commandCalled {
+		t.Fatalf("Fx-injected dispatcher did NOT serve the webhook command — runtime duplication still present")
 	}
 }

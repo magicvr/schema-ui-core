@@ -20,6 +20,7 @@ version: 1.0.0
 | [E-006-root-closeout](02-execution/E-006-root-closeout.md) | 2026-09-03 | Root 关门结项 | GOAL-005 完成 3/3 关门；证据矩阵通过；grok 独立审通过（0 required）；Root progress 4/4 正式关门 | recorded |
 | [E-007-a002-response](02-execution/E-007-a002-response.md) | 2026-09-03 | A-002 审计响应 | F-001（进程级端口装配与 disabled stub）与 F-002（数据库持久化）fixed 闭合；R-001～R-008 全项整改完成 | recorded |
 | [E-008-a004-final-closure](02-execution/E-008-a004-final-closure.md) | 2026-09-03 | A-004 复审整改 | 响应 A-004：同一 dispatcher 接进 newMux，F-002 纳入 catalog 迁移 66 + AES-GCM 加密，彻底删除运行时 DDL，重启重载测试全绿 | recorded |
+| [E-009-a006-response](02-execution/E-009-a006-response.md) | 2026-09-03 | A-006 复审整改 | 响应 A-006：`*TelegramRuntime` 改非 variadic 必选参数并删 fallback；新增经 NewApp/fx `fx.Populate` 同一实例测试；主密钥离开源码（`TELEGRAM_MASTER_KEY`/密钥文件），`initPersistence` fail-closed。全量测试绿 | recorded |
 
 ## 执行记录（ledger）
 

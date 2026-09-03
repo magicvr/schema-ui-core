@@ -65,6 +65,7 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		cachePort,
 		eventBusPort,
 		ratelimit.NewProvider(),
+		nil, // tr: this plan has no channel.telegram
 	)
 }
 

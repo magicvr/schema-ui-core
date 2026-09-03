@@ -15,7 +15,10 @@ import (
 
 func TestRuntimeManager_HotSwitch(t *testing.T) {
 	mock := NewCaptureSender()
-	rm := NewRuntimeManager("initial-token-12345", "initial-secret-67890", mock)
+	rm, err := NewRuntimeManager("initial-token-12345", "initial-secret-67890", mock, testMasterKey())
+	if err != nil {
+		t.Fatalf("NewRuntimeManager: %v", err)
+	}
 
 	// Verify initial getters
 	if rm.GetToken() != "initial-token-12345" {
@@ -57,7 +60,10 @@ func TestRuntimeManager_HotSwitch(t *testing.T) {
 }
 
 func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
-	rm := NewRuntimeManager("token123456", "secret789012", nil)
+	rm, err := NewRuntimeManager("token123456", "secret789012", nil, testMasterKey())
+	if err != nil {
+		t.Fatalf("NewRuntimeManager: %v", err)
+	}
 	handler := NewSettingsHandler(rm)
 
 	// 1. Unauthenticated GET -> 401
@@ -135,4 +141,21 @@ func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 	if rm.GetSecret() != "secret789012" {
 		t.Fatalf("expected secret to remain unchanged, got %s", rm.GetSecret())
 	}
+}
+
+// testMasterKey returns a fixed 32-byte at-rest key for tests (F-002: the
+// production path never falls back to a source constant).
+func testMasterKey() []byte {
+	return []byte("0123456789abcdef0123456789abcdef")
+}
+
+// newTestRuntimeManager constructs a RuntimeManager with a fixed test key,
+// failing the test on construction error (no persistence runner in these tests).
+func newTestRuntimeManager(t *testing.T, seedToken, seedSecret string, mock *CaptureSender) *RuntimeManager {
+	t.Helper()
+	rm, err := NewRuntimeManager(seedToken, seedSecret, mock, testMasterKey())
+	if err != nil {
+		t.Fatalf("NewRuntimeManager: %v", err)
+	}
+	return rm
 }

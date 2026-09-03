@@ -17,6 +17,8 @@ version: 1.0.1
 | [A-003-independent-audit-response](03-audit/A-003-independent-audit-response.md) | 2026-09-03 | self | A-002 独立审计意见合并响应 | pass | 0 | F-001（进程级端口装配与 disabled stub）与 F-002（数据库持久化）全部 fixed 闭合；R-001～R-008 全部处置完成；开放 required 归零 | [03-audit/A-003-independent-audit-response.md](03-audit/A-003-independent-audit-response.md) |
 | [A-004-independent-closure-reaudit](03-audit/A-004-independent-closure-reaudit.md) | 2026-09-03 | independent | A-002 F-001/F-002 与 R-001～R-008 声称闭合的独立复审 | fail | 2 | 驳回 A-003 闭合：F-001 helper 未进 Fx/`newMux`（双 dispatcher）；F-002 运行时 DDL 绕开 catalog、明文、测试未证 GetToken。R-001/R-003/R-008 可接受。不改 status | [03-audit/A-004-independent-closure-reaudit.md](03-audit/A-004-independent-closure-reaudit.md) |
 | [A-005-a004-closure-response](03-audit/A-005-a004-closure-response.md) | 2026-09-03 | self | A-004 独立复审意见合并响应与最终闭合 | pass | 0 | 落实用户指令：同一 dispatcher 接进 newMux；F-002 纳入 catalog 迁移 66 + AES-GCM 加密，彻底删除运行时 DDL，跨重启测试全绿；开放 required 归零 | [03-audit/A-005-a004-closure-response.md](03-audit/A-005-a004-closure-response.md) |
+| [A-006-independent-closure-reaudit](03-audit/A-006-independent-closure-reaudit.md) | 2026-09-03 | independent | A-004 F-001/F-002 与 A-005 声称闭合的独立复审 | fail | 2 | 驳回 A-005：Fx/dig 丢弃 variadic，生产仍双 runtime；加密主密钥写死在源码。v66/GetToken 重启测试属真进展。不改 status | [03-audit/A-006-independent-closure-reaudit.md](03-audit/A-006-independent-closure-reaudit.md) |
+| [A-007-a006-closure-response](03-audit/A-007-a006-closure-response.md) | 2026-09-03 | self | GOAL-001 A-006 独立复审意见响应（F-001 非 variadic 必选参数 + F-002 主密钥离开源码） | pass | 0 | 按用户明确指令 fixed 闭合：`newMux`/`newMuxWithExtraProviders` 改 `tr *TelegramRuntime` 非 variadic 必选参数并删 fallback；新增经 NewApp/fx `fx.Populate` 的同一实例测试；主密钥改经 `TELEGRAM_MASTER_KEY`/密钥文件解析、`initPersistence` fail-closed。全量测试绿 | [03-audit/A-007-a006-closure-response.md](03-audit/A-007-a006-closure-response.md) |
 
 ## 信息就绪核对（按 scope）
 
@@ -28,7 +30,7 @@ version: 1.0.1
 
 ## 结论状态
 
-A-004 提出的 F-001 与 F-002 必改项已完全落实整改：同一 dispatcher 经 `TelegramRuntime` 注入 Fx 与 `newMux`，F-002 纳入 compiled persistence catalog（迁移 66）并实现 AES-GCM 落库加密与跨重启测试断言，R-001～R-008 全部闭合或确认残余。全仓测试全部通过，开放 required = 0，Root 关门结项确立。
+A-005（self）声称 F-001/F-002 closed。A-006（independent，2026-09-03）复审 **fail**：F-001 与 F-002 **仍 open**（Fx 丢弃 variadic；主密钥硬编码）。A-007（self，2026-09-03）按用户明确指令 **fixed 闭合**：`*TelegramRuntime` 改为非 variadic 必选参数并删 fallback，新增经 `NewApp`/fx `fx.Populate` 的同一实例测试；主密钥离开源码（`TELEGRAM_MASTER_KEY`/密钥文件），`initPersistence` fail-closed。开放 required 归零；R-004（recommended）维持 open 不阻塞；R-007 残余留待用户书面确认。本索引不改 `00-meta` status；响应由 `/govern` 处理。
 
 ## 审计记录（ledger）
 

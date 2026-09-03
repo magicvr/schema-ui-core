@@ -16,7 +16,7 @@ import (
 
 func TestHTTPSender_UnconfiguredToken_DowngradesToMock(t *testing.T) {
 	mock := NewCaptureSender()
-	rm := NewRuntimeManager("", "", mock)
+	rm := newTestRuntimeManager(t, "", "", mock)
 	sender := NewHTTPSender(rm, nil, "")
 
 	msg := kernel.TelegramMessage{
@@ -35,7 +35,7 @@ func TestHTTPSender_UnconfiguredToken_DowngradesToMock(t *testing.T) {
 }
 
 func TestHTTPSender_ValidationFailClosed(t *testing.T) {
-	rm := NewRuntimeManager("test-token", "", nil)
+	rm := newTestRuntimeManager(t, "test-token", "", nil)
 	sender := NewHTTPSender(rm, nil, "http://invalid-host")
 
 	// Invalid empty text
@@ -63,7 +63,7 @@ func TestHTTPSender_ValidMessageDelivery(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rm := NewRuntimeManager("my-bot-token", "my-secret", nil)
+	rm := newTestRuntimeManager(t, "my-bot-token", "my-secret", nil)
 	sender := NewHTTPSender(rm, server.Client(), server.URL)
 
 	msg := kernel.TelegramMessage{
@@ -104,7 +104,7 @@ func TestHTTPSender_APIErrorResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rm := NewRuntimeManager("my-bot-token", "", nil)
+	rm := newTestRuntimeManager(t, "my-bot-token", "", nil)
 	sender := NewHTTPSender(rm, server.Client(), server.URL)
 
 	msg := kernel.TelegramMessage{
@@ -125,7 +125,7 @@ func TestHTTPSender_Status200_ButOKFalse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rm := NewRuntimeManager("my-bot-token", "", nil)
+	rm := newTestRuntimeManager(t, "my-bot-token", "", nil)
 	sender := NewHTTPSender(rm, server.Client(), server.URL)
 
 	msg := kernel.TelegramMessage{
@@ -170,7 +170,7 @@ func TestHTTPSender_TimeoutBudget(t *testing.T) {
 	}))
 	defer server.Close()
 
-	rm := NewRuntimeManager("my-bot-token", "", nil)
+	rm := newTestRuntimeManager(t, "my-bot-token", "", nil)
 	sender := NewHTTPSender(rm, server.Client(), server.URL)
 
 	// Context with very short timeout

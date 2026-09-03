@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
@@ -57,6 +57,7 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 		cachePort,
 		eventBusPort,
 		ratelimit.NewProvider(),
+		nil, // tr: this plan has no channel.telegram
 	)
 	if err != nil {
 		t.Fatal(err)

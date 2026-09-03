@@ -232,6 +232,15 @@ type Config struct {
 	// Telegram channel runtime surface (VP-030 / GOAL-003 R2).
 	TelegramBotToken      string
 	TelegramWebhookSecret string
+	// TelegramMasterKey optionally supplies the at-rest master key for the
+	// telegram_config row via TELEGRAM_MASTER_KEY (hashed like mail's
+	// MAIL_CONFIG_MASTER_KEY; F-002 / A-006 — never a source constant). Empty
+	// keeps the auto-generated key file beside the data directory.
+	TelegramMasterKey string
+	// TelegramMasterKeyPath optionally relocates the auto-generated master key
+	// FILE (telegram.master_key_path / TELEGRAM_MASTER_KEY_PATH), mirroring
+	// mail.master_key_path (W13 F-017 pattern).
+	TelegramMasterKeyPath string
 
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
@@ -397,6 +406,7 @@ type yamlFile struct {
 	Telegram struct {
 		BotToken      *string `yaml:"bot_token"`
 		WebhookSecret *string `yaml:"webhook_secret"`
+		MasterKeyPath *string `yaml:"master_key_path"`
 	} `yaml:"telegram"`
 	Runtime struct {
 		Mode *string `yaml:"mode"`
@@ -605,6 +615,7 @@ func Load() *Config {
 	cfg.MailMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Mail.MasterKeyPath, cfg.MailMasterKeyPath))
 	cfg.TelegramBotToken = strPtrOr(yf.Telegram.BotToken, cfg.TelegramBotToken)
 	cfg.TelegramWebhookSecret = strPtrOr(yf.Telegram.WebhookSecret, cfg.TelegramWebhookSecret)
+	cfg.TelegramMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Telegram.MasterKeyPath, cfg.TelegramMasterKeyPath))
 	if yf.Cache.MaxEntries != nil {
 		cfg.CacheMaxEntries = *yf.Cache.MaxEntries
 	}
@@ -724,6 +735,8 @@ func Load() *Config {
 	cfg.MailConfigMasterKey = envOr("MAIL_CONFIG_MASTER_KEY", cfg.MailConfigMasterKey)
 	cfg.TelegramBotToken = envOr("TELEGRAM_BOT_TOKEN", cfg.TelegramBotToken)
 	cfg.TelegramWebhookSecret = envOr("TELEGRAM_WEBHOOK_SECRET", cfg.TelegramWebhookSecret)
+	cfg.TelegramMasterKey = envOr("TELEGRAM_MASTER_KEY", cfg.TelegramMasterKey)
+	cfg.TelegramMasterKeyPath = strings.TrimSpace(envOr("TELEGRAM_MASTER_KEY_PATH", cfg.TelegramMasterKeyPath))
 	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): strict env
 	// parse mirroring MAIL_SMTP_PORT — an explicitly supplied invalid value
 	// fails closed instead of silently keeping the default.

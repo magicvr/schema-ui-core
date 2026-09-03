@@ -17,6 +17,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/cache"
+	telegraminternal "github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/eventbus"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
@@ -33,6 +34,7 @@ import (
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
+	telegrammodule "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/modules/dashboard"
 	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary"
@@ -63,8 +65,6 @@ import (
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
-	telegraminternal "github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
-	telegrammodule "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -107,6 +107,14 @@ func ResolvePlan(cfg *config.Config) (kernel.Plan, error) {
 // NewApp creates the Fx composition root. Fx types remain confined to this
 // package; module descriptors and kernel contracts remain framework agnostic.
 func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logger) (*fx.App, error) {
+	return newAppWithOptions(cfg, secretValue, seedHash, logger)
+}
+
+// newAppWithOptions is the composition-root test seam (F-001 / A-006): it builds
+// the exact same Fx graph as NewApp plus caller-supplied fx.Options (e.g.
+// fx.Populate) so a test can prove the injected *TelegramRuntime is the SAME
+// instance the webhook mounts, without bypassing the Fx graph.
+func newAppWithOptions(cfg *config.Config, secretValue, seedHash string, logger *slog.Logger, extra ...fx.Option) (*fx.App, error) {
 	plan, err := ResolvePlan(cfg)
 	if err != nil {
 		return nil, err
@@ -114,7 +122,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return fx.New(
+	opts := []fx.Option{
 		fx.Provide(
 			func() *config.Config { return cfg },
 			func() jwtSecret { return jwtSecret(secretValue) },
@@ -141,7 +149,9 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newServer,
 		),
 		fx.Invoke(registerLifecycle),
-	), nil
+	}
+	opts = append(opts, extra...)
+	return fx.New(opts...), nil
 }
 
 // readinessGate reports whether the module graph Start+Ready succeeded (R5 real
@@ -298,12 +308,8 @@ func newMux(
 	cachePort kernel.Cache,
 	eventBusPort kernel.EventBus,
 	rateLimiters kernel.RateLimiterProvider,
-	trs ...*TelegramRuntime,
+	tr *TelegramRuntime,
 ) (*http.ServeMux, error) {
-	var tr *TelegramRuntime
-	if len(trs) > 0 {
-		tr = trs[0]
-	}
 	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, eventBusPort, rateLimiters, tr)
 }
 
@@ -329,7 +335,7 @@ func newMuxWithExtraProviders(
 	cachePort kernel.Cache,
 	eventBusPort kernel.EventBus,
 	rateLimiters kernel.RateLimiterProvider,
-	trs ...*TelegramRuntime,
+	tr *TelegramRuntime,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
 	// interception point — central handler registrations (Handle/HandleFunc)
@@ -595,15 +601,11 @@ func newMuxWithExtraProviders(
 			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 		}
 	}
-	var tr *TelegramRuntime
-	if len(trs) > 0 && trs[0] != nil {
-		tr = trs[0]
-	} else {
-		tr = newTelegramRuntime(plan, cfg, st, rateLimiters)
-	}
 
 	// VP-030 (GOAL-003 R2 / GOAL-004 R3 / F-001 / F-002): channel.telegram — Telegram channel runtime.
-	// Assembled by plan enablement (custom profile or explicit app.modules).
+	// Assembled by plan enablement (custom profile or explicit app.modules). The
+	// injected `tr` is THE process instance provided by newTelegramRuntime in the
+	// Fx graph — never reconstructed here (F-001 / A-006: variadic removed).
 	if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil {
 		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(tr.Manager))
 		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings))
@@ -814,12 +816,26 @@ type TelegramRuntime struct {
 }
 
 // newTelegramRuntime builds the shared TelegramRuntime for the process (F-001).
-func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider) *TelegramRuntime {
+// The at-rest master key is resolved the same way as the mail channel
+// (F-002 / A-006): operator-passphrase env (TELEGRAM_MASTER_KEY) or an
+// auto-generated key file beside the database — never a source constant.
+func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider) (*TelegramRuntime, error) {
 	if plan.HasModule("channel.telegram") {
+		masterKeyPath := cfg.TelegramMasterKeyPath
+		if strings.TrimSpace(masterKeyPath) == "" {
+			masterKeyPath = filepath.Join(filepath.Dir(cfg.DBPath), "telegram-master.key")
+		}
+		masterKey, err := mail.LoadOrCreateMasterKey(cfg.TelegramMasterKey, masterKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("composition: telegram master key: %w", err)
+		}
 		subStore := subject.NewStore(st)
 		disp := telegraminternal.NewDispatcher()
 		mockSender := telegraminternal.NewCaptureSender()
-		rt := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, mockSender, st)
+		rt, err := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, mockSender, masterKey, st)
+		if err != nil {
+			return nil, fmt.Errorf("composition: telegram runtime: %w", err)
+		}
 		sender := telegraminternal.NewHTTPSender(rt, nil, "")
 		webhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
 			TokenGetter:  rt.GetToken,
@@ -834,18 +850,23 @@ func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, r
 			Sender:     sender,
 			Manager:    rt,
 			Webhook:    webhook,
-		}
+		}, nil
 	}
 	return &TelegramRuntime{
 		Dispatcher: telegraminternal.NewDisabledDispatcher(),
 		Sender:     telegraminternal.NewDisabledSender(),
-	}
+	}, nil
 }
 
 // ResolveTelegramPorts returns the process-level TelegramDispatcher and TelegramSender (D-002 §1 / F-001).
-func ResolveTelegramPorts(plan kernel.Plan, cfg *config.Config, st kernel.Store) (kernel.TelegramDispatcher, kernel.TelegramSender) {
-	tr := newTelegramRuntime(plan, cfg, st, newRateLimiters())
-	return tr.Dispatcher, tr.Sender
+// It is a standalone helper for non-Fx consumers (tests, external harnesses);
+// the Fx production graph injects the single *TelegramRuntime directly.
+func ResolveTelegramPorts(plan kernel.Plan, cfg *config.Config, st kernel.Store) (kernel.TelegramDispatcher, kernel.TelegramSender, error) {
+	tr, err := newTelegramRuntime(plan, cfg, st, newRateLimiters())
+	if err != nil {
+		return nil, nil, err
+	}
+	return tr.Dispatcher, tr.Sender, nil
 }
 
 // newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /
