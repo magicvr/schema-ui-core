@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-contract-freeze
 title: R1 合同冻结（AllowRecord 端口契约）
-status: active
+status: done
 parent: GOAL-001-rate-limiter-atomic-port
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.1.0
-progress: 2/3
+version: 0.2.0
+progress: 3/3
 plan_refs:
   - VP-032-rate-limiter-atomic-port
 primary_plan: VP-032-rate-limiter-atomic-port
@@ -25,9 +25,9 @@ serves_summary: 承载 VP-032 R1：把 VRev-073 已冻结的 I-032-001/002 落�
 |--------|------|------|
 | C1 | **继承激活冻结**：I-032-001/002 无新 P-004 裁决；记录到 D-001 | **已关门**（2026-09-03 · 用户指令冻结 R1 方案；无开放 required） |
 | C2 | **合同正文 + 端口落地**：D-002 冻结；`kernel.RateLimiter` 增 `AllowRecord`；stub + Memory 单锁实现；合同级测试绿 | **已关门**（2026-09-03 · D-002 v0.1.0；kernel + Memory + 顺序等价/并发预算/`-race`） |
-| C3 | **审视与关门**：阶段关门 self（Root D-001：R1 default self；independent 留 R3） | 待 C2 后 |
+| C3 | **审视与关门**：阶段关门 self（Root D-001：R1 default self；independent 留 R3） | **已关门**（2026-09-03 · A-001 pass + A-002 独立审 F-001 fixed 闭合于 A-003；pass 0 required） |
 
-`progress` = 已关门检查点数 / 3。当前 **2/3**。
+`progress` = 已关门检查点数 / 3。当前 **3/3**。
 
 ## 成功标准（方向级）
 

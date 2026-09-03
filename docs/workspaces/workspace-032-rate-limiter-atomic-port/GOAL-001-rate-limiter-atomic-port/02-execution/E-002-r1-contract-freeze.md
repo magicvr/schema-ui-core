@@ -14,7 +14,7 @@ version: 0.1.0
 - 2026-09-03：用户指令冻结 R1 方案；扫描无 P-004 裁决（I-032-001/002 已 verified）。
 - 2026-09-03：立项 `GOAL-002-r1-contract-freeze`；D-001 继承激活冻结；D-002 v0.1.0 冻结 AllowRecord 合同。
 - 2026-09-03：端口落地 `kernel.RateLimiter.AllowRecord` + Memory 单锁实现 + 合同级测试。生产 14 处调用点未迁。
-- 2026-09-03：Git checkpoint `bdfe925f`。
+- 2026-09-03：Git checkpoint `98edb03e`（HEAD on dev）。
 
 ## 产物
 

@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-03
 updated: 2026-09-03
-version: 0.2.0
-progress: 0/3
+version: 0.3.0
+progress: 1/3
 plan_refs:
   - VP-032-rate-limiter-atomic-port
 primary_plan: VP-032-rate-limiter-atomic-port
@@ -33,9 +33,9 @@ serves_summary: 架构分支 · 承接 VP-027 residual R-007：kernel.RateLimite
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
-| R1 | 合同落盘（GOAL-002）：D-002 冻结 + kernel.AllowRecord + Memory 单锁实现 + 合同级测试。I-032-001/002 已由 VRev-073 冻结 | **进行中**（C1/C2 已关门 · C3 self 待做） |
-| R2 | 14 处迁移 + handler 回归（判据 2/3）：按立即消费 / 失败预算两口径迁生产调用点；handler 既有限流测试仍绿 | 待 R1 关门 |
-| R3 | 证据与关门（判据 4/5；依赖 R1–R2）：证据矩阵 / 越界核账 / 审计闭合 | 待 R1–R2 |
+| R1 | 合同落盘（GOAL-002）：D-002 冻结 + kernel.AllowRecord + Memory 单锁实现 + 合同级测试。I-032-001/002 已由 VRev-073 冻结 | **已关门**（2026-09-03 · GOAL-002 合同与端口落地 + A-003 关门） |
+| R2 | 14 处迁移 + handler 回归（判据 2/3）：按立即消费 / 失败预算两口径迁生产调用点；handler 既有限流测试仍绿 | **进行中**（GOAL-003 已立项；待迁 14 处调用点） |
+| R3 | 证据与关门（判据 4/5；依赖 R1–R2）：证据矩阵 / 越界核账 / 审计闭合 | 待 R2 关门 |
 
 ## 信息就绪与未知项（P-005）
 

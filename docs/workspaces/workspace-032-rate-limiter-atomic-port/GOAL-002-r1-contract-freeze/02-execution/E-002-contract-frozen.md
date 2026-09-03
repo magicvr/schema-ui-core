@@ -17,7 +17,7 @@ version: 0.1.0
 - 2026-09-03：`apps/api/internal/ratelimit/memory.go` 抽 `allowLocked`/`recordLocked`；`AllowRecord` 同一把锁内 Allow-then-Record。
 - 2026-09-03：`memory_test.go` 增顺序等价、拒绝不登记、并发预算；既有并发测试混入 AllowRecord。
 - 2026-09-03：验证（`apps/api`）：`go test ./kernel/ ./internal/ratelimit/` 绿；`go test -race ./internal/ratelimit/` 绿；`go build ./...` 通过。生产 14 处调用点未改。
-- 2026-09-03：Git checkpoint `bdfe925f`（owned paths：vision VP-032 激活台账 + workspace-032 + kernel/Memory AllowRecord）。
+- 2026-09-03：Git checkpoint `98edb03e`（owned paths：vision VP-032 激活台账 + workspace-032 + kernel/Memory AllowRecord；HEAD on dev）。
 
 ## 产物
 
