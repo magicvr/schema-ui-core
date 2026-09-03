@@ -60,13 +60,13 @@ func mustCIDR(cidr string) *net.IPNet {
 	return ipnet
 }
 
-// loginClientIP returns the client identity used for per-client rate
+// LoginClientIP returns the client identity used for per-client rate
 // limiting: the X-Real-IP header when the direct peer is a configured trusted
 // reverse proxy, otherwise the direct peer address. The header is never
 // trusted from an untrusted peer: a client-facing server must not be
 // spoofable by setting X-Real-IP itself (D-001 P1; W7 F-008 — trust is
 // explicit CIDRs, not all private addresses).
-func loginClientIP(r *http.Request) string {
+func LoginClientIP(r *http.Request) string {
 	peer := clientIP(r)
 	if trustedReverseProxy(peer) {
 		if real := r.Header.Get("X-Real-IP"); strings.TrimSpace(real) != "" {
@@ -74,6 +74,10 @@ func loginClientIP(r *http.Request) string {
 		}
 	}
 	return peer
+}
+
+func loginClientIP(r *http.Request) string {
+	return LoginClientIP(r)
 }
 
 // trustedReverseProxy reports whether the direct peer is a configured trusted

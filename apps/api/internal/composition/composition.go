@@ -62,6 +62,9 @@ import (
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/modules/users"
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
+	telegraminternal "github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
+	telegrammodule "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -582,6 +585,22 @@ func newMuxWithExtraProviders(
 		a.OnLockOpened = func(userID string) {
 			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 		}
+	}
+	// VP-030 (GOAL-003 R2): channel.telegram — Telegram channel runtime.
+	// Assembled by plan enablement (custom profile or explicit app.modules).
+	if plan.HasModule("channel.telegram") {
+		subStore := subject.NewStore(st)
+		tgDispatcher := telegraminternal.NewDispatcher()
+		tgSender := telegraminternal.NewCaptureSender()
+		tgWebhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
+			TokenGetter:  func() string { return cfg.TelegramBotToken },
+			SecretGetter: func() string { return cfg.TelegramWebhookSecret },
+			RateLimiters: rateLimiters,
+			SubjectStore: subStore,
+			Dispatcher:   tgDispatcher,
+			Sender:       tgSender,
+		})
+		providers = append(providers, telegrammodule.New(tgWebhook))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)

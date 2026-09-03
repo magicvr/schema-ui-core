@@ -229,6 +229,10 @@ type Config struct {
 	// volume instead.
 	MailMasterKeyPath string
 
+	// Telegram channel runtime surface (VP-030 / GOAL-003 R2).
+	TelegramBotToken      string
+	TelegramWebhookSecret string
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -390,6 +394,10 @@ type yamlFile struct {
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
+	Telegram struct {
+		BotToken      *string `yaml:"bot_token"`
+		WebhookSecret *string `yaml:"webhook_secret"`
+	} `yaml:"telegram"`
 	Runtime struct {
 		Mode *string `yaml:"mode"`
 	} `yaml:"runtime"`
@@ -595,6 +603,8 @@ func Load() *Config {
 	cfg.MailResendAPIKey = strPtrOr(yf.Mail.Resend.APIKey, cfg.MailResendAPIKey)
 	cfg.MailResendFrom = strPtrOr(yf.Mail.Resend.From, cfg.MailResendFrom)
 	cfg.MailMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Mail.MasterKeyPath, cfg.MailMasterKeyPath))
+	cfg.TelegramBotToken = strPtrOr(yf.Telegram.BotToken, cfg.TelegramBotToken)
+	cfg.TelegramWebhookSecret = strPtrOr(yf.Telegram.WebhookSecret, cfg.TelegramWebhookSecret)
 	if yf.Cache.MaxEntries != nil {
 		cfg.CacheMaxEntries = *yf.Cache.MaxEntries
 	}
@@ -712,6 +722,8 @@ func Load() *Config {
 	cfg.MailResendFrom = envOr("MAIL_RESEND_FROM", cfg.MailResendFrom)
 	cfg.MailMasterKeyPath = strings.TrimSpace(envOr("MAIL_MASTER_KEY_PATH", cfg.MailMasterKeyPath))
 	cfg.MailConfigMasterKey = envOr("MAIL_CONFIG_MASTER_KEY", cfg.MailConfigMasterKey)
+	cfg.TelegramBotToken = envOr("TELEGRAM_BOT_TOKEN", cfg.TelegramBotToken)
+	cfg.TelegramWebhookSecret = envOr("TELEGRAM_WEBHOOK_SECRET", cfg.TelegramWebhookSecret)
 	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): strict env
 	// parse mirroring MAIL_SMTP_PORT — an explicitly supplied invalid value
 	// fails closed instead of silently keeping the default.
