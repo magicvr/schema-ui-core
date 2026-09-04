@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.14.0
+version: 0.15.0
 ---
 
 # GOAL-003 · R2 审计索引
@@ -15,7 +15,7 @@ version: 0.14.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-033-014～016 | **verified** | D-001 已记录用户裁决；A-002 self pass；A-003 independent pass；C2 已加入 DB 既有行（含空列）权威性测试 |
-| I-033-017 | **verified** | A-014/C4 composition 测试确认 disabled profile 不暴露 settings、lease、webhook、schema |
+| I-033-017 | **verified** | A-014 与 A-015 均确认 disabled profile 不暴露 settings、lease、webhook、schema |
 | I-033-018 | **verified** | A-009/A-012：`Dispatcher.HasBusinessHandlers` 具体实现与行为测试已核对 |
 | 到期 required 是否已 verified / residual | 已满足 | I-033-014～016 verified；无 residual/overrule |
 | 资料引用（若有）是否固定且用户确认 | 无 | workspace `shared_materials_catalog: none` |
@@ -38,7 +38,9 @@ version: 0.14.0
 | [A-012-r2-c3-finding-remediation-independent](03-audit/A-012-r2-c3-finding-remediation-independent.md) | 2026-09-04 | independent | A-010 F-001～F-003 修复后的 R2 C3 全范围 re-audit | **pass** | **0** | `03-audit/A-012-r2-c3-finding-remediation-independent.md` |
 | [A-013-r2-c3-audit-response](03-audit/A-013-r2-c3-audit-response.md) | 2026-09-04 | self | 响应 A-012 并关闭 R2 C3 检查点 | **pass** | **0** | `03-audit/A-013-r2-c3-audit-response.md` |
 | [A-014-r2-c4-implementation-self](03-audit/A-014-r2-c4-implementation-self.md) | 2026-09-04 | self | R2 C4 Admin settings UI、polling lease HTTP 与 composition 接缝 | **pass** | **0** | `03-audit/A-014-r2-c4-implementation-self.md` |
+| [A-015-r2-c4-implementation-independent](03-audit/A-015-r2-c4-implementation-independent.md) | 2026-09-04 | independent | R2 C4 Admin settings UI、lease HTTP 认证/会话隔离、manager/Fx 接缝、profile gating 与相关测试 | **pass** | **0** | `03-audit/A-015-r2-c4-implementation-independent.md` |
+| [A-016-r2-c4-audit-response](03-audit/A-016-r2-c4-audit-response.md) | 2026-09-04 | self | 响应 A-015 并关闭 R2 C4 检查点 | **pass** | **0** | `03-audit/A-016-r2-c4-audit-response.md` |
 
 ## 结论状态
 
-R2 C1 已由用户裁决、A-002 self `pass` 与 A-003 independent `pass`（open required = 0）核对；A-001 原文保留。A-004 已完成 `/govern` 响应。C2 生产实现已由 A-005 self `pass` 与 A-006 Grok independent `pass`（open required = 0）核对，A-007 已完成 `/govern` 响应并关闭 C2 检查点（progress 2/5）。A-008 纠正了 A-007 中将整个 GOAL-003 投影为 `done` 的错误。A-003 F-001 以代码+回归测试合法 `fixed`；A-006 F-001～F-005 仍为推荐性后续项，不构成 C2 required 阻断。A-009 已核对 C3 初次实施，A-010 Grok independent 原文保留为 **fail**、open_required=`3`；其 F-001～F-003 已由 `4cc96b06` 修复、A-011 self `pass`，并由 A-012 Grok independent re-audit 标为 `fixed`（A-012 **pass**、open_required=`0`）。A-013 已响应并合法闭合三项 required，关闭 C3，GOAL-003 当前为 `active · 3/5`。A-014 已核对 C4 实现 self `pass`、open_required=`0`，C4 independent pending；A-010 F-004～F-005 / A-012 F-001～F-002 仍为 recommended open，转入 C5；C5 尚未完成。
+R2 C1 已由用户裁决、A-002 self `pass` 与 A-003 independent `pass`（open required = 0）核对；A-001 原文保留。A-004 已完成 `/govern` 响应。C2 生产实现已由 A-005 self `pass` 与 A-006 Grok independent `pass`（open required = 0）核对，A-007 已完成 `/govern` 响应并关闭 C2 检查点（progress 2/5）。A-008 纠正了 A-007 中将整个 GOAL-003 投影为 `done` 的错误。A-003 F-001 以代码+回归测试合法 `fixed`；A-006 F-001～F-005 仍为推荐性后续项，不构成 C2 required 阻断。A-009 已核对 C3 初次实施，A-010 Grok independent 原文保留为 **fail**、open_required=`3`；其 F-001～F-003 已由 `4cc96b06` 修复、A-011 self `pass`，并由 A-012 Grok independent re-audit 标为 `fixed`（A-012 **pass**、open_required=`0`）。A-013 已响应并合法闭合三项 required，关闭 C3，GOAL-003 当前为 `active · 3/5`。A-014 已核对 C4 实现 self `pass`、open_required=`0`（原文保留）。A-015 Grok independent 已独立核验当前 HEAD 与测试，**pass**、open_required=`0`；A-016 已响应并关闭 C4，GOAL-003 当前为 `active · 4/5`。A-015 F-001～F-004 与 A-010 F-004～F-005 / A-012 F-001～F-002 仍为 recommended open，转入 C5；C5 尚未完成。
