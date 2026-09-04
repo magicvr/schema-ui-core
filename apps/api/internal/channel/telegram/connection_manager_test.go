@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -231,7 +232,7 @@ func TestConnectionManager_PollingErrorClearsReceiver(t *testing.T) {
 	defer server.Close()
 
 	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		return botAPIJSONResponse(`{"ok":false,"error_code":502,"description":"upstream unavailable"}`), nil
+		return nil, errors.New("dial failed")
 	})}
 	manager := NewConnectionManager(rm, NewDispatcher(), NewBotAPIClient(rm, server.Client(), server.URL), NewPollingBotAPIClient(rm, pollingClient, "https://telegram.test"), nil)
 	if err := manager.AcquireLease(context.Background(), "console-1"); err != nil {
@@ -247,7 +248,7 @@ func TestConnectionManager_PollingErrorClearsReceiver(t *testing.T) {
 	for {
 		status := manager.Status()
 		if status.State == ConnectionStateError {
-			if status.Receiver != ReceiverNone || status.LastError == "" {
+			if status.Receiver != ReceiverNone || status.LastError != "telegram: getUpdates: execute request failed" {
 				t.Fatalf("polling error status = %+v", status)
 			}
 			break
@@ -397,6 +398,32 @@ func TestConnectionManager_FailedModeSwitchDrainsPolling(t *testing.T) {
 	}
 	if err := manager.Stop(context.Background()); err != nil {
 		t.Fatalf("Stop: %v", err)
+	}
+}
+
+func TestConnectionManager_WatchDemandDoesNotStartWhenStopped(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	dispatcher := NewDispatcher()
+	if err := dispatcher.RegisterCommand("status", func(context.Context, kernel.TelegramUpdate) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	pollStarted := make(chan struct{})
+	var startOnce sync.Once
+	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		startOnce.Do(func() { close(pollStarted) })
+		return botAPIJSONResponse(`{"ok":true,"result":[]}`), nil
+	})}
+	manager := NewConnectionManager(rm, dispatcher, nil, NewPollingBotAPIClient(rm, pollingClient, "https://telegram.test"), nil)
+	watchCtx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		cancel()
+		_ = manager.Stop(context.Background())
+	}()
+	go manager.watchDemand(watchCtx)
+	select {
+	case <-pollStarted:
+		t.Fatal("watchDemand started polling while manager was stopped")
+	case <-time.After(PollingLeaseSweepInterval + 250*time.Millisecond):
 	}
 }
 

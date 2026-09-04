@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -93,17 +94,66 @@ func TestPollingBotAPIClient_RequestAndClientTimeouts(t *testing.T) {
 	defer server.Close()
 
 	client := NewPollingBotAPIClient(rm, server.Client(), server.URL)
-	if client.requestTimeout != GetUpdatesRequestTimeout {
-		t.Fatalf("request timeout = %s, want %s", client.requestTimeout, GetUpdatesRequestTimeout)
+	if client.contextTimeout != PollingRequestContextTimeout {
+		t.Fatalf("context timeout = %s, want %s", client.contextTimeout, PollingRequestContextTimeout)
 	}
 	if client.client.Timeout != PollingHTTPClientTimeout {
 		t.Fatalf("client timeout = %s, want %s", client.client.Timeout, PollingHTTPClientTimeout)
+	}
+	if !(GetUpdatesRequestTimeout < client.contextTimeout && client.contextTimeout < client.client.Timeout) {
+		t.Fatalf("polling timeout ordering = API %s, context %s, client %s", GetUpdatesRequestTimeout, client.contextTimeout, client.client.Timeout)
 	}
 	if _, err := client.GetUpdates(context.Background(), 17); err != nil {
 		t.Fatalf("GetUpdates: %v", err)
 	}
 	if payload.Offset != 17 || payload.Timeout != 30 {
 		t.Fatalf("getUpdates payload = %+v, want offset 17 timeout 30", payload)
+	}
+}
+
+func TestPollingBotAPIClient_ContextDeadlineLeavesLongPollGrace(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	deadlineSeen := make(chan time.Time, 1)
+	client := NewPollingBotAPIClient(rm, &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		deadline, ok := req.Context().Deadline()
+		if !ok {
+			t.Error("polling request has no context deadline")
+		} else {
+			deadlineSeen <- deadline
+		}
+		return botAPIJSONResponse(`{"ok":true,"result":[]}`), nil
+	})}, "https://telegram.test")
+	if _, err := client.GetUpdates(context.Background(), 0); err != nil {
+		t.Fatalf("GetUpdates: %v", err)
+	}
+	select {
+	case deadline := <-deadlineSeen:
+		remaining := time.Until(deadline)
+		if remaining <= GetUpdatesRequestTimeout-time.Second {
+			t.Fatalf("context deadline leaves insufficient long-poll grace: %s", remaining)
+		}
+		if remaining > PollingRequestContextTimeout {
+			t.Fatalf("context deadline exceeds configured timeout: %s", remaining)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("polling request deadline was not observed")
+	}
+}
+
+func TestBotAPIClient_TransportErrorsAreSanitized(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "webhook-secret", nil)
+	client := NewBotAPIClient(rm, &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return nil, errors.New("dial failed")
+	})}, "https://telegram.test")
+	_, err := client.GetMe(context.Background())
+	if err == nil {
+		t.Fatal("GetMe unexpectedly succeeded")
+	}
+	if strings.Contains(err.Error(), "bot-token") || strings.Contains(err.Error(), "webhook-secret") {
+		t.Fatalf("transport error leaked secret: %v", err)
+	}
+	if !strings.Contains(err.Error(), "execute request failed") {
+		t.Fatalf("transport error lost safe diagnostic: %v", err)
 	}
 }
 

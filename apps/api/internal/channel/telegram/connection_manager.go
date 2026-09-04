@@ -321,14 +321,11 @@ func (m *ConnectionManager) reconcileDemand(ctx context.Context) error {
 
 func (m *ConnectionManager) startPolling(bot BotUser) {
 	m.stateMu.Lock()
-	if m.pollCancel != nil {
+	if m.pollCancel != nil || !m.started || m.lifecycleCtx == nil || m.lifecycleCtx.Err() != nil {
 		m.stateMu.Unlock()
 		return
 	}
 	lifecycleCtx := m.lifecycleCtx
-	if lifecycleCtx == nil {
-		lifecycleCtx = context.Background()
-	}
 	pollCtx, cancel := context.WithCancel(lifecycleCtx)
 	done := make(chan struct{})
 	m.pollCancel = cancel
@@ -388,7 +385,17 @@ func (m *ConnectionManager) watchDemand(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			if ctx.Err() != nil {
+				return
+			}
 			m.operationMu.Lock()
+			m.stateMu.Lock()
+			started := m.started
+			m.stateMu.Unlock()
+			if !started || ctx.Err() != nil {
+				m.operationMu.Unlock()
+				return
+			}
 			err := m.reconcileDemand(context.Background())
 			m.operationMu.Unlock()
 			if err != nil {

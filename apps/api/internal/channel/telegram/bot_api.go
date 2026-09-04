@@ -14,6 +14,10 @@ import (
 const (
 	// GetUpdatesRequestTimeout is the long-poll request budget fixed by D-001.
 	GetUpdatesRequestTimeout = 30 * time.Second
+	// PollingRequestContextTimeout leaves network and response-processing grace
+	// after Telegram's 30-second long-poll budget while staying below the
+	// dedicated polling client's 40-second timeout.
+	PollingRequestContextTimeout = 35 * time.Second
 	// PollingHTTPClientTimeout is deliberately larger than GetUpdatesRequestTimeout
 	// so a normal long-poll response is not reported as a client timeout (D-001).
 	PollingHTTPClientTimeout = 40 * time.Second
@@ -28,7 +32,7 @@ type BotAPIClient struct {
 	runtime        *RuntimeManager
 	client         *http.Client
 	apiBaseURL     string
-	requestTimeout time.Duration
+	contextTimeout time.Duration
 }
 
 // BotUser is the small getMe result needed by the connection status surface.
@@ -67,10 +71,10 @@ func NewBotAPIClient(runtime *RuntimeManager, client *http.Client, apiBaseURL st
 // NewPollingBotAPIClient constructs the dedicated long-polling client. It is
 // intentionally separate from the 10-second sendMessage client (D-001).
 func NewPollingBotAPIClient(runtime *RuntimeManager, client *http.Client, apiBaseURL string) *BotAPIClient {
-	return newBotAPIClient(runtime, client, apiBaseURL, GetUpdatesRequestTimeout, PollingHTTPClientTimeout)
+	return newBotAPIClient(runtime, client, apiBaseURL, PollingRequestContextTimeout, PollingHTTPClientTimeout)
 }
 
-func newBotAPIClient(runtime *RuntimeManager, client *http.Client, apiBaseURL string, requestTimeout, clientTimeout time.Duration) *BotAPIClient {
+func newBotAPIClient(runtime *RuntimeManager, client *http.Client, apiBaseURL string, contextTimeout, clientTimeout time.Duration) *BotAPIClient {
 	if client == nil {
 		client = &http.Client{}
 	} else {
@@ -85,7 +89,7 @@ func newBotAPIClient(runtime *RuntimeManager, client *http.Client, apiBaseURL st
 		runtime:        runtime,
 		client:         client,
 		apiBaseURL:     strings.TrimRight(strings.TrimSpace(apiBaseURL), "/"),
-		requestTimeout: requestTimeout,
+		contextTimeout: contextTimeout,
 	}
 }
 
@@ -148,14 +152,14 @@ func (c *BotAPIClient) call(ctx context.Context, method string, payload any, res
 
 	requestCtx := ctx
 	var cancel context.CancelFunc
-	if c.requestTimeout > 0 {
-		requestCtx, cancel = context.WithTimeout(ctx, c.requestTimeout)
+	if c.contextTimeout > 0 {
+		requestCtx, cancel = context.WithTimeout(ctx, c.contextTimeout)
 		defer cancel()
 	}
 	requestURL := fmt.Sprintf("%s/bot%s/%s", c.apiBaseURL, token, method)
 	req, err := http.NewRequestWithContext(requestCtx, http.MethodPost, requestURL, body)
 	if err != nil {
-		return fmt.Errorf("telegram: %s: create request: %w", method, err)
+		return fmt.Errorf("telegram: %s: create request failed", method)
 	}
 	if payload != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -163,7 +167,7 @@ func (c *BotAPIClient) call(ctx context.Context, method string, payload any, res
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("telegram: %s: execute request: %w", method, err)
+		return fmt.Errorf("telegram: %s: execute request failed", method)
 	}
 	defer resp.Body.Close()
 	responseBody, readErr := io.ReadAll(io.LimitReader(resp.Body, BotAPIResponseBodyLimit))
