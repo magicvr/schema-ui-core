@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.9.1
+version: 0.9.2
 ---
 
 # GOAL-003 · R2 执行索引
@@ -25,7 +25,8 @@ version: 0.9.1
 | [E-009-r2-c3-audit-response](02-execution/E-009-r2-c3-audit-response.md) | 2026-09-04 | R2 C3 independent 响应与检查点关闭 | A-012 Grok pass；A-013 response；C3 complete；progress 3/5 | done |
 | [E-010-r2-c4-implementation](02-execution/E-010-r2-c4-implementation.md) | 2026-09-04 | R2 C4 Admin 设置页与 polling lease 实现 | 提交 d95f7544；A-014 self pass；independent pending；GOAL-003 仍 active · 3/5 | done |
 | [E-011-r2-c4-audit-response](02-execution/E-011-r2-c4-audit-response.md) | 2026-09-04 | R2 C4 independent 响应与检查点关闭 | A-015 Grok pass；A-016 response；C4 complete；progress 4/5 | done |
+| [E-012-r2-c5-implementation](02-execution/E-012-r2-c5-implementation.md) | 2026-09-04 | R2 C5 Fake Bot API、错误矩阵与 self 核验 | 提交 690259fe；A-017 self pass；required 0；independent pending；GOAL-003 仍 active · 4/5 | done |
 
 ## 事实边界
 
-只记录已发生事实；R2 生产代码、测试与 checkpoint 在发生后分别落盘。C2 配置 schema、v67 migration、runtime 回读、settings PATCH 与配置导出接缝已实现并有测试事实；C3 Bot API client、connection manager、互斥切换与 Fx 生命周期已由 A-012 independent re-audit 通过并关闭；C4 Admin UI/heartbeat HTTP 已由 E-010 实现、A-014 self 与 A-015 Grok independent 核对，A-016 已关闭 C4，GOAL-003 当前为 `active · 4/5`；C5 全量证据仍待完成。
+只记录已发生事实；R2 生产代码、测试与 checkpoint 在发生后分别落盘。C2 配置 schema、v67 migration、runtime 回读、settings PATCH 与配置导出接缝已实现并有测试事实；C3 Bot API client、connection manager、互斥切换与 Fx 生命周期已由 A-012 independent re-audit 通过并关闭；C4 Admin UI/heartbeat HTTP 已由 E-010 实现、A-014 self 与 A-015 Grok independent 核对，A-016 已关闭 C4；C5 Fake Bot API、错误/退出矩阵、迁移/导出/并发 PATCH/Fx lifecycle 补证已由提交 `690259fe`、E-012、A-017 self 记录，GOAL-003 当前为 `active · 4/5`，independent 审计与响应仍待进行。
