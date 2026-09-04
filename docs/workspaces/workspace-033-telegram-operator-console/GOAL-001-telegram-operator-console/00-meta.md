@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.7.9
+version: 0.8.0
 progress: 2/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -36,7 +36,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 |------|------|-------------|
 | R1 | 合同冻结：模式切换、轮询生命周期、业务占用位、控制台 heartbeat、发言权探测、显式公网 base URL 与 Fake Bot API 验收 | **完成**：D-002+D-003；A-004 independent pass；GOAL-002 C3 done · 3/3 |
 | R2 | 连接与设置：`getMe`、`setWebhook`/`deleteWebhook`、互斥热切换、占用位和 Admin 设置页 | **完成**：`GOAL-003-r2-connection-settings` done · 5/5；C1～C4 已由 A-006/A-012/A-015 Grok independent pass 与 A-007/A-013/A-016 response 关闭，C5 由 E-012/E-013、A-017/A-018 与 A-019 关闭；实施源 D-002+D-003 |
-| R3 | 会话与人工台：入站会话落盘、用户/群分栏、未绑定人工 IM、发言权反馈 | **进行中**：`GOAL-004-r3-session-operator-console` active · 1/4；C1 已由 A-005 Grok independent `pass` + A-006 response 关闭；C2 D-004 用户裁决已记录，self/independent 合同审视中，尚未实施代码 |
+| R3 | 会话与人工台：入站会话落盘、用户/群分栏、未绑定人工 IM、发言权反馈 | **进行中**：`GOAL-004-r3-session-operator-console` active · 1/4；C1 已由 A-005 Grok independent `pass` + A-006 response 关闭；C2 D-004 用户裁决、D-005 实施合同与 A-007 self pass 已记录，等待 Grok independent 合同审计，尚未实施代码 |
 | R4 | 证据与关门：退出判据矩阵、红线核账、审计 finding 闭合 | 待开始；依赖 R1～R3 |
 
 ## 信息就绪与未知项（P-005）
@@ -57,7 +57,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 | I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **verified** | 用户书面裁决：缺省 `polling`、生产显式 `webhook`；D-002 |
 | I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **verified** | 用户书面裁决：Telegram connection manager + composition `OnStop` drain；D-002 |
 
-当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1～C5（D-001；I-033-014～016 verified；v67 migration、DB authoritative、settings PATCH、Bot API/manager、Admin UI/lease、Fake Bot API/错误矩阵/Fx lifecycle；A-006/A-012/A-015/A-018 Grok independent pass；A-007/A-013/A-016/A-019 response；A-008 状态纠正），GOAL-003 已关闭为 `done · 5/5`。R3 已完成 C1，进入 C2 合同审视：`GOAL-004-r3-session-operator-console` active · 1/4；D-004 已记录双表/规范化字段/兼容现有 handler 失败语义，C2 self/independent 审视中，尚未实施代码；Root 仍为 `active · 2/4`。
+当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1～C5（D-001；I-033-014～016 verified；v67 migration、DB authoritative、settings PATCH、Bot API/manager、Admin UI/lease、Fake Bot API/错误矩阵/Fx lifecycle；A-006/A-012/A-015/A-018 Grok independent pass；A-007/A-013/A-016/A-019 response；A-008 状态纠正），GOAL-003 已关闭为 `done · 5/5`。R3 已完成 C1，进入 C2 合同审视：`GOAL-004-r3-session-operator-console` active · 1/4；D-004 已裁决，D-005 已记录双表/规范化 inbox/会话事务合同，A-007 self `pass`，等待 Grok independent 合同审计，尚未实施代码；Root 仍为 `active · 2/4`。
 
 ## 父目标
 
@@ -65,4 +65,4 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 
 ## 台账布局
 
-`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001/E-001 已首条落盘，后续按编号递增。
+`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；Root execution 已登记至 E-016，后续按编号递增。
