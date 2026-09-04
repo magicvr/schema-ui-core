@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.9.5
+version: 0.9.6
 ---
 
 # GOAL-001-telegram-operator-console · 02-execution 索引
@@ -28,6 +28,7 @@ version: 0.9.5
 | E-014-r3-c1-audit-response | 2026-09-04 | R3 C1 independent finding 响应 | D-003 补全 A-003 F-001；A-004 self pass；Grok re-audit 待进行；R3 active · 0/4 | done |
 | E-015-r3-c2-user-decisions | 2026-09-04 | R3 C2 用户方案裁决投影 | GOAL-004 D-004/E-005：双表、规范化字段、兼容现有 handler 失败语义；C2 self/independent 审视中；R3 active · 1/4 | done |
 | E-016-r3-c2-contract-review | 2026-09-04 | Root R3 C2 合同审视 | GOAL-004 D-005 与 A-007 self pass 已落盘；Grok independent 合同审计待进行；Root active · 2/4、R3 active · 1/4 | done |
+| E-017-r3-c2-a008-response | 2026-09-04 | Root R3 C2 A-008 响应投影 | GOAL-004 用户选择 fixed；D-005/A-009 已响应 F-001/F-002；Grok independent re-audit 待进行；Root active · 2/4、R3 active · 1/4 | done |
 
 ## 执行记录（ledger）
 

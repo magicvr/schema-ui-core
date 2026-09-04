@@ -5,7 +5,7 @@ parent: GOAL-004-r3-session-operator-console
 date: 2026-09-04
 source: Codex govern
 status: done
-version: 0.1.0
+version: 0.2.0
 ---
 
 # D-005 · R3 C2 入站落盘实施合同
@@ -34,18 +34,18 @@ version: 0.1.0
 1. webhook 与 polling 都继续进入同一个内部 `UpdatePayload` 路径；不扩张 kernel `TelegramUpdate`。先完成支持范围分类：文本消息（含命令）和 callback 记录；媒体、空 payload 或缺少会话 chat 的不支持更新不进入 C2 成绩单。
 2. 先沿用当前 IP/chat/user 限流边界。被限流的 webhook 保持 `429 + Retry-After`；被限流的 polling update 保持当前“拒绝并跳过、不自动重试”的兼容语义，由 connection manager 在明确识别该拒绝后推进一次 offset，不能把它冒充为已持久化。
 3. 对支持的更新，使用运行时经 `getMe` 确认的稳定 `bot_id`；bot identity 不可用时视为持久化错误，不能用 token、username 或零值替代幂等范围。
-4. 在同一个 `Store` 事务中先尝试插入 `(bot_id, update_id)` 入站收据；唯一冲突表示已成功接受的重复投递，不新增消息、不更新其会话活动、不分发。新收据才 upsert 对应会话，任一写入失败都回滚整个事务并返回错误。
-5. 新收据事务提交成功后才调用现有 Dispatcher。Dispatcher handler 错误沿用当前告警/日志且不自动重试；因为收据已经成功，webhook 仍可成功确认，polling 才可推进 offset。重复收据直接作为幂等成功返回，不再次调用 Dispatcher。
-6. webhook 只有共同路径返回 nil（新收据成功、重复收据成功或明确不支持更新）才返回 2xx；落盘错误返回 5xx。polling 只有共同路径成功后才推进成功接受更新的 offset；落盘错误保持当前 offset，供同一 `update_id` 重试。限流拒绝是第 2 步声明的唯一非持久化跳过路径。
+4. 在唯一收据事务之前，先沿用既有 `subjectStore.GetOrCreateSubject`（有 user identity 时调用）。该 repository 自己使用一个独立的 `Store.Run`，不得嵌套进 inbox 事务；主体映射错误属于可重试持久化错误，不能先铸造唯一收据。重复 update 也必须先完成这项既有可重试预分发工作，不能用重复短路径吞掉后续 Dispatcher 语义。
+5. 在同一个 `Store` 事务中以方言无关的 `INSERT ... ON CONFLICT DO NOTHING`（占位符保持 `?`）尝试插入 `(bot_id, update_id)` 入站收据；必须读取 `RowsAffected()`：`0` 表示已成功接受的重复投递，同一事务不得再执行会话 upsert，调用方不得分发；`1` 才 upsert 对应会话。禁止在 PostgreSQL 唯一冲突后于同一 Tx 继续查询或写入。新收据路径任一写入失败都回滚整个事务并返回错误。
+6. 新收据事务提交成功后才调用现有 Dispatcher。Dispatcher handler 错误沿用当前告警/日志且不自动重试；因为收据已经成功，webhook 仍可成功确认，polling 才可推进 offset。重复收据直接作为幂等成功返回，不再次调用 Dispatcher。
+7. webhook 只有共同路径返回 nil（新收据成功、重复收据成功或明确不支持更新）才返回 2xx；落盘或主体映射错误返回 5xx。polling 只有共同路径成功后才推进成功接受更新的 offset；落盘或主体映射错误保持当前 offset，供同一 `update_id` 重试。限流拒绝是第 2 步声明的唯一非持久化跳过路径。
 
 ## 实现与验证约束
 
 - Telegram channel module 自有 v68 migration、repository 与测试；repository 只依赖已有方言无关 `kernel.Store` / `TxRunner`，不改 kernel Telegram port。
-- 必须覆盖 SQLite migration 与 restart、PostgreSQL DDL 形状（可用现有 gated harness）、webhook/polling 共同路径、首次写入、重复投递、并发唯一竞争、事务失败不确认/不推进 offset、handler 错误不自动重试，以及命令/回调收据不重复分发。
+- 必须覆盖 SQLite migration 与 restart、PostgreSQL DDL 形状和 gated runtime duplicate path、webhook/polling 共同路径、首次写入、`ON CONFLICT DO NOTHING` 重复投递、并发唯一竞争、主体映射失败后仍可重试且不先铸造 inbox、事务失败不确认/不推进 offset、handler 错误不自动重试，以及命令/回调收据不重复分发。
 - 本合同只冻结 C2 实施语义；完成代码、迁移和测试后必须另行 self + Grok independent 审计，不能以本合同或自审代替运行时证据。
 
 ## 未选与禁止扩展
 
 - 不采用单一方向事件表，不在 C2 建立 outbound 表、`pending/sent/failed` 状态机、后台重试、人工发送或 kernel 新端口。
 - 不以进程内 map/mutex 代替数据库唯一约束；不把 raw JSON 作为主存储或兜底审计资料。
-

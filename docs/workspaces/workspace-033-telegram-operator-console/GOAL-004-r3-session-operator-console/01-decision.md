@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.5.0
+version: 0.6.0
 ---
 
 # GOAL-004 · R3 决策索引
@@ -17,6 +17,7 @@ version: 0.5.0
 | [D-003-r3-c1-inbound-ack-contract](01-decision/D-003-r3-c1-inbound-ack-contract.md) | 2026-09-04 | R3 C1 入站确认顺序补充合同 | 响应 A-003 F-001：持久化先于 webhook 2xx / polling offset；失败可重试；重复 update 不重复落盘/分发 | done |
 | [D-004-r3-c2-user-decisions](01-decision/D-004-r3-c2-user-decisions.md) | 2026-09-04 | R3 C2 用户方案裁决 | 双表最小面；规范化字段不留 raw JSON；兼容现有 handler 失败语义 | done |
 | [D-005-r3-c2-ingress-implementation-contract](01-decision/D-005-r3-c2-ingress-implementation-contract.md) | 2026-09-04 | R3 C2 入站落盘实施合同 | 规范化 inbox 收据先于分发；会话/收据同事务；普通文本进入成绩单；webhook/polling 失败顺序冻结 | done |
+| [D-006-r3-c2-a008-fixed](01-decision/D-006-r3-c2-a008-fixed.md) | 2026-09-04 | R3 C2 A-008 required finding 闭合路径裁决 | 用户选择 fixed；补全 PG 幂等与主体映射顺序；等待 independent re-audit | done |
 
 ## 决策记录（ledger）
 

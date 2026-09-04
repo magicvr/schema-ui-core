@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-04
 parent: null
-version: 0.49.4
+version: 0.49.5
 ---
 
 # 工作区贡献图
@@ -43,7 +43,7 @@ version: 0.49.4
 | workspace-029-wallet-prepaid-instrument | docs/workspaces/workspace-029-wallet-prepaid-instrument/ | GOAL-001-wallet-prepaid-instrument | delivery | VP-029-wallet-prepaid-instrument | **done**（2026-09-02 激活开区 · 当日全量交付结项：Root `GOAL-001-wallet-prepaid-instrument` `done` 5/5；**VP-029 `closed` v0.5.0（用户指令授权 · VRev-069 pass）**；判据 #1～#10 全量 verified；GOAL-002～005 全 done） |
 | workspace-030-telegram-channel-runtime | docs/workspaces/workspace-030-telegram-channel-runtime/ | GOAL-001-telegram-channel-runtime | delivery | VP-030-telegram-channel-runtime | **done**（2026-09-03 激活开区 · 同日全链结项：Root `GOAL-001-telegram-channel-runtime` `done` 4/4+R5；VP-030 文件仍 `active` v0.2.2（V-F117 recommended：另轮 `/vision` 关门）） |
 | workspace-032-rate-limiter-atomic-port | docs/workspaces/workspace-032-rate-limiter-atomic-port/ | GOAL-001-rate-limiter-atomic-port | delivery | VP-032-rate-limiter-atomic-port | **done**（2026-09-03 激活开区 · 2026-09-04 全链结项：Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3（R1 合同冻结 → R2 14 处迁移+handler 回归（A-002 证伪后 D-002 令牌化 Reserve/Cancel 修复）→ R3 证据与关门）；关门双审 A-001 self `pass` + A-002 grok independent `pass`（0 required）；**VP-032 `closed` v0.3.0（2026-09-04 用户书面确认 · VRev-074 pass）**，判据 #2 失败预算口径承接由 GOAL-003 D-002 取代并登记于规划短史） |
-| workspace-033-telegram-operator-console | docs/workspaces/workspace-033-telegram-operator-console/ | GOAL-001-telegram-operator-console | delivery | VP-033-telegram-operator-console | **active**（2026-09-04 激活开区：VRev-075 self `pass` · Admin freshness `42036a3c`→`dd1edade` PASS · Root `active` 2/4 · R3 C1 A-005 Grok independent pass + A-006 response，C2 D-004 用户裁决、D-005 实施合同、A-007 self pass，Grok independent 合同审计待进行；VP-030 保持 active，本轮不夹带关门） |
+| workspace-033-telegram-operator-console | docs/workspaces/workspace-033-telegram-operator-console/ | GOAL-001-telegram-operator-console | delivery | VP-033-telegram-operator-console | **active**（2026-09-04 激活开区：VRev-075 self `pass` · Admin freshness `42036a3c`→`dd1edade` PASS · Root `active` 2/4 · R3 C1 A-005 Grok independent pass + A-006 response，C2 A-008 F-001/F-002 经 D-006 fixed、D-005/A-009 已响应，Grok independent re-audit 待进行；VP-030 保持 active，本轮不夹带关门） |
 
 ## 说明
 
