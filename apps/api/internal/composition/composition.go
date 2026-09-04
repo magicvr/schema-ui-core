@@ -850,7 +850,7 @@ func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, r
 		subStore := subject.NewStore(st)
 		disp := telegraminternal.NewDispatcher()
 		mockSender := telegraminternal.NewCaptureSender()
-		rt, err := telegraminternal.NewRuntimeManager(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, mockSender, masterKey, st)
+		rt, err := telegraminternal.NewRuntimeManagerWithSettings(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, cfg.TelegramMode, cfg.TelegramWebhookPublicBaseURL, mockSender, masterKey, st)
 		if err != nil {
 			return nil, fmt.Errorf("composition: telegram runtime: %w", err)
 		}

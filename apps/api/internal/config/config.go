@@ -243,6 +243,14 @@ type Config struct {
 	// Telegram channel runtime surface (VP-030 / GOAL-003 R2).
 	TelegramBotToken      string
 	TelegramWebhookSecret string
+	// TelegramMode selects the Telegram receiver mode independently of the
+	// process-wide RuntimeMode. Empty input normalizes to polling; the only
+	// explicit values are polling and webhook (VP-033 / workspace-033 R2).
+	TelegramMode string
+	// TelegramWebhookPublicBaseURL is the explicit external origin used to
+	// build the webhook endpoint. It is never inferred from request headers or
+	// the process-wide auth.public_base_url.
+	TelegramWebhookPublicBaseURL string
 	// TelegramMasterKey optionally supplies the at-rest master key for the
 	// telegram_config row via TELEGRAM_MASTER_KEY (hashed like mail's
 	// MAIL_CONFIG_MASTER_KEY; F-002 / A-006 — never a source constant). Empty
@@ -286,6 +294,22 @@ const (
 func ValidRuntimeMode(mode RuntimeMode) bool {
 	switch mode {
 	case RuntimeModeNormal, RuntimeModeMaintenance, RuntimeModeDegraded, RuntimeModeReadOnly:
+		return true
+	default:
+		return false
+	}
+}
+
+const (
+	TelegramModePolling = "polling"
+	TelegramModeWebhook = "webhook"
+)
+
+// ValidTelegramMode reports whether mode is one of the Telegram receiver
+// modes. Empty is accepted by the loader as the documented polling default.
+func ValidTelegramMode(mode string) bool {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "", TelegramModePolling, TelegramModeWebhook:
 		return true
 	default:
 		return false
@@ -415,9 +439,11 @@ type yamlFile struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
 	Telegram struct {
-		BotToken      *string `yaml:"bot_token"`
-		WebhookSecret *string `yaml:"webhook_secret"`
-		MasterKeyPath *string `yaml:"master_key_path"`
+		BotToken             *string `yaml:"bot_token"`
+		WebhookSecret        *string `yaml:"webhook_secret"`
+		Mode                 *string `yaml:"mode"`
+		WebhookPublicBaseURL *string `yaml:"webhook_public_base_url"`
+		MasterKeyPath        *string `yaml:"master_key_path"`
 	} `yaml:"telegram"`
 	Runtime struct {
 		Mode *string `yaml:"mode"`
@@ -483,6 +509,7 @@ func Load() *Config {
 		TracesEnabled:            false,
 		TracesEndpoint:           "",
 		TracesSampleRatio:        1.0,
+		TelegramMode:             TelegramModePolling,
 		RuntimeMode:              RuntimeModeNormal,
 	}
 
@@ -626,6 +653,11 @@ func Load() *Config {
 	cfg.MailMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Mail.MasterKeyPath, cfg.MailMasterKeyPath))
 	cfg.TelegramBotToken = strPtrOr(yf.Telegram.BotToken, cfg.TelegramBotToken)
 	cfg.TelegramWebhookSecret = strPtrOr(yf.Telegram.WebhookSecret, cfg.TelegramWebhookSecret)
+	cfg.TelegramMode = strings.ToLower(strings.TrimSpace(strPtrOr(yf.Telegram.Mode, cfg.TelegramMode)))
+	if cfg.TelegramMode == "" {
+		cfg.TelegramMode = TelegramModePolling
+	}
+	cfg.TelegramWebhookPublicBaseURL = strPtrOr(yf.Telegram.WebhookPublicBaseURL, cfg.TelegramWebhookPublicBaseURL)
 	cfg.TelegramMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Telegram.MasterKeyPath, cfg.TelegramMasterKeyPath))
 	if yf.Cache.MaxEntries != nil {
 		cfg.CacheMaxEntries = *yf.Cache.MaxEntries
@@ -750,6 +782,19 @@ func Load() *Config {
 	cfg.TelegramWebhookSecret = envOr("TELEGRAM_WEBHOOK_SECRET", cfg.TelegramWebhookSecret)
 	cfg.TelegramMasterKey = envOr("TELEGRAM_MASTER_KEY", cfg.TelegramMasterKey)
 	cfg.TelegramMasterKeyPath = strings.TrimSpace(envOr("TELEGRAM_MASTER_KEY_PATH", cfg.TelegramMasterKeyPath))
+	cfg.TelegramMode = strings.ToLower(strings.TrimSpace(envOr("TELEGRAM_MODE", cfg.TelegramMode)))
+	cfg.TelegramWebhookPublicBaseURL = strings.TrimSpace(envOr("TELEGRAM_WEBHOOK_PUBLIC_BASE_URL", cfg.TelegramWebhookPublicBaseURL))
+	if cfg.TelegramMode == "" {
+		cfg.TelegramMode = TelegramModePolling
+	}
+	if !ValidTelegramMode(cfg.TelegramMode) {
+		cfg.LoadError = fmt.Errorf("config: telegram.mode must be one of polling or webhook (got %q)", cfg.TelegramMode)
+		return cfg
+	}
+	if err := ValidateTelegramWebhookPublicBaseURL(cfg.TelegramWebhookPublicBaseURL); err != nil {
+		cfg.LoadError = err
+		return cfg
+	}
 	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): strict env
 	// parse mirroring MAIL_SMTP_PORT — an explicitly supplied invalid value
 	// fails closed instead of silently keeping the default.
@@ -1206,6 +1251,12 @@ func (c *Config) ValidateProd() error {
 	if c.RuntimeMode != "" && !ValidRuntimeMode(c.RuntimeMode) {
 		return fmt.Errorf("invalid runtime mode %q", c.RuntimeMode)
 	}
+	if c.TelegramMode != "" && !ValidTelegramMode(c.TelegramMode) {
+		return fmt.Errorf("config: telegram.mode must be one of polling or webhook (got %q)", c.TelegramMode)
+	}
+	if err := ValidateTelegramWebhookPublicBaseURL(c.TelegramWebhookPublicBaseURL); err != nil {
+		return err
+	}
 	if c.AppEnv == "" {
 		return fmt.Errorf("APP_ENV must be set explicitly (development for local runs, production for deployments); refusing to guess")
 	}
@@ -1278,6 +1329,25 @@ func (c *Config) ValidateProd() error {
 		if prev == c.AuthJWTSecret {
 			return fmt.Errorf("AUTH_JWT_SECRET_PREVIOUS must differ from AUTH_JWT_SECRET (a no-op rotation is a misconfiguration)")
 		}
+	}
+	return nil
+}
+
+// ValidateTelegramWebhookPublicBaseURL enforces the explicit origin contract
+// for Telegram webhook setup. The endpoint path is appended by the connection
+// manager, so paths, queries, fragments, credentials, and whitespace are not
+// accepted here.
+func ValidateTelegramWebhookPublicBaseURL(raw string) error {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || value != raw || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+		parsed.Host == "" || parsed.User != nil || parsed.Path != "" ||
+		parsed.RawQuery != "" || parsed.Fragment != "" ||
+		strings.ContainsAny(value, " \t\r\n") {
+		return fmt.Errorf("config: telegram.webhook_public_base_url must be an absolute http(s) origin like https://host (no path, query, fragment, credentials, or whitespace); got %q", raw)
 	}
 	return nil
 }

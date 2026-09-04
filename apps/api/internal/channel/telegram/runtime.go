@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -11,14 +12,21 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
+const (
+	TelegramModePolling = "polling"
+	TelegramModeWebhook = "webhook"
+)
+
 // RuntimeStatus contains diagnostic and status information about the Telegram channel.
 // Sensitive secrets are never exposed in plaintext or partial masks (F-002 / R-005 / R-008).
 type RuntimeStatus struct {
-	Configured            bool `json:"configured"`
-	TokenSet              bool `json:"token_set"`
-	SecretSet             bool `json:"secret_set"`
-	CapturedMessagesCount int  `json:"captured_messages_count"`
-	CapturedCount         int  `json:"captured_count"` // backwards compatibility alias
+	Configured            bool   `json:"configured"`
+	TokenSet              bool   `json:"token_set"`
+	SecretSet             bool   `json:"secret_set"`
+	Mode                  string `json:"mode"`
+	WebhookPublicBaseURL  string `json:"webhook_public_base_url"`
+	CapturedMessagesCount int    `json:"captured_messages_count"`
+	CapturedCount         int    `json:"captured_count"` // backwards compatibility alias
 }
 
 // TxRunner is the persistence boundary for storing runtime channel configurations.
@@ -29,12 +37,15 @@ type TxRunner interface {
 // RuntimeManager manages dynamic channel configuration (Bot Token and Webhook Secret)
 // with thread-safe hot switching (I-030-005) and persistent encrypted database storage (F-002).
 type RuntimeManager struct {
-	mu        sync.RWMutex
-	token     string
-	secret    string
-	mock      *CaptureSender
-	runner    TxRunner
-	masterKey []byte
+	mu                   sync.RWMutex
+	updateMu             sync.Mutex
+	token                string
+	secret               string
+	mode                 string
+	webhookPublicBaseURL string
+	mock                 *CaptureSender
+	runner               TxRunner
+	masterKey            []byte
 }
 
 // NewRuntimeManager constructs a RuntimeManager initialized with the given token and secret,
@@ -42,11 +53,25 @@ type RuntimeManager struct {
 // encryption key — required, and NEVER derived from a source constant (F-002 / A-006:
 // "主密钥离开源码"). A nil/empty key is a construction error (fail-closed).
 func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, masterKey []byte, runners ...TxRunner) (*RuntimeManager, error) {
+	return NewRuntimeManagerWithSettings(seedToken, seedSecret, TelegramModePolling, "", mock, masterKey, runners...)
+}
+
+// NewRuntimeManagerWithSettings is the R2 constructor. YAML/env values are
+// seeds only; once the singleton DB row exists, its values are authoritative.
+func NewRuntimeManagerWithSettings(seedToken, seedSecret, seedMode, seedWebhookPublicBaseURL string, mock *CaptureSender, masterKey []byte, runners ...TxRunner) (*RuntimeManager, error) {
 	if len(masterKey) == 0 {
 		return nil, fmt.Errorf("telegram: master key is required")
 	}
 	if mock == nil {
 		mock = NewCaptureSender()
+	}
+	seedMode = normalizeTelegramMode(seedMode)
+	if !ValidTelegramMode(seedMode) {
+		return nil, fmt.Errorf("telegram: mode must be polling or webhook (got %q)", seedMode)
+	}
+	seedWebhookPublicBaseURL = strings.TrimSpace(seedWebhookPublicBaseURL)
+	if err := validateWebhookPublicBaseURL(seedWebhookPublicBaseURL); err != nil {
+		return nil, err
 	}
 
 	var runner TxRunner
@@ -55,15 +80,17 @@ func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, master
 	}
 
 	rm := &RuntimeManager{
-		token:     strings.TrimSpace(seedToken),
-		secret:    strings.TrimSpace(seedSecret),
-		mock:      mock,
-		runner:    runner,
-		masterKey: masterKey,
+		token:                strings.TrimSpace(seedToken),
+		secret:               strings.TrimSpace(seedSecret),
+		mode:                 seedMode,
+		webhookPublicBaseURL: seedWebhookPublicBaseURL,
+		mock:                 mock,
+		runner:               runner,
+		masterKey:            masterKey,
 	}
 
 	if runner != nil {
-		if err := rm.initPersistence(seedToken, seedSecret); err != nil {
+		if err := rm.initPersistence(seedToken, seedSecret, seedMode, seedWebhookPublicBaseURL); err != nil {
 			return nil, fmt.Errorf("telegram: init persistence: %w", err)
 		}
 	}
@@ -78,7 +105,7 @@ func NewRuntimeManager(seedToken, seedSecret string, mock *CaptureSender, master
 // Once a row exists it is authoritative: the decrypted values are applied
 // verbatim, including empty ones, so an admin clearing a token/secret survives
 // restart instead of reverting to the env seed (A-008 informational).
-func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) error {
+func (r *RuntimeManager) initPersistence(seedToken, seedSecret, seedMode, seedWebhookPublicBaseURL string) error {
 	ctx := context.Background()
 	return r.runner.Run(ctx, func(tx kernel.Tx) error {
 		var count int
@@ -94,17 +121,17 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) error {
 				return fmt.Errorf("telegram: encrypt seed secrets: %v / %v", err1, err2)
 			}
 			now := time.Now().Unix()
-			if _, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, updated_at) VALUES (1, ?, ?, ?)`,
-				tokenEnc, secretEnc, now); err != nil {
+			if _, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at) VALUES (1, ?, ?, ?, ?, ?)`,
+				tokenEnc, secretEnc, seedMode, seedWebhookPublicBaseURL, now); err != nil {
 				return fmt.Errorf("telegram: seed config: %w", err)
 			}
 			return nil
 		}
 
-		var dbTokenEnc, dbSecretEnc string
+		var dbTokenEnc, dbSecretEnc, dbMode, dbWebhookPublicBaseURL string
 		var updatedAt int64
-		row2 := tx.QueryRow(ctx, `SELECT bot_token_enc, webhook_secret_enc, updated_at FROM telegram_config WHERE id = 1`)
-		if err := row2.Scan(&dbTokenEnc, &dbSecretEnc, &updatedAt); err != nil {
+		row2 := tx.QueryRow(ctx, `SELECT bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at FROM telegram_config WHERE id = 1`)
+		if err := row2.Scan(&dbTokenEnc, &dbSecretEnc, &dbMode, &dbWebhookPublicBaseURL, &updatedAt); err != nil {
 			return fmt.Errorf("telegram: read persisted config: %w", err)
 		}
 		decToken, err1 := mail.DecryptSecret(r.masterKey, dbTokenEnc)
@@ -112,12 +139,53 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret string) error {
 		if err1 != nil || err2 != nil {
 			return fmt.Errorf("telegram: decrypt persisted config: %v / %v", err1, err2)
 		}
+		dbMode = normalizeTelegramMode(dbMode)
+		if !ValidTelegramMode(dbMode) {
+			return fmt.Errorf("telegram: persisted mode is invalid: %q", dbMode)
+		}
+		dbWebhookPublicBaseURL = strings.TrimSpace(dbWebhookPublicBaseURL)
+		if err := validateWebhookPublicBaseURL(dbWebhookPublicBaseURL); err != nil {
+			return fmt.Errorf("telegram: persisted webhook URL: %w", err)
+		}
 		r.mu.Lock()
 		r.token = strings.TrimSpace(decToken)
 		r.secret = strings.TrimSpace(decSecret)
+		r.mode = dbMode
+		r.webhookPublicBaseURL = dbWebhookPublicBaseURL
 		r.mu.Unlock()
 		return nil
 	})
+}
+
+func normalizeTelegramMode(mode string) string {
+	mode = strings.ToLower(strings.TrimSpace(mode))
+	if mode == "" {
+		return TelegramModePolling
+	}
+	return mode
+}
+
+func ValidTelegramMode(mode string) bool {
+	switch normalizeTelegramMode(mode) {
+	case TelegramModePolling, TelegramModeWebhook:
+		return true
+	default:
+		return false
+	}
+}
+
+func validateWebhookPublicBaseURL(raw string) error {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || value != raw || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+		parsed.Host == "" || parsed.User != nil || parsed.Path != "" ||
+		parsed.RawQuery != "" || parsed.Fragment != "" || strings.ContainsAny(value, " \t\r\n") {
+		return fmt.Errorf("telegram: webhook_public_base_url must be an absolute http(s) origin with no path, query, fragment, credentials, or whitespace (got %q)", raw)
+	}
+	return nil
 }
 
 // GetToken returns the currently active Bot Token.
@@ -134,11 +202,43 @@ func (r *RuntimeManager) GetSecret() string {
 	return r.secret
 }
 
+// GetMode returns the currently persisted Telegram receiver mode.
+func (r *RuntimeManager) GetMode() string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.mode
+}
+
+// GetWebhookPublicBaseURL returns the explicit webhook origin.
+func (r *RuntimeManager) GetWebhookPublicBaseURL() string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.webhookPublicBaseURL
+}
+
 // Update hot-switches the active Bot Token and Webhook Secret.
 // Persists encrypted secrets to the database before modifying in-memory state (fail-closed).
 func (r *RuntimeManager) Update(ctx context.Context, token, secret string) error {
+	return r.UpdateSettings(ctx, token, secret, r.GetMode(), r.GetWebhookPublicBaseURL())
+}
+
+// UpdateSettings persists the complete Telegram settings row before changing
+// memory. A serialized update path keeps concurrent PATCH requests from
+// publishing a mixed token/secret/mode/URL snapshot.
+func (r *RuntimeManager) UpdateSettings(ctx context.Context, token, secret, mode, webhookPublicBaseURL string) error {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
+
 	trimmedToken := strings.TrimSpace(token)
 	trimmedSecret := strings.TrimSpace(secret)
+	trimmedMode := normalizeTelegramMode(mode)
+	if !ValidTelegramMode(trimmedMode) {
+		return fmt.Errorf("telegram: mode must be polling or webhook (got %q)", mode)
+	}
+	trimmedWebhookPublicBaseURL := strings.TrimSpace(webhookPublicBaseURL)
+	if err := validateWebhookPublicBaseURL(trimmedWebhookPublicBaseURL); err != nil {
+		return err
+	}
 
 	if r.runner != nil {
 		tokenEnc, err := mail.EncryptSecret(r.masterKey, trimmedToken)
@@ -152,13 +252,15 @@ func (r *RuntimeManager) Update(ctx context.Context, token, secret string) error
 
 		now := time.Now().Unix()
 		err = r.runner.Run(ctx, func(tx kernel.Tx) error {
-			_, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, updated_at)
-				VALUES (1, ?, ?, ?)
+			_, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at)
+				VALUES (1, ?, ?, ?, ?, ?)
 				ON CONFLICT(id) DO UPDATE SET
 					bot_token_enc = excluded.bot_token_enc,
 					webhook_secret_enc = excluded.webhook_secret_enc,
+					mode = excluded.mode,
+					webhook_public_base_url = excluded.webhook_public_base_url,
 					updated_at = excluded.updated_at`,
-				tokenEnc, secretEnc, now)
+				tokenEnc, secretEnc, trimmedMode, trimmedWebhookPublicBaseURL, now)
 			return err
 		})
 		if err != nil {
@@ -170,6 +272,8 @@ func (r *RuntimeManager) Update(ctx context.Context, token, secret string) error
 	r.mu.Lock()
 	r.token = trimmedToken
 	r.secret = trimmedSecret
+	r.mode = trimmedMode
+	r.webhookPublicBaseURL = trimmedWebhookPublicBaseURL
 	r.mu.Unlock()
 
 	return nil
@@ -190,6 +294,8 @@ func (r *RuntimeManager) Status() RuntimeStatus {
 		Configured:            r.token != "",
 		TokenSet:              r.token != "",
 		SecretSet:             r.secret != "",
+		Mode:                  r.mode,
+		WebhookPublicBaseURL:  r.webhookPublicBaseURL,
 		CapturedMessagesCount: captured,
 		CapturedCount:         captured,
 	}

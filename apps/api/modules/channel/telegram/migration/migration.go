@@ -25,6 +25,11 @@ var telegramConfigPGDDL = []string{
 )`,
 }
 
+var telegramConfigConnectionDDL = []string{
+	`ALTER TABLE telegram_config ADD COLUMN mode TEXT NOT NULL DEFAULT 'polling'`,
+	`ALTER TABLE telegram_config ADD COLUMN webhook_public_base_url TEXT NOT NULL DEFAULT ''`,
+}
+
 func migrateTelegramConfig(tx kernel.Tx) error {
 	for _, stmt := range telegramConfigDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
@@ -43,17 +48,45 @@ func migrateTelegramConfigPG(tx kernel.Tx) error {
 	return nil
 }
 
-// Descriptors returns the compiled-global migration for telegram_config (v66).
+func migrateTelegramConfigConnection(tx kernel.Tx) error {
+	for _, stmt := range telegramConfigConnectionDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("extend telegram_config: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateTelegramConfigConnectionPG(tx kernel.Tx) error {
+	for _, stmt := range telegramConfigConnectionDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("extend telegram_config (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
+// Descriptors returns the compiled-global migrations for telegram_config
+// (v66) and its connection settings extension (v67).
 func Descriptors() ([]kernel.MigrationContribution, error) {
-	checksum := kernel.MigrationChecksum(telegramConfigDDL, "0066:telegram-config:v1")
+	configChecksum := kernel.MigrationChecksum(telegramConfigDDL, "0066:telegram-config:v1")
+	connectionChecksum := kernel.MigrationChecksum(telegramConfigConnectionDDL, "0067:telegram-config-connection:v1")
 	return []kernel.MigrationContribution{
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram_config"},
 			Version:              66,
 			Name:                 "telegram_config",
-			Checksum:             checksum,
+			Checksum:             configChecksum,
 			Apply:                migrateTelegramConfig,
 			ApplyPostgres:        migrateTelegramConfigPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram_config_connection"},
+			Version:              67,
+			Name:                 "telegram_config_connection",
+			Checksum:             connectionChecksum,
+			Apply:                migrateTelegramConfigConnection,
+			ApplyPostgres:        migrateTelegramConfigConnectionPG,
 		},
 	}, nil
 }

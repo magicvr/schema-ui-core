@@ -24,5 +24,10 @@ auth:
   public_base_url: ${AUTH_PUBLIC_BASE_URL:-}
 admin:
   initial_password: ${ADMIN_INITIAL_PASSWORD:-}
+telegram:
+  # polling (default) or webhook; the public serve shell does not assemble the
+  # Telegram runtime, but config export preserves this non-sensitive schema.
+  mode: polling
+  webhook_public_base_url: ""
 log:
   level: info

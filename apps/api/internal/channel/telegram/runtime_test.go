@@ -141,6 +141,21 @@ func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 	if rm.GetSecret() != "secret789012" {
 		t.Fatalf("expected secret to remain unchanged, got %s", rm.GetSecret())
 	}
+
+	// Mode and the explicit public origin are non-secret PATCH fields and must
+	// be returned without exposing either credential.
+	patchBody = `{"mode":"webhook","webhook_public_base_url":"https://console.example"}`
+	reqPatch = httptest.NewRequest(http.MethodPatch, "/api/channel/telegram/settings", bytes.NewReader([]byte(patchBody)))
+	reqPatch = reqPatch.WithContext(auth.WithIdentity(reqPatch.Context(), admin))
+	wPatch = httptest.NewRecorder()
+	handler.ServeHTTP(wPatch, reqPatch)
+	if wPatch.Code != http.StatusOK {
+		t.Fatalf("PATCH connection settings expected 200, got %d", wPatch.Code)
+	}
+	status = rm.Status()
+	if status.Mode != TelegramModeWebhook || status.WebhookPublicBaseURL != "https://console.example" {
+		t.Fatalf("connection settings not applied: %+v", status)
+	}
 }
 
 // testMasterKey returns a fixed 32-byte at-rest key for tests (F-002: the

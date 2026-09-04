@@ -21,8 +21,10 @@ func NewSettingsHandler(runtime *RuntimeManager) *SettingsHandler {
 
 // updateSettingsRequest defines the JSON payload for PATCH /api/channel/telegram/settings.
 type updateSettingsRequest struct {
-	BotToken      *string `json:"bot_token"`
-	WebhookSecret *string `json:"webhook_secret"`
+	BotToken             *string `json:"bot_token"`
+	WebhookSecret        *string `json:"webhook_secret"`
+	Mode                 *string `json:"mode"`
+	WebhookPublicBaseURL *string `json:"webhook_public_base_url"`
 }
 
 func (h *SettingsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +75,8 @@ func (h *SettingsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 
 	currentToken := h.runtime.GetToken()
 	currentSecret := h.runtime.GetSecret()
+	currentMode := h.runtime.GetMode()
+	currentWebhookPublicBaseURL := h.runtime.GetWebhookPublicBaseURL()
 
 	newToken := currentToken
 	if req.BotToken != nil {
@@ -84,7 +88,25 @@ func (h *SettingsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		newSecret = strings.TrimSpace(*req.WebhookSecret)
 	}
 
-	if err := h.runtime.Update(r.Context(), newToken, newSecret); err != nil {
+	newMode := currentMode
+	if req.Mode != nil {
+		newMode = strings.ToLower(strings.TrimSpace(*req.Mode))
+		if !ValidTelegramMode(newMode) {
+			http.Error(w, "invalid telegram mode", http.StatusBadRequest)
+			return
+		}
+	}
+
+	newWebhookPublicBaseURL := currentWebhookPublicBaseURL
+	if req.WebhookPublicBaseURL != nil {
+		newWebhookPublicBaseURL = strings.TrimSpace(*req.WebhookPublicBaseURL)
+		if err := validateWebhookPublicBaseURL(newWebhookPublicBaseURL); err != nil {
+			http.Error(w, "invalid webhook public base URL", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err := h.runtime.UpdateSettings(r.Context(), newToken, newSecret, newMode, newWebhookPublicBaseURL); err != nil {
 		http.Error(w, "failed to persist telegram settings: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -115,6 +115,7 @@ var lockedHeadExtraTables = map[int][]string{
 	64: {"subjects", "vouchers"},          // workspace-029 R2: external subject and prepaid voucher tables
 	65: {"voucher_batches"},               // workspace-029 A-005 F-004 (A-008): batch registry
 	66: {"telegram_config"},               // workspace-030 (GOAL-004/005 F-002): persistent encrypted channel configuration
+	67: {},                                  // workspace-033 R2: additive Telegram mode/URL columns
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

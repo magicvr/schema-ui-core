@@ -60,7 +60,7 @@ func TestTelegramModuleProvider(t *testing.T) {
 
 	// Check Persistence
 	contribs, err := p.CompiledPersistence()
-	if err != nil || len(contribs) != 1 || contribs[0].Version != 66 || contribs[0].Name != "telegram_config" {
+	if err != nil || len(contribs) != 2 || contribs[0].Version != 66 || contribs[0].Name != "telegram_config" || contribs[1].Version != 67 || contribs[1].Name != "telegram_config_connection" {
 		t.Fatalf("unexpected persistence: %+v, err=%v", contribs, err)
 	}
 

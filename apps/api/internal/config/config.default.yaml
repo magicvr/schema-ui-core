@@ -202,6 +202,12 @@ mail:
     api-key: ""             # MAIL_RESEND_API_KEY
     from: ""                # MAIL_RESEND_FROM; default sender, bare address
 
+telegram:
+  # polling (default) or webhook. This is independent of runtime.mode.
+  mode: polling             # TELEGRAM_MODE
+  # Explicit public origin; the fixed webhook path is appended by the runtime.
+  webhook_public_base_url: "" # TELEGRAM_WEBHOOK_PUBLIC_BASE_URL
+
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
   mode: normal

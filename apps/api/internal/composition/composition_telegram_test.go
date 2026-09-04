@@ -323,6 +323,58 @@ func TestTelegramRuntime_ClearSurvivesRestart(t *testing.T) {
 	}
 }
 
+func TestTelegramRuntime_ConnectionSettingsPersistenceAndAuthority(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "telegram_connection_settings_test.db")
+	st1, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
+	cfg1 := &config.Config{
+		TelegramBotToken:            "seed-token",
+		TelegramWebhookSecret:       "seed-secret",
+		TelegramMode:                "webhook",
+		TelegramWebhookPublicBaseURL: "https://seed.example",
+		TelegramMasterKey:           "test-master-key",
+	}
+	tr1, err := newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime: %v", err)
+	}
+	if got := tr1.Manager.Status(); got.Mode != "webhook" || got.WebhookPublicBaseURL != "https://seed.example" {
+		t.Fatalf("seed connection settings = %+v", got)
+	}
+	if err := tr1.Manager.UpdateSettings(context.Background(), "live-token", "live-secret", "webhook", "https://live.example"); err != nil {
+		t.Fatalf("UpdateSettings: %v", err)
+	}
+	if err := st1.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st2, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+	cfg2 := &config.Config{
+		TelegramBotToken:            "stale-seed-token",
+		TelegramWebhookSecret:       "stale-seed-secret",
+		TelegramMode:                "polling",
+		TelegramWebhookPublicBaseURL: "https://stale.example",
+		TelegramMasterKey:           "test-master-key",
+	}
+	tr2, err := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime(restart): %v", err)
+	}
+	got := tr2.Manager.Status()
+	if got.Mode != "webhook" || got.WebhookPublicBaseURL != "https://live.example" ||
+		tr2.Manager.GetToken() != "live-token" || tr2.Manager.GetSecret() != "live-secret" {
+		t.Fatalf("persisted Telegram settings were not authoritative: status=%+v token=%q secret=%q", got, tr2.Manager.GetToken(), tr2.Manager.GetSecret())
+	}
+}
+
 func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "telegram_real_mount_test.db")
 	st, err := testsupport.OpenStore(dbPath, "admin", "hash", false)

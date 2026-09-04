@@ -56,6 +56,9 @@ func TestExportDefaultShape(t *testing.T) {
 	if pkg.Config.HTTP.Addr != "127.0.0.1:25080" {
 		t.Errorf("config.http.addr = %q, want loopback default", pkg.Config.HTTP.Addr)
 	}
+	if pkg.Config.Telegram.Mode != "polling" || pkg.Config.Telegram.WebhookPublicBaseURL != "" {
+		t.Errorf("config.telegram = %+v, want polling with empty public URL", pkg.Config.Telegram)
+	}
 	// 敏感键剔除
 	if pkg.Config.Auth.JWTSecret != "" || pkg.Config.Admin.InitialPassword != "" {
 		t.Error("sensitive keys not stripped from config tree")
