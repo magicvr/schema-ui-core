@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r2-connection-settings
 title: R2 · Telegram 连接与设置实现
-status: done
+status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.3.0
+version: 0.3.1
 progress: 2/5
 plan_refs:
   - VP-033-telegram-operator-console
@@ -57,7 +57,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 | I-033-017 | non-blocking | disabled profile 下 Telegram HTTP surface 是否继续按现有 module gating 处理 | 实施 / C4 | C3 | R2 计划核对 provider/composition 现状并记录 | open | 可沿用现有 profile 语义 | A-002 F-007 recommended；不重开默认 Profile 红线 |
 | I-033-018 | non-blocking | `HasBusinessHandlers` 放在具体 dispatcher/adapter 还是扩展 kernel 端口 | 实施 / C3 | C3 | R2 实现决策与编译期/行为测试 | open | 可在 C3 记录 | A-002 F-006 recommended |
 
-R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；C2 已由 A-005 self、A-006 Grok independent 与 A-007 response 完成并关闭检查点，progress 为 2/5。A-006 F-001～F-005 为不阻断 C2 的 recommended open，分别转入 C3/C5；C3 仍必须按 D-001 + GOAL-002 D-002 + D-003 实施并保留未实现边界。I-033-017～018 为 non-blocking open。
+R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；C2 已由 A-005 self、A-006 Grok independent 与 A-007 response 完成并关闭检查点，progress 为 2/5。A-007 中将整个 GOAL-003 写为 `done` 的表述已由 A-008 纠正；当前目标仍为 `active · 2/5`，C3～C5 尚未完成。A-006 F-001～F-005 为不阻断 C2 的 recommended open，分别转入 C3/C5；C3 仍必须按 D-001 + GOAL-002 D-002 + D-003 实施并保留未实现边界。I-033-017～018 为 non-blocking open。
 
 ## 父目标
 
