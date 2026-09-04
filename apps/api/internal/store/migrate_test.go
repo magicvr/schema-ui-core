@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 67 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" {
-		t.Fatalf("applied = %+v, want v67 telegram_config_connection tail", applied)
+	if len(applied) != 68 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" || applied[67].version != 68 || applied[67].name != "telegram_ingress" {
+		t.Fatalf("applied = %+v, want v68 telegram_ingress tail", applied)
 	}
 	applied = applied[:66]
 	if len(applied) != 66 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" || applied[43].version != 44 || applied[43].name != "service_credentials" || applied[44].version != 45 || applied[44].name != "operation_log_service_credentials" || applied[45].version != 46 || applied[45].name != "site_operation_log_retention" || applied[46].version != 47 || applied[46].name != "operation_log_archive" || applied[47].version != 48 || applied[47].name != "operation_log_session" || applied[48].version != 49 || applied[48].name != "seed_admin_must_change_password" || applied[49].version != 50 || applied[49].name != "wallet_ledger_order_repair" || applied[50].version != 51 || applied[50].name != "mail_outbox" || applied[51].version != 52 || applied[51].name != "mail_config" || applied[52].version != 53 || applied[52].name != "operation_log_mail_events" || applied[53].version != 54 || applied[53].name != "account_email_identity" || applied[54].version != 55 || applied[54].name != "email_verification_challenges" || applied[55].version != 56 || applied[55].name != "password_recovery_challenges" || applied[56].version != 57 || applied[56].name != "password_policy" || applied[57].version != 58 || applied[57].name != "user_password_history" || applied[58].version != 59 || applied[58].name != "user_invites" || applied[59].version != 60 || applied[59].name != "mail_outbox_channels" || applied[60].version != 61 || applied[60].name != "login_failures" || applied[61].version != 62 || applied[61].name != "site_default_currency" || applied[62].version != 63 || applied[62].name != "site_settings_updated_at_index" || applied[63].version != 64 || applied[63].name != "wallet_voucher_and_subject" || applied[64].version != 65 || applied[64].name != "wallet_voucher_batches" || applied[65].version != 66 || applied[65].name != "telegram_config" {
@@ -131,7 +131,7 @@ func TestMigrateFreshDB(t *testing.T) {
 	for _, tbl := range []string{
 		"users", "refresh_tokens", "schema_migrations",
 		"roles", "user_roles", "permissions", "role_permissions", "menu_items", "role_menu_items",
-		"operation_log", "operation_log_correlation", "operation_log_archive", "operation_log_session", "site_settings", "system_data_reconcile", "system_data_grants", "jobs", "service_credentials", "subjects", "vouchers", "voucher_batches", "telegram_config",
+		"operation_log", "operation_log_correlation", "operation_log_archive", "operation_log_session", "site_settings", "system_data_reconcile", "system_data_grants", "jobs", "service_credentials", "subjects", "vouchers", "voucher_batches", "telegram_config", "telegram_sessions", "telegram_inbound_messages",
 	} {
 		if !tableExistsDB(t, st.db, tbl) {
 			t.Fatalf("table %s missing after fresh migration", tbl)
@@ -189,8 +189,8 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 67 || applied2[66].version != 67 || applied2[66].name != "telegram_config_connection" {
-		t.Fatalf("migrations after reopen = %+v, want v67 telegram_config_connection tail", applied2)
+	if len(applied2) != 68 || applied2[66].version != 67 || applied2[66].name != "telegram_config_connection" || applied2[67].version != 68 || applied2[67].name != "telegram_ingress" {
+		t.Fatalf("migrations after reopen = %+v, want v68 telegram_ingress tail", applied2)
 	}
 	applied2 = applied2[:66]
 	if len(applied2) != 66 {
@@ -739,6 +739,8 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"channel.telegram", "telegram_config", "e330d7859636a5344edff165ebf9e0cfe96dfd43bc127e6d3a36cda5ed936601"},
 		// workspace-033 R2: Telegram receiver mode and explicit webhook origin
 		{"channel.telegram", "telegram_config_connection", "50eb9a447a0b2ebf1dd77b4f780dcbedc7cd38300430f88a4ddf217149797182"},
+		// workspace-033 R3 C2: Telegram session and inbound receipt tables
+		{"channel.telegram", "telegram_ingress", "d5cf6d441f5a7b41c5c9b8be3f5099312a3849f159749f5a973f27929f04789b"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

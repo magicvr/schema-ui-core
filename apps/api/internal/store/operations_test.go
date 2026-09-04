@@ -51,8 +51,8 @@ func TestMigrateExistingV3ToV4(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) != 67 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" {
-		t.Fatalf("applied = %+v, want v67 telegram_config_connection tail", applied)
+	if len(applied) != 68 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" || applied[67].version != 68 || applied[67].name != "telegram_ingress" {
+		t.Fatalf("applied = %+v, want v68 telegram_ingress tail", applied)
 	}
 	applied = applied[:66]
 	if len(applied) != 66 || applied[52].version != 53 || applied[52].name != "operation_log_mail_events" || applied[53].version != 54 || applied[53].name != "account_email_identity" || applied[54].version != 55 || applied[54].name != "email_verification_challenges" || applied[55].version != 56 || applied[55].name != "password_recovery_challenges" || applied[56].version != 57 || applied[56].name != "password_policy" || applied[57].version != 58 || applied[57].name != "user_password_history" || applied[58].version != 59 || applied[58].name != "user_invites" || applied[59].version != 60 || applied[59].name != "mail_outbox_channels" || applied[60].version != 61 || applied[60].name != "login_failures" || applied[61].version != 62 || applied[61].name != "site_default_currency" || applied[62].version != 63 || applied[62].name != "site_settings_updated_at_index" || applied[63].version != 64 || applied[63].name != "wallet_voucher_and_subject" || applied[64].version != 65 || applied[64].name != "wallet_voucher_batches" || applied[65].version != 66 || applied[65].name != "telegram_config" {

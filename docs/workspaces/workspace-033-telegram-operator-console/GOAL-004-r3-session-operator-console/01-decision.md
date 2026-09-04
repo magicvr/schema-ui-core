@@ -18,7 +18,8 @@ version: 0.6.0
 | [D-004-r3-c2-user-decisions](01-decision/D-004-r3-c2-user-decisions.md) | 2026-09-04 | R3 C2 用户方案裁决 | 双表最小面；规范化字段不留 raw JSON；兼容现有 handler 失败语义 | done |
 | [D-005-r3-c2-ingress-implementation-contract](01-decision/D-005-r3-c2-ingress-implementation-contract.md) | 2026-09-04 | R3 C2 入站落盘实施合同 | 规范化 inbox 收据先于分发；会话/收据同事务；普通文本进入成绩单；webhook/polling 失败顺序冻结 | done |
 | [D-006-r3-c2-a008-fixed](01-decision/D-006-r3-c2-a008-fixed.md) | 2026-09-04 | R3 C2 A-008 required finding 闭合路径裁决 | 用户选择 fixed；补全 PG 幂等与主体映射顺序；等待 independent re-audit | done |
+| [D-007-r3-c2-nonblocking-scope](01-decision/D-007-r3-c2-nonblocking-scope.md) | 2026-09-04 | R3 C2 非阻断项处理范围与 polling 失败策略 | 用户要求本轮一并处理 C2 非阻断项；PG 首次/并发/重复证据补齐；持久化失败进入 error、不热循环 | done |
 
 ## 决策记录（ledger）
 
-`01-decision/` 平铺；正文只写已发生或用户已确认的决策。D-002 已记录 C1 用户方案裁决；实施参数和验证事实继续写入后续 ledger。
+`01-decision/` 平铺；正文只写已发生或用户已确认的决策。D-002 已记录 C1 用户方案裁决；D-007 记录本轮非阻断项范围与 polling 失败策略；实施参数和验证事实继续写入后续 ledger。

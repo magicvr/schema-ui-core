@@ -266,6 +266,60 @@ func TestConnectionManager_PollingErrorClearsReceiver(t *testing.T) {
 	}
 }
 
+func TestConnectionManager_PersistenceFailureEntersErrorWithoutAdvancing(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/botbot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":15,"is_bot":true,"username":"persist_error_bot"}}`))
+		case "/botbot-token/deleteWebhook":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	var getUpdatesCalls atomic.Int32
+	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		getUpdatesCalls.Add(1)
+		return botAPIJSONResponse(`{"ok":true,"result":[{"update_id":77,"message":{"chat":{"id":123},"text":"hello"}}]}`), nil
+	})}
+	updateHandler := func(context.Context, UpdatePayload) error {
+		return errors.New("persist failed")
+	}
+	manager := NewConnectionManager(rm, NewDispatcher(), NewBotAPIClient(rm, server.Client(), server.URL), NewPollingBotAPIClient(rm, pollingClient, "https://telegram.test"), updateHandler)
+	if err := manager.AcquireLease(context.Background(), "console-1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer manager.Stop(context.Background())
+
+	deadline := time.NewTimer(time.Second)
+	defer deadline.Stop()
+	for manager.Status().State != ConnectionStateError {
+		select {
+		case <-deadline.C:
+			t.Fatalf("persistence error was not reported; status=%+v", manager.Status())
+		case <-time.After(time.Millisecond):
+		}
+	}
+	status := manager.Status()
+	if status.Receiver != ReceiverNone || status.LastError != "persist failed" {
+		t.Fatalf("persistence error status = %+v", status)
+	}
+	if got := getUpdatesCalls.Load(); got != 1 {
+		t.Fatalf("getUpdates calls after persistence failure = %d, want 1", got)
+	}
+	manager.stateMu.Lock()
+	defer manager.stateMu.Unlock()
+	if manager.pollCancel != nil || manager.pollDone != nil {
+		t.Fatalf("polling handles retained after persistence failure: cancel=%v done=%v", manager.pollCancel != nil, manager.pollDone != nil)
+	}
+}
+
 func TestConnectionManager_ExpiredLeaseDrainsPolling(t *testing.T) {
 	rm := newTestRuntimeManager(t, "bot-token", "", nil)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

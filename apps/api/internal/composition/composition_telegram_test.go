@@ -442,6 +442,18 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
+	telegramAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/botlive-bot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":101,"is_bot":true,"username":"mount_test_bot"}}`))
+		case "/botlive-bot-token/deleteWebhook":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(telegramAPI.Close)
 
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
@@ -468,10 +480,14 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 
 	// Construct single shared TelegramRuntime (F-001)
 	rateLimiters := newRateLimiters()
-	tr, err := newTelegramRuntime(plan, cfg, st, rateLimiters)
+	tr, err := buildTelegramRuntime(plan, cfg, st, rateLimiters, telegramRuntimeOptions{APIBaseURL: telegramAPI.URL})
 	if err != nil {
 		t.Fatalf("newTelegramRuntime: %v", err)
 	}
+	if err := tr.Connection.Start(context.Background()); err != nil {
+		t.Fatalf("telegram connection start: %v", err)
+	}
+	t.Cleanup(func() { _ = tr.Connection.Stop(context.Background()) })
 
 	// Register command on the SAME dispatcher that webhook dispatches to
 	commandCalled := false

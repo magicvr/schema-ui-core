@@ -45,10 +45,10 @@ func TestMigrateV66TelegramRowPreservesExistingConfigOnV67(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) < 67 || applied[65].version != 66 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" {
+	if len(applied) < 68 || applied[65].version != 66 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" || applied[67].version != 68 || applied[67].name != "telegram_ingress" {
 		tail := applied
-		if len(tail) > 2 {
-			tail = tail[len(tail)-2:]
+		if len(tail) > 3 {
+			tail = tail[len(tail)-3:]
 		}
 		t.Fatalf("upgraded migration tail = %+v", tail)
 	}

@@ -35,6 +35,7 @@ import (
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	telegrammodule "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram"
+	telegramstore "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/store"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/modules/dashboard"
 	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary"
@@ -879,6 +880,7 @@ func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store,
 			return nil, fmt.Errorf("composition: telegram master key: %w", err)
 		}
 		subStore := subject.NewStore(st)
+		inboundStore := telegramstore.NewRepository(st)
 		disp := telegraminternal.NewDispatcher()
 		mockSender := telegraminternal.NewCaptureSender()
 		rt, err := telegraminternal.NewRuntimeManagerWithSettings(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, cfg.TelegramMode, cfg.TelegramWebhookPublicBaseURL, mockSender, masterKey, st)
@@ -891,6 +893,14 @@ func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store,
 			SecretGetter: rt.GetSecret,
 			RateLimiters: rateLimiters,
 			SubjectStore: subStore,
+			BotIDGetter: func() (int64, error) {
+				status := rt.ConnectionStatus()
+				if status.BotID <= 0 {
+					return 0, fmt.Errorf("telegram: bot identity is unavailable")
+				}
+				return status.BotID, nil
+			},
+			InboundStore: inboundStore,
 			Dispatcher:   disp,
 			Sender:       sender,
 		})

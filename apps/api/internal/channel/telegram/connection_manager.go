@@ -358,20 +358,29 @@ func (m *ConnectionManager) runPolling(ctx context.Context, done chan struct{}) 
 			return
 		}
 		for _, payload := range updates {
-			if payload.UpdateID >= offset {
-				offset = payload.UpdateID + 1
-			}
 			if m.updateHandler == nil {
+				if payload.UpdateID >= offset {
+					offset = payload.UpdateID + 1
+				}
 				continue
 			}
 			if err := m.updateHandler(ctx, payload); err != nil {
 				var limitErr *rateLimitExceededError
 				if errors.As(err, &limitErr) {
+					// A rate-limited update is deliberately rejected rather than
+					// persisted. Preserve the existing drop/no-auto-retry
+					// semantics while keeping ordinary failures retryable.
+					if payload.UpdateID >= offset {
+						offset = payload.UpdateID + 1
+					}
 					continue
 				}
 				status := m.Status()
 				m.runtime.setConnectionStatus(ConnectionStatus{State: ConnectionStateError, Receiver: ReceiverNone, BotID: status.BotID, BotUsername: status.BotUsername, LastError: err.Error()})
 				return
+			}
+			if payload.UpdateID >= offset {
+				offset = payload.UpdateID + 1
 			}
 		}
 	}

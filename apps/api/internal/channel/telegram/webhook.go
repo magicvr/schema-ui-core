@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	telegramstore "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
 )
 
@@ -39,6 +41,8 @@ type WebhookHandler struct {
 	chatLimiter  kernel.RateLimiter
 	userLimiter  kernel.RateLimiter
 	subjectStore *subject.Store
+	botIDGetter  func() (int64, error)
+	inboundStore *telegramstore.Repository
 	dispatcher   *Dispatcher
 	sender       kernel.TelegramSender
 	now          func() time.Time
@@ -50,6 +54,8 @@ type HandlerConfig struct {
 	SecretGetter func() string
 	RateLimiters kernel.RateLimiterProvider
 	SubjectStore *subject.Store
+	BotIDGetter  func() (int64, error)
+	InboundStore *telegramstore.Repository
 	Dispatcher   *Dispatcher
 	Sender       kernel.TelegramSender
 	Now          func() time.Time
@@ -76,6 +82,8 @@ func NewWebhookHandler(cfg HandlerConfig) *WebhookHandler {
 		chatLimiter:  chatLim,
 		userLimiter:  userLim,
 		subjectStore: cfg.SubjectStore,
+		botIDGetter:  cfg.BotIDGetter,
+		inboundStore: cfg.InboundStore,
 		dispatcher:   cfg.Dispatcher,
 		sender:       cfg.Sender,
 		now:          nowFn,
@@ -164,8 +172,8 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandlePollingUpdate sends a Bot API update through the same rate-limit,
-// subject-mapping, and dispatcher path as webhook delivery. Polling has no
-// client IP face, so only the chat/user buckets are applicable.
+// subject-mapping, persistence, and dispatcher path as webhook delivery.
+// Polling has no client IP face, so only the chat/user buckets are applicable.
 func (h *WebhookHandler) HandlePollingUpdate(ctx context.Context, payload UpdatePayload) error {
 	if h == nil {
 		return nil
@@ -182,31 +190,16 @@ func (e *rateLimitExceededError) Error() string {
 }
 
 func (h *WebhookHandler) dispatchPayload(ctx context.Context, payload UpdatePayload, now time.Time) error {
-	// Extract identifiers and message details.
-	var chatID, userID, command, text, callbackData string
-
-	if payload.Message != nil {
-		if payload.Message.Chat != nil {
-			chatID = strconv.FormatInt(payload.Message.Chat.ID, 10)
-		}
-		if payload.Message.From != nil {
-			userID = strconv.FormatInt(payload.Message.From.ID, 10)
-		}
-		text = payload.Message.Text
-		if strings.HasPrefix(text, "/") {
-			parts := strings.Fields(text)
-			if len(parts) > 0 {
-				command = parts[0]
-			}
-		}
-	} else if payload.CallbackQuery != nil {
-		if payload.CallbackQuery.From != nil {
-			userID = strconv.FormatInt(payload.CallbackQuery.From.ID, 10)
-		}
-		callbackData = payload.CallbackQuery.Data
-		if payload.CallbackQuery.Message != nil && payload.CallbackQuery.Message.Chat != nil {
-			chatID = strconv.FormatInt(payload.CallbackQuery.Message.Chat.ID, 10)
-		}
+	normalized, update, supported := normalizeInbound(payload, now)
+	if !supported {
+		// Non-text and malformed updates are deliberately accepted and skipped;
+		// they are outside the C2 transcript boundary.
+		return nil
+	}
+	chatID := strconv.FormatInt(normalized.ChatID, 10)
+	userID := ""
+	if normalized.UserID != 0 {
+		userID = strconv.FormatInt(normalized.UserID, 10)
 	}
 
 	// Chat Rate Limiting (30/min).
@@ -225,6 +218,20 @@ func (h *WebhookHandler) dispatchPayload(ctx context.Context, payload UpdatePayl
 		}
 	}
 
+	if h.inboundStore != nil {
+		if h.botIDGetter == nil {
+			return fmt.Errorf("telegram: bot identity is unavailable")
+		}
+		botID, err := h.botIDGetter()
+		if err != nil {
+			return fmt.Errorf("telegram: get bot identity: %w", err)
+		}
+		if botID <= 0 {
+			return fmt.Errorf("telegram: bot identity is unavailable")
+		}
+		normalized.BotID = botID
+	}
+
 	// Subject Identity Mapping: GetOrCreateSubject("telegram", userID).
 	var subjectID string
 	if h.subjectStore != nil && userID != "" {
@@ -238,20 +245,110 @@ func (h *WebhookHandler) dispatchPayload(ctx context.Context, payload UpdatePayl
 		}
 	}
 
+	if h.inboundStore != nil {
+		isNew, err := h.inboundStore.RecordInbound(ctx, normalized)
+		if err != nil {
+			// The receipt is the retry boundary. Do not confirm or advance
+			// polling when the transaction did not commit.
+			return err
+		}
+		if !isNew {
+			return nil
+		}
+	}
+
 	// Dispatch Update. Handler failures are logged but do not make Telegram
 	// retry a successfully accepted update; persistence failures above do.
 	if h.dispatcher != nil {
-		upd := kernel.TelegramUpdate{
-			ChatID:       chatID,
-			UserID:       userID,
-			SubjectID:    subjectID,
-			Command:      command,
-			Text:         text,
-			CallbackData: callbackData,
-		}
-		if err := h.dispatcher.Dispatch(ctx, upd, h.sender); err != nil {
-			slog.Warn("telegram: dispatch handler error", "err", err, "command", command, "chat_id", chatID)
+		update.SubjectID = subjectID
+		if err := h.dispatcher.Dispatch(ctx, update, h.sender); err != nil {
+			slog.Warn("telegram: dispatch handler error", "err", err, "command", update.Command, "chat_id", chatID)
 		}
 	}
 	return nil
+}
+
+func normalizeInbound(payload UpdatePayload, now time.Time) (telegramstore.InboundMessage, kernel.TelegramUpdate, bool) {
+	if payload.Message != nil {
+		message := payload.Message
+		if message.Chat == nil || strings.TrimSpace(message.Text) == "" {
+			return telegramstore.InboundMessage{}, kernel.TelegramUpdate{}, false
+		}
+
+		var userID int64
+		var senderUsername string
+		chatTitle := message.Chat.Title
+		if message.From != nil {
+			userID = message.From.ID
+			senderUsername = message.From.Username
+			if strings.EqualFold(message.Chat.Type, "private") && strings.TrimSpace(chatTitle) == "" {
+				chatTitle = strings.TrimSpace(strings.Join([]string{message.From.FirstName, message.From.LastName}, " "))
+			}
+		}
+		command := ""
+		kind := "text"
+		if strings.HasPrefix(message.Text, "/") {
+			kind = "command"
+			parts := strings.Fields(message.Text)
+			if len(parts) > 0 {
+				command = parts[0]
+			}
+		}
+		return telegramstore.InboundMessage{
+				UpdateID:       payload.UpdateID,
+				ChatID:         message.Chat.ID,
+				ChatType:       message.Chat.Type,
+				ChatTitle:      chatTitle,
+				ChatUsername:   message.Chat.Username,
+				UserID:         userID,
+				MessageID:      message.MessageID,
+				MessageKind:    kind,
+				Text:           message.Text,
+				SenderUsername: senderUsername,
+				ReceivedAt:     now,
+			}, kernel.TelegramUpdate{
+				ChatID:  strconv.FormatInt(message.Chat.ID, 10),
+				UserID:  optionalTelegramID(userID),
+				Command: command,
+				Text:    message.Text,
+			}, true
+	}
+
+	if payload.CallbackQuery != nil && payload.CallbackQuery.Message != nil && payload.CallbackQuery.Message.Chat != nil {
+		callback := payload.CallbackQuery
+		chat := callback.Message.Chat
+		var userID int64
+		var senderUsername string
+		if callback.From != nil {
+			userID = callback.From.ID
+			senderUsername = callback.From.Username
+		}
+		return telegramstore.InboundMessage{
+				UpdateID:        payload.UpdateID,
+				ChatID:          chat.ID,
+				ChatType:        chat.Type,
+				ChatTitle:       chat.Title,
+				ChatUsername:    chat.Username,
+				UserID:          userID,
+				MessageID:       callback.Message.MessageID,
+				CallbackQueryID: callback.ID,
+				MessageKind:     "callback",
+				CallbackData:    callback.Data,
+				SenderUsername:  senderUsername,
+				ReceivedAt:      now,
+			}, kernel.TelegramUpdate{
+				ChatID:       strconv.FormatInt(chat.ID, 10),
+				UserID:       optionalTelegramID(userID),
+				CallbackData: callback.Data,
+			}, true
+	}
+
+	return telegramstore.InboundMessage{}, kernel.TelegramUpdate{}, false
+}
+
+func optionalTelegramID(id int64) string {
+	if id == 0 {
+		return ""
+	}
+	return strconv.FormatInt(id, 10)
 }

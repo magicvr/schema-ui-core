@@ -4,16 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	telegramstore "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
 )
 
@@ -25,6 +29,12 @@ func newTestSubjectStore(t *testing.T) *subject.Store {
 	}
 	t.Cleanup(func() { st.Close() })
 	return subject.NewStore(st)
+}
+
+type failingTelegramTxRunner struct{}
+
+func (failingTelegramTxRunner) Run(context.Context, func(kernel.Tx) error) error {
+	return errors.New("forced subject persistence failure")
 }
 
 func TestWebhook_UnconfiguredToken_Returns503(t *testing.T) {
@@ -304,6 +314,7 @@ func TestWebhook_RateLimiting_UserBucket(t *testing.T) {
 			Message: &MessagePayload{
 				From: &UserPayload{ID: 777},
 				Chat: &ChatPayload{ID: int64(1000 + i)}, // different chat to avoid chat limit
+				Text: "hello",
 			},
 		}
 		bodyBytes, _ := json.Marshal(updateBody)
@@ -323,6 +334,7 @@ func TestWebhook_RateLimiting_UserBucket(t *testing.T) {
 		Message: &MessagePayload{
 			From: &UserPayload{ID: 777},
 			Chat: &ChatPayload{ID: 8888},
+			Text: "hello",
 		},
 	}
 	bodyBytes, _ := json.Marshal(updateBody)
@@ -382,6 +394,7 @@ func TestWebhook_RateLimiting_ChatBucket(t *testing.T) {
 			Message: &MessagePayload{
 				From: &UserPayload{ID: int64(5000 + i)}, // different users
 				Chat: &ChatPayload{ID: 9999},            // same chat
+				Text: "hello",
 			},
 		}
 		bodyBytes, _ := json.Marshal(updateBody)
@@ -401,6 +414,7 @@ func TestWebhook_RateLimiting_ChatBucket(t *testing.T) {
 		Message: &MessagePayload{
 			From: &UserPayload{ID: 99999},
 			Chat: &ChatPayload{ID: 9999},
+			Text: "hello",
 		},
 	}
 	bodyBytes, _ := json.Marshal(updateBody)
@@ -419,6 +433,12 @@ func TestWebhook_RateLimiting_ChatBucket(t *testing.T) {
 
 func TestWebhook_SubjectMappingIdempotency(t *testing.T) {
 	subStore := newTestSubjectStore(t)
+	path := filepath.Join(t.TempDir(), "telegram_inbound_idempotency.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
 	disp := NewDispatcher()
 
 	var capturedSubjectIDs []string
@@ -432,6 +452,8 @@ func TestWebhook_SubjectMappingIdempotency(t *testing.T) {
 		SecretGetter: func() string { return "my-secret" },
 		RateLimiters: ratelimit.NewProvider(),
 		SubjectStore: subStore,
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
 		Dispatcher:   disp,
 	})
 
@@ -463,11 +485,180 @@ func TestWebhook_SubjectMappingIdempotency(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w2.Code)
 	}
 
-	if len(capturedSubjectIDs) != 2 {
-		t.Fatalf("expected 2 captured calls, got %d", len(capturedSubjectIDs))
+	if len(capturedSubjectIDs) != 1 {
+		t.Fatalf("expected one dispatch for repeated update, got %d", len(capturedSubjectIDs))
 	}
-	if capturedSubjectIDs[0] == "" || capturedSubjectIDs[0] != capturedSubjectIDs[1] {
-		t.Fatalf("expected identical non-empty SubjectID on repeated webhook, got %v", capturedSubjectIDs)
+	if capturedSubjectIDs[0] == "" {
+		t.Fatalf("expected non-empty SubjectID on first webhook, got %v", capturedSubjectIDs)
+	}
+}
+
+func TestWebhook_UnsupportedEmptyTextSkipsPersistence(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram_empty_text.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	dispatcher := NewDispatcher()
+	dispatchCount := 0
+	if err := dispatcher.RegisterCommand("ignored", func(context.Context, kernel.TelegramUpdate) error {
+		dispatchCount++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "secret" },
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
+		Dispatcher:   dispatcher,
+	})
+
+	for _, payload := range []UpdatePayload{
+		{UpdateID: 3001, Message: &MessagePayload{From: &UserPayload{ID: 7}, Chat: &ChatPayload{ID: 7001}}},
+		{UpdateID: 3002, Message: &MessagePayload{From: &UserPayload{ID: 7}, Chat: &ChatPayload{ID: 7002}, Text: ""}},
+	} {
+		body, _ := json.Marshal(payload)
+		req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+		req.Header.Set(HeaderTelegramSecretToken, "secret")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("empty/unsupported update status = %d", w.Code)
+		}
+	}
+	if dispatchCount != 0 {
+		t.Fatalf("unsupported empty-text updates dispatched %d times", dispatchCount)
+	}
+	var sessions, messages int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_sessions`).Scan(&sessions); err != nil {
+			return err
+		}
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messages)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if sessions != 0 || messages != 0 {
+		t.Fatalf("unsupported updates persisted sessions=%d messages=%d", sessions, messages)
+	}
+}
+
+func TestWebhook_SubjectPersistenceFailureDoesNotMintReceipt(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram_subject_failure.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "secret" },
+		SubjectStore: subject.NewStore(failingTelegramTxRunner{}),
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
+	})
+	payload := UpdatePayload{
+		UpdateID: 5001,
+		Message: &MessagePayload{
+			From: &UserPayload{ID: 55},
+			Chat: &ChatPayload{ID: 505},
+			Text: "hello",
+		},
+	}
+	body, _ := json.Marshal(payload)
+	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+	req.Header.Set(HeaderTelegramSecretToken, "secret")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("subject persistence failure status = %d, want 500", w.Code)
+	}
+	var messageCount, sessionCount int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messageCount); err != nil {
+			return err
+		}
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_sessions`).Scan(&sessionCount)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if messageCount != 0 || sessionCount != 0 {
+		t.Fatalf("subject failure minted persistence rows messages=%d sessions=%d", messageCount, sessionCount)
+	}
+}
+
+func TestHandlePollingUpdatePersistsAndDeduplicates(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram_polling_idempotency.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	dispatcher := NewDispatcher()
+	var dispatchCount atomic.Int32
+	if err := dispatcher.RegisterCommand("poll", func(context.Context, kernel.TelegramUpdate) error {
+		dispatchCount.Add(1)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	h := NewWebhookHandler(HandlerConfig{
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
+		Dispatcher:   dispatcher,
+	})
+	payload := UpdatePayload{
+		UpdateID: 6001,
+		Message: &MessagePayload{
+			From: &UserPayload{ID: 66},
+			Chat: &ChatPayload{ID: 606},
+			Text: "/poll",
+		},
+	}
+	if err := h.HandlePollingUpdate(context.Background(), payload); err != nil {
+		t.Fatalf("first polling update: %v", err)
+	}
+	if err := h.HandlePollingUpdate(context.Background(), payload); err != nil {
+		t.Fatalf("duplicate polling update: %v", err)
+	}
+	if got := dispatchCount.Load(); got != 1 {
+		t.Fatalf("polling duplicate dispatch count = %d, want 1", got)
+	}
+	var messageCount, sessionCount int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messageCount); err != nil {
+			return err
+		}
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_sessions`).Scan(&sessionCount)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if messageCount != 1 || sessionCount != 1 {
+		t.Fatalf("polling persistence counts messages=%d sessions=%d, want 1/1", messageCount, sessionCount)
+	}
+}
+
+func TestNormalizeInbound_PrivateChatUsesSenderName(t *testing.T) {
+	now := time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)
+	got, _, supported := normalizeInbound(UpdatePayload{
+		UpdateID: 4001,
+		Message: &MessagePayload{
+			From: &UserPayload{ID: 88, FirstName: "Ada", LastName: "Lovelace"},
+			Chat: &ChatPayload{ID: 8001, Type: "private"},
+			Text: "hello",
+		},
+	}, now)
+	if !supported {
+		t.Fatal("private text update was not supported")
+	}
+	if got.ChatTitle != "Ada Lovelace" {
+		t.Fatalf("private chat title = %q, want sender name", got.ChatTitle)
 	}
 }
 
