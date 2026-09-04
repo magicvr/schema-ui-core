@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.8.0
+version: 0.9.0
 progress: 1/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -41,7 +41,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | R3 数据/权限/发言权合同、信息需求与用户裁决冻结 | **完成**：D-002+D-003/E-002～E-004；A-002 self `pass`；A-003 F-001 → A-004 `fixed`；A-005 Grok independent `pass`；A-006 response；开放 required = 0 |
-| C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | **实施中**：A-010 Grok independent `pass` 确认 A-008 F-001/F-002 合同 fixed，A-011 已响应；按 D-005 进入 v68、共同入站接线与测试，C2 尚未完成 |
+| C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | **实现完成待关门审计**：A-010/A-011 放行后已按 D-005 实现 v68、双表 repository、共同 webhook/polling 接线；D-007 纳入非阻断项并选定持久化失败进入 error；A-012 self `pass`，等待 Grok independent 实现审计 |
 | C3 | 会话列表/成绩单/人工发送 API、权限与运行时接线 | 待开始；依赖 C2 |
 | C4 | Admin 人工台 UI、发言权反馈、端到端验证与 independent 审计 | 待开始；依赖 C3 |
 
@@ -62,4 +62,4 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 ## 台账布局
 
-`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-006、E-001～E-008、A-001～A-011 已记录 R3 建立、C1 审计闭合、C2 用户裁决、independent finding 响应与 C2 实施放行，后续按编号递增。
+`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-007、E-001～E-009、A-001～A-012 已记录 R3 建立、C1 审计闭合、C2 用户裁决、independent finding 响应、非阻断项裁决与 C2 实现自审，后续按编号递增。

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.6.0
+version: 0.7.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -19,7 +19,9 @@ version: 0.6.0
 | [E-005-r3-c2-user-decisions](02-execution/E-005-r3-c2-user-decisions.md) | 2026-09-04 | R3 C2 用户方案裁决 | D-004 已记录三项选择；C2 进入 self/independent 合同审视；R3 active · 1/4 | `02-execution/E-005-r3-c2-user-decisions.md` |
 | [E-006-r3-c2-contract-review](02-execution/E-006-r3-c2-contract-review.md) | 2026-09-04 | R3 C2 合同审视准备 | D-005 与 A-007 self pass 已落盘；Grok independent 待进行；未修改生产代码 | `02-execution/E-006-r3-c2-contract-review.md` |
 | [E-007-r3-c2-a008-response](02-execution/E-007-r3-c2-a008-response.md) | 2026-09-04 | R3 C2 A-008 required finding 响应 | 用户选择 fixed；D-005/A-009 已补全合同；Grok independent re-audit 待进行 | `02-execution/E-007-r3-c2-a008-response.md` |
+| [E-008-r3-c2-a010-response](02-execution/E-008-r3-c2-a010-response.md) | 2026-09-04 | R3 C2 A-010 独立复审响应 | A-010 Grok independent pass；A-008 F-001/F-002 合同 fixed；放行 C2 代码实施 | `02-execution/E-008-r3-c2-a010-response.md` |
+| [E-009-r3-c2-implementation](02-execution/E-009-r3-c2-implementation.md) | 2026-09-04 | R3 C2 入站持久化实现 | v68 双表、repository、共同 webhook/polling 接线与测试已提交；A-012 self pass；等待实现 independent | `02-execution/E-009-r3-c2-implementation.md` |
 
 ## 事实边界
 
-只记录已发生事实；R3 当前没有生产代码或数据库迁移变更。C2 已完成用户裁决、A-008 响应与合同 self review，仍等待 independent re-audit，不将合同审视投影为代码实施或 C2 完成。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；定向/PG gated/`go vet`/`go build` 通过。全套回归曾在并发运行中出现一次 `TestShutdownDrainHarnessPostgres` EOF，隔离重跑通过，作为环境/基线波动保留；C2 仍等待 independent 实现审计，不将 self 审视投影为关门。
