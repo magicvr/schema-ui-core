@@ -74,7 +74,7 @@ open_required: 2
 |------|----|
 | 严重度 | **high** |
 | 建议 | **required** |
-| status | **open** |
+| status | **closed · fixed**（2026-09-04 · 编排器响应） |
 | 影响门禁 | GOAL-003 C2 行为等价；C3 关门；VP-032 退出判据 #2/#5 |
 
 **证据：**
@@ -97,7 +97,7 @@ open_required: 2
 |------|----|
 | 严重度 | med |
 | 建议 | **required** |
-| status | **open** |
+| status | **closed · fixed**（2026-09-04 · 编排器响应） |
 | 影响门禁 | GOAL-003 C2 回归证据；C3 关门 |
 
 **证据：**
@@ -131,6 +131,13 @@ open_required: 2
 2. **F-002（med / required）**：补齐能防止 F-001 回归的混合历史/no-path 测试，并重建“行为等价”证据链。
 
 开放必改项数：**2**。在 F-001/F-002 未按 `fixed` / `accepted-residual` / `user-overruled` 合法闭合前，不得关门 GOAL-003，也不得以 A-001 `pass` 单独放行 R2。
+
+## 闭合记录（编排器响应 · 2026-09-04）
+
+- **F-001 → closed · fixed**：用户裁决方案 A（令牌化保留）；`kernel.RateLimiter` 新增 `Reserve`/`Cancel`（GOAL-003 D-002）；10 处失败预算逐路径语义冻结；CAPTCHA / no-path / complete 400 / mfa·invite 成功回归全部纠正（commit `3bfe66c2` + A-004 R-001 的登录 500 分支补 `Cancel`）。证据：A-003（self · pass）＋ A-004（grok-build independent · pass / 0 required）。
+- **F-002 → closed · fixed**：五条回归测试落地并独立复跑（no-path 累计 / CAPTCHA 不清历史 / complete·mfa·invite 混合序列），全绿含 `-race`。证据：A-003 / A-004。
+- **F-003 → 响应**：Root / workspace / goal-tree 路线图投影已更新（2026-09-04）。
+- 冲突处置：A-001（pass）与 A-002（fail）的 verdict 冲突经 P-004 用户裁决 + 修复后消除——A-003/A-004 对修复后状态均为 pass，无开放 required。
 
 ## 与既有意见的异同
 

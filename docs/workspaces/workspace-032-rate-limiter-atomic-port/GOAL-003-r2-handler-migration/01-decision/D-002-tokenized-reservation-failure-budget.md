@@ -50,7 +50,7 @@ Cancel(key string, token uint64)
 
 | # | 使用点 | 入口 | 计数（保留槽） | 非计数（Cancel） | 成功 |
 |---|--------|------|---------------|-----------------|------|
-| 1 | 登录失败桶（auth.go） | `Reserve` | locked/disabled、invalid creds、MFA 签发（旧在签发点 Record 1 次 = 入口 1 次） | 无效 CAPTCHA（旧无副作用） | `Clear`（旧有） |
+| 1 | 登录失败桶（auth.go） | `Reserve` | locked/disabled、invalid creds、MFA 签发（旧在签发点 Record 1 次 = 入口 1 次） | 无效 CAPTCHA、LOGIN_FAILED 500（mfa==nil / BeginChallenge 失败 / 其它 auth 错误，旧无副作用 · A-004 R-001） | `Clear`（旧有） |
 | 3 | 密码修改（account_self.go） | `Reserve` | 当前密码错误（旧 Record） | — | `Clear`（旧有） |
 | 4 | 自助恢复 start（recovery.go） | `Reserve` | `ErrRecoveryNotAvailable`（旧 Record） | Cooldown / SendFailed / 其它 500（旧无副作用） | `Cancel`（旧净 0，无 Clear） |
 | 5 | 自助恢复 complete（recovery.go） | `Reserve` | ResolveTarget err、Expired、NotPending、mismatch、二次因子错误（旧 recordFailure 各 1 次） | Evaluate 500、second-factor-required、INVALID_PASSWORD（基线/策略）、hash 500、CompleteRecovery err（含 NotPending 竞态）（旧无副作用） | `Cancel`（旧净 0，无 Clear） |
@@ -92,3 +92,4 @@ Cancel(key string, token uint64)
 | date | version | change |
 |------|---------|--------|
 | 2026-09-04 | 0.1.0 | 初版：用户裁决方案 A；Reserve/Cancel 契约（I-032-003）；10 处失败预算逐路径语义冻结；F-002 测试要求 |
+| 2026-09-04 | 0.1.1 | 响应 A-004 R-001：§3 #1 非计数列补充 LOGIN_FAILED 500 三条（mfa==nil / BeginChallenge 失败 / 其它 auth 错误）→ `Cancel`（旧无副作用，严格 1:1）；实现 3bfe66c2 基础上追加 Cancel 于三条 500 分支 |

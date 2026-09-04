@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-handler-migration
 title: R2 生产使用点迁移与 handler 回归
-status: active
+status: done
 parent: GOAL-001-rate-limiter-atomic-port
 created: 2026-09-03
 updated: 2026-09-04
-version: 0.2.0
-progress: 2/3
+version: 0.3.0
+progress: 3/3
 plan_refs:
   - VP-032-rate-limiter-atomic-port
 primary_plan: VP-032-rate-limiter-atomic-port
@@ -25,34 +25,34 @@ serves_summary: 承载 VP-032 R2：依据 D-002 冻结合同将 14 处生产 All
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | **14 处生产调用点迁移**：按立即消费（4 处）与失败预算（10 处）两口径完成代码改造，生产代码消除 Allow→Record 配对 | **已完成**（E-002 · 14 处全迁） |
-| C2 | **测试套件回归与并发验证**：handler / channel 既有限流单测全绿；验证立即消费单请求等价与失败预算 Clear 后净状态等价 | **受阻后修复**（A-002 F-001/F-002 → D-002 令牌化修复 + 混合历史回归；E-003） |
-| C3 | **审视与阶段关门**：自审（A-001）对照 14 处分母与红线，达成无开放 required 关门 | 响应中（A-002 fail / 2 required → 已按 D-002 修复，待复审） |
+| C1 | **14 处生产调用点迁移**：按立即消费（4 处）与失败预算（10 处）两口径完成代码改造，生产代码消除 Allow→Record 配对 | **已完成**（E-002 · 14 处全迁；失败预算按 D-002 修正为 Reserve/Cancel） |
+| C2 | **测试套件回归与并发验证**：handler / channel 既有限流单测全绿；立即消费等价、失败预算逐路径语义、并发无穿透 | **已完成**（A-002 证伪后 D-002 令牌化修复 + 混合历史回归全绿；E-003） |
+| C3 | **审视与阶段关门**：自审 + 独立复审，无开放 required | **已完成**（A-001 pass / A-002 fail→F-001/F-002 修复；A-003 self pass / A-004 grok independent pass · 0 required） |
 
-`progress` = 已关门检查点数 / 3。当前 **2/3**（C3 未关门）。
+`progress` = 已关门检查点数 / 3。当前 **3/3**。
 
 ## 成功标准（对应 VP-032 退出判据 #2 / #3 / #4）
 
-1. **分母全覆盖**：D-002 §5 冻结的 14 处生产调用点 100% 迁移至 `AllowRecord`，生产环境不再存在 Allow→Record 两段式调用。
-2. **行为等价**：立即消费路径（4 处）单请求与旧 Allow→Record 等价；失败预算路径（10 处）成功时 Clear 净状态等价，失败时不再二次 Record。
+1. **分母全覆盖**：D-002 §5 冻结的 14 处生产调用点 100% 迁移至原子端口——立即消费 4 处 `AllowRecord` + 失败预算 10 处 `Reserve`/`Cancel`（GOAL-003 D-002 §3 逐路径冻结），生产环境不再存在 Allow→Record 两段式调用。
+2. **行为等价**：立即消费路径（4 处）单请求与旧 Allow→Record 等价；失败预算路径（10 处）每种结果 = 旧代码计数行为（计数保留槽 / 非计数 `Cancel` 只回滚当次并保留历史 / 旧有 `Clear` 路径保持 `Clear`），并发下更保守且消除 TOCTOU。
 3. **回归全绿**：`go test ./internal/handler/...` 与 `./internal/channel/telegram/...` 既有限流测试全绿，不破损现有业务流。
 4. **红线保持**：不重开 VP-027；不实现 Redis / 不消耗 RT-Q05；不改 Profile 默认集；不改动其它内核端口；`Allow`/`Record` 保持兼容声明。
 
-## 14 处生产调用点迁移清单（D-002 §5 分母）
+## 14 处生产调用点迁移清单（D-002 §5 分母 · 口径按 GOAL-003 D-002 §3）
 
 | # | 使用点 | 位置 | 模式 | 迁移口径 |
 |---|--------|------|------|----------|
-| 1 | 登录失败桶（含 MFA 签发二次检查） | `apps/api/internal/handler/auth.go` | 失败预算 | 入口 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
+| 1 | 登录失败桶（含 MFA 签发二次检查） | `apps/api/internal/handler/auth.go` | 失败预算 | 入口 `Reserve`；locked/disabled / invalid creds / MFA 签发保留槽；无效 CAPTCHA 与 LOGIN_FAILED 500 分支 `Cancel`；成功 `Clear` |
 | 2 | 验证码生成 | `apps/api/internal/handler/captcha.go` | 立即消费 | `Allow`+`Record` → `AllowRecord` |
-| 3 | 密码修改 | `apps/api/internal/handler/account_self.go` | 失败预算 | 入口 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
-| 4 | 自助恢复 start | `apps/api/internal/handler/recovery.go` | 失败预算 | 入口 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
-| 5 | 自助恢复 complete（`recordFailure`） | `apps/api/internal/handler/recovery.go` | 失败预算 | 入口 `AllowRecord`；`recordFailure` 不再二次 `Record` |
-| 6 | MFA verify 独立桶 | `apps/api/internal/handler/mfa.go` | 失败预算 | 入口 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
-| 7 | MFA step-up enroll | `apps/api/internal/handler/mfa.go` | 失败预算 | `guardMFAStepUp` 改为 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
-| 8 | MFA step-up disable | `apps/api/internal/handler/mfa.go` | 失败预算 | 同 #7 |
-| 9 | MFA step-up recovery-rotate | `apps/api/internal/handler/mfa.go` | 失败预算 | 同 #7 |
-| 10 | 邀请接受 | `apps/api/internal/handler/invites.go` | 失败预算 | 入口 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
-| 11 | 钱包核销 | `apps/api/internal/handler/wallet_self.go` | 失败预算 | 入口 `AllowRecord`；失败不再 `Record`；成功 `Clear` |
+| 3 | 密码修改 | `apps/api/internal/handler/account_self.go` | 失败预算 | 入口 `Reserve`；当前密码错误保留槽；成功 `Clear` |
+| 4 | 自助恢复 start | `apps/api/internal/handler/recovery.go` | 失败预算 | 入口 `Reserve`；no-path（NotAvailable）保留槽并回 202；Cooldown / SendFailed / 500 `Cancel`；成功 `Cancel` |
+| 5 | 自助恢复 complete | `apps/api/internal/handler/recovery.go` | 失败预算 | 入口 `Reserve`；错误码 / Expired / NotPending / mismatch / 二次因子错误保留槽；Evaluate 500 / second-factor-required / INVALID_PASSWORD×2 / hash 500 / CompleteRecovery err `Cancel`；成功 `Cancel` |
+| 6 | MFA verify 独立桶 | `apps/api/internal/handler/mfa.go` | 失败预算 | 入口 `Reserve`；Verify fail 保留槽；body 解析失败 `Cancel`；成功 `Cancel` |
+| 7 | MFA step-up enroll | `apps/api/internal/handler/mfa.go` | 失败预算 | `guardMFAStepUp` 改 `Reserve`；当前密码错误保留槽；UserByID 500 `Cancel`；成功 `Clear` |
+| 8 | MFA step-up disable | `apps/api/internal/handler/mfa.go` | 失败预算 | 同 #7；`ErrMFAInvalid` 保留槽、其它 Disable err `Cancel` |
+| 9 | MFA step-up recovery-rotate | `apps/api/internal/handler/mfa.go` | 失败预算 | 同 #8 |
+| 10 | 邀请接受 | `apps/api/internal/handler/invites.go` | 失败预算 | 入口 `Reserve`；Peek / AcceptInvite err 保留槽；INVALID_PASSWORD / hash 500 `Cancel`；成功 `Cancel` |
+| 11 | 钱包核销 | `apps/api/internal/handler/wallet_self.go` | 失败预算 | 入口 `Reserve`；body 解析 / 空 code / Redeem err 保留槽；成功 `Clear` |
 | 12 | Telegram IP 桶 | `apps/api/internal/channel/telegram/webhook.go` | 立即消费 | `Allow`+`Record` → `AllowRecord` |
 | 13 | Telegram chat 桶 | `apps/api/internal/channel/telegram/webhook.go` | 立即消费 | `Allow`+`Record` → `AllowRecord` |
 | 14 | Telegram user 桶 | `apps/api/internal/channel/telegram/webhook.go` | 立即消费 | `Allow`+`Record` → `AllowRecord` |

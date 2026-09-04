@@ -162,6 +162,11 @@ func (h *authHandler) login() http.HandlerFunc {
 		if errors.As(err, &mfaReq) {
 			if h.mfa == nil {
 				// The gate vanished between Login and here — fail closed.
+				// Legacy: an internal LOGIN_FAILED never recorded — roll back
+				// only this attempt's slot (A-004 R-001).
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(limiterKey, token)
+				}
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
 			}
@@ -171,6 +176,11 @@ func (h *authHandler) login() http.HandlerFunc {
 			// Record at proof issuance — same net count).
 			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
 			if perr != nil {
+				// Legacy: a failed proof issuance never recorded — roll back
+				// only this attempt's slot (A-004 R-001).
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(limiterKey, token)
+				}
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
 			}
@@ -178,6 +188,11 @@ func (h *authHandler) login() http.HandlerFunc {
 			return
 		}
 		if err != nil {
+			// Legacy: an unexpected auth error never recorded — roll back
+			// only this attempt's slot (A-004 R-001).
+			if h.rateLimiter != nil {
+				h.rateLimiter.Cancel(limiterKey, token)
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
 		}
