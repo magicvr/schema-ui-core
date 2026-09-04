@@ -89,7 +89,8 @@ parent: null
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
 | I-032-001 | `AllowRecord` 精确签名与返回值语义（bool 是否足够，是否需返回剩余额度）。 | required | 判据 1 | 方案冻结 | **verified**（2026-09-03 · VRev-073：`AllowRecord(key string, now time.Time) bool`；bool 足够；不返回剩余额度；`RetryAfterSeconds` 独立） |
-| I-032-002 | 是否所有使用点都应迁移（如 Clear-on-success 调用点是否需要原子变体）。 | required | 判据 2 | 方案冻结 | **verified**（2026-09-03 · VRev-073：14 处生产 Allow→Record 全迁；Clear 无需原子变体；立即消费 vs 失败预算两口径） |
+| I-032-002 | 是否所有使用点都应迁移（如 Clear-on-success 调用点是否需要原子变体）。 | required | 判据 2 | 方案冻结 | **revised**（2026-09-03 · VRev-073：14 处全迁 + Clear 无需原子变体 + 两口径。**2026-09-04 修正 · GOAL-003 A-002 证伪**：键级 `Clear` 无法只回滚当次占槽、会连历史一起清空 → 失败预算口径改为**令牌化 `Reserve`/`Cancel`**（GOAL-003 D-002 · 用户裁决方案 A · I-032-003），判据 #2 意图（行为等价 + 并发更保守）仍达成） |
+| I-032-003 | 令牌化保留契约（`Reserve`/`Cancel` 签名与逐路径语义冻结）。 | required | 判据 2/5 | 实施阶段 | **verified**（2026-09-04 · GOAL-003 D-002：`Reserve(key, now) (token uint64, ok bool)` + `Cancel(key, token)`；10 处失败预算逐路径冻结；GOAL-003 A-004 grok independent 独立核对一致） |
 
 ## 工作区绑定
 
@@ -107,3 +108,4 @@ parent: null
 |------|--------|
 | 2026-09-03 | 用户书面裁决（GOAL-001 A-008 R-007 处置）：新建 VP 下一波做端口原子化，承接 `kernel.RateLimiter` Allow/Record TOCTOU residual。登记 `planned` v0.1.0（0 区），退出分母草案待 `/vision` 正式冻结。 |
 | 2026-09-03 | 用户指令激活：VRev-073 self `pass`（0 required · 架构类 freshness PASS `42036a3c`→`b1c03acd`）· I-032-001/002 冻结 · 使用点分母 14 处 · `planned → active` v0.2.0 · lead `workspace-032-rate-limiter-atomic-port` 交 `/govern` 开区。V-F117 recommended（VP-030 仍 active）不阻断。 |
+| 2026-09-04 | **口径承接登记（GOAL-003 A-002 证伪 · 用户裁决方案 A）**：§首波冻结「失败预算：入口乐观占槽；`Clear` 保持（无需原子变体）」与判据 #2「失败预算路径在 `Clear` 后净状态等价」的**表述**由 [GOAL-003 D-002](../workspaces/workspace-032-rate-limiter-atomic-port/GOAL-003-r2-handler-migration/01-decision/D-002-tokenized-reservation-failure-budget.md)（令牌化 `Reserve`/`Cancel` + 10 处逐路径语义冻结）取代——键级 `Clear` 无法只回滚当次占槽（A-002 证伪）；判据 #2 意图（14 处全迁 / 立即消费等价 / 失败预算净状态等价 / 并发下更保守）仍达成。I-032-002 → `revised`；新增 I-032-003 `verified`。实施与双审证据见 workspace-032（Root `done` 3/3 · A-001 self + A-002 grok independent 双 `pass`）。**关门就绪审视 = VRev-074 self `pass`**（0 required）。 |
