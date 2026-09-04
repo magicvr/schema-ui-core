@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.1.0
+version: 0.2.0
 ---
 
 # GOAL-003 · R2 执行索引
@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | [E-001-r2-goal-establishment](02-execution/E-001-r2-goal-establishment.md) | 2026-09-04 | R2 子目标建立 | done | `02-execution/E-001-r2-goal-establishment.md` |
+| [E-002-r2-c1-decision](02-execution/E-002-r2-c1-decision.md) | 2026-09-04 | R2 C1 参数裁决 | D-001 accepted；I-033-014～016 verified；progress 1/5 | done |
 
 ## 事实边界
 

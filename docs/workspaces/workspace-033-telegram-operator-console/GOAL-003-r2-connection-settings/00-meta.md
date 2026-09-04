@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 plan_refs:
   - VP-033-telegram-operator-console
 primary_plan: VP-033-telegram-operator-console
@@ -41,7 +41,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | R2 关键参数裁决、实施计划与 required 信息闭合 | 待开始；I-033-014～016 待用户裁决 |
+| C1 | R2 关键参数裁决、实施计划与 required 信息闭合 | **完成**：D-001；I-033-014～016 verified；A-002 self pass |
 | C2 | Telegram 配置 schema、迁移、runtime 回读与 settings API | 待开始；依赖 C1 |
 | C3 | Bot API client、connection manager、互斥切换与 Fx 生命周期 | 待开始；依赖 C1，部分依赖 C2 |
 | C4 | Admin settings UI、占用位/heartbeat 接缝与跨层集成 | 待开始；依赖 C2/C3 |
@@ -51,13 +51,13 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-033-014 | required | mode 与 `webhook_public_base_url` 在 YAML/env、DB seed、DB authoritative、Admin PATCH 之间的优先级 | 方案 / C2 | C1 | 用户裁决后写 D-004；补 migration/runtime/settings 回读测试 | open | 未延期 | A-004 recommended F-001；当前代码仅 token/secret 为 DB authoritative |
-| I-033-015 | required | 未绑定 polling 的 heartbeat 是引用计数还是单 lease，以及 TTL/失效 drain 语义 | 方案 / C3/C4 | C1 | 用户裁决后写 D-004；补 lease 并发/过期测试 | open | 未延期 | A-002 F-005 recommended；VP-033 使用活跃会话引用计数表述 |
-| I-033-016 | required | `getUpdates` 长轮询请求 timeout 与独立 HTTP client 余量的默认值 | 方案 / C3 | C1 | 用户裁决后写 D-004；补正常等待/取消/错误/timeout 测试 | open | 未延期 | A-004 F-002 recommended；D-003 已冻结严格大于关系但未定数值 |
+| I-033-014 | required | mode 与 `webhook_public_base_url` 在 YAML/env、DB seed、DB authoritative、Admin PATCH 之间的优先级 | 方案 / C2 | C1 | 用户裁决；D-001；补 migration/runtime/settings 回读测试 | **verified** | 未延期 | DB row 存在后 authoritative；首次由 YAML/env seed；Admin PATCH 可更新 mode/URL |
+| I-033-015 | required | 未绑定 polling 的 heartbeat 是引用计数还是单 lease，以及 TTL/失效 drain 语义 | 方案 / C3/C4 | C1 | 用户裁决；D-001；补 lease 并发/过期测试 | **verified** | 未延期 | 活跃控制台会话引用计数；每个 lease 基线 20 秒；归零/失效后 drain |
+| I-033-016 | required | `getUpdates` 长轮询请求 timeout 与独立 HTTP client 余量的默认值 | 方案 / C3 | C1 | 用户裁决；D-001；补正常等待/取消/错误/timeout 测试 | **verified** | 未延期 | 请求 30 秒；专用 polling client 40 秒；不复用 10 秒 sendMessage client |
 | I-033-017 | non-blocking | disabled profile 下 Telegram HTTP surface 是否继续按现有 module gating 处理 | 实施 / C4 | C3 | R2 计划核对 provider/composition 现状并记录 | open | 可沿用现有 profile 语义 | A-002 F-007 recommended；不重开默认 Profile 红线 |
 | I-033-018 | non-blocking | `HasBusinessHandlers` 放在具体 dispatcher/adapter 还是扩展 kernel 端口 | 实施 / C3 | C3 | R2 实现决策与编译期/行为测试 | open | 可在 C3 记录 | A-002 F-006 recommended |
 
-当前 C1 前有 3 项 required 信息未闭合；在用户裁决并写入 D-004 前，不开始依赖这些选择的生产代码实现。
+R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self response `pass`；可进入 C2/C3，但必须按 D-001 + D-002 + D-003 实施并保留未实现边界。I-033-017～018 为 non-blocking open。
 
 ## 父目标
 
