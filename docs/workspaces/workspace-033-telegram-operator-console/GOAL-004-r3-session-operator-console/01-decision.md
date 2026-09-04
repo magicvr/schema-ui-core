@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.7.0
+version: 0.9.0
 ---
 
 # GOAL-004 · R3 决策索引
@@ -20,7 +20,9 @@ version: 0.7.0
 | [D-006-r3-c2-a008-fixed](01-decision/D-006-r3-c2-a008-fixed.md) | 2026-09-04 | R3 C2 A-008 required finding 闭合路径裁决 | 用户选择 fixed；补全 PG 幂等与主体映射顺序；等待 independent re-audit | done |
 | [D-007-r3-c2-nonblocking-scope](01-decision/D-007-r3-c2-nonblocking-scope.md) | 2026-09-04 | R3 C2 非阻断项处理范围与 polling 失败策略 | 用户要求本轮一并处理 C2 非阻断项；PG 首次/并发/重复证据补齐；持久化失败进入 error、不热循环 | done |
 | [D-008-r3-c3-retry-identity](01-decision/D-008-r3-c3-retry-identity.md) | 2026-09-04 | R3 C3 显式重试身份裁决 | 每次显式重试新建 request_id 与发送记录，以 retry_of 关联原始请求；无自动重试 | done |
+| [D-009-r3-c3-operator-console-contract](01-decision/D-009-r3-c3-operator-console-contract.md) | 2026-09-04 | R3 C3 人工台 API、权限与运行时实施合同 | 四条鉴权 operator 路由、专用 read/write 权限、running 且未绑定门禁、v69 出站记录与幂等重试合同 | done |
+| [D-010-r3-c3-polling-lease-decision](01-decision/D-010-r3-c3-polling-lease-decision.md) | 2026-09-04 | R3 C3 polling lease 与专用权限裁决 | 用户选择 operator.read 接管既有 polling lease；保留 running 门禁与按心跳启停 | done |
 
 ## 决策记录（ledger）
 
-`01-decision/` 平铺；正文只写已发生或用户已确认的决策。D-002 已记录 C1 用户方案裁决；D-007 记录 C2 非阻断项范围与 polling 失败策略；D-008 记录 C3 显式重试身份裁决；实施参数和验证事实继续写入后续 ledger。
+`01-decision/` 平铺；正文只写已发生或用户已确认的决策。D-002 已记录 C1 用户方案裁决；D-007 记录 C2 非阻断项范围与 polling 失败策略；D-008 记录 C3 显式重试身份裁决；D-009 固化 C3 API/权限/运行时实施合同；D-010 记录 polling lease 裁决；验证事实继续写入后续 ledger。
