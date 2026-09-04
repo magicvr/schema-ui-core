@@ -5,14 +5,14 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-002 · R1 03-audit 索引
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
-| — | — | — | — | — | 0 | 尚未到 R1 阶段审计节点；`I-033-011`～`I-033-013` 已由 D-002 记录为 verified | — |
+| [A-001-r1-contract-freeze-self](03-audit/A-001-r1-contract-freeze-self.md) | 2026-09-04 | self | R1 合同冻结、R2 入口设计与 required 信息门禁 | **pass** | **0** | C1/C2 通过；F-001/F-002 为 R2/R4 recommended；Grok independent 待完成 | [A-001-r1-contract-freeze-self](03-audit/A-001-r1-contract-freeze-self.md) |
 
 ## 信息就绪核对（按 scope）
 
