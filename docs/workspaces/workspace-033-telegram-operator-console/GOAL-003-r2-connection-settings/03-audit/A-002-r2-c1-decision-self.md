@@ -38,7 +38,7 @@ I-033-017～018 仍为 non-blocking open，分别在 C3/C4 实施期回应；不
 
 ## Findings
 
-无当前 C1 scope 内的开放 required finding。A-004 F-004～F-009 与 A-004 recommended 仍需在 R2 代码阶段形成实现/测试证据，不在本条虚构关闭。
+无当前 C1 scope 内的开放 required finding。GOAL-002 A-002 F-004～F-009 与本区 A-003 recommended 仍需在 R2 代码阶段形成实现/测试证据，不在本条虚构关闭。
 
 ## 结论与下一步
 

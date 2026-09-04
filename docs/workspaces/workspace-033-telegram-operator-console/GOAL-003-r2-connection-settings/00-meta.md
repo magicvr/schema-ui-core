@@ -41,7 +41,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | R2 关键参数裁决、实施计划与 required 信息闭合 | **完成**：D-001；I-033-014～016 verified；A-002 self pass |
+| C1 | R2 关键参数裁决、实施计划与 required 信息闭合 | **完成**：D-001；I-033-014～016 verified；A-002 self + A-003 independent pass |
 | C2 | Telegram 配置 schema、迁移、runtime 回读与 settings API | 待开始；依赖 C1 |
 | C3 | Bot API client、connection manager、互斥切换与 Fx 生命周期 | 待开始；依赖 C1，部分依赖 C2 |
 | C4 | Admin settings UI、占用位/heartbeat 接缝与跨层集成 | 待开始；依赖 C2/C3 |
@@ -57,7 +57,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 | I-033-017 | non-blocking | disabled profile 下 Telegram HTTP surface 是否继续按现有 module gating 处理 | 实施 / C4 | C3 | R2 计划核对 provider/composition 现状并记录 | open | 可沿用现有 profile 语义 | A-002 F-007 recommended；不重开默认 Profile 红线 |
 | I-033-018 | non-blocking | `HasBusinessHandlers` 放在具体 dispatcher/adapter 还是扩展 kernel 端口 | 实施 / C3 | C3 | R2 实现决策与编译期/行为测试 | open | 可在 C3 记录 | A-002 F-006 recommended |
 
-R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self response `pass`；可进入 C2/C3，但必须按 D-001 + D-002 + D-003 实施并保留未实现边界。I-033-017～018 为 non-blocking open。
+R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；A-004 已完成 `/govern` 响应，可进入 C2/C3，但必须按 D-001 + GOAL-002 D-002 + D-003 实施并保留未实现边界。I-033-017～018 为 non-blocking open。
 
 ## 父目标
 

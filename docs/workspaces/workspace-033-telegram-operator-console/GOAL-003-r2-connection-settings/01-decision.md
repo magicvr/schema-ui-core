@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.2.0
+version: 0.3.0
 ---
 
 # GOAL-003 · R2 决策索引

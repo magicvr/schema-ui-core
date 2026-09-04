@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.6.0
+version: 0.7.0
 progress: 0/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -35,7 +35,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
 | R1 | 合同冻结：模式切换、轮询生命周期、业务占用位、控制台 heartbeat、发言权探测、显式公网 base URL 与 Fake Bot API 验收 | **完成**：D-002+D-003；A-004 independent pass；GOAL-002 C3 done · 3/3 |
-| R2 | 连接与设置：`getMe`、`setWebhook`/`deleteWebhook`、互斥热切换、占用位和 Admin 设置页 | **进行中**：`GOAL-003-r2-connection-settings` active · 1/5；C1 D-001 已完成，C2/C3 实现尚未开始；实施源 D-002+D-003 |
+| R2 | 连接与设置：`getMe`、`setWebhook`/`deleteWebhook`、互斥热切换、占用位和 Admin 设置页 | **进行中**：`GOAL-003-r2-connection-settings` active · 1/5；C1 D-001 + A-003 independent pass 已完成，C2/C3 实现尚未开始；实施源 D-002+D-003 |
 | R3 | 会话与人工台：入站会话落盘、用户/群分栏、未绑定人工 IM、发言权反馈 | 待开始；依赖 R2；I-033-010 最晚本阶段冻结 |
 | R4 | 证据与关门：退出判据矩阵、红线核账、审计 finding 闭合 | 待开始；依赖 R1～R3 |
 
@@ -57,7 +57,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 | I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **verified** | 用户书面裁决：缺省 `polling`、生产显式 `webhook`；D-002 |
 | I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **verified** | 用户书面裁决：Telegram connection manager + composition `OnStop` drain；D-002 |
 
-当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1（D-001；I-033-014～016 verified；A-002 self pass），迁移、连接 manager、设置 API/UI 仍未实施，independent review 待执行。`I-033-009/010` 仍为 non-blocking，必须在各自最晚阶段前处理。
+当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1（D-001；I-033-014～016 verified；A-002 self + A-003 independent pass；A-004 response），迁移、连接 manager、设置 API/UI 仍未实施。`I-033-009/010` 仍为 non-blocking，必须在各自最晚阶段前处理。
 
 ## 父目标
 
