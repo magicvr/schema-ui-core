@@ -1,11 +1,11 @@
 ---
 id: GOAL-002-r1-contract-freeze
 title: R1 · Telegram 连接与人工台合同冻结
-status: active
+status: done
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.3.0
+version: 0.4.0
 ---
 
 # GOAL-002-r1-contract-freeze · 01-decision 索引

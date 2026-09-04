@@ -65,11 +65,11 @@ version: 0.1.0
 
 A-002 要求补进的三条（A-002 L62–66、L197）：
 
-1. webhook 缺 secret → 不得 `setWebhook`、不得进入 `running`  
+1. webhook 缺 secret → 不得 `setWebhook`、不得进入 `running`
    - D-003 L22、L44；R1-V-002 L57；R1-V-007 L61。
-2. polling 缺 secret → 仍允许 `getMe` + `deleteWebhook` +（若应跑）`getUpdates`  
+2. polling 缺 secret → 仍允许 `getMe` + `deleteWebhook` +（若应跑）`getUpdates`
    - D-003 L24、L45；R1-V-007 L61。
-3. `setWebhook` 必须带与入站校验一致的 `secret_token`  
+3. `setWebhook` 必须带与入站校验一致的 `secret_token`
    - D-003 L23；R1-V-002 L57。secret 不得进入日志/错误文本/状态展示（D-003 L23）。
 
 现有入站 handler 在 secret 为空时仍直接 401、不区分 mode（`webhook.go` L113–121，调用序 `ServeHTTP` L84；header 常量为 `X-Telegram-Bot-Api-Secret-Token`，L19–20）。这与「webhook 必须有非空 secret 并与 `secret_token` 一致」相容；也解释了为何 R2 若只组 URL、不传 `secret_token`，生产 webhook 仍会被拒绝。D-003 已把该约束写入合同。polling 允许空 secret（D-003 L24）并不要求卸载 HTTP 路由；偶发 POST 保持 fail-closed 仍属 A-002 F-007 recommended，本条不升级。
