@@ -376,6 +376,13 @@ func TestTelegramOperatorHandlerPaginationRuntimeAndRetryGuards(t *testing.T) {
 	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" {
 		t.Fatalf("unknown receiver runtime = %d %v, want unavailable", recorder.Code, body)
 	}
+	state = "unconfigured"
+	receiver = "polling"
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, "/api/channel/telegram/operator/sessions", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" {
+		t.Fatalf("unconfigured runtime = %d %v, want unavailable", recorder.Code, body)
+	}
+	state = "running"
 	receiver = "polling"
 	botID = 0
 	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, "/api/channel/telegram/operator/sessions", "", telegramOperatorReadPermission))
@@ -388,6 +395,10 @@ func TestTelegramOperatorHandlerPaginationRuntimeAndRetryGuards(t *testing.T) {
 	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages", `{"requestId":"missing-token","text":"blocked"}`, telegramOperatorWritePermission))
 	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" || fixture.sender.callCount() != callCount {
 		t.Fatalf("empty token runtime = %d %v calls=%d, want unavailable and no sender", recorder.Code, body, fixture.sender.callCount())
+	}
+	failed, err := fixture.repository.GetOutbound(context.Background(), 101, 8001, "missing-token")
+	if err != nil || failed.Status != "failed" || failed.ErrorMessage != "telegram operator became unavailable" {
+		t.Fatalf("empty token durable state = %+v err=%v, want sanitized failed row", failed, err)
 	}
 	token = "bot-token"
 	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages/missing-request/retry", `{"requestId":"retry-missing"}`, telegramOperatorWritePermission))
@@ -425,5 +436,44 @@ func TestTelegramOperatorMiddlewareRejectsServiceCredentialWithoutOperatorScope(
 	}
 	if response.Code != http.StatusForbidden || body["error"] != "FORBIDDEN" {
 		t.Fatalf("service credential missing operator scope = %d %v, want 403 FORBIDDEN", response.Code, body)
+	}
+}
+
+func TestTelegramOperatorHandlerKeepsPendingWhenRetryTokenDisappearsAfterSend(t *testing.T) {
+	fixture := newTelegramOperatorTestFixture(t)
+	if _, created, err := fixture.repository.CreatePending(context.Background(), 101, 8001, "retry-token-source", "retry me"); err != nil || !created {
+		t.Fatalf("seed retry source = created %v err %v, want created", created, err)
+	}
+	if err := fixture.repository.MarkFailed(context.Background(), 101, "retry-token-source", "telegram send failed"); err != nil {
+		t.Fatalf("mark retry source failed: %v", err)
+	}
+
+	token := "bot-token"
+	sender := &telegramOperatorTestSender{
+		before: func(context.Context, kernel.TelegramMessage) error {
+			token = ""
+			return nil
+		},
+	}
+	handler := NewTelegramOperatorHandler(
+		func() (int64, string, string, string) { return 101, *fixture.state, "polling", token },
+		func() bool { return *fixture.business },
+		fixture.repository,
+		sender,
+	)
+
+	recorder, body := serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages/retry-token-source/retry", `{"requestId":"retry-token-race"}`, telegramOperatorWritePermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" || sender.callCount() != 1 {
+		t.Fatalf("retry token race response = %d %v calls=%d, want 409 unavailable and one send", recorder.Code, body, sender.callCount())
+	}
+	pending, err := fixture.repository.GetOutbound(context.Background(), 101, 8001, "retry-token-race")
+	if err != nil || pending.Status != "pending" || pending.RetryOf != "retry-token-source" {
+		t.Fatalf("retry token race durable state = %+v err=%v, want pending retry row", pending, err)
+	}
+
+	token = "bot-token"
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages/retry-token-source/retry", `{"requestId":"retry-token-race"}`, telegramOperatorWritePermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_REQUEST_IN_PROGRESS" || sender.callCount() != 1 {
+		t.Fatalf("retry token race replay = %d %v calls=%d, want in-progress and no duplicate send", recorder.Code, body, sender.callCount())
 	}
 }
