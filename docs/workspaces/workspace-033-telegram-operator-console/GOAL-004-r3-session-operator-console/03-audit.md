@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 2.4.0
+version: 2.6.0
 ---
 
 # GOAL-004 · R3 审计索引
@@ -38,18 +38,24 @@ version: 2.4.0
 | [A-024-r3-c3-a023-response](03-audit/A-024-r3-c3-a023-response.md) | 2026-09-05 | self | 响应 A-023 F-001/F-002 recommended；补测试钉与 fail-closed 接缝 | **pass** | **0** | `03-audit/A-024-r3-c3-a023-response.md` |
 | [A-025-r3-c3-a024-remediation-independent](03-audit/A-025-r3-c3-a024-remediation-independent.md) | 2026-09-05 | independent | A-023 F-001/F-002 修复后复审；HEAD `279f0298` / `fa0caa70` 源码与测试钉 | **pass** | **0** | `03-audit/A-025-r3-c3-a024-remediation-independent.md` |
 | [A-026-r3-c3-a025-response](03-audit/A-026-r3-c3-a025-response.md) | 2026-09-05 | self | 响应 A-025 F-001 recommended；补 retry token/空 token durable/composition 401 钉 | **pass** | **0** | `03-audit/A-026-r3-c3-a025-response.md` |
+| [A-027-r3-c3-final-closeout-independent](03-audit/A-027-r3-c3-final-closeout-independent.md) | 2026-09-05 | independent | R3 C3 最终 close-out：HEAD `023122c7` 源码/测试钉/v69/operator/runtime/幂等重试；A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 | **pass** | **0** | `03-audit/A-027-r3-c3-final-closeout-independent.md` |
+| [A-028-r3-c3-a027-response](03-audit/A-028-r3-c3-a027-response.md) | 2026-09-05 | self | 响应 A-027 最终 independent close-out；关闭 C3 检查点并更新 R3 投影 | **pass** | **0** | `03-audit/A-028-r3-c3-a027-response.md` |
 
 ## 信息就绪核对（按 scope）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| VP-033 / R1 / R2 前置与父级对齐 | verified | R2 已 `done · 5/5`；Root active · 2/4；R3 parent 正确 |
+| VP-033 / R1 / R2 前置与父级对齐 | verified | R2 已 `done · 5/5`；Root active · 2/4；R3 parent 正确；C3 关闭后 R3 active · 3/4 |
 | I-033-009/010/019～022 | user-decided；I-033-020 合同已补全；A-008 F-001/F-002 经 D-005 补全、A-010 Grok independent `pass` 确认响应侧 `fixed`；C2 实现经 A-013 Grok independent `pass`；A-013 F-001～F-003 经 A-015 Grok independent re-audit 确认响应侧 `fixed`，A-016 已响应，C2 已关闭 | D-002 记录七项主方向；D-003 响应 A-003 F-001；A-004 self；A-005 Grok independent `pass`；A-006 响应；A-007 self；A-008 原文 conditional/open=2 保留；D-006/A-009 响应；A-010 闭合复审；A-011 响应；D-007 非阻断项裁决；A-012 self；A-013 Grok independent 实现关门 `pass`（不采信 A-012）；A-014 self（不采信为独立证据）；A-015 Grok independent 修复后复审 `pass`（不采信 A-014）；A-016 response；A-008/A-010/A-013 原文不改写 |
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
-| C3 实现就绪 | **pass（实现 independent + 修复后 re-audit）** | A-023 Grok independent `pass`（open required = 0）；A-024 响应 F-001/F-002；A-025 Grok independent 修复后复审 `pass`（open required = 0），确认 A-023 F-001/F-002 响应侧 `fixed`（原文不改写）；本条不关闭 C3 检查点，关闭由 `/govern` 响应 A-025 |
-| C3 合同就绪 | **pass（合同侧）** | D-010 已记录用户裁决；A-019 响应 A-018 并将 F-001～F-007 补入 D-009；A-020 Grok independent re-audit `pass`，A-021 response 确认 A-018 F-001/F-002/F-003 响应侧 `fixed`（原文不改写）；可进入 C3 生产代码，不关闭 C3 检查点 |
+| C3 实现就绪 | **pass（最终 independent close-out，已响应）** | A-027 Grok independent `pass`（open required = 0）；A-028 已响应并关闭 C3 检查点；HEAD `023122c7`；确认 A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 响应侧 `fixed`（原文不改写 A-001～A-027）；本会话 gated PostgreSQL **PASS**（不是 skip）；C4 仍待开始 |
+| C3 合同就绪 | **pass（合同侧，已响应）** | D-010 已记录用户裁决；A-019 响应 A-018 并将 F-001～F-007 补入 D-009；A-020 Grok independent re-audit `pass`，A-021 response 确认 A-018 F-001/F-002/F-003 响应侧 `fixed`（原文不改写）；合同门禁已放行，C3 检查点后由 A-027/A-028 完成关闭 |
 
 ## 审计记录（ledger）
+
+A-028 响应 A-027 最终 Grok independent close-out：A-027 为 `pass`、开放 required = 0、无新增 recommended finding；本条以 A-027 为独立成功依据，保留 A-001～A-027 原文，确认 A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 均已在响应侧处理并经独立复核，关闭 C3 检查点。GOAL-004 更新为 `active · 3/4`，C4 的 Admin UI、`getChatMember`/缓存失效、发言权反馈与端到端验证仍未交付；Root 维持 `active · 2/4`。本条不新增方案决策、不接受 residual、不作 overrule。
+
+A-027 为 C3 最终 Grok independent close-out（pass，开放 required = 0），核对 HEAD `023122c7` 源码、测试钉与本会话跑数（含 gated PostgreSQL **PASS**，不是 skip）；确认 A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 响应侧 `fixed`（原文不改写 A-001～A-026）；无新增 required/recommended finding。A-022/A-024/A-026 self 不作为独立证据。本条不改 status/progress，不自行关闭 C3。
 
 A-026 为 C3 A-025 recommended F-001 的 self response，确认 retry token 窗口、空 token durable failed 状态和四条 composition 匿名 401 测试均已补齐并 `fixed`；等待最终 Grok independent close-out，不改 status/progress。
 
@@ -59,4 +65,4 @@ A-024 为 C3 A-023 recommended F-001/F-002 的 self response，记录 `fa0caa70`
 
 A-023 为 C3 实现 Grok independent `pass`（open required = 0），确认 v69/operator API/RBAC/runtime/幂等重试及 A-018 F-004～F-007 主路径已落地；本会话 gated PostgreSQL **PASS**（不是 skip）；recommended F-001/F-002 原文见 A-023。A-022 self 不作为独立证据。本条不改 status/progress，不自行关闭 C3。
 
-`03-audit/` 平铺；正式意见必须落盘（self / independent 共用序列）。A-001～A-022 原文保留。A-008 为 Grok independent 合同审计（conditional，开放 required = 2，原文不改写）；A-009 记录用户选择 fixed 后的 self 响应；A-010 为 Grok independent 闭合复审（pass，开放 required = 0），确认 F-001/F-002 在响应侧 `fixed`（原文不改写）；A-011 记录响应并放行 C2 代码实施；A-012 为 C2 实现 self pass，不作为独立证据；A-013 为 Grok independent 实现关门审计（pass，开放 required = 0），recommended F-001～F-003 原文保留；A-014 记录三项 recommended 修复响应，不作为独立证据；A-015 为 Grok independent 修复后复审（pass，开放 required = 0），确认 A-013 F-001/F-002/F-003 响应侧 `fixed`，不改 status/progress；A-016 响应 A-015 并关闭 C2 检查点；A-017 为 C3 合同 self `pass`，不作为独立证据，不关闭 C3；A-018 为 Grok independent C3 合同审计（conditional，开放 required = 3），确认 D-009 方向忠实但认证包装、polling 可用性与 PG 幂等读法不足，原文不改写 A-001～A-017；A-019 记录响应 A-018、D-010 用户裁决及 F-001～F-007 合同补全，等待 independent re-audit；A-020 为 Grok independent 合同修复复审（pass，开放 required = 0），确认 A-018 F-001/F-002/F-003 响应侧 `fixed`，原文不改写 A-001～A-019，不改 status/progress，放行 C3 生产代码实施；A-021 响应 A-020，确认 C3 实现门禁已放行但检查点未关闭；A-022 为 C3 实现 self `pass`，不作为独立证据。
+`03-audit/` 平铺；正式意见必须落盘（self / independent 共用序列）。A-001～A-027 原文保留。A-008 为 Grok independent 合同审计（conditional，开放 required = 2，原文不改写）；A-009 记录用户选择 fixed 后的 self 响应；A-010 为 Grok independent 闭合复审（pass，开放 required = 0），确认 F-001/F-002 在响应侧 `fixed`（原文不改写）；A-011 记录响应并放行 C2 代码实施；A-012 为 C2 实现 self pass，不作为独立证据；A-013 为 Grok independent 实现关门审计（pass，开放 required = 0），recommended F-001～F-003 原文保留；A-014 记录三项 recommended 修复响应，不作为独立证据；A-015 为 Grok independent 修复后复审（pass，开放 required = 0），确认 A-013 F-001/F-002/F-003 响应侧 `fixed`，不改 status/progress；A-016 响应 A-015 并关闭 C2 检查点；A-017 为 C3 合同 self `pass`，不作为独立证据，不关闭 C3；A-018 为 Grok independent C3 合同审计（conditional，开放 required = 3），确认 D-009 方向忠实但认证包装、polling 可用性与 PG 幂等读法不足，原文不改写 A-001～A-017；A-019 记录响应 A-018、D-010 用户裁决及 F-001～F-007 合同补全，等待 independent re-audit；A-020 为 Grok independent 合同修复复审（pass，开放 required = 0），确认 A-018 F-001/F-002/F-003 响应侧 `fixed`，原文不改写 A-001～A-019，不改 status/progress，放行 C3 生产代码实施；A-021 响应 A-020，确认 C3 实现门禁已放行但检查点未关闭；A-022 为 C3 实现 self `pass`；A-023 为实现 independent `pass`，A-024/A-026 记录 recommended 修复响应，A-025 为修复后 independent `pass`，A-027 为最终 independent close-out `pass`；A-028 响应 A-027 并关闭 C3 检查点。

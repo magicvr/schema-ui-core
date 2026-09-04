@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.3.0
+version: 1.4.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -27,7 +27,8 @@ version: 1.3.0
 | [E-013-r3-c3-implementation](02-execution/E-013-r3-c3-implementation.md) | 2026-09-05 | R3 C3 operator 实现与非阻断项处理 | `7ddc97e1` 已落盘；专项验证通过；A-022 self pass；等待实现 independent，R3 active · 2/4 | `02-execution/E-013-r3-c3-implementation.md` |
 | [E-014-r3-c3-recommended-remediation](02-execution/E-014-r3-c3-recommended-remediation.md) | 2026-09-05 | R3 C3 A-023 推荐项修复 | `fa0caa70` 已落盘；A-024 response；F-001/F-002 fixed；等待 independent re-audit，R3 active · 2/4 | `02-execution/E-014-r3-c3-recommended-remediation.md` |
 | [E-015-r3-c3-a025-remediation](02-execution/E-015-r3-c3-a025-remediation.md) | 2026-09-05 | R3 C3 A-025 推荐项修复 | A-026 response；retry token/空 token durable/composition 401 钉已补；等待最终 independent，R3 active · 2/4 | `02-execution/E-015-r3-c3-a025-remediation.md` |
+| [E-016-r3-c3-closeout](02-execution/E-016-r3-c3-closeout.md) | 2026-09-05 | R3 C3 检查点关闭 | A-027 Grok independent final pass；A-028 response；C3 完成；R3 active · 3/4；C4 可开始 | `02-execution/E-016-r3-c3-closeout.md` |
 
 ## 事实边界
 
-只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；`fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 与 A-025 independent re-audit 已记录；随后补齐 A-025 F-001 recommended，A-026 response 已记录，最终 independent close-out 尚未完成。定向测试、隔离 C3 race 和本机 PostgreSQL gated 测试通过；全量 handler race 曾出现 wallet/SQLite 并发争用，作为环境/基线波动保留。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；`fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 与 A-025 independent re-audit 已记录；随后补齐 A-025 F-001 recommended，A-026 response、A-027 最终 Grok independent close-out `pass` 与 A-028 response 已记录，C3 已关闭，R3 为 `active · 3/4`，C4 下一步。定向测试、隔离 C3 race 和本机 PostgreSQL gated 测试通过；全量 handler race 曾出现 wallet/SQLite 并发争用，作为环境/基线波动保留。
