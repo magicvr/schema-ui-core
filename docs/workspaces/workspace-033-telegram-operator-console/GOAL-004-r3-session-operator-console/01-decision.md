@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.9.0
+version: 1.0.0
 ---
 
 # GOAL-004 · R3 决策索引
@@ -22,7 +22,8 @@ version: 0.9.0
 | [D-008-r3-c3-retry-identity](01-decision/D-008-r3-c3-retry-identity.md) | 2026-09-04 | R3 C3 显式重试身份裁决 | 每次显式重试新建 request_id 与发送记录，以 retry_of 关联原始请求；无自动重试 | done |
 | [D-009-r3-c3-operator-console-contract](01-decision/D-009-r3-c3-operator-console-contract.md) | 2026-09-04 | R3 C3 人工台 API、权限与运行时实施合同 | 四条鉴权 operator 路由、专用 read/write 权限、running 且未绑定门禁、v69 出站记录与幂等重试合同 | done |
 | [D-010-r3-c3-polling-lease-decision](01-decision/D-010-r3-c3-polling-lease-decision.md) | 2026-09-04 | R3 C3 polling lease 与专用权限裁决 | 用户选择 operator.read 接管既有 polling lease；保留 running 门禁与按心跳启停 | done |
+| [D-011-r3-c4-independent-capability-route](01-decision/D-011-r3-c4-independent-capability-route.md) | 2026-09-05 | R3 C4 capability API 形状与缓存 owner | 用户选择独立 capability 路由；`getChatMember`、60 秒 bot/chat 缓存、single-flight、403 失效与显式重探合同 | done |
 
 ## 决策记录（ledger）
 
-`01-decision/` 平铺；正文只写已发生或用户已确认的决策。D-002 已记录 C1 用户方案裁决；D-007 记录 C2 非阻断项范围与 polling 失败策略；D-008 记录 C3 显式重试身份裁决；D-009 固化 C3 API/权限/运行时实施合同；D-010 记录 polling lease 裁决；验证事实继续写入后续 ledger。
+`01-decision/` 平铺；正文只写已发生或用户已确认的决策。D-002 已记录 C1 用户方案裁决；D-007 记录 C2 非阻断项范围与 polling 失败策略；D-008 记录 C3 显式重试身份裁决；D-009 固化 C3 API/权限/运行时实施合同；D-010 记录 polling lease 裁决；D-011 记录用户选择的独立 capability 路由与缓存合同；验证事实继续写入后续 ledger。

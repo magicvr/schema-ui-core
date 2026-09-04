@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-05
-version: 0.8.8
+version: 0.8.9
 progress: 2/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -36,7 +36,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 |------|------|-------------|
 | R1 | 合同冻结：模式切换、轮询生命周期、业务占用位、控制台 heartbeat、发言权探测、显式公网 base URL 与 Fake Bot API 验收 | **完成**：D-002+D-003；A-004 independent pass；GOAL-002 C3 done · 3/3 |
 | R2 | 连接与设置：`getMe`、`setWebhook`/`deleteWebhook`、互斥热切换、占用位和 Admin 设置页 | **完成**：`GOAL-003-r2-connection-settings` done · 5/5；C1～C4 已由 A-006/A-012/A-015 Grok independent pass 与 A-007/A-013/A-016 response 关闭，C5 由 E-012/E-013、A-017/A-018 与 A-019 关闭；实施源 D-002+D-003 |
-| R3 | 会话与人工台：入站会话落盘、用户/群分栏、未绑定人工 IM、发言权反馈 | **进行中**：`GOAL-004-r3-session-operator-console` active · 3/4；C1 已由 A-005 Grok independent `pass` + A-006 response 关闭；C2 已由 A-013/A-015 Grok independent `pass`、A-014/A-016 response 关闭，A-013 F-001～F-003 已 fixed；C3 已由 A-027 Grok independent final `pass`、A-028 response 关闭；C4 基础 UI 已由 E-017/A-029 启动，E-018/A-031 已响应 A-030，A-032/A-034 Grok independent pass 后 E-019/A-033/A-035 已补齐推荐覆盖钉，`I-033-023` capability API 形状待用户裁决，完整 C4 待交付 |
+| R3 | 会话与人工台：入站会话落盘、用户/群分栏、未绑定人工 IM、发言权反馈 | **进行中**：`GOAL-004-r3-session-operator-console` active · 3/4；C1 已由 A-005 Grok independent `pass` + A-006 response 关闭；C2 已由 A-013/A-015 Grok independent `pass`、A-014/A-016 response 关闭，A-013 F-001～F-003 已 fixed；C3 已由 A-027 Grok independent final `pass`、A-028 response 关闭；C4 基础 UI 已由 E-017/A-029 启动，E-018/A-031 已响应 A-030，A-032/A-034 Grok independent pass 后 E-019/A-033/A-035 已补齐推荐覆盖钉，D-011 已选择独立 capability 路由并冻结缓存/403/显式重探合同，完整 C4 待交付 |
 | R4 | 证据与关门：退出判据矩阵、红线核账、审计 finding 闭合 | 待开始；依赖 R1～R3 |
 
 ## 信息就绪与未知项（P-005）
@@ -53,12 +53,12 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 | I-033-008 | required | webhook 公网 URL 与本地验收 | 判据 1/2 | R1 | **verified** | 2026-09-04：显式公网 base URL；本地 Fake Bot API；不做运行时猜测 |
 | I-033-009 | non-blocking | Admin 短轮询间隔 | 判据 5 | R1 | **verified (decision)** | D-002：10 秒单飞、失焦暂停、恢复立即刷新；实现与 UI timer/失焦测试留在 R3 C4 |
 | I-033-010 | non-blocking | 发言权探测与缓存失效 | 判据 5 | R3 | **verified (decision)** | D-002：混合 `getChatMember` 预检 + 发送 403 最终否决；60 秒 bot/chat 缓存，显式重探；实现与 API/UI 状态机测试留在 R3 C4 |
-| I-033-023 | required | C4 `getChatMember` capability API 的承载方式与 60 秒 bot/chat 缓存所有权 | C4 API/UI/关门 | C4 | **collecting** | D-002 已冻结混合行为；独立 capability、成绩单附带或会话列表附带三种互斥 API 形状待用户裁决 |
+| I-033-023 | required | C4 `getChatMember` capability API 的承载方式与 60 秒 bot/chat 缓存所有权 | C4 API/UI/关门 | C4 | **verified (user decision)** | D-011：独立 capability 路由；channel.telegram capability service owner；60 秒 absolute TTL、single-flight、403 失效、`refresh=1` 显式重探 |
 | I-033-011 | required | `mode` 与显式 webhook 公网 base URL 的持久化/配置边界 | R2 配置与重启语义 | R1 | **verified** | 用户书面裁决：Telegram 专属 `webhook_public_base_url` 配置/持久化面；D-002 |
 | I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **verified** | 用户书面裁决：缺省 `polling`、生产显式 `webhook`；D-002 |
 | I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **verified** | 用户书面裁决：Telegram connection manager + composition `OnStop` drain；D-002 |
 
-当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1～C5（D-001；I-033-014～016 verified；v67 migration、DB authoritative、settings PATCH、Bot API/manager、Admin UI/lease、Fake Bot API/错误矩阵/Fx lifecycle；A-006/A-012/A-015/A-018 Grok independent pass；A-007/A-013/A-016/A-019 response；A-008 状态纠正），GOAL-003 已关闭为 `done · 5/5`。R3 C1/C2 已分别由 A-005/A-013/A-015 Grok independent `pass` 与 response 关闭；C3 已由 A-027 Grok independent final `pass`、A-028 response 关闭：`GOAL-004-r3-session-operator-console` active · 3/4；E-017/A-029 已启动 C4 UI 基础切片，`I-033-023` capability API 形状仍待用户裁决；C4 的完整发言权反馈与端到端验证待交付；Root 仍为 `active · 2/4`。
+当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1～C5（D-001；I-033-014～016 verified；v67 migration、DB authoritative、settings PATCH、Bot API/manager、Admin UI/lease、Fake Bot API/错误矩阵/Fx lifecycle；A-006/A-012/A-015/A-018 Grok independent pass；A-007/A-013/A-016/A-019 response；A-008 状态纠正），GOAL-003 已关闭为 `done · 5/5`。R3 C1/C2 已分别由 A-005/A-013/A-015 Grok independent `pass` 与 response 关闭；C3 已由 A-027 Grok independent final `pass`、A-028 response 关闭：`GOAL-004-r3-session-operator-console` active · 3/4；E-017/A-029 已启动 C4 UI 基础切片，D-011 已记录用户选择独立 capability 路由及其缓存/403/显式重探合同；C4 的完整发言权反馈与端到端验证待交付；Root 仍为 `active · 2/4`。
 
 ## 父目标
 

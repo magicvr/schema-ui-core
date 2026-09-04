@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.4.0
+version: 1.5.0
 ---
 
 # GOAL-001-telegram-operator-console · 02-execution 索引
@@ -38,7 +38,8 @@ version: 1.4.0
 | [E-023-r3-c4-a030-response](02-execution/E-023-r3-c4-a030-response.md) | 2026-09-05 | Root R3 C4 A-030 响应投影 | GOAL-004 E-018/A-031；双语文案、10 秒/单飞测试、业务占用隐藏与 lease fail-closed 已处理；I-033-023 待裁决；Root active · 2/4 | done |
 | [E-024-r3-c4-a032-response](02-execution/E-024-r3-c4-a032-response.md) | 2026-09-05 | Root R3 C4 A-032 响应投影 | GOAL-004 E-019/A-033；发送键精确断言、同 chat 单飞、composition/lease 接缝已处理；I-033-023 待裁决；Root active · 2/4 | done |
 | [E-025-r3-c4-a034-response](02-execution/E-025-r3-c4-a034-response.md) | 2026-09-05 | Root R3 C4 A-034 响应投影 | GOAL-004 E-020/A-035；A-032 推荐覆盖钉经 Grok independent pass 复核；I-033-023 待裁决；Root active · 2/4 | done |
+| [E-026-r3-c4-capability-decision](02-execution/E-026-r3-c4-capability-decision.md) | 2026-09-05 | Root R3 C4 capability 路由裁决投影 | GOAL-004 E-021/A-036；用户选择独立 capability 路由，合同 self pass，等待 Grok independent 合同审计；Root active · 2/4 | done |
 
 ## 执行记录（ledger）
 
-`02-execution/` 平铺；编号递增；时间线只记事实。E-001～E-025 已登记本 Root 的开区、R1～R3 投影与审计响应；R3 C2 已由 A-015/A-016 关闭，C3 已由 A-027/A-028 关闭，C4 基础 UI 已由 E-017/A-029 启动，E-018/A-031 已响应 A-030，E-019/A-033 已响应 A-032 推荐覆盖钉，A-034/A-035 完成独立复审响应，`I-033-023` 尚待用户裁决，Root 仍为 `active · 2/4` 并等待 R3 完成与 R4。
+`02-execution/` 平铺；编号递增；时间线只记事实。E-001～E-026 已登记本 Root 的开区、R1～R3 投影与审计响应；R3 C2 已由 A-015/A-016 关闭，C3 已由 A-027/A-028 关闭，C4 基础 UI 已由 E-017/A-029 启动，E-018/A-031 已响应 A-030，E-019/A-033 已响应 A-032 推荐覆盖钉，A-034/A-035 完成独立复审响应，E-026 已投影用户选择独立 capability 路由及合同 self pass，Root 仍为 `active · 2/4` 并等待 R3 完成与 R4。

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 3.3.0
+version: 3.4.0
 ---
 
 # GOAL-004 · R3 审计索引
@@ -47,6 +47,7 @@ version: 3.3.0
 | [A-033-r3-c4-a032-response](03-audit/A-033-r3-c4-a032-response.md) | 2026-09-05 | self | 响应 A-032 三项 recommended 覆盖钉；不选择 I-033-023 | **pass** | **0** | `03-audit/A-033-r3-c4-a032-response.md` |
 | [A-034-r3-c4-a032-coverage-independent](03-audit/A-034-r3-c4-a032-coverage-independent.md) | 2026-09-05 | independent | A-032 新增 F-001/F-002/F-003 recommended 覆盖钉复审；当前工作树源码/测试/双语 catalog/composition；不采信 A-033/E-019；不选择 I-033-023；不关闭 C4 | **pass** | **0** | `03-audit/A-034-r3-c4-a032-coverage-independent.md` |
 | [A-035-r3-c4-a034-response](03-audit/A-035-r3-c4-a034-response.md) | 2026-09-05 | self | 响应 A-034 independent pass；确认 A-032 三项 recommended fixed；不选择 I-033-023 | **pass** | **0** | `03-audit/A-035-r3-c4-a034-response.md` |
+| [A-036-r3-c4-capability-contract-self](03-audit/A-036-r3-c4-capability-contract-self.md) | 2026-09-05 | self | 用户选择独立 capability 路由；冻结 getChatMember、60 秒缓存、single-flight、403 失效、显式重探与 UI/发送接缝；放行合同 independent 审计 | **pass** | **0** | `03-audit/A-036-r3-c4-capability-contract-self.md` |
 
 ## 信息就绪核对（按 scope）
 
@@ -57,11 +58,13 @@ version: 3.3.0
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
 | C3 实现就绪 | **pass（最终 independent close-out，已响应）** | A-027 Grok independent `pass`（open required = 0）；A-028 已响应并关闭 C3 检查点；HEAD `023122c7`；确认 A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 响应侧 `fixed`（原文不改写 A-001～A-027）；本会话 gated PostgreSQL **PASS**（不是 skip）；C4 仍待开始 |
 | C3 合同就绪 | **pass（合同侧，已响应）** | D-010 已记录用户裁决；A-019 响应 A-018 并将 F-001～F-007 补入 D-009；A-020 Grok independent re-audit `pass`，A-021 response 确认 A-018 F-001/F-002/F-003 响应侧 `fixed`（原文不改写）；合同门禁已放行，C3 检查点后由 A-027/A-028 完成关闭 |
-| C4 UI 基础切片 | **pass（A-032 推荐覆盖钉 independent re-audit 已响应；不关闭 C4）** | A-034 Grok independent `pass`（open required = 0）；A-035 已响应并确认 A-032 F-001/F-002/F-003 `fixed`（原文不改写 A-001～A-034）；本会话 Web 定向 28/28、全量 92/1208、API telegram/composition/docscheck PASS；写集外 `form-controls.tsx` L946–947 `tsc` 基线仍失败；`I-033-023` 仍 collecting，本条不选择形状；不放行 C4 关门 |
+| C4 UI 基础切片 | **pass（A-032 推荐覆盖钉 independent re-audit 已响应；capability 合同已由 A-036 self 通过，待 independent；不关闭 C4）** | A-034 Grok independent `pass`（open required = 0）；A-035 已响应并确认 A-032 F-001/F-002/F-003 `fixed`（原文不改写 A-001～A-034）；D-011 已记录用户选择独立 capability 路由及缓存/403/显式重探合同；A-036 self `pass`（open required = 0）；实现与 independent 合同审计尚待完成；写集外 `form-controls.tsx` L946–947 `tsc` 基线仍失败；不放行 C4 关门 |
 
 ## 审计记录（ledger）
 
-A-035 为响应 A-034 Grok independent `pass` 的 self close-out response：A-032 三项 recommended 覆盖钉已确认响应侧 `fixed`，A-034 无新增 required/recommended finding；原文 A-001～A-034 保留。本条不改 status/progress、不关闭 C4，I-033-023 仍 collecting。
+A-036 为 I-033-023 capability 合同 self gate：用户已选择 D-011 的独立 capability 路由，合同覆盖 `getChatMember` 状态映射、60 秒 bot/chat cache、single-flight、Telegram 403 精确失效、`refresh=1` 显式重探、非 403 错误及现有发送/UI 状态机接缝；`open_required: 0`。本条不修改 status/progress，不关闭 C4，等待 Grok independent 合同审计。
+
+A-035 为响应 A-034 Grok independent `pass` 的 self close-out response：A-032 三项 recommended 覆盖钉已确认响应侧 `fixed`，A-034 无新增 required/recommended finding；原文 A-001～A-034 保留。本条不改 status/progress、不关闭 C4。D-011 已记录用户选择独立 capability 路由，I-033-023 已由 collecting 进入 verified (user decision)，实现与后续 independent 审计仍未完成。
 
 A-034 为 C4 A-032 三项 recommended 覆盖钉的 Grok independent re-audit（pass，开放 required = 0），核对当前工作树源码、测试、双语 catalog、composition/settings 占用接线与本会话跑数（Web 定向 28/28、全量 92/1208、API telegram/composition/docscheck PASS）；确认 A-032 F-001/F-002/F-003 响应侧 `fixed`（原文不改写 A-001～A-033）。A-033 self / E-019 不作为独立证据。无新增 required/recommended finding。覆盖残余（tab `toContain("Send")` leftover、mux 未钉 PATCH JSON、占用翻转无行为测试）已写明，不升 required。I-033-023 仍 collecting，本条不选择三种 capability API 形状，不关闭 C4。
 
