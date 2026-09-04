@@ -332,11 +332,11 @@ func TestTelegramRuntime_ConnectionSettingsPersistenceAndAuthority(t *testing.T)
 
 	plan := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
 	cfg1 := &config.Config{
-		TelegramBotToken:            "seed-token",
-		TelegramWebhookSecret:       "seed-secret",
-		TelegramMode:                "webhook",
+		TelegramBotToken:             "seed-token",
+		TelegramWebhookSecret:        "seed-secret",
+		TelegramMode:                 "webhook",
 		TelegramWebhookPublicBaseURL: "https://seed.example",
-		TelegramMasterKey:           "test-master-key",
+		TelegramMasterKey:            "test-master-key",
 	}
 	tr1, err := newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
 	if err != nil {
@@ -358,11 +358,11 @@ func TestTelegramRuntime_ConnectionSettingsPersistenceAndAuthority(t *testing.T)
 	}
 	t.Cleanup(func() { _ = st2.Close() })
 	cfg2 := &config.Config{
-		TelegramBotToken:            "stale-seed-token",
-		TelegramWebhookSecret:       "stale-seed-secret",
-		TelegramMode:                "polling",
+		TelegramBotToken:             "stale-seed-token",
+		TelegramWebhookSecret:        "stale-seed-secret",
+		TelegramMode:                 "polling",
 		TelegramWebhookPublicBaseURL: "https://stale.example",
-		TelegramMasterKey:           "test-master-key",
+		TelegramMasterKey:            "test-master-key",
 	}
 	tr2, err := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
 	if err != nil {
@@ -372,6 +372,57 @@ func TestTelegramRuntime_ConnectionSettingsPersistenceAndAuthority(t *testing.T)
 	if got.Mode != "webhook" || got.WebhookPublicBaseURL != "https://live.example" ||
 		tr2.Manager.GetToken() != "live-token" || tr2.Manager.GetSecret() != "live-secret" {
 		t.Fatalf("persisted Telegram settings were not authoritative: status=%+v token=%q secret=%q", got, tr2.Manager.GetToken(), tr2.Manager.GetSecret())
+	}
+}
+
+func TestTelegramRuntime_EmptyConnectionSettingsRemainAuthoritative(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "telegram_empty_connection_settings_test.db")
+	st1, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan := kernel.Plan{Modules: []kernel.Module{{ID: "channel.telegram"}}}
+	cfg1 := &config.Config{
+		TelegramBotToken:             "seed-token",
+		TelegramWebhookSecret:        "seed-secret",
+		TelegramMode:                 "webhook",
+		TelegramWebhookPublicBaseURL: "https://seed.example",
+		TelegramMasterKey:            "test-master-key",
+	}
+	_, err = newTelegramRuntime(plan, cfg1, st1, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime: %v", err)
+	}
+	if err := st1.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), `UPDATE telegram_config SET mode = '', webhook_public_base_url = '' WHERE id = 1`)
+		return err
+	}); err != nil {
+		t.Fatalf("clear persisted connection settings: %v", err)
+	}
+	if err := st1.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st2, err := testsupport.OpenStore(dbPath, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st2.Close() })
+	cfg2 := &config.Config{
+		TelegramBotToken:             "stale-seed-token",
+		TelegramWebhookSecret:        "stale-seed-secret",
+		TelegramMode:                 "webhook",
+		TelegramWebhookPublicBaseURL: "https://stale.example",
+		TelegramMasterKey:            "test-master-key",
+	}
+	tr2, err := newTelegramRuntime(plan, cfg2, st2, newRateLimiters())
+	if err != nil {
+		t.Fatalf("newTelegramRuntime(restart): %v", err)
+	}
+	got := tr2.Manager.Status()
+	if got.Mode != "polling" || got.WebhookPublicBaseURL != "" {
+		t.Fatalf("empty persisted connection settings were not authoritative: %+v", got)
 	}
 }
 
