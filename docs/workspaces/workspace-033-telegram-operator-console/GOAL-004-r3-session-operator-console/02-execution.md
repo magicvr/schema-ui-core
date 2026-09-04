@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.7.0
+version: 0.8.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -21,7 +21,8 @@ version: 0.7.0
 | [E-007-r3-c2-a008-response](02-execution/E-007-r3-c2-a008-response.md) | 2026-09-04 | R3 C2 A-008 required finding 响应 | 用户选择 fixed；D-005/A-009 已补全合同；Grok independent re-audit 待进行 | `02-execution/E-007-r3-c2-a008-response.md` |
 | [E-008-r3-c2-a010-response](02-execution/E-008-r3-c2-a010-response.md) | 2026-09-04 | R3 C2 A-010 独立复审响应 | A-010 Grok independent pass；A-008 F-001/F-002 合同 fixed；放行 C2 代码实施 | `02-execution/E-008-r3-c2-a010-response.md` |
 | [E-009-r3-c2-implementation](02-execution/E-009-r3-c2-implementation.md) | 2026-09-04 | R3 C2 入站持久化实现 | v68 双表、repository、共同 webhook/polling 接线与测试已提交；A-012 self pass；等待实现 independent | `02-execution/E-009-r3-c2-implementation.md` |
+| [E-010-r3-c2-nonblocking-remediation](02-execution/E-010-r3-c2-nonblocking-remediation.md) | 2026-09-04 | R3 C2 非阻断 finding 修复 | A-013 F-001～F-003 已按用户范围修复；A-014 self pass；修复后 HEAD 待 Grok independent re-audit | `02-execution/E-010-r3-c2-nonblocking-remediation.md` |
 
 ## 事实边界
 
-只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；定向/PG gated/`go vet`/`go build` 通过。全套回归曾在并发运行中出现一次 `TestShutdownDrainHarnessPostgres` EOF，隔离重跑通过，作为环境/基线波动保留；C2 仍等待 independent 实现审计，不将 self 审视投影为关门。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；定向/PG gated/race 测试通过。全套回归曾在并发运行中出现一次 `TestShutdownDrainHarnessPostgres` EOF，隔离重跑通过，作为环境/基线波动保留；修复后仍等待 Grok independent re-audit，不将 self 审视投影为关门。
