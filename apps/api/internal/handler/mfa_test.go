@@ -549,3 +549,51 @@ func TestMFAEnrollWrongPasswordRateLimited(t *testing.T) {
 		t.Fatalf("enroll over budget = %d body %s, want 429 RATE_LIMITED", rr.Code, rr.Body.String())
 	}
 }
+
+// GOAL-003 D-002 #6 (A-002 F-001/F-002): malformed verify bodies must not
+// count against the bucket and prior verify failures must survive (no
+// key-wide Clear on the non-counting path).
+func TestMFAVerifyMalformedBodyDoesNotCount(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	revoker := &fakeSessionRevoker{}
+	mountMFASurface(t, env, fake, revoker)
+
+	verifyInvalid := func() int {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/mfa/verify",
+			strings.NewReader(`{"proof":"no-such-proof","code":"000000"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr.Code
+	}
+	malformed := func() int {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/mfa/verify", strings.NewReader(`{`))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	// 5 real failures count toward the 10-budget bucket.
+	for i := 0; i < 5; i++ {
+		if code := verifyInvalid(); code == http.StatusTooManyRequests {
+			t.Fatalf("verify %d within budget got 429", i+1)
+		}
+	}
+	// 10 malformed bodies must neither count nor wipe the 5 failures.
+	for i := 0; i < 10; i++ {
+		if code := malformed(); code != http.StatusBadRequest {
+			t.Fatalf("malformed %d status = %d, want 400 INVALID_MFA_BODY", i+1, code)
+		}
+	}
+	// 5 more real failures → exactly the budget.
+	for i := 0; i < 5; i++ {
+		if code := verifyInvalid(); code == http.StatusTooManyRequests {
+			t.Fatalf("verify %d (batch 2) within budget got 429", i+1)
+		}
+	}
+	if code := verifyInvalid(); code != http.StatusTooManyRequests {
+		t.Fatalf("post-budget status = %d, want 429", code)
+	}
+}

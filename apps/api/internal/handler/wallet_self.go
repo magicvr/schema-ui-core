@@ -111,7 +111,8 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 			return
 		}
 		now := time.Now().UTC()
-		if !redeemLimiter.AllowRecord(user.ID, now) {
+		var granted bool
+		if _, granted = redeemLimiter.Reserve(user.ID, now); !granted {
 			if sec := redeemLimiter.RetryAfterSeconds(user.ID, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -123,16 +124,19 @@ func WalletSelfRoutes(a *auth.Authenticator, service WalletService, operations o
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			// Legacy: a malformed body recorded one failure — keep the slot.
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with code")
 			return
 		}
 		code := strings.TrimSpace(body.Code)
 		if code == "" {
+			// Legacy: an empty code recorded one failure — keep the slot.
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with code")
 			return
 		}
 		result, err := service.RedeemForUser(r.Context(), user.ID, user.Name, code, now)
 		if err != nil {
+			// Legacy: a failed redeem recorded one failure — keep the slot.
 			writeVoucherRedeemError(w, r, err)
 			return
 		}

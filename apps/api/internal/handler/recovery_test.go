@@ -306,3 +306,113 @@ func TestInviteAcceptRateLimitBoundsUnauthenticatedSpray(t *testing.T) {
 		t.Fatalf("post-budget status = %d body %s, want 429 RATE_LIMITED", rec.Code, rec.Body.String())
 	}
 }
+
+// GOAL-003 D-002 #4 (A-002 F-001/F-002): no-path recovery starts must keep
+// accumulating toward the budget — the dispatched (enumeration-neutral)
+// branch rolls back only its own slot, so unknown-account probes still hit
+// 429 exactly at the budget.
+func TestRecoveryStartNoPathAccumulatesTo429(t *testing.T) {
+	repo := &fakeRecoveryRepo{
+		target:   &authsession.RecoveryTarget{UserID: "u1", Enabled: true},
+		startErr: authsession.ErrRecoveryNotAvailable,
+	}
+	mux := newRecoveryMux(repo, nil)
+	const budget = 20 // recovery start/complete loginRateLimiter max
+
+	for i := 0; i < budget; i++ {
+		rec := postJSON(t, mux, "/api/auth/recovery/start", `{"account":"ghost"}`)
+		if rec.Code != http.StatusAccepted {
+			t.Fatalf("no-path attempt %d status = %d (%s), want 202 dispatched", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	rec := postJSON(t, mux, "/api/auth/recovery/start", `{"account":"ghost"}`)
+	if rec.Code != http.StatusTooManyRequests || !strings.Contains(rec.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("post-budget no-path status = %d body %s, want 429 RATE_LIMITED", rec.Code, rec.Body.String())
+	}
+}
+
+// GOAL-003 D-002 #5 (A-002 F-001/F-002): non-counting complete branches
+// (second-factor demand, INVALID_PASSWORD) must roll back only their own
+// slot — prior wrong-code failures survive and the bucket still reaches 429
+// exactly at the budget.
+func TestRecoveryCompleteMixedHistoryPreserved(t *testing.T) {
+	repo := &fakeRecoveryRepo{
+		target:  &authsession.RecoveryTarget{UserID: "u1"},
+		outcome: authsession.RecoveryMismatch,
+	}
+	gate := &fakeGate{required: true}
+	mux := newRecoveryMux(repo, gate)
+	const budget = 20
+
+	wrongCode := func() *httptest.ResponseRecorder {
+		return postJSON(t, mux, "/api/auth/recovery/complete", `{"account":"x","code":"000000","newPassword":"new-password-1"}`)
+	}
+	// Matched code but missing second factor → RECOVERY_SECOND_FACTOR_REQUIRED
+	// (a non-counting branch in the legacy flow).
+	secondFactorDemand := func() *httptest.ResponseRecorder {
+		repo.outcome = authsession.RecoveryMatch
+		rec := postJSON(t, mux, "/api/auth/recovery/complete", `{"account":"x","code":"123456","newPassword":"new-password-1"}`)
+		repo.outcome = authsession.RecoveryMismatch
+		return rec
+	}
+
+	// 10 counting wrong-code failures.
+	for i := 0; i < 10; i++ {
+		if rec := wrongCode(); rec.Code != http.StatusBadRequest {
+			t.Fatalf("wrong-code %d status = %d (%s), want 400", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	// 10 non-counting demands: must neither wipe the 10 failures nor count.
+	for i := 0; i < 10; i++ {
+		if rec := secondFactorDemand(); !strings.Contains(rec.Body.String(), "RECOVERY_SECOND_FACTOR_REQUIRED") {
+			t.Fatalf("demand %d = %s, want RECOVERY_SECOND_FACTOR_REQUIRED", i+1, rec.Body.String())
+		}
+	}
+	// 10 more counting wrong-code failures → exactly the budget.
+	for i := 0; i < 10; i++ {
+		if rec := wrongCode(); rec.Code != http.StatusBadRequest {
+			t.Fatalf("wrong-code %d (batch 2) status = %d (%s), want 400", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	rec := wrongCode()
+	if rec.Code != http.StatusTooManyRequests || !strings.Contains(rec.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("post-budget status = %d body %s, want 429 RATE_LIMITED", rec.Code, rec.Body.String())
+	}
+}
+
+// GOAL-003 D-002 #10 (A-002 F-001/F-002): a successful invite accept must
+// not wipe prior dead-token failures (legacy success recorded nothing), so
+// the unauthenticated spray budget still holds after a legitimate accept.
+func TestInviteAcceptSuccessPreservesHistory(t *testing.T) {
+	repo := &fakeInviteAcceptRepo{}
+	mux := newAcceptMux(repo)
+	const budget = inviteAcceptMax
+
+	dead := func() *httptest.ResponseRecorder {
+		repo.peekFailWith = authsession.ErrInviteInvalid
+		rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"dead","username":"u","password":"invited-pass-1"}`)
+		repo.peekFailWith = nil
+		return rec
+	}
+	// 5 dead-token failures count.
+	for i := 0; i < 5; i++ {
+		if rec := dead(); rec.Code != http.StatusBadRequest {
+			t.Fatalf("dead %d status = %d (%s), want 400", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	// A successful accept (204) must NOT wipe those 5.
+	rec := postJSON(t, mux, "/api/auth/invite/accept", `{"token":"tok-ok","username":"newbie","password":"invited-pass-1"}`)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("accept status = %d body %s, want 204", rec.Code, rec.Body.String())
+	}
+	// 5 more dead-token failures → exactly the budget.
+	for i := 0; i < 5; i++ {
+		if rec := dead(); rec.Code != http.StatusBadRequest {
+			t.Fatalf("dead %d (batch 2) status = %d (%s), want 400", i+1, rec.Code, rec.Body.String())
+		}
+	}
+	rec = dead()
+	if rec.Code != http.StatusTooManyRequests || !strings.Contains(rec.Body.String(), "RATE_LIMITED") {
+		t.Fatalf("post-budget status = %d body %s, want 429 RATE_LIMITED", rec.Code, rec.Body.String())
+	}
+}

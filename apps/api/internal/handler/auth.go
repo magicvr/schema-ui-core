@@ -103,15 +103,21 @@ func (h *authHandler) login() http.HandlerFunc {
 		// D-001 P1: the bucket key is the real client IP (trusted reverse proxy
 		// X-Real-IP) plus the attempted username, so one attacker spraying many
 		// usernames cannot lock out unrelated clients behind the same proxy.
-		// VP-032: atomic AllowRecord (optimistic slot reservation) eliminates
-		// TOCTOU between check and record. Success clears the bucket.
+		// VP-032 / GOAL-003 D-002: tokenized Reserve occupies this attempt's
+		// slot atomically (no TOCTOU); non-counting outcomes (invalid captcha)
+		// Cancel exactly this slot; success clears the bucket (legacy Clear).
 		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
-		if h.rateLimiter != nil && !h.rateLimiter.AllowRecord(limiterKey, h.now().UTC()) {
-			if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
-				w.Header().Set("Retry-After", strconv.Itoa(sec))
+		var token uint64
+		if h.rateLimiter != nil {
+			var ok bool
+			token, ok = h.rateLimiter.Reserve(limiterKey, h.now().UTC())
+			if !ok {
+				if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+					w.Header().Set("Retry-After", strconv.Itoa(sec))
+				}
+				writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
+				return
 			}
-			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
-			return
 		}
 		// S-11 (GOAL-011 D-002): when the captcha gate is enabled it runs after
 		// the rate limiter (which bounds challenge exhaustion) and before
@@ -119,8 +125,11 @@ func (h *authHandler) login() http.HandlerFunc {
 		// code; failures do not count against the lockout budget.
 		if h.captcha != nil && h.captcha.Required() {
 			if err := h.captcha.Verify(creds.CaptchaID, creds.CaptchaAnswer, h.now().UTC()); err != nil {
+				// Legacy semantics: a captcha failure never touched the bucket.
+				// Roll back exactly this attempt's slot, preserving any history
+				// (GOAL-003 D-002 #1).
 				if h.rateLimiter != nil {
-					h.rateLimiter.Clear(limiterKey)
+					h.rateLimiter.Cancel(limiterKey, token)
 				}
 				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CAPTCHA", "captcha verification failed")
 				return
@@ -136,8 +145,8 @@ func (h *authHandler) login() http.HandlerFunc {
 		// locked/disabled" from "does not exist" (account-enumeration oracle).
 		// Fail-closed: no lock/disable status leak on the login surface.
 		// W11 F-007 (D2 residual): these terminal states now also count
-		// against the client's failure bucket. With entrance AllowRecord,
-		// the slot is already recorded.
+		// against the client's failure bucket. With entrance Reserve,
+		// the slot is already occupied.
 		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
@@ -158,7 +167,8 @@ func (h *authHandler) login() http.HandlerFunc {
 			}
 			// W11 F-003: the "password passed, awaiting second factor" state
 			// is rate-limited like the password factor itself. With entrance
-			// AllowRecord, this attempt was already counted in limiterKey.
+			// Reserve, this attempt's slot is already occupied (legacy: one
+			// Record at proof issuance — same net count).
 			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
 			if perr != nil {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")

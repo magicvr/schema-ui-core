@@ -50,10 +50,29 @@ type RateLimiter interface {
 	// after AllowRecord (or Allow) returned false. New call sites SHOULD use
 	// AllowRecord; Allow and Record remain for compatibility.
 	AllowRecord(key string, now time.Time) bool
+	// Reserve atomically checks the budget and, when allowed, occupies one
+	// slot for key under the same lock, returning a token that identifies
+	// exactly THIS attempt (VP-032 / workspace-032 GOAL-003 D-002). The
+	// occupied slot counts toward the budget immediately, so an in-flight
+	// attempt is conservative against concurrent ones; a denied attempt
+	// returns ok=false and registers nothing. Callers that reach a
+	// non-counting outcome (one the legacy flow recorded nothing for, e.g.
+	// a captcha failure or a success that never touched the bucket) MUST
+	// call Cancel with the returned token to release exactly this slot
+	// while preserving all other history; counting outcomes simply keep
+	// the slot. Callers MUST invoke RetryAfterSeconds only after Reserve
+	// (or Allow/AllowRecord) returned false.
+	Reserve(key string, now time.Time) (token uint64, ok bool)
+	// Cancel releases the single slot identified by token for key,
+	// preserving every other history entry for that key. It is a no-op when
+	// the slot is no longer present (already pruned or cleared). Cancel is
+	// NOT a budget reset: callers that must reset the whole bucket keep
+	// using Clear.
+	Cancel(key string, token uint64)
 	// RetryAfterSeconds is the remaining window after the oldest in-window
-	// failure. Callers MUST invoke it only after Allow or AllowRecord
-	// returned false (W12 D-002: Retry-After header semantic); the value
-	// follows RateLimiterRetryAfterSeconds.
+	// failure. Callers MUST invoke it only after Allow, AllowRecord or
+	// Reserve returned false (W12 D-002: Retry-After header semantic); the
+	// value follows RateLimiterRetryAfterSeconds.
 	RetryAfterSeconds(key string, now time.Time) int
 	// Clear drops every failure for key. Called after a successful attempt so
 	// a legitimate client never accumulates a poisoned bucket.

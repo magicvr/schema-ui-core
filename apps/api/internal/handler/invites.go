@@ -324,7 +324,9 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limit
 		}
 		key := loginClientIP(r)
 		now := time.Now().UTC()
-		if !limiter.AllowRecord(key, now) {
+		var token uint64
+		var ok bool
+		if token, ok = limiter.Reserve(key, now); !ok {
 			if sec := limiter.RetryAfterSeconds(key, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
@@ -332,30 +334,38 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limit
 			return
 		}
 		// F-001 ordering gate: dead tokens are rejected here, before any
-		// password policy or bcrypt work.
+		// password policy or bcrypt work. Legacy: a dead token recorded one
+		// failure — keep the slot.
 		if err := repo.PeekInviteToken(strings.TrimSpace(body.Token), now); err != nil {
 			writeInviteDomainError(w, r, err)
 			return
 		}
 		length := len([]byte(body.Password))
 		if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(body.Password) == "" {
+			// Legacy: password-policy failures never touched the bucket.
+			limiter.Cancel(key, token)
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "password must be a non-whitespace string of 8 to 72 bytes")
 			return
 		}
 		if err := repo.ValidateNewPassword("", body.Password); err != nil {
+			limiter.Cancel(key, token)
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "password violates the active password policy")
 			return
 		}
 		hash, herr := auth.HashPassword(body.Password, passwordHashCost)
 		if herr != nil {
+			limiter.Cancel(key, token)
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not hash password")
 			return
 		}
 		if _, aerr := repo.AcceptInvite(strings.TrimSpace(body.Token), body.Username, body.Name, hash, now); aerr != nil {
+			// Legacy: an accept failure recorded one failure — keep the slot.
 			writeInviteDomainError(w, r, aerr)
 			return
 		}
-		limiter.Clear(key)
+		// Legacy: a successful accept recorded nothing — roll back only this
+		// attempt's slot, preserving prior history (GOAL-003 D-002 #10).
+		limiter.Cancel(key, token)
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

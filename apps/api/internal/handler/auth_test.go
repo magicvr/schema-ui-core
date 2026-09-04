@@ -432,3 +432,48 @@ func TestLoginRateLimit_SuccessfulLoginClearsFailureBucket(t *testing.T) {
 		}
 	}
 }
+
+// GOAL-003 D-002 #1 (A-002 F-001/F-002): invalid captcha attempts must
+// neither count against nor wipe the login failure history — an attacker
+// cannot reset the lockout budget by failing captcha verification.
+func TestLoginInvalidCaptchaDoesNotClearFailureHistory(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.captcha.required = true
+	const budget = 20
+	username := "no-such-user"
+
+	login := func(captchaOK bool) int {
+		var body string
+		if captchaOK {
+			body = `{"username":` + quote(username) + `,"password":"wrong-password","captchaId":"cap-test-1","captchaAnswer":"2"}`
+		} else {
+			body = `{"username":` + quote(username) + `,"password":"wrong-password","captchaId":"cap-test-1","captchaAnswer":"0"}`
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	// One real failure counts (valid captcha + wrong password → 401).
+	if code := login(true); code != http.StatusUnauthorized {
+		t.Fatalf("failure status = %d, want 401", code)
+	}
+	// Many invalid captchas: neither counted nor wiping the history.
+	for range 19 {
+		if code := login(false); code != http.StatusBadRequest {
+			t.Fatalf("invalid captcha status = %d, want 400 INVALID_CAPTCHA", code)
+		}
+	}
+	// 19 more real failures → exactly the 20-attempt budget.
+	for i := 0; i < 19; i++ {
+		if code := login(true); code != http.StatusUnauthorized {
+			t.Fatalf("failure %d status = %d, want 401", i+1, code)
+		}
+	}
+	// The next real failure is rate-limited — history was never wiped.
+	if code := login(true); code != http.StatusTooManyRequests {
+		t.Fatalf("post-budget status = %d, want 429", code)
+	}
+}

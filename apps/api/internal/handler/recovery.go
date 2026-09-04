@@ -90,31 +90,53 @@ func (h *recoveryHandler) start() http.HandlerFunc {
 			return
 		}
 		key := h.limiterKey(r, body.Account)
-		if !h.rateLimiter.AllowRecord(key, h.now().UTC()) {
-			if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
-				w.Header().Set("Retry-After", strconv.Itoa(sec))
+		var token uint64
+		if h.rateLimiter != nil {
+			var ok bool
+			token, ok = h.rateLimiter.Reserve(key, h.now().UTC())
+			if !ok {
+				if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
+					w.Header().Set("Retry-After", strconv.Itoa(sec))
+				}
+				writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many recovery requests; try again later")
+				return
 			}
-			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many recovery requests; try again later")
-			return
 		}
 		if err := h.repo.StartRecovery(body.Account, h.sender, h.now().UTC()); err != nil {
 			switch {
 			case errors.Is(err, authsession.ErrRecoveryNotAvailable):
 				// Enumeration-neutral: identical shape, nothing was sent.
-				// VP-032: entrance AllowRecord already recorded this attempt.
+				// Legacy semantics: the no-path branch recorded one failure —
+				// keep this attempt's slot so unknown-account probes still
+				// accumulate toward the 429 (GOAL-003 D-002 #4). Answer the
+				// same dispatched shape and return WITHOUT rolling back.
+				writeJSON(w, http.StatusAccepted, map[string]string{"status": "dispatched"})
+				return
 			case errors.Is(err, authsession.ErrRecoveryCooldown):
+				// Legacy: cooldown answers never touched the bucket.
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(key, token)
+				}
 				writeLocalizedError(w, r, http.StatusTooManyRequests, "EMAIL_RESEND_COOLDOWN", "please wait before requesting another code")
 				return
 			case errors.Is(err, authsession.ErrRecoverySendFailed):
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(key, token)
+				}
 				writeLocalizedError(w, r, http.StatusBadGateway, "EMAIL_SEND_FAILED", "the reset email could not be sent")
 				return
 			default:
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(key, token)
+				}
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process the recovery request")
 				return
 			}
 		}
+		// Legacy: a dispatched start recorded nothing — roll back this
+		// attempt's slot, preserving any prior history (GOAL-003 D-002 #4).
 		if h.rateLimiter != nil {
-			h.rateLimiter.Clear(key)
+			h.rateLimiter.Cancel(key, token)
 		}
 		writeJSON(w, http.StatusAccepted, map[string]string{"status": "dispatched"})
 	}
@@ -143,12 +165,17 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			return
 		}
 		key := h.limiterKey(r, body.Account)
-		if !h.rateLimiter.AllowRecord(key, h.now().UTC()) {
-			if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
-				w.Header().Set("Retry-After", strconv.Itoa(sec))
+		var token uint64
+		if h.rateLimiter != nil {
+			var ok bool
+			token, ok = h.rateLimiter.Reserve(key, h.now().UTC())
+			if !ok {
+				if sec := h.rateLimiter.RetryAfterSeconds(key, h.now().UTC()); sec > 0 {
+					w.Header().Set("Retry-After", strconv.Itoa(sec))
+				}
+				writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many recovery attempts; try again later")
+				return
 			}
-			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many recovery attempts; try again later")
-			return
 		}
 		target, err := h.repo.ResolveRecoveryTarget(body.Account)
 		if err != nil {
@@ -156,13 +183,17 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			// failure still feeds the IP|identifier bucket — the 429 that
 			// eventually fires is identical for existing and non-existing
 			// accounts, so the limiter stays enumeration-neutral (A-001 F-001).
-			h.recordFailure(key)
+			// Legacy: this branch recorded one failure — keep the slot.
 			writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_INVALID", "recovery code is invalid")
 			return
 		}
 
 		outcome, err := h.repo.EvaluateRecoveryCode(target.UserID, body.Code, h.now().UTC())
 		if err != nil {
+			// Legacy: an internal evaluation error never touched the bucket.
+			if h.rateLimiter != nil {
+				h.rateLimiter.Cancel(key, token)
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process the recovery request")
 			return
 		}
@@ -170,12 +201,12 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		case authsession.RecoveryMatch:
 			// continue below
 		case authsession.RecoveryExpired:
-			h.recordFailure(key) // A-001 F-001: expired guesses feed the bucket too
+			// A-001 F-001: expired guesses feed the bucket too — keep the slot.
 			h.repo.DropStaleRecoveryChallenge(target.UserID, h.now().UTC())
 			writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_EXPIRED", "recovery code expired; request a new one")
 			return
 		case authsession.RecoveryNotPending:
-			h.recordFailure(key)
+			// Legacy: not-pending guesses counted — keep the slot.
 			writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_INVALID", "recovery code is invalid")
 			return
 		default: // mismatch
@@ -188,8 +219,10 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		if h.gate != nil && h.gate.Required(target.UserID) {
 			code2, rec2 := strings.TrimSpace(body.SecondFactorCode), strings.TrimSpace(body.RecoveryCode)
 			if code2 == "" && rec2 == "" {
+				// Legacy: the second-factor demand (missing field, not a
+				// guess) consumed nothing — roll back only this slot.
 				if h.rateLimiter != nil {
-					h.rateLimiter.Clear(key)
+					h.rateLimiter.Cancel(key, token)
 				}
 				writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_SECOND_FACTOR_REQUIRED", "your second factor is required to finish recovery")
 				return
@@ -197,6 +230,7 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			if verr := h.gate.VerifySecondFactor(target.UserID, code2, rec2, h.now().UTC()); verr != nil {
 				// A wrong second factor burns a challenge attempt too: the
 				// 6-digit code alone must never unlock unlimited TOTP guesses.
+				// Legacy: recordFailure counted — keep the slot.
 				h.failAttemptMFA(w, r, key, target.UserID, verr)
 				return
 			}
@@ -205,8 +239,10 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		newPassword := body.NewPassword
 		length := len([]byte(newPassword))
 		if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(newPassword) == "" {
+			// Legacy: INVALID_PASSWORD after a matched code consumed nothing
+			// (legitimate user mid-flow must not lock themselves out).
 			if h.rateLimiter != nil {
-				h.rateLimiter.Clear(key)
+				h.rateLimiter.Cancel(key, token)
 			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password must be a non-whitespace string of 8 to 72 bytes")
 			return
@@ -216,17 +252,23 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 		// baseline; does NOT consume a challenge attempt — A-001 F-004 note).
 		if err := h.repo.ValidateNewPassword(target.UserID, newPassword); err != nil {
 			if h.rateLimiter != nil {
-				h.rateLimiter.Clear(key)
+				h.rateLimiter.Cancel(key, token)
 			}
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "new password violates the active password policy")
 			return
 		}
 		hash, herr := auth.HashPassword(newPassword, passwordHashCost)
 		if herr != nil {
+			if h.rateLimiter != nil {
+				h.rateLimiter.Cancel(key, token)
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not hash password")
 			return
 		}
 		if cerr := h.repo.CompleteRecovery(target.UserID, hash, target.UserID, h.now().UTC()); cerr != nil {
+			if h.rateLimiter != nil {
+				h.rateLimiter.Cancel(key, token)
+			}
 			if errors.Is(cerr, authsession.ErrRecoveryNotPending) {
 				writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_INVALID", "recovery code is invalid")
 				return
@@ -234,8 +276,10 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process the recovery request")
 			return
 		}
+		// Legacy: a completed recovery recorded nothing — roll back this
+		// attempt's slot, preserving prior history (GOAL-003 D-002 #5).
 		if h.rateLimiter != nil {
-			h.rateLimiter.Clear(key)
+			h.rateLimiter.Cancel(key, token)
 		}
 		if h.operations != nil {
 			h.recordRecoveryEvent(target.UserID)
@@ -247,11 +291,11 @@ func (h *recoveryHandler) complete() http.HandlerFunc {
 	}
 }
 
-// failAttempt records the failed code guess in BOTH budgets — the per-user
-// challenge attempt count (≤5 voids it) and the IP|identifier rate-limiter
-// bucket (D-001 §2 / A-001 F-001) — then answers uniformly.
+// failAttempt consumes a challenge attempt for the failed code guess and
+// answers uniformly. The rate-limiter side is already occupied: under the
+// tokenized Reserve entrance this branch is a counting outcome, so the slot
+// is kept (legacy Record, GOAL-003 D-002 #5).
 func (h *recoveryHandler) failAttempt(w http.ResponseWriter, r *http.Request, key, userID string) {
-	h.recordFailure(key)
 	if h.repo.ConsumeRecoveryAttempt(userID) {
 		writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_EXPIRED", "recovery code expired; request a new one")
 		return
@@ -259,11 +303,10 @@ func (h *recoveryHandler) failAttempt(w http.ResponseWriter, r *http.Request, ke
 	writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_INVALID", "recovery code is invalid")
 }
 
-// failAttemptMFA records the rejected second factor as a challenge attempt
-// (and into the limiter bucket) and maps the underlying mfa error when the
-// budget survives.
+// failAttemptMFA consumes a challenge attempt for the rejected second factor
+// and maps the underlying mfa error when the budget survives. The limiter
+// slot is already occupied (counting outcome — kept).
 func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request, key, userID string, verr error) {
-	h.recordFailure(key)
 	if h.repo.ConsumeRecoveryAttempt(userID) {
 		writeLocalizedError(w, r, http.StatusBadRequest, "RECOVERY_CODE_EXPIRED", "recovery code expired; request a new one")
 		return
@@ -274,14 +317,6 @@ func (h *recoveryHandler) failAttemptMFA(w http.ResponseWriter, r *http.Request,
 	default:
 		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not process the recovery request")
 	}
-}
-
-// recordFailure feeds one failed complete attempt into the IP|identifier
-// limiter bucket (D-001 §2 · A-001 F-001). Deliberately NOT called for the
-// second-factor demand (missing field, not a guess) or INVALID_PASSWORD after
-// a matched code (legitimate user mid-flow) — see D-001 §2 write-back.
-// VP-032: no-op under AllowRecord entrance; optimistic slot is already occupied.
-func (h *recoveryHandler) recordFailure(key string) {
 }
 
 // recordRecoveryEvent appends the audit row under the existing

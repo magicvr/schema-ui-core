@@ -260,6 +260,158 @@ func TestMemoryAllowRecordConcurrentBudget(t *testing.T) {
 	}
 }
 
+// GOAL-003 D-002 §2: Reserve occupies a slot that counts immediately, and
+// Cancel removes exactly that slot while preserving all other history —
+// the property key-wide Clear cannot provide.
+func TestMemoryReserveCancelsOnlyItsOwnSlot(t *testing.T) {
+	l := limiter(t, 15*time.Minute, 3, 1<<16)
+	now := time.Now().UTC()
+
+	// Seed two counted failures.
+	l.Record("k", now)
+	l.Record("k", now)
+
+	token, ok := l.Reserve("k", now)
+	if !ok {
+		t.Fatal("Reserve under budget must allow")
+	}
+	if l.AllowRecord("k", now) {
+		t.Fatal("after Reserve the bucket is at max and must deny")
+	}
+
+	// Cancel only the reserved slot: the two seeded failures survive.
+	l.Cancel("k", token)
+	if got := len(l.attempts["k"]); got != 2 {
+		t.Fatalf("after Cancel history length = %d, want 2 (only the reserved slot rolled back)", got)
+	}
+	if !l.Allow("k", now) {
+		t.Fatal("after Cancel the bucket must be below max again")
+	}
+	// A second Reserve on a fresh slot, cancelled, must also leave history.
+	tok2, ok := l.Reserve("k", now)
+	if !ok {
+		t.Fatal("second Reserve must allow")
+	}
+	l.Cancel("k", tok2)
+	if got := len(l.attempts["k"]); got != 2 {
+		t.Fatalf("after second Cancel history length = %d, want 2", got)
+	}
+}
+
+// GOAL-003 D-002 §1: Reserve deny registers nothing and returns a zero token.
+func TestMemoryReserveDenyDoesNotGrow(t *testing.T) {
+	l := limiter(t, 15*time.Minute, 1, 8)
+	now := time.Now().UTC()
+	if _, ok := l.Reserve("k", now); !ok {
+		t.Fatal("first Reserve must allow")
+	}
+	token, ok := l.Reserve("k", now)
+	if ok {
+		t.Fatal("Reserve at max=1 must deny")
+	}
+	if token != 0 {
+		t.Fatalf("denied Reserve token = %d, want 0", token)
+	}
+	if got := len(l.attempts["k"]); got != 1 {
+		t.Fatalf("denied Reserve must not append, got %d slots", got)
+	}
+}
+
+// GOAL-003 D-002 §2: Cancel is a no-op for an unknown token, after Clear, or
+// when the key never existed; cancelling the last slot removes the key from
+// both the map and the eviction order.
+func TestMemoryReserveCancelNoOpAndCleanup(t *testing.T) {
+	l := limiter(t, 15*time.Minute, 3, 8)
+	now := time.Now().UTC()
+
+	// Unknown key / unknown token: no-op, no panic, no entry created.
+	l.Cancel("ghost", 123)
+	if len(l.attempts) != 0 {
+		t.Fatal("Cancel on an absent key must not create entries")
+	}
+
+	tok, ok := l.Reserve("k", now)
+	if !ok {
+		t.Fatal("Reserve must allow")
+	}
+	l.Cancel("k", 999) // unknown token
+	if got := len(l.attempts["k"]); got != 1 {
+		t.Fatalf("Cancel with unknown token must be a no-op, got %d slots", got)
+	}
+	l.Clear("k")
+	l.Cancel("k", tok) // after Clear the slot is gone — no-op
+	if _, exists := l.attempts["k"]; exists {
+		t.Fatal("Cancel after Clear must not resurrect the key")
+	}
+
+	// Cancelling the last slot removes the key and its order entry.
+	tok2, ok := l.Reserve("k2", now)
+	if !ok {
+		t.Fatal("Reserve on k2 must allow")
+	}
+	l.Cancel("k2", tok2)
+	if _, exists := l.attempts["k2"]; exists {
+		t.Fatal("last-slot Cancel must delete the key")
+	}
+	for _, k := range l.order {
+		if k == "k2" {
+			t.Fatal("cancelled key must be removed from the eviction order")
+		}
+	}
+}
+
+// GOAL-003 D-002 §1: N concurrent Reserve on one key cannot penetrate max
+// (the same atomicity criterion as AllowRecord).
+func TestMemoryReserveConcurrentBudget(t *testing.T) {
+	const max = 8
+	const n = 64
+	l := NewProvider().NewRateLimiter(time.Minute, max, 1<<16)
+	now := time.Now().UTC()
+	var allowed atomic.Int32
+	var wg sync.WaitGroup
+	wg.Add(n)
+	for range n {
+		go func() {
+			defer wg.Done()
+			if _, ok := l.Reserve("k", now); ok {
+				allowed.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if got := allowed.Load(); got != max {
+		t.Fatalf("concurrent Reserve allowed = %d, want %d (no TOCTOU penetration)", got, max)
+	}
+}
+
+// GOAL-003 D-002 §1: Reserve/Cancel interleave with AllowRecord/Record/Allow
+// under the same budget and stay race-clean (-race).
+func TestMemoryReserveCancelConcurrent(t *testing.T) {
+	l := NewProvider().NewRateLimiter(time.Minute, 4, 1<<16)
+	now := time.Now().UTC()
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range 300 {
+				key := "ip|user"
+				if tok, ok := l.Reserve(key, now); ok {
+					if j%2 == 0 {
+						l.Cancel(key, tok)
+					}
+				}
+				_ = l.AllowRecord(key, now)
+				_ = l.Allow(key, now)
+				if j%11 == 0 {
+					l.Clear(key)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 func itoa(i int) string {
 	const digits = "0123456789"
 	if i == 0 {

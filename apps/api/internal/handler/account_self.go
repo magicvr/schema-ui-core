@@ -270,12 +270,17 @@ func (h *accountSelfHandler) changePassword() http.Handler {
 		now := h.now().UTC()
 		// F-003: wrong-current-password attempts share the login limiter model
 		// (per client identity, 5 failures / 15 min window).
-		// VP-032: atomic AllowRecord (optimistic slot reservation) eliminates
-		// TOCTOU. Success clears the bucket.
+		// VP-032 / GOAL-003 D-002: tokenized Reserve occupies this attempt's
+		// slot atomically (no TOCTOU); wrong password keeps it (legacy Record);
+		// success clears the bucket (legacy Clear).
 		limiterKey := loginClientIP(r) + "|" + user.ID
-		if h.passwordLimiter != nil && !h.passwordLimiter.AllowRecord(limiterKey, h.now().UTC()) {
-			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed password attempts; try again later")
-			return
+		if h.passwordLimiter != nil {
+			var ok bool
+			_, ok = h.passwordLimiter.Reserve(limiterKey, h.now().UTC())
+			if !ok {
+				writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed password attempts; try again later")
+				return
+			}
 		}
 		if !auth.VerifyPassword(u.PasswordHash, body.CurrentPassword) {
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "current password is incorrect")

@@ -12,6 +12,10 @@ type stubRateLimiter struct{}
 func (stubRateLimiter) Allow(string, time.Time) bool       { return true }
 func (stubRateLimiter) Record(string, time.Time)           {}
 func (stubRateLimiter) AllowRecord(string, time.Time) bool { return true }
+func (stubRateLimiter) Reserve(string, time.Time) (uint64, bool) {
+	return 1, true
+}
+func (stubRateLimiter) Cancel(string, uint64) {}
 func (stubRateLimiter) RetryAfterSeconds(string, time.Time) int {
 	return 0
 }
