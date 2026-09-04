@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.9.0
+version: 1.0.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -23,7 +23,8 @@ version: 0.9.0
 | [E-009-r3-c2-implementation](02-execution/E-009-r3-c2-implementation.md) | 2026-09-04 | R3 C2 入站持久化实现 | v68 双表、repository、共同 webhook/polling 接线与测试已提交；A-012 self pass；等待实现 independent | `02-execution/E-009-r3-c2-implementation.md` |
 | [E-010-r3-c2-nonblocking-remediation](02-execution/E-010-r3-c2-nonblocking-remediation.md) | 2026-09-04 | R3 C2 非阻断 finding 修复 | A-013 F-001～F-003 已按用户范围修复；A-014 self pass；修复后 HEAD 待 Grok independent re-audit | `02-execution/E-010-r3-c2-nonblocking-remediation.md` |
 | [E-011-r3-c2-closeout](02-execution/E-011-r3-c2-closeout.md) | 2026-09-04 | R3 C2 检查点关闭 | A-015 Grok independent pass；A-016 response；C2 完成；R3 active · 2/4；C3 可开始 | `02-execution/E-011-r3-c2-closeout.md` |
+| [E-012-r3-c3-contract-gate](02-execution/E-012-r3-c3-contract-gate.md) | 2026-09-04 | R3 C3 合同门禁与实现放行 | D-010 用户裁决；A-020 Grok independent pass；A-021 response；C3 生产实现获准，R3 active · 2/4 | `02-execution/E-012-r3-c3-contract-gate.md` |
 
 ## 事实边界
 
-只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。定向/PG gated/race 测试通过。全套回归曾在并发运行中出现一次 `TestShutdownDrainHarnessPostgres` EOF，隔离重跑通过，作为环境/基线波动保留。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应，C3 生产实现获准但尚未开始。定向/PG gated/race 测试通过。全套回归曾在并发运行中出现一次 `TestShutdownDrainHarnessPostgres` EOF，隔离重跑通过，作为环境/基线波动保留。

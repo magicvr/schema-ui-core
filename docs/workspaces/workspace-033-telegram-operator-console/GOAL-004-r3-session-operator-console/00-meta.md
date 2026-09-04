@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 1.2.0
+version: 1.3.0
 progress: 2/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -42,7 +42,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 |--------|------|------|
 | C1 | R3 数据/权限/发言权合同、信息需求与用户裁决冻结 | **完成**：D-002+D-003/E-002～E-004；A-002 self `pass`；A-003 F-001 → A-004 `fixed`；A-005 Grok independent `pass`；A-006 response；开放 required = 0 |
 | C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | **完成**：A-013 Grok independent `pass`（0 required）；按用户范围修复 F-001～F-003，A-014 self `pass`；A-015 修复后 Grok independent `pass`（0 required）；A-016 response；开放 required = 0 |
-| C3 | 会话列表/成绩单/人工发送 API、权限与运行时接线 | 合同已按 D-010/A-019 补全；A-018 required 等待 Grok independent re-audit 后再实施 |
+| C3 | 会话列表/成绩单/人工发送 API、权限与运行时接线 | 合同门禁完成：A-020 Grok independent pass、A-021 response；生产实现获准，R3 active · 2/4 |
 | C4 | Admin 人工台 UI、发言权反馈、端到端验证与 independent 审计 | 待开始；依赖 C3 |
 
 ## 信息就绪与未知项（P-005）
