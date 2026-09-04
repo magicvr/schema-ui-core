@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.3.0
+version: 0.3.1
 ---
 
 # GOAL-003 · R2 决策索引
@@ -17,8 +17,8 @@ version: 0.3.0
 | I-033-014 | required | mode/URL 的 seed、DB authoritative 与 Admin PATCH 优先级 | 方案 / C2 | C1 | 用户裁决并写 D-001 | **verified** | 未延期 | D-001 |
 | I-033-015 | required | heartbeat 引用计数/单 lease 与 TTL | 方案 / C3/C4 | C1 | 用户裁决并写 D-001 | **verified** | 未延期 | D-001 |
 | I-033-016 | required | getUpdates 长轮询 timeout 与 client 余量 | 方案 / C3 | C1 | 用户裁决并写 D-001 | **verified** | 未延期 | D-001 |
-| I-033-017 | non-blocking | disabled profile 的 route/module surface 语义 | 实施 / C4 | C3 | 代码核对与计划记录 | open | 可沿用现有语义 | 待确认 |
-| I-033-018 | non-blocking | HasBusinessHandlers 的 adapter 放置 | 实施 / C3 | C3 | 实现决策与测试 | open | 可在 C3 记录 | 待确认 |
+| I-033-017 | non-blocking | disabled profile 的 route/module surface 语义 | 实施 / C4 | C3 | provider/composition disabled profile 404 测试 | **verified** | 未延期 | A-014；Telegram settings、lease、webhook、schema 均未注册 |
+| I-033-018 | non-blocking | HasBusinessHandlers 的 adapter 放置 | 实施 / C3 | C3 | 实现决策与测试 | **verified** | 已由 C3 记录 | A-009/A-012 |
 
 ## 决策索引
 
