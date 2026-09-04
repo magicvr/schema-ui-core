@@ -24,9 +24,9 @@ version: 0.5.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | VP-033 / R1 / R2 前置与父级对齐 | verified | R2 已 `done · 5/5`；Root active · 2/4；R3 parent 正确 |
-| I-033-009/010/019～022 | user-decided；I-033-020 合同已补全、实现待验证 | D-002 记录七项主方向；D-003 响应 A-003 F-001：持久化成功后才 ack/推进 offset；A-004 self 记 `fixed`；A-005 independent 复审 `pass`（开放 required = 0）；代码实现仍待 C2 |
+| I-033-009/010/019～022 | user-decided；I-033-020 合同已补全、C1 independent pass、实现待验证 | D-002 记录七项主方向；D-003 响应 A-003 F-001；A-004 self；A-005 Grok independent `pass`（开放 required = 0）；A-006 响应 |
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
 
 ## 审计记录（ledger）
 
-`03-audit/` 平铺；正式意见必须落盘（self / independent 共用序列）。A-001～A-005 原文保留。A-006 记录 `/govern` 对 A-005 台账 finding 的响应；独立意见不改 status/progress，C1 阶段关闭与 C2 启动由 `/govern` 投影，不替代 C4 实现审计。
+`03-audit/` 平铺；正式意见必须落盘（self / independent 共用序列）。A-001～A-005 原文保留。A-006 记录 `/govern` 对 A-005 台账 finding 的响应；A-005 已确认 C1 合同 required = 0，C2 实现审计仍须独立建立，不替代 C4 实现审计。

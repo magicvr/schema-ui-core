@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-033-telegram-operator-console
 created: 2026-09-03
 updated: 2026-09-04
-version: 0.2.1
+version: 0.2.2
 parent: null
 ---
 
@@ -121,7 +121,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root active 0/4 |
+| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root active 2/4；R3 C1 已由 A-005 Grok independent pass + A-006 response 关闭，C2 规划/选型中 |
 
 ## 关门记录
 
