@@ -105,15 +105,29 @@ func (c *BotAPIClient) GetMe(ctx context.Context) (BotUser, error) {
 
 // SetWebhook configures Telegram's webhook target and its secret token.
 func (c *BotAPIClient) SetWebhook(ctx context.Context, webhookURL, secret string) error {
-	return c.call(ctx, "setWebhook", setWebhookPayload{
+	var accepted bool
+	if err := c.call(ctx, "setWebhook", setWebhookPayload{
 		URL:         webhookURL,
 		SecretToken: secret,
-	}, nil)
+	}, &accepted); err != nil {
+		return err
+	}
+	if !accepted {
+		return fmt.Errorf("telegram: setWebhook: successful response result=false")
+	}
+	return nil
 }
 
 // DeleteWebhook removes Telegram's remote webhook configuration.
 func (c *BotAPIClient) DeleteWebhook(ctx context.Context) error {
-	return c.call(ctx, "deleteWebhook", nil, nil)
+	var accepted bool
+	if err := c.call(ctx, "deleteWebhook", nil, &accepted); err != nil {
+		return err
+	}
+	if !accepted {
+		return fmt.Errorf("telegram: deleteWebhook: successful response result=false")
+	}
+	return nil
 }
 
 // GetUpdates performs one long-poll request. An empty result is a normal

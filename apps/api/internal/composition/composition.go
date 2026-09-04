@@ -837,6 +837,9 @@ type TelegramRuntime struct {
 
 type telegramRuntimeOptions struct {
 	APIBaseURL string
+	// HTTPClient is an internal test seam; production leaves it nil so the
+	// standard library client is constructed with the configured API base URL.
+	HTTPClient *http.Client
 }
 
 type telegramRuntimeParams struct {
@@ -891,8 +894,8 @@ func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store,
 			Dispatcher:   disp,
 			Sender:       sender,
 		})
-		botAPI := telegraminternal.NewBotAPIClient(rt, nil, options.APIBaseURL)
-		pollingAPI := telegraminternal.NewPollingBotAPIClient(rt, nil, options.APIBaseURL)
+		botAPI := telegraminternal.NewBotAPIClient(rt, options.HTTPClient, options.APIBaseURL)
+		pollingAPI := telegraminternal.NewPollingBotAPIClient(rt, options.HTTPClient, options.APIBaseURL)
 		connection := telegraminternal.NewConnectionManager(rt, disp, botAPI, pollingAPI, webhook.HandlePollingUpdate)
 		rt.SetSettingsChangedHandler(connection.Reconcile)
 		return &TelegramRuntime{
