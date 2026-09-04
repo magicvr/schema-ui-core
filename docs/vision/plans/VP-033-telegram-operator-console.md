@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-033-telegram-operator-console
 created: 2026-09-03
 updated: 2026-09-04
-version: 0.2.0
+version: 0.2.1
 parent: null
 ---
 
@@ -114,8 +114,8 @@ parent: null
 | I-033-006 | 开发默认 polling、生产推荐 webhook。 | non-blocking | 判据 2 默认值 | R1 | **verified**（2026-09-03 用户书面） |
 | I-033-007 | 群消息：首波是否要求关 Privacy Mode，还是只收录 bot 可见的消息（命令 / 回复自己 / 私聊全文）？ | required | 判据 5 | R1 | **verified**（2026-09-04 用户书面：不要求关闭 Privacy Mode；仅收录 bot 实际可见更新） |
 | I-033-008 | webhook 公网 URL 来源（配置键 vs 运行时探测）；本地如何验收 `setWebhook`。 | required | 判据 1/2 | R1 | **verified**（2026-09-04 用户书面：显式公网 base URL；本地 Fake Bot API 验收；不做运行时猜测） |
-| I-033-009 | Admin 控制台刷新：短轮询间隔。默认倾向短轮询，不解除 SSE 接缝。 | non-blocking | 判据 5 | R1 | **open**（R1 可给默认秒数） |
-| I-033-010 | 发言权探测：`getChatMember` 预检 vs 发送 403 后灰掉；缓存失效策略。 | non-blocking | 判据 5 | R3 | **open** |
+| I-033-009 | Admin 控制台刷新：短轮询间隔。默认倾向短轮询，不解除 SSE 接缝。 | non-blocking | 判据 5 | R1 | **verified**（2026-09-04 用户书面：10 秒单飞、失焦暂停、恢复立即刷新；实现测试留给 R3） |
+| I-033-010 | 发言权探测：`getChatMember` 预检 vs 发送 403 后灰掉；缓存失效策略。 | non-blocking | 判据 5 | R3 | **verified**（2026-09-04 用户书面：混合预检/真实发送权威；60 秒 bot/chat 缓存；403 失效后显式重探；实现测试留给 R3） |
 
 ## 工作区绑定
 
@@ -133,3 +133,4 @@ parent: null
 |------|--------|
 | 2026-09-03 | 用户确认结构选型 A：新建 VP（不塞 workspace-030、不修订 VP-030 分母）。登记 `planned` v0.1.0（0 区）。入站模式开关 + 轮询启停策略 + 占用位 + 人工 IM 写入退出分母。I-033-001～006 会话内 verified；I-033-007/008 激活前裁决。 |
 | 2026-09-04 | 用户接受 `/vision` 建议：I-033-007 冻结为“不要求关闭 Privacy Mode，只收录 bot 实际可见更新”；I-033-008 冻结为“显式公网 base URL + 本地 Fake Bot API 验收”。VRev-075 self `pass`，Admin freshness `42036a3c`→`dd1edade` PASS，open required = 0；`planned → active` v0.2.0，lead `workspace-033-telegram-operator-console`。VP-030 保持 active，本次不夹带关门。 |
+| 2026-09-04 | workspace-033 R3 C1 用户裁决已落盘：I-033-009/010 的决策状态同步为 `verified`；实现与测试仍由 workspace-033 R3 核验，不改变 VP-033 边界或激活状态。 |

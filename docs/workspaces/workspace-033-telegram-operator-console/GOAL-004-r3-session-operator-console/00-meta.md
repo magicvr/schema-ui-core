@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.2.0
+version: 0.3.0
 progress: 0/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -17,7 +17,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 ## 概述
 
-本目标承接已关闭的 R2，交付 VP-033 的会话与人工台阶段：从 webhook/polling 的共同入站路径识别 Telegram 实际投递的文本更新，按 chat 形成私聊/群会话与文本成绩单，并为未绑定且连接成功的 Admin 提供人工代 bot 发言和发言权反馈。当前 C1 方案已由用户裁决并等待 independent 审计；尚未实施代码。
+本目标承接已关闭的 R2，交付 VP-033 的会话与人工台阶段：从 webhook/polling 的共同入站路径识别 Telegram 实际投递的文本更新，按 chat 形成私聊/群会话与文本成绩单，并为未绑定且连接成功的 Admin 提供人工代 bot 发言和发言权反馈。当前 C1 用户方案已记录于 D-002；A-003 independent 的 F-001 已由 D-003/A-004 补全合同并等待 Grok re-audit；尚未实施代码。
 
 ## 已冻结边界
 
@@ -40,7 +40,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | R3 数据/权限/发言权合同、信息需求与用户裁决冻结 | **self 完成，independent 待进行**：D-002/E-002；A-002 self `pass`；I-033-009/010/019～022 已有用户裁决，代码验证待后续 |
+| C1 | R3 数据/权限/发言权合同、信息需求与用户裁决冻结 | **self 响应完成，independent re-audit 待进行**：D-002+D-003/E-002+E-003；A-002 self `pass`；A-003 F-001 已按 A-004 记为 `fixed`；代码验证待后续 |
 | C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | 待开始；依赖 C1 |
 | C3 | 会话列表/成绩单/人工发送 API、权限与运行时接线 | 待开始；依赖 C2 |
 | C4 | Admin 人工台 UI、发言权反馈、端到端验证与 independent 审计 | 待开始；依赖 C3 |
@@ -52,7 +52,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 | I-033-009 | non-blocking | Admin 短轮询刷新间隔与请求并发/失焦行为 | C3/C4 | R3 | 用户裁决；补 UI timer/失焦测试 | **verified (decision)** | 未延期 | D-002：10 秒单飞、失焦暂停、恢复立即刷新 |
 | I-033-010 | required（本 R3 gate） | `getChatMember` 预检 vs 发送 403 后灰掉，以及缓存 TTL/失效/重新探测策略 | C1/C4 | R3 | 用户裁决；补 Bot API、API、UI 状态机测试 | **verified (decision)** | 未延期 | D-002：混合策略；60 秒 bot/chat 缓存；403 失效；显式重探 |
 | I-033-019 | required | 会话主键与分栏：`chat_id`、`subject_id` 或组合；私聊/群标题、排序、分页与未读语义 | C1/C2 | C1 | 用户裁决；写 schema/迁移与列表合同测试 | **verified (decision)** | 未延期 | D-002：`chat_id` 为会话边界 |
-| I-033-020 | required | 入站文本准入、UpdateID/messageID 幂等、重复投递与 webhook 重试的落盘/分发顺序 | C1/C2 | C1 | 用户裁决；补 webhook/polling/retry/concurrency 测试 | **verified (decision)** | 未延期 | D-002：bot 维度 `update_id` 主幂等，不重复分发 |
+| I-033-020 | required | 入站文本准入、UpdateID/messageID 幂等、重复投递与 webhook 重试的落盘/分发顺序 | C1/C2 | C1 | 用户裁决；补 webhook/polling/retry/concurrency 测试 | **verified (decision + contract; independent re-audit pending)** | 未延期 | D-002 + D-003：持久化成功后才 webhook 2xx / polling offset；失败可重试；重复 bot-scoped `update_id` 不重复落盘/分发 |
 | I-033-021 | required | 人工台读取/发送 API 的权限边界：复用 `settings.read/write` 或专用 operator 权限 | C1/C3 | C1 | 用户裁决；更新 Provider/RBAC/auth 测试 | **verified (decision)** | 未延期 | D-002：`telegram.operator.read/write` |
 | I-033-022 | required | 发送成功/失败的消息状态、落盘先后、失败重试与重复提交语义；是否记录失败消息 | C1/C3 | C1 | 用户裁决；补 sender/store/API 并发与失败测试 | **verified (decision)** | 未延期 | D-002：`pending`→`sent/failed`、`request_id` 幂等、失败显式重试 |
 
@@ -62,4 +62,4 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 ## 台账布局
 
-`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001/E-001/A-001 已记录目标建立与入口审视，后续按编号递增。
+`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-003、E-001～E-003、A-001～A-004 已记录 R3 建立、C1 裁决与 F-001 响应，后续按编号递增。
