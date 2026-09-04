@@ -4,31 +4,32 @@ title: R2 生产使用点迁移与 handler 回归
 status: active
 parent: GOAL-001-rate-limiter-atomic-port
 created: 2026-09-03
-updated: 2026-09-03
-version: 0.1.0
+updated: 2026-09-04
+version: 0.2.0
 progress: 2/3
 plan_refs:
   - VP-032-rate-limiter-atomic-port
 primary_plan: VP-032-rate-limiter-atomic-port
-serves_summary: 承载 VP-032 R2：依据 D-002 冻结合同将 14 处生产 Allow→Record 调用点全部迁移为 AllowRecord（立即消费 4 处 + 失败预算 10 处），消除生产 TOCTOU 并确保既有 handler 限流回归全绿。
+serves_summary: 承载 VP-032 R2：依据 D-002 冻结合同将 14 处生产 Allow→Record 调用点全部迁移为原子端口（立即消费 4 处 AllowRecord + 失败预算 10 处 Reserve/Cancel 令牌化保留），消除生产 TOCTOU 并确保既有 handler 限流回归全绿。
 ---
 
 # GOAL-003 · R2 生产使用点迁移与 handler 回归
 
 ## 概述
 
-执行 Root 纲领 **R2**：承接已关门之 R1（GOAL-002）冻结的 `AllowRecord` 端口合同（D-002 v0.1.0），将 HEAD（`b1c03acd` / `98edb03e`）扫描确定的 **14 处生产 Allow→Record 调用点**全部迁移为原子 `AllowRecord`。
-迁移严格遵守 D-002 §4 口径：立即消费（4 处）直接以 `if !AllowRecord(...) { 429 }` 替换旧两段式调用；失败预算（10 处）在入口乐观占槽并移除失败分支的二次 `Record`，成功路径保持单锁 `Clear`。迁移后执行 handler 与 channel 限流回归测试，验证行为等价且并发下消除 TOCTOU 穿透。
+执行 Root 纲领 **R2**：承接已关门之 R1（GOAL-002）冻结的 `AllowRecord` 端口合同（D-002 v0.1.0），将 HEAD（`b1c03acd` / `98edb03e`）扫描确定的 **14 处生产 Allow→Record 调用点**全部迁移为原子端口。
+迁移口径：立即消费（4 处）直接以 `if !AllowRecord(...) { 429 }` 替换旧两段式调用；失败预算（10 处）按 **GOAL-003 D-002（v0.1.0，2026-09-04 用户裁决）令牌化保留**——入口 `Reserve` 乐观占槽、非计数分支 `Cancel` 只回滚当次槽位（保留历史）、旧有 `Clear` 路径保持 `Clear`。
+注：初版 E-002 按 D-002 §4 旧口径（失败预算 = 入口 `AllowRecord` + 成功 `Clear`）实施后被 A-002 证伪（键级 `Clear` 连历史一起清空），已按 D-002 修正为令牌化方案并补混合历史回归（E-003）。
 
 ## 纲领检查点（P-001）
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | **14 处生产调用点迁移**：按立即消费（4 处）与失败预算（10 处）两口径完成代码改造，生产代码消除 Allow→Record 配对 | **已完成**（E-002 · 14 处全迁） |
-| C2 | **测试套件回归与并发验证**：handler / channel 既有限流单测全绿；验证立即消费单请求等价与失败预算 Clear 后净状态等价 | **已完成**（E-002 · 并发无穿透与 Clear 测试通过） |
-| C3 | **审视与阶段关门**：自审（A-001）对照 14 处分母与红线，达成无开放 required 关门 | 进行中（待自审与独立审计） |
+| C2 | **测试套件回归与并发验证**：handler / channel 既有限流单测全绿；验证立即消费单请求等价与失败预算 Clear 后净状态等价 | **受阻后修复**（A-002 F-001/F-002 → D-002 令牌化修复 + 混合历史回归；E-003） |
+| C3 | **审视与阶段关门**：自审（A-001）对照 14 处分母与红线，达成无开放 required 关门 | 响应中（A-002 fail / 2 required → 已按 D-002 修复，待复审） |
 
-`progress` = 已关门检查点数 / 3。当前 **2/3**。
+`progress` = 已关门检查点数 / 3。当前 **2/3**（C3 未关门）。
 
 ## 成功标准（对应 VP-032 退出判据 #2 / #3 / #4）
 
@@ -61,9 +62,10 @@ serves_summary: 承载 VP-032 R2：依据 D-002 冻结合同将 14 处生产 All
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-032-001 | required | `AllowRecord` 精确签名与返回值 | 方案冻结 + 判据 1 | R1 | GOAL-002 冻结 | **verified** | — | `AllowRecord(key string, now time.Time) bool`（D-002 §1） |
-| I-032-002 | required | 14 处使用点全迁口径与 Clear 语义 | 实施门禁 + 判据 2 | R2 | GOAL-002 冻结 | **verified** | — | 14 处全迁入 R2；立即消费 vs 失败预算两口径冻结于 D-002 §4/§5 |
+| I-032-002 | required | 14 处使用点全迁口径与 Clear 语义 | 实施门禁 + 判据 2 | R2 | GOAL-002 冻结；**2026-09-04 回流重审（A-002 F-001）** | **revised** | — | 2026-09-04 修正：键级 `Clear` 无法回滚当次占槽、会清历史 → 失败预算口径改为令牌化 `Reserve`/`Cancel`（GOAL-003 D-002，见 I-032-003） |
+| I-032-003 | required | 令牌化保留契约（Reserve/Cancel 签名与逐路径语义冻结） | 实施门禁 + 判据 2/5 | R2 | 用户裁决（2026-09-04 · 方案 A）→ D-002 冻结 → 实施验证 | **verified** | — | `Reserve(key, now) (token uint64, ok bool)` + `Cancel(key, token)`；10 处失败预算逐路径冻结（GOAL-003 D-002 §3） |
 
-本目标继承 verified 信息状态，无开放 required 信息项。
+本目标无开放 required 信息项（I-032-002 已回流 revised，结论由 I-032-003 承接）。
 
 ## 父目标
 

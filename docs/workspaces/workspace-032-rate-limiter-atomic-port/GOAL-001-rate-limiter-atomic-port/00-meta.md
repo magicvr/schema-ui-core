@@ -4,8 +4,8 @@ title: 限流器端口原子化
 status: active
 parent: null
 created: 2026-09-03
-updated: 2026-09-03
-version: 0.3.0
+updated: 2026-09-04
+version: 0.3.1
 progress: 1/3
 plan_refs:
   - VP-032-rate-limiter-atomic-port
@@ -34,7 +34,7 @@ serves_summary: 架构分支 · 承接 VP-027 residual R-007：kernel.RateLimite
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
 | R1 | 合同落盘（GOAL-002）：D-002 冻结 + kernel.AllowRecord + Memory 单锁实现 + 合同级测试。I-032-001/002 已由 VRev-073 冻结 | **已关门**（2026-09-03 · GOAL-002 合同与端口落地 + A-003 关门） |
-| R2 | 14 处迁移 + handler 回归（判据 2/3）：按立即消费 / 失败预算两口径迁生产调用点；handler 既有限流测试仍绿 | **进行中**（GOAL-003 已立项；待迁 14 处调用点） |
+| R2 | 14 处迁移 + handler 回归（判据 2/3）：按立即消费 / 失败预算两口径迁生产调用点；handler 既有限流测试仍绿 | **进行中**（GOAL-003：14 处已全迁；失败预算初版被 A-002 证伪 → D-002 令牌化修复完成、回归全绿，待复审关门） |
 | R3 | 证据与关门（判据 4/5；依赖 R1–R2）：证据矩阵 / 越界核账 / 审计闭合 | 待 R2 关门 |
 
 ## 信息就绪与未知项（P-005）
@@ -42,7 +42,7 @@ serves_summary: 架构分支 · 承接 VP-027 residual R-007：kernel.RateLimite
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-032-001 | required | `AllowRecord` 精确签名与返回值语义（bool 是否足够，是否需返回剩余额度）。 | 方案冻结 + 退出判据 1 | R1 | `/vision` 激活冻结（VRev-073） | **verified** | — | 2026-09-03：`AllowRecord(key string, now time.Time) bool`；bool 足够；不返回剩余额度；`RetryAfterSeconds` 独立（VRev-073） |
-| I-032-002 | required | 是否所有使用点都应迁移（Clear-on-success 是否需要原子变体）。 | 方案冻结 + 退出判据 2 | R1 | `/vision` 激活冻结（VRev-073） | **verified** | — | 2026-09-03：14 处生产 Allow→Record 全迁；Clear 无需原子变体；立即消费 vs 失败预算两口径（VRev-073） |
+| I-032-002 | required | 是否所有使用点都应迁移（Clear-on-success 是否需要原子变体）。 | 方案冻结 + 退出判据 2 | R1 | `/vision` 激活冻结（VRev-073）；**2026-09-04 回流重审（GOAL-003 A-002）** | **revised** | — | 2026-09-03：14 处生产 Allow→Record 全迁；Clear 无需原子变体；立即消费 vs 失败预算两口径（VRev-073）。**2026-09-04 修正**：键级 Clear 无法回滚当次占槽 → 失败预算改为令牌化 Reserve/Cancel（GOAL-003 D-002 · I-032-003） |
 
 R1 无开放 required 信息门禁（两项均已 vision 冻结）。R1 工作是把冻结写入 kernel 合同与测试，不是再裁决签名。
 

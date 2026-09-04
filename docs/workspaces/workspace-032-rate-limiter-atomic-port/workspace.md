@@ -10,8 +10,8 @@ plan_refs:
   - VP-032-rate-limiter-atomic-port
 primary_plan: VP-032-rate-limiter-atomic-port
 created: 2026-09-03
-updated: 2026-09-03
-version: 0.3.0
+updated: 2026-09-04
+version: 0.3.1
 parent: null
 ---
 
@@ -46,7 +46,7 @@ VP-032：限流器端口原子化（vision_ref @0.4.0）——五条方向级退
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | R1 | **合同落盘**（GOAL-002）：D-002 冻结 + kernel.AllowRecord + Memory 单锁实现 + 合同级测试 | **已关门**（GOAL-002 done · A-003 关门） |
-| R2 | **14 处迁移 + handler 回归**（GOAL-003 · 判据 2/3）：按立即消费 / 失败预算两口径迁生产调用点 | **进行中**（GOAL-003 已立项） |
+| R2 | **14 处迁移 + handler 回归**（GOAL-003 · 判据 2/3）：按立即消费 / 失败预算两口径迁生产调用点 | **进行中**（GOAL-003：14 处全迁；失败预算 A-002 证伪后按 D-002 令牌化修复、回归全绿，待复审关门） |
 | R3 | **证据与关门**（判据 4/5）：证据矩阵 / 越界核账 / 审计闭合 | 待 R2 关门 |
 
 ## 固定共享资料引用

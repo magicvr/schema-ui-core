@@ -153,3 +153,4 @@ AllowRecord 不引入后台协程。VP-021 义务不触发。内存态随进程�
 | date | version | change |
 |------|---------|--------|
 | 2026-09-03 | 0.1.0 | 初版冻结：AllowRecord 单锁等价、兼容、剪枝/容量表、14 处分母、R1/R2 切分（GOAL-002 C2） |
+| 2026-09-04 | 0.1.1 | **更正（GOAL-003 A-002 证伪）**：§4 失败预算口径（入口 `AllowRecord` + 成功 `Clear`）被证伪——键级 `Clear` 无法只回滚当次占槽、会连历史一起清空（已证实回归：CAPTCHA 清登录历史、recovery no-path 不累计）。§4 失败预算口径由 [GOAL-003 D-002](../../GOAL-003-r2-handler-migration/01-decision/D-002-tokenized-reservation-failure-budget.md)（令牌化 `Reserve`/`Cancel` + 逐路径语义冻结，2026-09-04 用户裁决方案 A）取代；§1 端口形状、§2、§3、§5–§7 不变。 |
