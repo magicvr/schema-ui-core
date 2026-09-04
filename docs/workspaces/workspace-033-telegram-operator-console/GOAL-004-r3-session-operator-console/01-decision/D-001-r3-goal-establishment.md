@@ -5,7 +5,7 @@ parent: GOAL-004-r3-session-operator-console
 date: 2026-09-04
 source: self
 status: done
-version: 0.1.0
+version: 0.2.0
 ---
 
 # D-001 · R3 目标建立与阶段路线
@@ -24,3 +24,7 @@ R3 只处理 Telegram 实际投递的文本、未绑定人工台和现有 sender
 ## 待用户裁决
 
 待处理 `I-033-009`、`I-033-010`、`I-033-019`、`I-033-021`、`I-033-022`；`I-033-020` 的 Update 幂等边界需在同一 C1 合同中明确。
+
+## 候选方案材料（非决策）
+
+`attachments/r3-c1-option-analysis.md` 已记录 I-033-009/010/019～022 的证据、互斥候选、AI 推荐和主要取舍。该附件只承载 C1 信息收集，不代表用户已选择任何方案；方案依赖的代码、迁移和权限写入继续保持门禁。
