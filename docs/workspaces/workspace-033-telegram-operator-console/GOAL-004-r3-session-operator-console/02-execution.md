@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.1.0
+version: 1.2.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -25,7 +25,8 @@ version: 1.1.0
 | [E-011-r3-c2-closeout](02-execution/E-011-r3-c2-closeout.md) | 2026-09-04 | R3 C2 检查点关闭 | A-015 Grok independent pass；A-016 response；C2 完成；R3 active · 2/4；C3 可开始 | `02-execution/E-011-r3-c2-closeout.md` |
 | [E-012-r3-c3-contract-gate](02-execution/E-012-r3-c3-contract-gate.md) | 2026-09-04 | R3 C3 合同门禁与实现放行 | D-010 用户裁决；A-020 Grok independent pass；A-021 response；C3 生产实现获准，R3 active · 2/4 | `02-execution/E-012-r3-c3-contract-gate.md` |
 | [E-013-r3-c3-implementation](02-execution/E-013-r3-c3-implementation.md) | 2026-09-05 | R3 C3 operator 实现与非阻断项处理 | `7ddc97e1` 已落盘；专项验证通过；A-022 self pass；等待实现 independent，R3 active · 2/4 | `02-execution/E-013-r3-c3-implementation.md` |
+| [E-014-r3-c3-recommended-remediation](02-execution/E-014-r3-c3-recommended-remediation.md) | 2026-09-05 | R3 C3 A-023 推荐项修复 | `fa0caa70` 已落盘；A-024 response；F-001/F-002 fixed；等待 independent re-audit，R3 active · 2/4 | `02-execution/E-014-r3-c3-recommended-remediation.md` |
 
 ## 事实边界
 
-只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；随后 `7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self pass 已记录，C3 independent implementation audit 尚未完成。定向测试与隔离 C3 race 通过；PostgreSQL gated 测试在缺少环境时 skip。全量 handler race 曾出现 wallet/SQLite 并发争用，作为环境/基线波动保留。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；随后 `fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 已记录，修复后 independent re-audit 尚未完成。定向测试、隔离 C3 race 和本机 PostgreSQL gated 测试通过；全量 handler race 曾出现 wallet/SQLite 并发争用，作为环境/基线波动保留。

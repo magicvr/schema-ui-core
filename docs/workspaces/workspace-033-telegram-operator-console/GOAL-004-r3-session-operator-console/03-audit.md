@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 2.1.0
+version: 2.2.0
 ---
 
 # GOAL-004 · R3 审计索引
@@ -35,6 +35,7 @@ version: 2.1.0
 | [A-021-r3-c3-a020-response](03-audit/A-021-r3-c3-a020-response.md) | 2026-09-04 | self | 响应 A-020 independent pass；确认 C3 生产实现放行 | **pass** | **0** | `03-audit/A-021-r3-c3-a020-response.md` |
 | [A-022-r3-c3-implementation-self](03-audit/A-022-r3-c3-implementation-self.md) | 2026-09-05 | self | C3 v69/operator API/RBAC/runtime/幂等重试实现与 F-004～F-007 非阻断项 | **pass** | **0** | `03-audit/A-022-r3-c3-implementation-self.md` |
 | [A-023-r3-c3-implementation-independent](03-audit/A-023-r3-c3-implementation-independent.md) | 2026-09-05 | independent | C3 实现关门：v69/operator API/RBAC/runtime/幂等重试/F-004～F-007；C3 是否可关闭 | **pass** | **0** | `03-audit/A-023-r3-c3-implementation-independent.md` |
+| [A-024-r3-c3-a023-response](03-audit/A-024-r3-c3-a023-response.md) | 2026-09-05 | self | 响应 A-023 F-001/F-002 recommended；补测试钉与 fail-closed 接缝 | **pass** | **0** | `03-audit/A-024-r3-c3-a023-response.md` |
 
 ## 信息就绪核对（按 scope）
 
@@ -43,10 +44,12 @@ version: 2.1.0
 | VP-033 / R1 / R2 前置与父级对齐 | verified | R2 已 `done · 5/5`；Root active · 2/4；R3 parent 正确 |
 | I-033-009/010/019～022 | user-decided；I-033-020 合同已补全；A-008 F-001/F-002 经 D-005 补全、A-010 Grok independent `pass` 确认响应侧 `fixed`；C2 实现经 A-013 Grok independent `pass`；A-013 F-001～F-003 经 A-015 Grok independent re-audit 确认响应侧 `fixed`，A-016 已响应，C2 已关闭 | D-002 记录七项主方向；D-003 响应 A-003 F-001；A-004 self；A-005 Grok independent `pass`；A-006 响应；A-007 self；A-008 原文 conditional/open=2 保留；D-006/A-009 响应；A-010 闭合复审；A-011 响应；D-007 非阻断项裁决；A-012 self；A-013 Grok independent 实现关门 `pass`（不采信 A-012）；A-014 self（不采信为独立证据）；A-015 Grok independent 修复后复审 `pass`（不采信 A-014）；A-016 response；A-008/A-010/A-013 原文不改写 |
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
-| C3 实现就绪 | **pass（实现 independent）** | HEAD `88d20ea1` / 实现 `7ddc97e1`；A-023 Grok independent `pass`（open required = 0），不采信 A-022；本会话 gated PG **PASS** 而非 skip；本条不关闭 C3 检查点 |
+| C3 实现就绪 | **pass（实现 independent）** | A-023 Grok independent `pass`（open required = 0）后，A-024 已响应 F-001/F-002 并在 `fa0caa70` 修复；待修复后 Grok independent re-audit，本条不关闭 C3 检查点 |
 | C3 合同就绪 | **pass（合同侧）** | D-010 已记录用户裁决；A-019 响应 A-018 并将 F-001～F-007 补入 D-009；A-020 Grok independent re-audit `pass`，A-021 response 确认 A-018 F-001/F-002/F-003 响应侧 `fixed`（原文不改写）；可进入 C3 生产代码，不关闭 C3 检查点 |
 
 ## 审计记录（ledger）
+
+A-024 为 C3 A-023 recommended F-001/F-002 的 self response，记录 `fa0caa70` 修复、测试钉和 fail-closed 接缝，状态均为 `fixed`，等待修复后 Grok independent re-audit；本条不改 status/progress，不自行关闭 C3。
 
 A-023 为 C3 实现 Grok independent `pass`（open required = 0），确认 v69/operator API/RBAC/runtime/幂等重试及 A-018 F-004～F-007 主路径已落地；本会话 gated PostgreSQL **PASS**（不是 skip）；recommended F-001/F-002 原文见 A-023。A-022 self 不作为独立证据。本条不改 status/progress，不自行关闭 C3。
 
