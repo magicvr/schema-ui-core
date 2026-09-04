@@ -34,7 +34,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 
 | 阶段 | 内容 | 检查点/状态 |
 |------|------|-------------|
-| R1 | 合同冻结：模式切换、轮询生命周期、业务占用位、控制台 heartbeat、发言权探测、显式公网 base URL 与 Fake Bot API 验收 | 待开始；I-033-001～008 已 verified，I-033-009 待给默认值 |
+| R1 | 合同冻结：模式切换、轮询生命周期、业务占用位、控制台 heartbeat、发言权探测、显式公网 base URL 与 Fake Bot API 验收 | 进行中；子目标 `GOAL-002-r1-contract-freeze`；I-033-011～013 待裁决 |
 | R2 | 连接与设置：`getMe`、`setWebhook`/`deleteWebhook`、互斥热切换、占用位和 Admin 设置页 | 待开始；依赖 R1 |
 | R3 | 会话与人工台：入站会话落盘、用户/群分栏、未绑定人工 IM、发言权反馈 | 待开始；依赖 R2；I-033-010 最晚本阶段冻结 |
 | R4 | 证据与关门：退出判据矩阵、红线核账、审计 finding 闭合 | 待开始；依赖 R1～R3 |
@@ -53,8 +53,11 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 | I-033-008 | required | webhook 公网 URL 与本地验收 | 判据 1/2 | R1 | **verified** | 2026-09-04：显式公网 base URL；本地 Fake Bot API；不做运行时猜测 |
 | I-033-009 | non-blocking | Admin 短轮询间隔 | 判据 5 | R1 | **open** | R1 给默认秒数；不解除 SSE 接缝 |
 | I-033-010 | non-blocking | 发言权探测与缓存失效 | 判据 5 | R3 | **open** | `getChatMember` 预检或发送 403 后灰掉，待 R3 冻结 |
+| I-033-011 | required | `mode` 与显式 webhook 公网 base URL 的持久化/配置边界 | R2 配置与重启语义 | R1 | **open** | R1 子目标待用户裁决：复用 `auth.public_base_url` 与 DB mode，或建立 Telegram 专属配置面 |
+| I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **open** | R1 子目标待用户确认默认 polling 的持久化与生产推荐 webhook 的表达方式 |
+| I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **open** | R1 子目标待用户确认 Telegram connection manager 接入 composition `Start/Stop` |
 
-当前无开放 required 信息门禁；I-033-009/010 为 non-blocking，必须在各自最晚阶段前处理，但不阻断 Root 建立。
+当前 R1 方案冻结存在开放 required 信息门禁 `I-033-011`～`I-033-013`；在其关闭前不得进入受影响的 R2 实施。`I-033-009/010` 仍为 non-blocking，必须在各自最晚阶段前处理。
 
 ## 父目标
 
