@@ -1,9 +1,11 @@
 package telegram
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -144,7 +146,43 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5. Extract identifiers and message details.
+	// 5. Apply the same chat/user limits, subject mapping, and dispatcher path
+	// used by polling. Identity persistence failures remain retryable 500s.
+	if err := h.dispatchPayload(r.Context(), payload, now); err != nil {
+		var limitErr *rateLimitExceededError
+		if errors.As(err, &limitErr) {
+			w.Header().Set("Retry-After", strconv.Itoa(limitErr.retryAfter))
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 6. Return 200 OK with empty body.
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandlePollingUpdate sends a Bot API update through the same rate-limit,
+// subject-mapping, and dispatcher path as webhook delivery. Polling has no
+// client IP face, so only the chat/user buckets are applicable.
+func (h *WebhookHandler) HandlePollingUpdate(ctx context.Context, payload UpdatePayload) error {
+	if h == nil {
+		return nil
+	}
+	return h.dispatchPayload(ctx, payload, h.now())
+}
+
+type rateLimitExceededError struct {
+	retryAfter int
+}
+
+func (e *rateLimitExceededError) Error() string {
+	return "telegram: inbound rate limit exceeded"
+}
+
+func (h *WebhookHandler) dispatchPayload(ctx context.Context, payload UpdatePayload, now time.Time) error {
+	// Extract identifiers and message details.
 	var chatID, userID, command, text, callbackData string
 
 	if payload.Message != nil {
@@ -171,41 +209,37 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 6. Chat Rate Limiting (30/min).
+	// Chat Rate Limiting (30/min).
 	if h.chatLimiter != nil && chatID != "" {
 		chatKey := "tg:chat:" + chatID
 		if !h.chatLimiter.AllowRecord(chatKey, now) {
-			w.Header().Set("Retry-After", strconv.Itoa(h.chatLimiter.RetryAfterSeconds(chatKey, now)))
-			w.WriteHeader(http.StatusTooManyRequests)
-			return
+			return &rateLimitExceededError{retryAfter: h.chatLimiter.RetryAfterSeconds(chatKey, now)}
 		}
 	}
 
-	// 7. User Rate Limiting (20/min).
+	// User Rate Limiting (20/min).
 	if h.userLimiter != nil && userID != "" {
 		userKey := "tg:user:" + userID
 		if !h.userLimiter.AllowRecord(userKey, now) {
-			w.Header().Set("Retry-After", strconv.Itoa(h.userLimiter.RetryAfterSeconds(userKey, now)))
-			w.WriteHeader(http.StatusTooManyRequests)
-			return
+			return &rateLimitExceededError{retryAfter: h.userLimiter.RetryAfterSeconds(userKey, now)}
 		}
 	}
 
-	// 8. Subject Identity Mapping: GetOrCreateSubject("telegram", userID).
+	// Subject Identity Mapping: GetOrCreateSubject("telegram", userID).
 	var subjectID string
 	if h.subjectStore != nil && userID != "" {
-		sub, _, err := h.subjectStore.GetOrCreateSubject(r.Context(), "telegram", userID, now)
+		sub, _, err := h.subjectStore.GetOrCreateSubject(ctx, "telegram", userID, now)
 		if err != nil {
-			// Fail-closed on persistence failure: return 500 so Telegram retries delivery (R-001).
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			// Fail-closed on persistence failure so Telegram retries delivery.
+			return err
 		}
 		if sub != nil {
 			subjectID = sub.ID
 		}
 	}
 
-	// 9. Dispatch Update.
+	// Dispatch Update. Handler failures are logged but do not make Telegram
+	// retry a successfully accepted update; persistence failures above do.
 	if h.dispatcher != nil {
 		upd := kernel.TelegramUpdate{
 			ChatID:       chatID,
@@ -215,11 +249,9 @@ func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Text:         text,
 			CallbackData: callbackData,
 		}
-		if err := h.dispatcher.Dispatch(r.Context(), upd, h.sender); err != nil {
+		if err := h.dispatcher.Dispatch(ctx, upd, h.sender); err != nil {
 			slog.Warn("telegram: dispatch handler error", "err", err, "command", command, "chat_id", chatID)
 		}
 	}
-
-	// 10. Return 200 OK with empty body.
-	w.WriteHeader(http.StatusOK)
+	return nil
 }

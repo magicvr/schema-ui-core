@@ -142,7 +142,7 @@ func newAppWithOptions(cfg *config.Config, secretValue, seedHash string, logger 
 			newCache,
 			newEventBus,
 			newRateLimiters,
-			newTelegramRuntime,
+			newTelegramRuntimeForFx,
 			func(tr *TelegramRuntime) kernel.TelegramDispatcher { return tr.Dispatcher },
 			func(tr *TelegramRuntime) kernel.TelegramSender { return tr.Sender },
 			newMux,
@@ -830,14 +830,41 @@ type TelegramRuntime struct {
 	Dispatcher kernel.TelegramDispatcher
 	Sender     kernel.TelegramSender
 	Manager    *telegraminternal.RuntimeManager
+	Connection *telegraminternal.ConnectionManager
 	Webhook    *telegraminternal.WebhookHandler
 }
 
-// newTelegramRuntime builds the shared TelegramRuntime for the process (F-001).
+type telegramRuntimeOptions struct {
+	APIBaseURL string
+}
+
+type telegramRuntimeParams struct {
+	fx.In
+	Plan         kernel.Plan
+	Config       *config.Config
+	Store        kernel.Store
+	RateLimiters kernel.RateLimiterProvider
+	Options      *telegramRuntimeOptions `optional:"true"`
+}
+
+func newTelegramRuntimeForFx(params telegramRuntimeParams) (*TelegramRuntime, error) {
+	options := telegramRuntimeOptions{}
+	if params.Options != nil {
+		options = *params.Options
+	}
+	return buildTelegramRuntime(params.Plan, params.Config, params.Store, params.RateLimiters, options)
+}
+
+// newTelegramRuntime is the direct non-Fx test/adaptation seam.
+func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider) (*TelegramRuntime, error) {
+	return buildTelegramRuntime(plan, cfg, st, rateLimiters, telegramRuntimeOptions{})
+}
+
+// buildTelegramRuntime builds the shared TelegramRuntime for the process (F-001).
 // The at-rest master key is resolved the same way as the mail channel
 // (F-002 / A-006): operator-passphrase env (TELEGRAM_MASTER_KEY) or an
 // auto-generated key file beside the database — never a source constant.
-func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider) (*TelegramRuntime, error) {
+func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider, options telegramRuntimeOptions) (*TelegramRuntime, error) {
 	if plan.HasModule("channel.telegram") {
 		masterKeyPath := cfg.TelegramMasterKeyPath
 		if strings.TrimSpace(masterKeyPath) == "" {
@@ -863,10 +890,15 @@ func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, r
 			Dispatcher:   disp,
 			Sender:       sender,
 		})
+		botAPI := telegraminternal.NewBotAPIClient(rt, nil, options.APIBaseURL)
+		pollingAPI := telegraminternal.NewPollingBotAPIClient(rt, nil, options.APIBaseURL)
+		connection := telegraminternal.NewConnectionManager(rt, disp, botAPI, pollingAPI, webhook.HandlePollingUpdate)
+		rt.SetSettingsChangedHandler(connection.Reconcile)
 		return &TelegramRuntime{
 			Dispatcher: disp,
 			Sender:     sender,
 			Manager:    rt,
+			Connection: connection,
 			Webhook:    webhook,
 		}, nil
 	}
@@ -962,10 +994,14 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing, eventBusPort kernel.EventBus) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing, eventBusPort kernel.EventBus, tr *TelegramRuntime) {
 	var listener net.Listener
 	var stopRetention func()
-	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
+	var connection *telegraminternal.ConnectionManager
+	if tr != nil {
+		connection = tr.Connection
+	}
+	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }, connection))
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			ln, err := net.Listen("tcp", srv.Addr)
@@ -1060,7 +1096,7 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 	})
 }
 
-func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, listenerReady func() bool) kernel.Plan {
+func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, listenerReady func() bool, connection *telegraminternal.ConnectionManager) kernel.Plan {
 	for i := range plan.Modules {
 		moduleID := plan.Modules[i].ID
 		plan.Modules[i].Hooks = kernel.Hooks{
@@ -1073,6 +1109,13 @@ func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, 
 				case "core.auth-session":
 					if err := st.Ping(ctx); err != nil {
 						return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: moduleID, Detail: fmt.Sprintf("store is not available: %v", err)}
+					}
+				case "channel.telegram":
+					if connection == nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: moduleID, Detail: "telegram connection manager is unavailable"}
+					}
+					if err := connection.Start(ctx); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: moduleID, Detail: fmt.Sprintf("telegram connection start failed: %v", err)}
 					}
 				}
 				logger.Debug("module started", "module_id", moduleID)
@@ -1087,9 +1130,19 @@ func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, 
 						return &kernel.Error{Code: kernel.CodeLifecycleReadyFailed, ModuleID: moduleID, Detail: fmt.Sprintf("system-data readiness failed: %v", err)}
 					}
 				}
+				if moduleID == "channel.telegram" && connection != nil {
+					if err := connection.Ready(ctx); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleReadyFailed, ModuleID: moduleID, Detail: fmt.Sprintf("telegram connection readiness failed: %v", err)}
+					}
+				}
 				return nil
 			},
-			Stop: func(context.Context) error {
+			Stop: func(ctx context.Context) error {
+				if moduleID == "channel.telegram" && connection != nil {
+					if err := connection.Stop(ctx); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleStopFailed, ModuleID: moduleID, Detail: fmt.Sprintf("telegram connection stop failed: %v", err)}
+					}
+				}
 				logger.Debug("module stopped", "module_id", moduleID)
 				return nil
 			},

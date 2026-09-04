@@ -551,6 +551,19 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 // the previous test's flaw the audit rejected.
 func TestTelegramFxInjection_SameRuntime(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "telegram_fx_test.db")
+	apiServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/botlive-bot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":101,"is_bot":true,"username":"fx_test_bot"}}`))
+		case "/botlive-bot-token/deleteWebhook":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			t.Errorf("unexpected Telegram API request: %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer apiServer.Close()
 	cfg := &config.Config{
 		ProfileName:           string(kernel.ProfileCustom),
 		ModulesEnabled:        []string{"core.server-registration", "core.auth-session", "core.schema-render", "core.manifest-route", "core.navigation-capability", "core.operationlog", "admin.settings", "channel.telegram"},
@@ -572,6 +585,7 @@ func TestTelegramFxInjection_SameRuntime(t *testing.T) {
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 		fx.Populate(&injected),
 		fx.Populate(&mux),
+		fx.Supply(&telegramRuntimeOptions{APIBaseURL: apiServer.URL}),
 	)
 	if err != nil {
 		t.Fatalf("newAppWithOptions: %v", err)

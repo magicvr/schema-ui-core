@@ -24,6 +24,18 @@ func NewDispatcher() *Dispatcher {
 	}
 }
 
+// HasBusinessHandlers reports whether the dispatcher is occupied by at least
+// one business command or callback. It is a concrete-package probe rather than
+// a kernel interface method so the public channel contract stays unchanged.
+func (d *Dispatcher) HasBusinessHandlers() bool {
+	if d == nil {
+		return false
+	}
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	return len(d.commands) > 0 || len(d.callbacks) > 0
+}
+
 // RegisterCommand registers a handler for the normalized command name.
 // Strips leading slash and optional @BotName. Returns error on conflict or invalid name.
 func (d *Dispatcher) RegisterCommand(name string, h kernel.TelegramHandler) error {

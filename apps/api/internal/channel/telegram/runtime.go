@@ -17,6 +17,29 @@ const (
 	TelegramModeWebhook = "webhook"
 )
 
+const (
+	ConnectionStateUnconfigured = "unconfigured"
+	ConnectionStateStarting     = "starting"
+	ConnectionStateRunning      = "running"
+	ConnectionStateStopping     = "stopping"
+	ConnectionStateError        = "error"
+	ConnectionStateIdle         = "idle"
+
+	ReceiverNone    = "none"
+	ReceiverWebhook = "webhook"
+	ReceiverPolling = "polling"
+)
+
+// ConnectionStatus is the non-secret operational state of the Telegram
+// receiver. It is intentionally separate from the kernel Telegram contract.
+type ConnectionStatus struct {
+	State       string
+	Receiver    string
+	BotID       int64
+	BotUsername string
+	LastError   string
+}
+
 // RuntimeStatus contains diagnostic and status information about the Telegram channel.
 // Sensitive secrets are never exposed in plaintext or partial masks (F-002 / R-005 / R-008).
 type RuntimeStatus struct {
@@ -25,6 +48,11 @@ type RuntimeStatus struct {
 	SecretSet             bool   `json:"secret_set"`
 	Mode                  string `json:"mode"`
 	WebhookPublicBaseURL  string `json:"webhook_public_base_url"`
+	ConnectionState       string `json:"connection_state"`
+	Receiver              string `json:"receiver"`
+	BotID                 int64  `json:"bot_id,omitempty"`
+	BotUsername           string `json:"bot_username,omitempty"`
+	LastError             string `json:"last_error,omitempty"`
 	CapturedMessagesCount int    `json:"captured_messages_count"`
 	CapturedCount         int    `json:"captured_count"` // backwards compatibility alias
 }
@@ -43,9 +71,16 @@ type RuntimeManager struct {
 	secret               string
 	mode                 string
 	webhookPublicBaseURL string
+	connectionState      string
+	receiver             string
+	botID                int64
+	botUsername          string
+	lastError            string
 	mock                 *CaptureSender
 	runner               TxRunner
 	masterKey            []byte
+	settingsChangedMu    sync.RWMutex
+	settingsChanged      func(context.Context) error
 }
 
 // NewRuntimeManager constructs a RuntimeManager initialized with the given token and secret,
@@ -79,11 +114,18 @@ func NewRuntimeManagerWithSettings(seedToken, seedSecret, seedMode, seedWebhookP
 		runner = runners[0]
 	}
 
+	trimmedSeedToken := strings.TrimSpace(seedToken)
+	initialConnectionState := ConnectionStateUnconfigured
+	if trimmedSeedToken != "" {
+		initialConnectionState = ConnectionStateIdle
+	}
 	rm := &RuntimeManager{
-		token:                strings.TrimSpace(seedToken),
+		token:                trimmedSeedToken,
 		secret:               strings.TrimSpace(seedSecret),
 		mode:                 seedMode,
 		webhookPublicBaseURL: seedWebhookPublicBaseURL,
+		connectionState:      initialConnectionState,
+		receiver:             ReceiverNone,
 		mock:                 mock,
 		runner:               runner,
 		masterKey:            masterKey,
@@ -152,6 +194,15 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret, seedMode, seedWe
 		r.secret = strings.TrimSpace(decSecret)
 		r.mode = dbMode
 		r.webhookPublicBaseURL = dbWebhookPublicBaseURL
+		if r.token == "" {
+			r.connectionState = ConnectionStateUnconfigured
+		} else {
+			r.connectionState = ConnectionStateIdle
+		}
+		r.receiver = ReceiverNone
+		r.botID = 0
+		r.botUsername = ""
+		r.lastError = ""
 		r.mu.Unlock()
 		return nil
 	})
@@ -216,10 +267,67 @@ func (r *RuntimeManager) GetWebhookPublicBaseURL() string {
 	return r.webhookPublicBaseURL
 }
 
+// ConnectionStatus returns the current non-secret receiver state.
+func (r *RuntimeManager) ConnectionStatus() ConnectionStatus {
+	if r == nil {
+		return ConnectionStatus{State: ConnectionStateUnconfigured, Receiver: ReceiverNone}
+	}
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return ConnectionStatus{
+		State:       r.connectionState,
+		Receiver:    r.receiver,
+		BotID:       r.botID,
+		BotUsername: r.botUsername,
+		LastError:   r.lastError,
+	}
+}
+
+func (r *RuntimeManager) setConnectionStatus(status ConnectionStatus) {
+	if r == nil {
+		return
+	}
+	r.mu.Lock()
+	r.connectionState = status.State
+	r.receiver = status.Receiver
+	r.botID = status.BotID
+	r.botUsername = status.BotUsername
+	r.lastError = status.LastError
+	r.mu.Unlock()
+}
+
+// SetSettingsChangedHandler installs the process-local callback used by the
+// connection manager to reconcile a running receiver after an Admin PATCH.
+// It is an internal composition seam and does not alter the kernel contract.
+func (r *RuntimeManager) SetSettingsChangedHandler(handler func(context.Context) error) {
+	if r == nil {
+		return
+	}
+	r.settingsChangedMu.Lock()
+	r.settingsChanged = handler
+	r.settingsChangedMu.Unlock()
+}
+
+func (r *RuntimeManager) settingsChangedHandler() func(context.Context) error {
+	if r == nil {
+		return nil
+	}
+	r.settingsChangedMu.RLock()
+	defer r.settingsChangedMu.RUnlock()
+	return r.settingsChanged
+}
+
+func (r *RuntimeManager) currentConnectionSettings() (string, string) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.mode, r.webhookPublicBaseURL
+}
+
 // Update hot-switches the active Bot Token and Webhook Secret.
 // Persists encrypted secrets to the database before modifying in-memory state (fail-closed).
 func (r *RuntimeManager) Update(ctx context.Context, token, secret string) error {
-	return r.UpdateSettings(ctx, token, secret, r.GetMode(), r.GetWebhookPublicBaseURL())
+	mode, webhookPublicBaseURL := r.currentConnectionSettings()
+	return r.UpdateSettings(ctx, token, secret, mode, webhookPublicBaseURL)
 }
 
 // UpdateSettings persists the complete Telegram settings row before changing
@@ -228,6 +336,39 @@ func (r *RuntimeManager) Update(ctx context.Context, token, secret string) error
 func (r *RuntimeManager) UpdateSettings(ctx context.Context, token, secret, mode, webhookPublicBaseURL string) error {
 	r.updateMu.Lock()
 	defer r.updateMu.Unlock()
+	return r.updateSettingsLocked(ctx, token, secret, mode, webhookPublicBaseURL)
+}
+
+// UpdateSettingsPatch merges a partial Admin settings update while holding the
+// same serialization lock as the persistence transaction. This prevents two
+// concurrent PATCH requests from reading a stale complementary field and
+// overwriting each other (A-006 F-005).
+func (r *RuntimeManager) UpdateSettingsPatch(ctx context.Context, token, secret, mode, webhookPublicBaseURL *string) error {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
+
+	r.mu.RLock()
+	currentToken := r.token
+	currentSecret := r.secret
+	currentMode := r.mode
+	currentWebhookPublicBaseURL := r.webhookPublicBaseURL
+	r.mu.RUnlock()
+	if token != nil {
+		currentToken = *token
+	}
+	if secret != nil {
+		currentSecret = *secret
+	}
+	if mode != nil {
+		currentMode = *mode
+	}
+	if webhookPublicBaseURL != nil {
+		currentWebhookPublicBaseURL = *webhookPublicBaseURL
+	}
+	return r.updateSettingsLocked(ctx, currentToken, currentSecret, currentMode, currentWebhookPublicBaseURL)
+}
+
+func (r *RuntimeManager) updateSettingsLocked(ctx context.Context, token, secret, mode, webhookPublicBaseURL string) error {
 
 	trimmedToken := strings.TrimSpace(token)
 	trimmedSecret := strings.TrimSpace(secret)
@@ -276,6 +417,9 @@ func (r *RuntimeManager) UpdateSettings(ctx context.Context, token, secret, mode
 	r.webhookPublicBaseURL = trimmedWebhookPublicBaseURL
 	r.mu.Unlock()
 
+	if handler := r.settingsChangedHandler(); handler != nil {
+		return handler(ctx)
+	}
 	return nil
 }
 
@@ -296,6 +440,11 @@ func (r *RuntimeManager) Status() RuntimeStatus {
 		SecretSet:             r.secret != "",
 		Mode:                  r.mode,
 		WebhookPublicBaseURL:  r.webhookPublicBaseURL,
+		ConnectionState:       r.connectionState,
+		Receiver:              r.receiver,
+		BotID:                 r.botID,
+		BotUsername:           r.botUsername,
+		LastError:             r.lastError,
 		CapturedMessagesCount: captured,
 		CapturedCount:         captured,
 	}

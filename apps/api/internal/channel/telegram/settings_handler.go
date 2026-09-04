@@ -73,40 +73,25 @@ func (h *SettingsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentToken := h.runtime.GetToken()
-	currentSecret := h.runtime.GetSecret()
-	currentMode := h.runtime.GetMode()
-	currentWebhookPublicBaseURL := h.runtime.GetWebhookPublicBaseURL()
-
-	newToken := currentToken
-	if req.BotToken != nil {
-		newToken = strings.TrimSpace(*req.BotToken)
-	}
-
-	newSecret := currentSecret
-	if req.WebhookSecret != nil {
-		newSecret = strings.TrimSpace(*req.WebhookSecret)
-	}
-
-	newMode := currentMode
 	if req.Mode != nil {
-		newMode = strings.ToLower(strings.TrimSpace(*req.Mode))
-		if !ValidTelegramMode(newMode) {
+		mode := strings.ToLower(strings.TrimSpace(*req.Mode))
+		if !ValidTelegramMode(mode) {
 			http.Error(w, "invalid telegram mode", http.StatusBadRequest)
 			return
 		}
+		req.Mode = &mode
 	}
 
-	newWebhookPublicBaseURL := currentWebhookPublicBaseURL
 	if req.WebhookPublicBaseURL != nil {
-		newWebhookPublicBaseURL = strings.TrimSpace(*req.WebhookPublicBaseURL)
-		if err := validateWebhookPublicBaseURL(newWebhookPublicBaseURL); err != nil {
+		webhookPublicBaseURL := strings.TrimSpace(*req.WebhookPublicBaseURL)
+		if err := validateWebhookPublicBaseURL(webhookPublicBaseURL); err != nil {
 			http.Error(w, "invalid webhook public base URL", http.StatusBadRequest)
 			return
 		}
+		req.WebhookPublicBaseURL = &webhookPublicBaseURL
 	}
 
-	if err := h.runtime.UpdateSettings(r.Context(), newToken, newSecret, newMode, newWebhookPublicBaseURL); err != nil {
+	if err := h.runtime.UpdateSettingsPatch(r.Context(), req.BotToken, req.WebhookSecret, req.Mode, req.WebhookPublicBaseURL); err != nil {
 		http.Error(w, "failed to persist telegram settings: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
