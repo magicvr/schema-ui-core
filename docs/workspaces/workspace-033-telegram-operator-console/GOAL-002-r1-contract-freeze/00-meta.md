@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.2.0
+version: 0.3.0
 progress: 2/3
 plan_refs:
   - VP-033-telegram-operator-console
@@ -40,7 +40,7 @@ serves_summary: 承载 Root R1 合同冻结：连接模式、轮询生命周期�
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | 用户方案裁决与 R1 合同冻结 | **完成**：D-002 accepted |
-| C2 | 状态/接口/失败语义/验证矩阵落盘 | **完成**：D-002 R1 合同与 R1-V-001～008 |
+| C2 | 状态/接口/失败语义/验证矩阵落盘 | **完成**：D-002 + D-003 R1 合同与 R1-V-001～009 |
 | C3 | R1 阶段审视与 R2 放行建议 | 待开始 |
 
 ## 信息就绪与未知项（P-005）
@@ -54,7 +54,7 @@ serves_summary: 承载 Root R1 合同冻结：连接模式、轮询生命周期�
 | I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **verified** | 用户 2026-09-04 书面选择缺省 `polling`、生产显式 `webhook`；D-002 |
 | I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **verified** | 用户 2026-09-04 书面选择 Telegram connection manager + composition `OnStop` drain；D-002 |
 
-当前 R1 方案冻结所需的 required 信息 `I-033-011`～`I-033-013` 已由用户决定并以 D-002 记录为 `verified`；R2 仍须等待 C3 阶段审视与放行建议。其余开放项均为 non-blocking，不能被写成已验证。
+当前 R1 方案冻结所需的 required 信息 `I-033-011`～`I-033-013` 已由用户决定并以 D-002 记录为 `verified`；A-002 F-001～F-003 已由用户选择的 D-003 修正路径补足合同并由 A-003 标记为 `fixed`，但仍待 Grok independent re-audit。R2 仍须等待 C3 阶段审视与放行建议。其余开放项均为 non-blocking，不能被写成已验证。
 
 ## 父目标
 
