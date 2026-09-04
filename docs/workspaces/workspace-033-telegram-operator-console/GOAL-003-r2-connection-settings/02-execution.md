@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.7.0
+version: 0.8.0
 ---
 
 # GOAL-003 · R2 执行索引
@@ -21,6 +21,7 @@ version: 0.7.0
 | [E-005-r2-c2-audit-response](02-execution/E-005-r2-c2-audit-response.md) | 2026-09-04 | R2 C2 independent 响应与检查点关闭 | A-006 Grok pass；A-007 response；C2 done；progress 2/5 | done |
 | [E-006-r2-c2-state-correction](02-execution/E-006-r2-c2-state-correction.md) | 2026-09-04 | R2 C2 状态投影纠正 | C2 checkpoint complete；GOAL-003 恢复 active · 2/5；C3～C5 未完成 | done |
 | [E-007-r2-c3-implementation](02-execution/E-007-r2-c3-implementation.md) | 2026-09-04 | R2 C3 Bot API、connection manager 与 Fx 生命周期实现 | 实施提交 9bc825ba；self pass；independent pending；GOAL-003 仍 active · 2/5 | done |
+| [E-008-r2-c3-finding-remediation](02-execution/E-008-r2-c3-finding-remediation.md) | 2026-09-04 | R2 C3 A-010 必改项修复 | 修复 F-001～F-003；提交 4cc96b06；A-011 self pass；independent re-audit pending | done |
 
 ## 事实边界
 

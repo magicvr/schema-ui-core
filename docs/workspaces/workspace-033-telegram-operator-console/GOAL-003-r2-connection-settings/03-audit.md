@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.10.0
+version: 0.11.0
 ---
 
 # GOAL-003 · R2 审计索引
@@ -33,7 +33,8 @@ version: 0.10.0
 | [A-008-r2-c2-state-correction](03-audit/A-008-r2-c2-state-correction.md) | 2026-09-04 | self | 纠正 C2 检查点与 GOAL-003 整体状态投影 | **pass** | **0** | `03-audit/A-008-r2-c2-state-correction.md` |
 | [A-009-r2-c3-implementation-self](03-audit/A-009-r2-c3-implementation-self.md) | 2026-09-04 | self | R2 C3 Bot API、connection manager 与 Fx 生命周期实施 | **pass** | **0** | `03-audit/A-009-r2-c3-implementation-self.md` |
 | [A-010-r2-c3-implementation-independent](03-audit/A-010-r2-c3-implementation-independent.md) | 2026-09-04 | independent | R2 C3 Bot API、connection manager 与 Fx 生命周期实施 | **fail** | **3** | `03-audit/A-010-r2-c3-implementation-independent.md` |
+| [A-011-r2-c3-finding-remediation-self](03-audit/A-011-r2-c3-finding-remediation-self.md) | 2026-09-04 | self | A-010 F-001～F-003 修复复核 | **pass** | **0** | `03-audit/A-011-r2-c3-finding-remediation-self.md` |
 
 ## 结论状态
 
-R2 C1 已由用户裁决、A-002 self `pass` 与 A-003 independent `pass`（open required = 0）核对；A-001 原文保留。A-004 已完成 `/govern` 响应。C2 生产实现已由 A-005 self `pass` 与 A-006 Grok independent `pass`（open required = 0）核对，A-007 已完成 `/govern` 响应并关闭 C2 检查点（progress 2/5）。A-008 纠正了 A-007 中将整个 GOAL-003 投影为 `done` 的错误：当前 GOAL-003 为 `active · 2/5`，C3～C5 尚未完成。A-003 F-001 以代码+回归测试合法 `fixed`；A-006 F-001～F-005 仍为推荐性后续项，不构成 C2 required 阻断。A-009 已核对 C3 实施，self `pass`、open required = 0。A-010 Grok independent 为 **fail**、open required = **3**（F-001 有效 30s/40s timeout、F-002 token 进入 last_error、F-003 Stop 后 watchDemand 可再拉起 polling），与 A-009 构成 P-004 冲突；C3 检查点不得关闭。
+R2 C1 已由用户裁决、A-002 self `pass` 与 A-003 independent `pass`（open required = 0）核对；A-001 原文保留。A-004 已完成 `/govern` 响应。C2 生产实现已由 A-005 self `pass` 与 A-006 Grok independent `pass`（open required = 0）核对，A-007 已完成 `/govern` 响应并关闭 C2 检查点（progress 2/5）。A-008 纠正了 A-007 中将整个 GOAL-003 投影为 `done` 的错误：当前 GOAL-003 为 `active · 2/5`，C3～C5 尚未完成。A-003 F-001 以代码+回归测试合法 `fixed`；A-006 F-001～F-005 仍为推荐性后续项，不构成 C2 required 阻断。A-009 已核对 C3 实施，self `pass`、open required = 0。A-010 Grok independent 为 **fail**、open required = **3**（F-001 有效 30s/40s timeout、F-002 token 进入 last_error、F-003 Stop 后 watchDemand 可再拉起 polling），与 A-009 构成 P-004 冲突；A-011 已记录三项修复与 self `pass`，但独立 re-audit 尚待完成，C3 检查点不得关闭。
