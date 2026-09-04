@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-033-telegram-operator-console
 title: Telegram Bot 人工控制台
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace:
+lead_workspace: workspace-033-telegram-operator-console
 created: 2026-09-03
-updated: 2026-09-03
-version: 0.1.0
+updated: 2026-09-04
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-09-03 · v0.1.0 · 0 区 · 用户确认结构选型 A） |
-| lead_workspace | 未绑定（激活时按惯例 `workspace-033-telegram-operator-console`） |
-| Vision required | 计划阶段 self = [VRev-072](../reviews/VRev-072-vp033-telegram-operator-console-planned.md)；**激活前必须**：① Admin 类 freshness ② `/vision` 冻结仍 open 的 I-033-007/008 ③ 建议先按现行分母关闭 VP-030（避免两个 Telegram 意图同时 `active`；不阻塞本 VP 计划登记） |
+| status | **`active`**（2026-09-04 · v0.2.0 · 用户书面确认激活） |
+| lead_workspace | `workspace-033-telegram-operator-console`（唯一 lead delivery） |
+| Vision required | 计划阶段 [VRev-072](../reviews/VRev-072-vp033-telegram-operator-console-planned.md) self `pass`；激活就绪 [VRev-075](../reviews/VRev-075-vp033-telegram-operator-console-activation.md) self `pass`（open required = 0；I-033-007/008 已冻结；Admin freshness `42036a3c`→`dd1edade` PASS）。V-F116 仅 recommended；用户确认本次不夹带关闭 VP-030。 |
 | 组合位置 | **Admin 功能分支** · 通道运营台（连接状态 / 入站模式 / 占用位 / 人工 IM）。消费已交付的 `channel.telegram` runtime。**不是**业务域、**不是**付费命令、**不重开** VP-030 |
 
 ## 意图
@@ -44,6 +44,8 @@ parent: null
 | 已绑定控制台 | **入口隐藏**（不可进人工台） |
 | 首波产品 | 只文本；无历史回灌；无 FSM；无群发；无频道；无多 bot；同进程（不是独立 Bot 进程） |
 | 连接口径 | webhook 模式 = `getMe` + `setWebhook`；polling 模式 = `getMe` + `deleteWebhook` + 按上表启停 |
+| 群消息 / Privacy Mode | 首波**不要求**管理员关闭 Telegram Privacy Mode；只收录 Telegram 实际投递给 bot 的消息。私聊全文；群内仅命令、回复 bot 等 bot 可见更新，不把“群内全部消息”写成成功条件 |
+| webhook 公网 URL | 使用显式配置项提供公网 base URL，不做运行时/代理头猜测；`setWebhook` 目标为该 base URL + `/api/channel/telegram/webhook`。本地以可注入 Fake Bot API 核对请求与 fail-closed 语义；真实公网 tunnel/live 只作可选验收，不作为本地自动化门禁 |
 
 ## 首波冻结（退出分母）
 
@@ -110,8 +112,8 @@ parent: null
 | I-033-004 | 连接口径：webhook = `getMe`+`setWebhook`；polling = `getMe`+`deleteWebhook`。 | required | 判据 1 | R1 | **verified**（2026-09-03 用户书面） |
 | I-033-005 | 首波产品收口：只文本、无历史、无 FSM、无群发、无频道、无多 bot、同进程。 | required | 判据 5/6 | R1 | **verified**（2026-09-03 用户书面） |
 | I-033-006 | 开发默认 polling、生产推荐 webhook。 | non-blocking | 判据 2 默认值 | R1 | **verified**（2026-09-03 用户书面） |
-| I-033-007 | 群消息：首波是否要求关 Privacy Mode，还是只收录 bot 可见的消息（命令 / 回复自己 / 私聊全文）？ | required | 判据 5 | R1 | **open**（激活前 `/vision` 裁决） |
-| I-033-008 | webhook 公网 URL 来源（配置键 vs 运行时探测）；本地如何验收 `setWebhook`。 | required | 判据 1/2 | R1 | **open**（激活前 `/vision` 裁决） |
+| I-033-007 | 群消息：首波是否要求关 Privacy Mode，还是只收录 bot 可见的消息（命令 / 回复自己 / 私聊全文）？ | required | 判据 5 | R1 | **verified**（2026-09-04 用户书面：不要求关闭 Privacy Mode；仅收录 bot 实际可见更新） |
+| I-033-008 | webhook 公网 URL 来源（配置键 vs 运行时探测）；本地如何验收 `setWebhook`。 | required | 判据 1/2 | R1 | **verified**（2026-09-04 用户书面：显式公网 base URL；本地 Fake Bot API 验收；不做运行时猜测） |
 | I-033-009 | Admin 控制台刷新：短轮询间隔。默认倾向短轮询，不解除 SSE 接缝。 | non-blocking | 判据 5 | R1 | **open**（R1 可给默认秒数） |
 | I-033-010 | 发言权探测：`getChatMember` 预检 vs 发送 403 后灰掉；缓存失效策略。 | non-blocking | 判据 5 | R3 | **open** |
 
@@ -119,7 +121,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | — | — | 未绑定（planned · 0 区） |
+| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root active 0/4 |
 
 ## 关门记录
 
@@ -130,3 +132,4 @@ parent: null
 | date | change |
 |------|--------|
 | 2026-09-03 | 用户确认结构选型 A：新建 VP（不塞 workspace-030、不修订 VP-030 分母）。登记 `planned` v0.1.0（0 区）。入站模式开关 + 轮询启停策略 + 占用位 + 人工 IM 写入退出分母。I-033-001～006 会话内 verified；I-033-007/008 激活前裁决。 |
+| 2026-09-04 | 用户接受 `/vision` 建议：I-033-007 冻结为“不要求关闭 Privacy Mode，只收录 bot 实际可见更新”；I-033-008 冻结为“显式公网 base URL + 本地 Fake Bot API 验收”。VRev-075 self `pass`，Admin freshness `42036a3c`→`dd1edade` PASS，open required = 0；`planned → active` v0.2.0，lead `workspace-033-telegram-operator-console`。VP-030 保持 active，本次不夹带关门。 |
