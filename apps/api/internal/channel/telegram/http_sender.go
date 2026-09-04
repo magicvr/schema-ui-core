@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,8 +20,13 @@ const DefaultTelegramAPIBaseURL = "https://api.telegram.org"
 // OutboundHTTPTimeout is the strict 10s timeout budget for Bot API calls (D-002 §4).
 const OutboundHTTPTimeout = 10 * time.Second
 
+// ErrTelegramTokenMissing indicates that an HTTPSender has no usable Bot API
+// token and no explicit in-memory CaptureSender fallback.
+var ErrTelegramTokenMissing = errors.New("telegram: bot token is not configured")
+
 // HTTPSender implements kernel.TelegramSender with standard library net/http.
-// When unconfigured, it automatically downgrades to the in-memory CaptureSender.
+// When unconfigured, it delegates only to an explicit in-memory CaptureSender;
+// without that test/development fallback it fails closed.
 type HTTPSender struct {
 	runtime    *RuntimeManager
 	client     *http.Client
@@ -66,7 +72,7 @@ type botAPIResponse struct {
 	ErrorCode   int    `json:"error_code,omitempty"`
 }
 
-// Send delivers one message to Telegram Bot API or falls back to CaptureSender.
+// Send delivers one message to Telegram Bot API or an explicit CaptureSender.
 func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error {
 	// 1. Contract-level validation fails closed immediately.
 	if err := msg.Validate(); err != nil {
@@ -79,12 +85,13 @@ func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error
 		token = s.runtime.GetToken()
 	}
 
-	// 3. If unconfigured, safely downgrade to memory CaptureSender (判据 #3).
+	// 3. Preserve the explicit in-memory test/development fallback, but never
+	// report success when there is no runtime or fallback sender.
 	if token == "" {
 		if s.runtime != nil && s.runtime.Mock() != nil {
 			return s.runtime.Mock().Send(ctx, msg)
 		}
-		return nil
+		return ErrTelegramTokenMissing
 	}
 
 	// 4. Construct wire payload.

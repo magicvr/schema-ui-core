@@ -609,6 +609,15 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 		t.Fatalf("expected 401 on unauthenticated settings request, got %d", wSettings.Code)
 	}
 
+	// Operator routes are also protected by the real composition middleware;
+	// Public:false is a contribution declaration, not an authentication gate.
+	reqOperator := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/operator/sessions", nil)
+	wOperator := httptest.NewRecorder()
+	mux.ServeHTTP(wOperator, reqOperator)
+	if wOperator.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated operator request, got %d", wOperator.Code)
+	}
+
 	// The real provider also mounts the authenticated console lease. Use the
 	// explicit dev-session test mode to exercise the complete mux middleware
 	// and prove the route reaches the same process-level manager as the webhook.

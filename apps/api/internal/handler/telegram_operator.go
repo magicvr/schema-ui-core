@@ -347,6 +347,13 @@ func (h *TelegramOperatorHandler) sendMessage(w http.ResponseWriter, r *http.Req
 		writeTelegramSendFailure(w, r, message)
 		return
 	}
+	// A sender can observe a token/runtime transition after senderReady passed.
+	// Do not turn a nil result from an in-memory fallback or an uncertain
+	// external send into sent; the durable pending row blocks duplicate replay.
+	if !h.senderReady() {
+		writeLocalizedError(w, r, http.StatusConflict, "TELEGRAM_OPERATOR_UNAVAILABLE", "telegram operator is unavailable")
+		return
+	}
 	if err := h.repository.MarkSent(r.Context(), botID, body.RequestID); err != nil {
 		// The external send already happened. Keep the durable row pending and
 		// fail closed; never call sender again for this request id.
@@ -401,6 +408,12 @@ func (h *TelegramOperatorHandler) retryMessage(w http.ResponseWriter, r *http.Re
 		message.ErrorMessage = "telegram send failed"
 		message.UpdatedAt = time.Now().UTC()
 		writeTelegramSendFailure(w, r, message)
+		return
+	}
+	// Keep the retry pending when runtime/token state changed after Send returned
+	// nil; the external result is then not safe to classify as sent.
+	if !h.senderReady() {
+		writeLocalizedError(w, r, http.StatusConflict, "TELEGRAM_OPERATOR_UNAVAILABLE", "telegram operator is unavailable")
 		return
 	}
 	if err := h.repository.MarkSent(r.Context(), botID, body.RequestID); err != nil {

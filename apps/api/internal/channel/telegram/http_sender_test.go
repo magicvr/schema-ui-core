@@ -34,6 +34,16 @@ func TestHTTPSender_UnconfiguredToken_DowngradesToMock(t *testing.T) {
 	}
 }
 
+func TestHTTPSender_UnconfiguredWithoutRuntimeFailsClosed(t *testing.T) {
+	sender := NewHTTPSender(nil, nil, "")
+	msg := kernel.TelegramMessage{ChatID: "12345678", Text: "must not be reported sent"}
+
+	err := sender.Send(context.Background(), msg)
+	if !errors.Is(err, ErrTelegramTokenMissing) {
+		t.Fatalf("expected ErrTelegramTokenMissing, got %v", err)
+	}
+}
+
 func TestHTTPSender_ValidationFailClosed(t *testing.T) {
 	rm := newTestRuntimeManager(t, "test-token", "", nil)
 	sender := NewHTTPSender(rm, nil, "http://invalid-host")

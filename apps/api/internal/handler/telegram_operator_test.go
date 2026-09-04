@@ -303,3 +303,127 @@ func TestTelegramOperatorHandlerKeepsPendingWhenSentFinalizationFails(t *testing
 		t.Fatalf("post-send replay = %d %v calls=%d, want 409 in-progress and no duplicate send", recorder.Code, body, fixture.sender.callCount())
 	}
 }
+
+func TestTelegramOperatorHandlerKeepsPendingWhenTokenDisappearsAfterSend(t *testing.T) {
+	fixture := newTelegramOperatorTestFixture(t)
+	token := "bot-token"
+	sender := &telegramOperatorTestSender{
+		before: func(context.Context, kernel.TelegramMessage) error {
+			token = ""
+			return nil
+		},
+	}
+	handler := NewTelegramOperatorHandler(
+		func() (int64, string, string, string) { return 101, *fixture.state, "polling", token },
+		func() bool { return *fixture.business },
+		fixture.repository,
+		sender,
+	)
+
+	recorder, body := serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages", `{"requestId":"token-race","text":"uncertain"}`, telegramOperatorWritePermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" || sender.callCount() != 1 {
+		t.Fatalf("token race response = %d %v calls=%d, want 409 unavailable and one send", recorder.Code, body, sender.callCount())
+	}
+	message, err := fixture.repository.GetOutbound(context.Background(), 101, 8001, "token-race")
+	if err != nil || message.Status != "pending" {
+		t.Fatalf("token race durable state = %+v err=%v, want pending", message, err)
+	}
+
+	// Restore runtime availability only to prove the durable pending row, not
+	// the transient token state, prevents a duplicate external send.
+	token = "bot-token"
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages", `{"requestId":"token-race","text":"uncertain"}`, telegramOperatorWritePermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_REQUEST_IN_PROGRESS" || sender.callCount() != 1 {
+		t.Fatalf("token race replay = %d %v calls=%d, want in-progress and no duplicate send", recorder.Code, body, sender.callCount())
+	}
+}
+
+func TestTelegramOperatorHandlerPaginationRuntimeAndRetryGuards(t *testing.T) {
+	fixture := newTelegramOperatorTestFixture(t)
+	state := "running"
+	receiver := "polling"
+	botID := int64(101)
+	token := "bot-token"
+	business := false
+	handler := NewTelegramOperatorHandler(
+		func() (int64, string, string, string) { return botID, state, receiver, token },
+		func() bool { return business },
+		fixture.repository,
+		fixture.sender,
+	)
+
+	for _, test := range []struct {
+		path string
+		code string
+	}{
+		{path: "/api/channel/telegram/operator/sessions?page=0", code: "INVALID_PAGE"},
+		{path: "/api/channel/telegram/operator/sessions?pageSize=101", code: "INVALID_PAGE_SIZE"},
+		{path: "/api/channel/telegram/operator/sessions/8001/messages?pageSize=not-a-number", code: "INVALID_PAGE_SIZE"},
+	} {
+		recorder, body := serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, test.path, "", telegramOperatorReadPermission))
+		if recorder.Code != http.StatusBadRequest || body["error"] != test.code {
+			t.Fatalf("pagination %s = %d %v, want 400 %s", test.path, recorder.Code, body, test.code)
+		}
+	}
+
+	receiver = "webhook"
+	recorder, body := serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, "/api/channel/telegram/operator/sessions", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusOK || body["total"] != float64(1) {
+		t.Fatalf("webhook runtime = %d %v, want available sessions", recorder.Code, body)
+	}
+	receiver = "none"
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, "/api/channel/telegram/operator/sessions", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" {
+		t.Fatalf("unknown receiver runtime = %d %v, want unavailable", recorder.Code, body)
+	}
+	receiver = "polling"
+	botID = 0
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, "/api/channel/telegram/operator/sessions", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" {
+		t.Fatalf("invalid bot id runtime = %d %v, want unavailable", recorder.Code, body)
+	}
+	botID = 101
+	token = ""
+	callCount := fixture.sender.callCount()
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages", `{"requestId":"missing-token","text":"blocked"}`, telegramOperatorWritePermission))
+	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" || fixture.sender.callCount() != callCount {
+		t.Fatalf("empty token runtime = %d %v calls=%d, want unavailable and no sender", recorder.Code, body, fixture.sender.callCount())
+	}
+	token = "bot-token"
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodPost, "/api/channel/telegram/operator/sessions/8001/messages/missing-request/retry", `{"requestId":"retry-missing"}`, telegramOperatorWritePermission))
+	if recorder.Code != http.StatusNotFound || body["error"] != "TELEGRAM_REQUEST_NOT_FOUND" || fixture.sender.callCount() != callCount {
+		t.Fatalf("unknown retry request = %d %v calls=%d, want 404 and no sender", recorder.Code, body, fixture.sender.callCount())
+	}
+}
+
+func TestTelegramOperatorMiddlewareRejectsServiceCredentialWithoutOperatorScope(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fixture := newTelegramOperatorTestFixture(t)
+	env.mux.Handle("GET /api/channel/telegram/operator/sessions", env.a.Middleware(fixture.handler))
+
+	expiresAt := time.Now().UTC().Add(time.Hour).Format(time.RFC3339)
+	admin := adminToken(t, env)
+	create := httptest.NewRecorder()
+	env.mux.ServeHTTP(create, bearer(t, admin, http.MethodPost, "/api/service-credentials", `{"name":"Telegram Readless","scopes":["users.read"],"expiresAt":"`+expiresAt+`"}`))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("service credential create = %d %s", create.Code, create.Body.String())
+	}
+	var created map[string]any
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	secret, _ := created["secret"].(string)
+	if secret == "" {
+		t.Fatalf("service credential secret missing from create response: %v", created)
+	}
+
+	response := httptest.NewRecorder()
+	env.mux.ServeHTTP(response, bearer(t, secret, http.MethodGet, "/api/channel/telegram/operator/sessions", ""))
+	var body map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if response.Code != http.StatusForbidden || body["error"] != "FORBIDDEN" {
+		t.Fatalf("service credential missing operator scope = %d %v, want 403 FORBIDDEN", response.Code, body)
+	}
+}

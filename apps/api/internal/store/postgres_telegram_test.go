@@ -136,3 +136,81 @@ func TestPostgresTelegramOutboundConflictAndRetryState(t *testing.T) {
 		t.Fatalf("postgres retry after sent err = %v, want ErrRetryNotAllowed", err)
 	}
 }
+
+func TestPostgresTelegramOutboundConcurrentRequestAndRootIdempotency(t *testing.T) {
+	ctx := context.Background()
+	st := postgresScratchDB(t, "r3telegramoutboundrace")
+	repository := telegramstore.NewRepository(st)
+	if inserted, err := repository.RecordInbound(ctx, telegramstore.InboundMessage{
+		BotID: 101, UpdateID: 9301, ChatID: 8301, ChatType: "private",
+		MessageKind: "text", Text: "hello", ReceivedAt: time.Now().UTC(),
+	}); err != nil || !inserted {
+		t.Fatalf("seed postgres Telegram session = %v, %v; want true, nil", inserted, err)
+	}
+
+	const competitors = 8
+	var wg sync.WaitGroup
+	created := make(chan bool, competitors)
+	errs := make(chan error, competitors)
+	for i := 0; i < competitors; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, didCreate, err := repository.CreatePending(ctx, 101, 8301, "concurrent-root", "reply")
+			if err != nil && !errors.Is(err, telegramstore.ErrRequestInProgress) {
+				errs <- err
+				return
+			}
+			created <- didCreate
+		}()
+	}
+	wg.Wait()
+	close(created)
+	close(errs)
+	for err := range errs {
+		t.Fatalf("concurrent postgres CreatePending: %v", err)
+	}
+	createdCount := 0
+	for didCreate := range created {
+		if didCreate {
+			createdCount++
+		}
+	}
+	if createdCount != 1 {
+		t.Fatalf("concurrent postgres CreatePending created=%d, want exactly 1", createdCount)
+	}
+	if err := repository.MarkFailed(ctx, 101, "concurrent-root", "send failed"); err != nil {
+		t.Fatalf("mark concurrent root failed: %v", err)
+	}
+
+	rootCreated := make(chan bool, competitors)
+	rootErrs := make(chan error, competitors)
+	for i := 0; i < competitors; i++ {
+		wg.Add(1)
+		requestID := "concurrent-retry-" + string(rune('a'+i))
+		go func() {
+			defer wg.Done()
+			_, didCreate, err := repository.CreateRetry(ctx, 101, 8301, "concurrent-root", requestID)
+			if err != nil && !errors.Is(err, telegramstore.ErrRequestInProgress) {
+				rootErrs <- err
+				return
+			}
+			rootCreated <- didCreate
+		}()
+	}
+	wg.Wait()
+	close(rootCreated)
+	close(rootErrs)
+	for err := range rootErrs {
+		t.Fatalf("concurrent postgres CreateRetry: %v", err)
+	}
+	rootCreatedCount := 0
+	for didCreate := range rootCreated {
+		if didCreate {
+			rootCreatedCount++
+		}
+	}
+	if rootCreatedCount != 1 {
+		t.Fatalf("concurrent postgres CreateRetry created=%d, want exactly 1 pending root retry", rootCreatedCount)
+	}
+}
