@@ -38,6 +38,11 @@ const STATUS = {
   configured: true,
   token_set: true,
   secret_set: true,
+  mode: "polling",
+  webhook_public_base_url: "",
+  connection_state: "running",
+  receiver: "polling",
+  bot_username: "fixture_bot",
   captured_messages_count: 3,
 };
 
@@ -90,6 +95,50 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     // Values are never pre-filled from the server (write-only).
     expect(token.value).toBe("");
     expect(secret.value).toBe("");
+  });
+
+  it("acquires a polling lease and renders the live connection status", async () => {
+    const calls: Array<{ url: string; method?: string }> = [];
+    const container = renderTab(async (input, init) => {
+      calls.push({ url: String(input), method: init?.method });
+      return jsonResponse(STATUS);
+    });
+    await settle();
+
+    expect(calls).toContainEqual({
+      url: "/api/channel/telegram/lease/acquire",
+      method: "POST",
+    });
+    expect(container.querySelector("[data-telegram-connection]")).not.toBeNull();
+    expect(container.textContent).toContain("Connection: Running · Polling");
+    expect(container.textContent).toContain("Console lease: Active");
+  });
+
+  it("PATCHes receiver mode and webhook origin as non-secret settings", async () => {
+    const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
+    const container = renderTab(async (input, init) => {
+      const url = String(input);
+      calls.push({ url, method: init?.method, body: init?.body === undefined ? undefined : JSON.parse(String(init.body)) });
+      if (url === "/api/channel/telegram/settings" && init?.method === "PATCH") {
+        return jsonResponse({ ...STATUS, mode: "webhook", webhook_public_base_url: "https://console.example", receiver: "webhook" });
+      }
+      return jsonResponse(STATUS);
+    });
+    await settle();
+
+    await act(async () => {
+      const mode = container.querySelector("#telegram-mode") as HTMLSelectElement;
+      mode.value = "webhook";
+      mode.dispatchEvent(new Event("change", { bubbles: true }));
+      setNativeValue(container.querySelector("#telegram-webhook-public-base-url") as HTMLInputElement, "https://console.example");
+    });
+
+    const saveButton = [...container.querySelectorAll("button")].find((b) => b.textContent === "Save settings");
+    expect(saveButton).toBeDefined();
+    await act(async () => saveButton!.click());
+
+    const patch = calls.find((c) => c.method === "PATCH");
+    expect(patch?.body).toEqual({ mode: "webhook", webhook_public_base_url: "https://console.example" });
   });
 
   it("PATCHes only non-empty values and refreshes status + clears inputs", async () => {

@@ -626,7 +626,8 @@ func newMuxWithExtraProviders(
 	// Fx graph — never reconstructed here (F-001 / A-006: variadic removed).
 	if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil {
 		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(tr.Manager))
-		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings))
+		tgLease := a.Middleware(telegraminternal.NewLeaseHandler(tr.Connection))
+		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings, tgLease))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)

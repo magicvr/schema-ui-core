@@ -471,6 +471,173 @@ func TestConnectionManager_WebhookMissingSecretDoesNotSetWebhook(t *testing.T) {
 	}
 }
 
+func TestConnectionManager_WebhookMissingPublicOriginDoesNotSetWebhook(t *testing.T) {
+	rm, err := NewRuntimeManagerWithSettings("bot-token", "webhook-secret", TelegramModeWebhook, "", nil, testMasterKey())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paths []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch r.URL.Path {
+		case "/botbot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":16,"is_bot":true,"username":"missing_origin_bot"}}`))
+		case "/botbot-token/setWebhook":
+			t.Errorf("setWebhook must not run without a public origin")
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	manager := NewConnectionManager(rm, NewDispatcher(), NewBotAPIClient(rm, server.Client(), server.URL), NewPollingBotAPIClient(rm, server.Client(), server.URL), nil)
+	if err := manager.Start(context.Background()); err == nil {
+		t.Fatal("Start unexpectedly succeeded without a webhook public origin")
+	}
+	status := manager.Status()
+	if status.State != ConnectionStateError || status.Receiver != ReceiverNone {
+		t.Fatalf("missing-origin status = %+v", status)
+	}
+	if !reflect.DeepEqual(paths, []string{"/botbot-token/getMe"}) {
+		t.Fatalf("calls = %v", paths)
+	}
+}
+
+func TestConnectionManager_HeartbeatKeepsOnlyRefreshedLease(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	manager := NewConnectionManager(rm, NewDispatcher(), nil, nil, nil)
+	base := time.Now().UTC().Truncate(time.Millisecond)
+	var now atomic.Int64
+	now.Store(base.UnixNano())
+	manager.now = func() time.Time { return time.Unix(0, now.Load()).UTC() }
+
+	if err := manager.AcquireLease(context.Background(), "console-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.AcquireLease(context.Background(), "console-b"); err != nil {
+		t.Fatal(err)
+	}
+	now.Store(base.Add(PollingLeaseTTL - time.Second).UnixNano())
+	if err := manager.HeartbeatLease(context.Background(), "console-a"); err != nil {
+		t.Fatal(err)
+	}
+	now.Store(base.Add(PollingLeaseTTL + time.Second).UnixNano())
+	if got := manager.ActiveLeaseCount(); got != 1 {
+		t.Fatalf("active leases after refreshing one session = %d, want 1", got)
+	}
+	manager.stateMu.Lock()
+	_, aLive := manager.leases["console-a"]
+	_, bLive := manager.leases["console-b"]
+	manager.stateMu.Unlock()
+	if !aLive || bLive {
+		t.Fatalf("lease isolation after heartbeat: console-a=%v console-b=%v", aLive, bLive)
+	}
+}
+
+func TestConnectionManager_StopAfterStartDoesNotRestartPolling(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	dispatcher := NewDispatcher()
+	if err := dispatcher.RegisterCommand("status", func(context.Context, kernel.TelegramUpdate) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/botbot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":17,"is_bot":true,"username":"stop_race_bot"}}`))
+		case "/botbot-token/deleteWebhook":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	var pollCalls atomic.Int32
+	pollStarted := make(chan struct{})
+	var startOnce sync.Once
+	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		pollCalls.Add(1)
+		startOnce.Do(func() { close(pollStarted) })
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	})}
+	manager := NewConnectionManager(rm, dispatcher, NewBotAPIClient(rm, server.Client(), server.URL), NewPollingBotAPIClient(rm, pollingClient, "https://telegram.test"), nil)
+	if err := manager.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	select {
+	case <-pollStarted:
+	case <-time.After(time.Second):
+		t.Fatal("polling did not start")
+	}
+	stopCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	if err := manager.Stop(stopCtx); err != nil {
+		cancel()
+		t.Fatalf("Stop: %v", err)
+	}
+	cancel()
+	time.Sleep(PollingLeaseSweepInterval + 250*time.Millisecond)
+	if got := pollCalls.Load(); got != 1 {
+		t.Fatalf("polling restarted after Stop: calls=%d, want 1", got)
+	}
+}
+
+func TestConnectionManager_StopTimeoutRetainsPollingErrorState(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/botbot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":18,"is_bot":true,"username":"stop_timeout_bot"}}`))
+		case "/botbot-token/deleteWebhook":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	pollStarted := make(chan struct{})
+	releasePoll := make(chan struct{})
+	var releaseOnce sync.Once
+	release := func() { releaseOnce.Do(func() { close(releasePoll) }) }
+	var startOnce sync.Once
+	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		startOnce.Do(func() { close(pollStarted) })
+		<-releasePoll
+		return nil, context.Canceled
+	})}
+	manager := NewConnectionManager(rm, NewDispatcher(), NewBotAPIClient(rm, server.Client(), server.URL), NewPollingBotAPIClient(rm, pollingClient, "https://telegram.test"), nil)
+	if err := manager.AcquireLease(context.Background(), "console-1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	defer func() {
+		release()
+		_ = manager.Stop(context.Background())
+	}()
+	select {
+	case <-pollStarted:
+	case <-time.After(time.Second):
+		t.Fatal("polling did not start")
+	}
+	stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	err := manager.Stop(stopCtx)
+	cancel()
+	if err == nil {
+		t.Fatal("Stop unexpectedly succeeded while the receiver ignored cancellation")
+	}
+	status := manager.Status()
+	if status.State != ConnectionStateError || status.Receiver != ReceiverPolling || status.LastError == "" {
+		t.Fatalf("timeout stop status = %+v", status)
+	}
+	release()
+	if err := manager.Stop(context.Background()); err != nil {
+		t.Fatalf("cleanup Stop: %v", err)
+	}
+}
+
 func TestConnectionManager_SettingsUpdateHotSwitchesMode(t *testing.T) {
 	rm := newTestRuntimeManager(t, "bot-token", "webhook-secret", nil)
 	dispatcher := NewDispatcher()

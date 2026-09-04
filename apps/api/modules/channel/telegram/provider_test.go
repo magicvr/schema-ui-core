@@ -39,16 +39,19 @@ func TestTelegramModuleProvider(t *testing.T) {
 	dummySettings := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+	dummyLease := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 
-	p := moduletg.New(dummyWebhook, dummySettings)
+	p := moduletg.New(dummyWebhook, dummySettings, dummyLease)
 
 	// Check Descriptor
 	desc := p.Descriptor()
 	if desc.ID != moduletg.ModuleID {
 		t.Fatalf("expected module ID %q, got %q", moduletg.ModuleID, desc.ID)
 	}
-	if len(desc.Contributions.Routes) != 3 {
-		t.Fatalf("expected 3 route contributions, got %+v", desc.Contributions.Routes)
+	if len(desc.Contributions.Routes) != 6 {
+		t.Fatalf("expected 6 route contributions, got %+v", desc.Contributions.Routes)
 	}
 	// GOAL-006 R5: telegram-settings page + menu_telegram navigation declared.
 	if len(desc.Contributions.Pages) != 1 || desc.Contributions.Pages[0] != "telegram-settings" {
@@ -69,8 +72,8 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if err := p.Register(context.Background(), reg); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if len(reg.routes) != 3 {
-		t.Fatalf("expected 3 routes registered, got %d", len(reg.routes))
+	if len(reg.routes) != 6 {
+		t.Fatalf("expected 6 routes registered, got %d", len(reg.routes))
 	}
 	if len(reg.pages) != 1 || reg.pages[0].PageID != "telegram-settings" || reg.pages[0].DataSource != "/api/channel/telegram/settings" {
 		t.Fatalf("unexpected page contributions: %+v", reg.pages)
@@ -95,7 +98,10 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 	dummySettings := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	p := moduletg.New(dummyWebhook, dummySettings)
+	dummyLease := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	p := moduletg.New(dummyWebhook, dummySettings, dummyLease)
 
 	// Verify BuiltinModules includes channel.telegram
 	builtin := kernel.BuiltinModules()
@@ -145,8 +151,8 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 3 {
-		t.Fatalf("expected 3 routes in ContributionSet, got %d", len(set.Routes))
+	if len(set.Routes) != 6 {
+		t.Fatalf("expected 6 routes in ContributionSet, got %d", len(set.Routes))
 	}
 	if len(set.Pages) != 1 || set.Pages[0].PageID != "telegram-settings" {
 		t.Fatalf("expected telegram-settings page in ContributionSet, got %+v", set.Pages)

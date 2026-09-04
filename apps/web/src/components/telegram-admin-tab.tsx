@@ -15,9 +15,26 @@ interface TelegramSettingsStatus {
   configured: boolean;
   token_set: boolean;
   secret_set: boolean;
+  mode?: string;
+  webhook_public_base_url?: string;
+  connection_state?: string;
+  receiver?: string;
+  bot_id?: number;
+  bot_username?: string;
+  last_error?: string;
   captured_messages_count?: number;
   captured_count?: number;
 }
+
+type LeaseAction = "acquire" | "heartbeat" | "release";
+
+const telegramPollingMode = "polling";
+const telegramLeaseIntervalMs = 10_000;
+const telegramLeasePaths: Record<LeaseAction, string> = {
+  acquire: "/api/channel/telegram/lease/acquire",
+  heartbeat: "/api/channel/telegram/lease/heartbeat",
+  release: "/api/channel/telegram/lease/release",
+};
 
 const inputClass =
   "h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20";
@@ -33,9 +50,12 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const [status, setStatus] = useState<TelegramSettingsStatus | null>(null);
   const [tokenInput, setTokenInput] = useState("");
   const [secretInput, setSecretInput] = useState("");
+  const [modeInput, setModeInput] = useState(telegramPollingMode);
+  const [webhookPublicBaseURLInput, setWebhookPublicBaseURLInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [leaseState, setLeaseState] = useState<"inactive" | "acquiring" | "active" | "error">("inactive");
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
 
   const loadStatus = useCallback(async () => {
@@ -46,12 +66,88 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         setLoadState("error");
         return;
       }
-      setStatus((await response.json()) as TelegramSettingsStatus);
+      const nextStatus = (await response.json()) as TelegramSettingsStatus;
+      setStatus(nextStatus);
+      setModeInput(nextStatus.mode === "webhook" ? "webhook" : telegramPollingMode);
+      setWebhookPublicBaseURLInput(nextStatus.webhook_public_base_url ?? "");
       setLoadState("ready");
     } catch {
       setLoadState("error");
     }
   }, [fetcher]);
+
+  const callLease = useCallback(
+    async (action: LeaseAction): Promise<boolean> => {
+      try {
+        const response = await fetcher(telegramLeasePaths[action], { method: "POST" });
+        return response.ok;
+      } catch {
+        return false;
+      }
+    },
+    [fetcher],
+  );
+
+  useEffect(() => {
+    if (loadState !== "ready" || status?.mode !== telegramPollingMode) {
+      setLeaseState("inactive");
+      return;
+    }
+
+    let disposed = false;
+    let leaseHeld = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let leaseQueue = Promise.resolve();
+
+    const queueLease = (action: LeaseAction) => {
+      const result = leaseQueue.then(() => callLease(action));
+      leaseQueue = result.then(() => undefined, () => undefined);
+      return result;
+    };
+
+    const scheduleHeartbeat = () => {
+      timer = setTimeout(() => {
+        void heartbeat();
+      }, telegramLeaseIntervalMs);
+    };
+
+    const heartbeat = async () => {
+      if (disposed) return;
+      const ok = await queueLease("heartbeat");
+      if (disposed) return;
+      if (ok) {
+        leaseHeld = true;
+        setLeaseState("active");
+      } else {
+        setLeaseState("error");
+      }
+      scheduleHeartbeat();
+    };
+
+    const acquire = async () => {
+      setLeaseState("acquiring");
+      const ok = await queueLease("acquire");
+      if (disposed) {
+        if (ok) void queueLease("release");
+        return;
+      }
+      if (!ok) {
+        setLeaseState("error");
+        scheduleHeartbeat();
+        return;
+      }
+      leaseHeld = true;
+      setLeaseState("active");
+      scheduleHeartbeat();
+    };
+
+    void acquire();
+    return () => {
+      disposed = true;
+      if (timer !== undefined) clearTimeout(timer);
+      if (leaseHeld) void queueLease("release");
+    };
+  }, [callLease, loadState, status?.mode]);
 
   useEffect(() => {
     void loadStatus();
@@ -81,6 +177,12 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       if (secretInput.trim() !== "") {
         payload.webhook_secret = secretInput.trim();
       }
+      if (status !== null && modeInput !== (status.mode ?? telegramPollingMode)) {
+        payload.mode = modeInput;
+      }
+      if (status !== null && webhookPublicBaseURLInput.trim() !== (status.webhook_public_base_url ?? "")) {
+        payload.webhook_public_base_url = webhookPublicBaseURLInput.trim();
+      }
       const response = await fetcher("/api/channel/telegram/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -90,7 +192,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         setFeedback({ kind: "error", message: await extractError(response) });
         return;
       }
-      setStatus((await response.json()) as TelegramSettingsStatus);
+      const nextStatus = (await response.json()) as TelegramSettingsStatus;
+      setStatus(nextStatus);
+      setModeInput(nextStatus.mode === "webhook" ? "webhook" : telegramPollingMode);
+      setWebhookPublicBaseURLInput(nextStatus.webhook_public_base_url ?? "");
       setTokenInput("");
       setSecretInput("");
       setFeedback({ kind: "success", message: t("schema.telegram.feedback.saved") });
@@ -116,7 +221,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         setFeedback({ kind: "error", message: await extractError(response) });
         return;
       }
-      setStatus((await response.json()) as TelegramSettingsStatus);
+      const nextStatus = (await response.json()) as TelegramSettingsStatus;
+      setStatus(nextStatus);
+      setModeInput(nextStatus.mode === "webhook" ? "webhook" : telegramPollingMode);
+      setWebhookPublicBaseURLInput(nextStatus.webhook_public_base_url ?? "");
       setTokenInput("");
       setSecretInput("");
       setConfirmClear(false);
@@ -143,6 +251,39 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     </label>
   );
 
+  const connectionStateLabel = (() => {
+    switch (status?.connection_state) {
+      case "unconfigured":
+        return t("schema.telegram.connection.unconfigured");
+      case "starting":
+        return t("schema.telegram.connection.starting");
+      case "running":
+        return t("schema.telegram.connection.running");
+      case "stopping":
+        return t("schema.telegram.connection.stopping");
+      case "error":
+        return t("schema.telegram.connection.error");
+      case "idle":
+        return t("schema.telegram.connection.idle");
+      default:
+        return t("schema.telegram.connection.unknown");
+    }
+  })();
+
+  const receiverLabel = status?.receiver === "polling"
+    ? t("schema.telegram.receiver.polling")
+    : status?.receiver === "webhook"
+      ? t("schema.telegram.receiver.webhook")
+      : t("schema.telegram.receiver.none");
+
+  const leaseLabel = leaseState === "active"
+    ? t("schema.telegram.lease.active")
+    : leaseState === "acquiring"
+      ? t("schema.telegram.lease.acquiring")
+      : leaseState === "error"
+        ? t("schema.telegram.lease.error")
+        : null;
+
   return (
     <section data-telegram-admin-tab className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -155,6 +296,19 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
           </span>
         ) : null}
       </div>
+
+      {status !== null ? (
+        <div data-telegram-connection className="space-y-1 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+          <p>
+            {t("schema.telegram.status.connection")} {connectionStateLabel} · {receiverLabel}
+          </p>
+          {status.bot_username ? <p>{t("schema.telegram.status.bot")} @{status.bot_username}</p> : null}
+          {status.last_error ? <p role="alert" className="text-destructive">{status.last_error}</p> : null}
+          {leaseLabel !== null && status.mode === telegramPollingMode ? (
+            <p role={leaseState === "error" ? "alert" : "status"}>{t("schema.telegram.status.consoleLease")} {leaseLabel}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       {loadState === "loading" ? <p className="text-sm text-muted-foreground">{t("feedback.loading")}</p> : null}
 
@@ -179,6 +333,30 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
           value={secretInput}
           placeholder={status?.secret_set ? t("schema.telegram.secret.keep") : ""}
           onChange={(event) => setSecretInput(event.target.value)}
+          className={inputClass}
+        />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[12rem_1fr] sm:items-center">
+        {fieldLabel("schema.telegram.field.mode", "telegram-mode")}
+        <select
+          id="telegram-mode"
+          value={modeInput}
+          onChange={(event) => setModeInput(event.target.value)}
+          className={inputClass}
+        >
+          <option value="polling">{t("schema.telegram.mode.polling")}</option>
+          <option value="webhook">{t("schema.telegram.mode.webhook")}</option>
+        </select>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[12rem_1fr] sm:items-center">
+        {fieldLabel("schema.telegram.field.webhookPublicBaseURL", "telegram-webhook-public-base-url")}
+        <input
+          id="telegram-webhook-public-base-url"
+          type="url"
+          autoComplete="url"
+          value={webhookPublicBaseURLInput}
+          placeholder="https://example.com"
+          onChange={(event) => setWebhookPublicBaseURLInput(event.target.value)}
           className={inputClass}
         />
       </div>

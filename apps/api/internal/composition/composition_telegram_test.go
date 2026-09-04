@@ -82,6 +82,9 @@ func TestTelegramChannelComposition(t *testing.T) {
 			Routes: []string{
 				"GET /api/channel/telegram/settings",
 				"PATCH /api/channel/telegram/settings",
+				"POST /api/channel/telegram/lease/acquire",
+				"POST /api/channel/telegram/lease/heartbeat",
+				"POST /api/channel/telegram/lease/release",
 				"POST /api/channel/telegram/webhook",
 			},
 			Pages:      []string{"telegram-settings"},
@@ -100,14 +103,14 @@ func TestTelegramChannelComposition(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 3 {
+	if len(set.Routes) != 6 {
 		t.Fatalf("unexpected route contributions: %+v", set.Routes)
 	}
 
 	// 5. Test webhook route execution
 	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", nil)
 	w := httptest.NewRecorder()
-	set.Routes[2].Handler.ServeHTTP(w, req)
+	set.Routes[5].Handler.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK, got %d", w.Code)
 	}
@@ -133,6 +136,12 @@ func (d *dummyTelegramProvider) Register(ctx context.Context, reg kernel.Registr
 			method, pattern = "GET", "/api/channel/telegram/settings"
 		} else if r == "PATCH /api/channel/telegram/settings" {
 			method, pattern = "PATCH", "/api/channel/telegram/settings"
+		} else if r == "POST /api/channel/telegram/lease/acquire" {
+			method, pattern = "POST", "/api/channel/telegram/lease/acquire"
+		} else if r == "POST /api/channel/telegram/lease/heartbeat" {
+			method, pattern = "POST", "/api/channel/telegram/lease/heartbeat"
+		} else if r == "POST /api/channel/telegram/lease/release" {
+			method, pattern = "POST", "/api/channel/telegram/lease/release"
 		} else {
 			method, pattern = "POST", "/api/channel/telegram/webhook"
 		}
@@ -542,6 +551,45 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 	if wSettings.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401 on unauthenticated settings request, got %d", wSettings.Code)
 	}
+
+	// The real provider also mounts the authenticated console lease. Use the
+	// explicit dev-session test mode to exercise the complete mux middleware
+	// and prove the route reaches the same process-level manager as the webhook.
+	aDev := auth.New([]byte("test-secret-at-least-32-chars-long!!"), 0, 0, st, true)
+	muxLease, err := newMuxWithExtraProviders(
+		cfg,
+		aDev,
+		st,
+		authRepo,
+		opRepo,
+		setRepo,
+		plan,
+		&readinessGate{},
+		jwtSecret("test-secret-at-least-32-chars-long!!"),
+		jobs,
+		nil,
+		nil,
+		slog.Default(),
+		nil,
+		nil,
+		rateLimiters,
+		tr,
+	)
+	if err != nil {
+		t.Fatalf("newMuxWithExtraProviders(lease): %v", err)
+	}
+	reqLease := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/lease/acquire", nil)
+	wLease := httptest.NewRecorder()
+	muxLease.ServeHTTP(wLease, reqLease)
+	if wLease.Code != http.StatusOK || tr.Connection.ActiveLeaseCount() != 1 {
+		t.Fatalf("lease acquire through composed mux status=%d active=%d body=%s", wLease.Code, tr.Connection.ActiveLeaseCount(), wLease.Body.String())
+	}
+	reqRelease := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/lease/release", nil)
+	wRelease := httptest.NewRecorder()
+	muxLease.ServeHTTP(wRelease, reqRelease)
+	if wRelease.Code != http.StatusOK || tr.Connection.ActiveLeaseCount() != 0 {
+		t.Fatalf("lease release through composed mux status=%d active=%d body=%s", wRelease.Code, tr.Connection.ActiveLeaseCount(), wRelease.Body.String())
+	}
 }
 
 // TestTelegramFxInjection_SameRuntime proves F-001 / A-006 closure THROUGH the
@@ -721,5 +769,22 @@ func TestTelegramSettingsSchema_MountAndDisable(t *testing.T) {
 	muxDisabled.ServeHTTP(wDisabled, reqDisabled)
 	if wDisabled.Code != http.StatusNotFound {
 		t.Fatalf("disabled module: /api/schema/telegram-settings status = %d, want 404", wDisabled.Code)
+	}
+	for _, probe := range []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodGet, path: "/api/channel/telegram/settings"},
+		{method: http.MethodPost, path: "/api/channel/telegram/lease/acquire"},
+		{method: http.MethodPost, path: "/api/channel/telegram/lease/heartbeat"},
+		{method: http.MethodPost, path: "/api/channel/telegram/lease/release"},
+		{method: http.MethodPost, path: "/api/channel/telegram/webhook"},
+	} {
+		req := httptest.NewRequest(probe.method, probe.path, nil)
+		w := httptest.NewRecorder()
+		muxDisabled.ServeHTTP(w, req)
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("disabled module: %s %s status = %d, want 404", probe.method, probe.path, w.Code)
+		}
 	}
 }

@@ -20,17 +20,23 @@ const ModuleID = "channel.telegram"
 type Provider struct {
 	webhookHandler  http.Handler
 	settingsHandler http.Handler
+	leaseHandler    http.Handler
 }
 
 // New constructs the channel.telegram module provider.
-func New(webhookHandler http.Handler, settingsHandlers ...http.Handler) *Provider {
+func New(webhookHandler http.Handler, handlers ...http.Handler) *Provider {
 	var sh http.Handler
-	if len(settingsHandlers) > 0 {
-		sh = settingsHandlers[0]
+	var lh http.Handler
+	if len(handlers) > 0 {
+		sh = handlers[0]
+	}
+	if len(handlers) > 1 {
+		lh = handlers[1]
 	}
 	return &Provider{
 		webhookHandler:  webhookHandler,
 		settingsHandler: sh,
+		leaseHandler:    lh,
 	}
 }
 
@@ -50,6 +56,9 @@ func (p *Provider) Descriptor() kernel.Module {
 			Routes: []string{
 				"GET /api/channel/telegram/settings",
 				"PATCH /api/channel/telegram/settings",
+				"POST /api/channel/telegram/lease/acquire",
+				"POST /api/channel/telegram/lease/heartbeat",
+				"POST /api/channel/telegram/lease/release",
 				"POST /api/channel/telegram/webhook",
 			},
 			// GOAL-006 R5 (判据 #5 补做 Admin UI tab): the telegram-settings
@@ -91,6 +100,26 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			Public:  false,
 		}); err != nil {
 			return err
+		}
+	}
+	if p.leaseHandler != nil {
+		for _, pattern := range []string{
+			"/api/channel/telegram/lease/acquire",
+			"/api/channel/telegram/lease/heartbeat",
+			"/api/channel/telegram/lease/release",
+		} {
+			if err := reg.HTTP(kernel.RouteContribution{
+				ContributionIdentity: kernel.ContributionIdentity{
+					ModuleID: ModuleID,
+					Key:      kernel.RouteKey(http.MethodPost, pattern),
+				},
+				Method:  http.MethodPost,
+				Pattern: pattern,
+				Handler: p.leaseHandler,
+				Public:  false,
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	if p.webhookHandler != nil {
