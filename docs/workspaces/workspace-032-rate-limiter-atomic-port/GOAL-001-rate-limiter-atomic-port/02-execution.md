@@ -4,8 +4,8 @@ title: 限流器端口原子化
 status: active
 parent: null
 created: 2026-09-03
-updated: 2026-09-03
-version: 0.3.0
+updated: 2026-09-04
+version: 0.4.0
 ---
 
 # GOAL-001-rate-limiter-atomic-port · 02-execution 索引
@@ -15,6 +15,7 @@ version: 0.3.0
 | [E-001-workspace-establishment](02-execution/E-001-workspace-establishment.md) | 2026-09-03 | 开区建立 | 工作区 scaffold + Root 五件套 + goal-tree + vision 台账同步（VRev-073 / VP-032 激活 / roadmap / reviews / workspaces / revisions） | done |
 | [E-002-r1-contract-freeze](02-execution/E-002-r1-contract-freeze.md) | 2026-09-03 | R1 C1/C2 | 立项 GOAL-002；D-002 冻结；kernel.AllowRecord + Memory 单锁实现 + 合同级测试；checkpoint 更正为 98edb03e | done |
 | [E-003-r2-goal-opened](02-execution/E-003-r2-goal-opened.md) | 2026-09-03 | R1 关门 / R2 立项 | GOAL-002 关门（A-003）；Root progress 1/3；立项 GOAL-003-r2-handler-migration | done |
+| [E-004-r3-evidence-matrix-and-close](02-execution/E-004-r3-evidence-matrix-and-close.md) | 2026-09-04 | R3 证据与关门 | VP-032 五判据证据矩阵；越界核账（redis/profile/manifest/其它端口零触碰）；全工作区审计闭合（GOAL-002/003 开放 required = 0）；VP-032 文案承接标记 | done |
 
 ## 执行记录（ledger）
 
