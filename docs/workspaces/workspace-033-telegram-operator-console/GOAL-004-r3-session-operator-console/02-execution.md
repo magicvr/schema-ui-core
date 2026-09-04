@@ -1,0 +1,19 @@
+---
+id: GOAL-004-r3-session-operator-console
+doc: execution
+status: active
+parent: GOAL-001-telegram-operator-console
+created: 2026-09-04
+updated: 2026-09-04
+version: 0.1.0
+---
+
+# GOAL-004 · R3 执行索引
+
+| E-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| [E-001-r3-goal-establishment](02-execution/E-001-r3-goal-establishment.md) | 2026-09-04 | R3 子目标建立与 C1 入口 | R3 active · 0/4；等待 C1 用户裁决与信息闭合 | `02-execution/E-001-r3-goal-establishment.md` |
+
+## 事实边界
+
+只记录已发生事实；R3 当前没有生产代码或数据库迁移变更。C1 的方案裁决、信息验证和审计响应完成前，不将路线图状态投影为 C2～C4 已开始。
