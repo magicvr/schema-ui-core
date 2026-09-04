@@ -15,6 +15,7 @@ version: 0.3.0
 | [E-001-r3-goal-establishment](02-execution/E-001-r3-goal-establishment.md) | 2026-09-04 | R3 子目标建立与 C1 入口 | R3 active · 0/4；等待 C1 用户裁决与信息闭合 | `02-execution/E-001-r3-goal-establishment.md` |
 | [E-002-r3-c1-user-decisions](02-execution/E-002-r3-c1-user-decisions.md) | 2026-09-04 | R3 C1 用户裁决 | 七项选择已记录；self pass；independent 待进行；R3 仍 active · 0/4 | `02-execution/E-002-r3-c1-user-decisions.md` |
 | [E-003-r3-c1-audit-response](02-execution/E-003-r3-c1-audit-response.md) | 2026-09-04 | R3 C1 independent finding 响应 | D-003 补全 A-003 F-001；A-004 self pass；independent re-audit 待进行；R3 仍 active · 0/4 | `02-execution/E-003-r3-c1-audit-response.md` |
+| [E-004-r3-c1-audit-response](02-execution/E-004-r3-c1-audit-response.md) | 2026-09-04 | R3 C1 A-005 recommended finding 响应 | 补齐 Root E-014 正文；A-006 self pass；C1 可按 A-005 independent pass 关闭 | `02-execution/E-004-r3-c1-audit-response.md` |
 
 ## 事实边界
 
