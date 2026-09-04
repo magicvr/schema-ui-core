@@ -96,6 +96,46 @@ var telegramIngressPGDDL = []string{
   ON telegram_inbound_messages (bot_id, chat_id, received_at DESC, update_id DESC)`,
 }
 
+var telegramOutboundDDL = []string{
+	`CREATE TABLE telegram_outbound_messages (
+  bot_id        INTEGER NOT NULL,
+  request_id    TEXT    NOT NULL,
+  retry_root    TEXT    NOT NULL,
+  retry_of      TEXT,
+  chat_id       INTEGER NOT NULL,
+  text          TEXT    NOT NULL,
+  status        TEXT    NOT NULL CHECK (status IN ('pending', 'sent', 'failed')),
+  error_message TEXT,
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL,
+  PRIMARY KEY (bot_id, request_id)
+ )`,
+	`CREATE INDEX idx_telegram_outbound_messages_chat_created
+  ON telegram_outbound_messages (bot_id, chat_id, created_at DESC, request_id DESC)`,
+	`CREATE UNIQUE INDEX idx_telegram_outbound_messages_pending_root
+  ON telegram_outbound_messages (bot_id, retry_root) WHERE status = 'pending'`,
+}
+
+var telegramOutboundPGDDL = []string{
+	`CREATE TABLE telegram_outbound_messages (
+  bot_id        BIGINT NOT NULL,
+  request_id    TEXT   NOT NULL,
+  retry_root    TEXT   NOT NULL,
+  retry_of      TEXT,
+  chat_id       BIGINT NOT NULL,
+  text          TEXT   NOT NULL,
+  status        TEXT   NOT NULL CHECK (status IN ('pending', 'sent', 'failed')),
+  error_message TEXT,
+  created_at    BIGINT NOT NULL,
+  updated_at    BIGINT NOT NULL,
+  PRIMARY KEY (bot_id, request_id)
+ )`,
+	`CREATE INDEX idx_telegram_outbound_messages_chat_created
+  ON telegram_outbound_messages (bot_id, chat_id, created_at DESC, request_id DESC)`,
+	`CREATE UNIQUE INDEX idx_telegram_outbound_messages_pending_root
+  ON telegram_outbound_messages (bot_id, retry_root) WHERE status = 'pending'`,
+}
+
 func migrateTelegramConfig(tx kernel.Tx) error {
 	for _, stmt := range telegramConfigDDL {
 		if _, err := tx.Exec(context.Background(), stmt); err != nil {
@@ -150,13 +190,32 @@ func migrateTelegramIngressPG(tx kernel.Tx) error {
 	return nil
 }
 
+func migrateTelegramOutbound(tx kernel.Tx) error {
+	for _, stmt := range telegramOutboundDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create telegram outbound table: %w", err)
+		}
+	}
+	return nil
+}
+
+func migrateTelegramOutboundPG(tx kernel.Tx) error {
+	for _, stmt := range telegramOutboundPGDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create telegram outbound table (postgres): %w", err)
+		}
+	}
+	return nil
+}
+
 // Descriptors returns the compiled-global migrations for telegram_config
-// (v66), its connection settings extension (v67), and the R3 ingress tables
-// (v68).
+// (v66), its connection settings extension (v67), the R3 ingress tables
+// (v68), and the R3 operator outbound ledger (v69).
 func Descriptors() ([]kernel.MigrationContribution, error) {
 	configChecksum := kernel.MigrationChecksum(telegramConfigDDL, "0066:telegram-config:v1")
 	connectionChecksum := kernel.MigrationChecksum(telegramConfigConnectionDDL, "0067:telegram-config-connection:v1")
 	ingressChecksum := kernel.MigrationChecksum(telegramIngressDDL, "0068:telegram-ingress:v1")
+	outboundChecksum := kernel.MigrationChecksum(telegramOutboundDDL, "0069:telegram-outbound:v1")
 	return []kernel.MigrationContribution{
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram_config"},
@@ -181,6 +240,14 @@ func Descriptors() ([]kernel.MigrationContribution, error) {
 			Checksum:             ingressChecksum,
 			Apply:                migrateTelegramIngress,
 			ApplyPostgres:        migrateTelegramIngressPG,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram_outbound"},
+			Version:              69,
+			Name:                 "telegram_outbound",
+			Checksum:             outboundChecksum,
+			Apply:                migrateTelegramOutbound,
+			ApplyPostgres:        migrateTelegramOutboundPG,
 		},
 	}, nil
 }

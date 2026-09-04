@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 // OpenStore opens a test database through the same compiled module catalog as

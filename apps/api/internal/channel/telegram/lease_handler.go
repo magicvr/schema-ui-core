@@ -36,8 +36,8 @@ func (h *LeaseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized: authentication required", http.StatusUnauthorized)
 		return
 	}
-	if !slices.Contains(user.Permissions, "settings.read") {
-		http.Error(w, "Forbidden: permission required: settings.read", http.StatusForbidden)
+	if !slices.Contains(user.Permissions, "settings.read") && !slices.Contains(user.Permissions, "telegram.operator.read") {
+		http.Error(w, "Forbidden: permission required: settings.read or telegram.operator.read", http.StatusForbidden)
 		return
 	}
 	if r.Method != http.MethodPost {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -96,5 +97,42 @@ func TestPostgresTelegramIngressRepositoryIdempotency(t *testing.T) {
 	}
 	if title != first.ChatTitle || username != first.ChatUsername || lastMessageAt != firstAt.Add(2*time.Hour).Unix() {
 		t.Fatalf("postgres duplicate changed session = title %q username %q last_message_at %d", title, username, lastMessageAt)
+	}
+}
+
+func TestPostgresTelegramOutboundConflictAndRetryState(t *testing.T) {
+	ctx := context.Background()
+	st := postgresScratchDB(t, "r3telegramoutbound")
+	repository := telegramstore.NewRepository(st)
+	baseAt := time.Date(2026, 9, 4, 15, 0, 0, 0, time.UTC)
+	if inserted, err := repository.RecordInbound(ctx, telegramstore.InboundMessage{
+		BotID: 101, UpdateID: 9201, ChatID: 8001, ChatType: "private",
+		MessageKind: "text", Text: "hello", ReceivedAt: baseAt,
+	}); err != nil || !inserted {
+		t.Fatalf("seed postgres Telegram session = %v, %v; want true, nil", inserted, err)
+	}
+
+	first, created, err := repository.CreatePending(ctx, 101, 8001, "root-1", "reply")
+	if err != nil || !created || first.Status != "pending" {
+		t.Fatalf("postgres CreatePending = %+v, %v, %v; want pending created", first, created, err)
+	}
+	if _, _, err := repository.CreatePending(ctx, 101, 8001, "root-1", "different"); !errors.Is(err, telegramstore.ErrRequestConflict) {
+		t.Fatalf("postgres mismatched request err = %v, want ErrRequestConflict", err)
+	}
+	if err := repository.MarkFailed(ctx, 101, "root-1", "send failed"); err != nil {
+		t.Fatalf("postgres MarkFailed = %v", err)
+	}
+	retry, created, err := repository.CreateRetry(ctx, 101, 8001, "root-1", "retry-1")
+	if err != nil || !created || retry.RetryOf != "root-1" || retry.Status != "pending" {
+		t.Fatalf("postgres CreateRetry = %+v, %v, %v; want root retry pending", retry, created, err)
+	}
+	if _, _, err := repository.CreateRetry(ctx, 101, 8001, "root-1", "retry-2"); !errors.Is(err, telegramstore.ErrRequestInProgress) {
+		t.Fatalf("postgres duplicate pending root err = %v, want ErrRequestInProgress", err)
+	}
+	if err := repository.MarkSent(ctx, 101, "retry-1"); err != nil {
+		t.Fatalf("postgres MarkSent = %v", err)
+	}
+	if _, _, err := repository.CreateRetry(ctx, 101, 8001, "root-1", "retry-3"); !errors.Is(err, telegramstore.ErrRetryNotAllowed) {
+		t.Fatalf("postgres retry after sent err = %v, want ErrRetryNotAllowed", err)
 	}
 }

@@ -11,9 +11,10 @@ import (
 )
 
 type mockRegistrar struct {
-	routes     []kernel.RouteContribution
-	pages      []kernel.PageContribution
-	navigation []kernel.NavigationContribution
+	routes      []kernel.RouteContribution
+	permissions []kernel.PermissionContribution
+	pages       []kernel.PageContribution
+	navigation  []kernel.NavigationContribution
 }
 
 func (m *mockRegistrar) HTTP(r kernel.RouteContribution) error {
@@ -24,7 +25,10 @@ func (m *mockRegistrar) Schema(p kernel.PageContribution) error {
 	m.pages = append(m.pages, p)
 	return nil
 }
-func (m *mockRegistrar) Authorization(a kernel.PermissionContribution) error { return nil }
+func (m *mockRegistrar) Authorization(a kernel.PermissionContribution) error {
+	m.permissions = append(m.permissions, a)
+	return nil
+}
 func (m *mockRegistrar) Navigation(n kernel.NavigationContribution) error {
 	m.navigation = append(m.navigation, n)
 	return nil
@@ -42,16 +46,22 @@ func TestTelegramModuleProvider(t *testing.T) {
 	dummyLease := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+	dummyOperator := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 
-	p := moduletg.New(dummyWebhook, dummySettings, dummyLease)
+	p := moduletg.New(dummyWebhook, dummySettings, dummyLease, dummyOperator)
 
 	// Check Descriptor
 	desc := p.Descriptor()
 	if desc.ID != moduletg.ModuleID {
 		t.Fatalf("expected module ID %q, got %q", moduletg.ModuleID, desc.ID)
 	}
-	if len(desc.Contributions.Routes) != 6 {
-		t.Fatalf("expected 6 route contributions, got %+v", desc.Contributions.Routes)
+	if len(desc.Contributions.Routes) != 10 {
+		t.Fatalf("expected 10 route contributions, got %+v", desc.Contributions.Routes)
+	}
+	if len(desc.Contributions.Permissions) != 2 || desc.Contributions.Permissions[0] != "telegram.operator.read" || desc.Contributions.Permissions[1] != "telegram.operator.write" {
+		t.Fatalf("unexpected operator permissions: %+v", desc.Contributions.Permissions)
 	}
 	// GOAL-006 R5: telegram-settings page + menu_telegram navigation declared.
 	if len(desc.Contributions.Pages) != 1 || desc.Contributions.Pages[0] != "telegram-settings" {
@@ -63,7 +73,7 @@ func TestTelegramModuleProvider(t *testing.T) {
 
 	// Check Persistence
 	contribs, err := p.CompiledPersistence()
-	if err != nil || len(contribs) != 3 || contribs[0].Version != 66 || contribs[0].Name != "telegram_config" || contribs[1].Version != 67 || contribs[1].Name != "telegram_config_connection" || contribs[2].Version != 68 || contribs[2].Name != "telegram_ingress" {
+	if err != nil || len(contribs) != 4 || contribs[0].Version != 66 || contribs[0].Name != "telegram_config" || contribs[1].Version != 67 || contribs[1].Name != "telegram_config_connection" || contribs[2].Version != 68 || contribs[2].Name != "telegram_ingress" || contribs[3].Version != 69 || contribs[3].Name != "telegram_outbound" {
 		t.Fatalf("unexpected persistence: %+v, err=%v", contribs, err)
 	}
 
@@ -72,8 +82,11 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if err := p.Register(context.Background(), reg); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if len(reg.routes) != 6 {
-		t.Fatalf("expected 6 routes registered, got %d", len(reg.routes))
+	if len(reg.routes) != 10 {
+		t.Fatalf("expected 10 routes registered, got %d", len(reg.routes))
+	}
+	if len(reg.permissions) != 2 || reg.permissions[0].Permission != "telegram.operator.read" || reg.permissions[1].Permission != "telegram.operator.write" {
+		t.Fatalf("unexpected registered permissions: %+v", reg.permissions)
 	}
 	if len(reg.pages) != 1 || reg.pages[0].PageID != "telegram-settings" || reg.pages[0].DataSource != "/api/channel/telegram/settings" {
 		t.Fatalf("unexpected page contributions: %+v", reg.pages)
@@ -101,7 +114,10 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 	dummyLease := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	p := moduletg.New(dummyWebhook, dummySettings, dummyLease)
+	dummyOperator := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	p := moduletg.New(dummyWebhook, dummySettings, dummyLease, dummyOperator)
 
 	// Verify BuiltinModules includes channel.telegram
 	builtin := kernel.BuiltinModules()
@@ -151,8 +167,17 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 6 {
-		t.Fatalf("expected 6 routes in ContributionSet, got %d", len(set.Routes))
+	if len(set.Routes) != 10 {
+		t.Fatalf("expected 10 routes in ContributionSet, got %d", len(set.Routes))
+	}
+	operatorPermissions := map[string]bool{}
+	for _, permission := range set.Permissions {
+		if permission.ModuleID == moduletg.ModuleID {
+			operatorPermissions[permission.Permission] = true
+		}
+	}
+	if len(operatorPermissions) != 2 || !operatorPermissions["telegram.operator.read"] || !operatorPermissions["telegram.operator.write"] {
+		t.Fatalf("expected operator permissions in ContributionSet, got %+v", set.Permissions)
 	}
 	if len(set.Pages) != 1 || set.Pages[0].PageID != "telegram-settings" {
 		t.Fatalf("expected telegram-settings page in ContributionSet, got %+v", set.Pages)

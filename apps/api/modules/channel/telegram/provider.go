@@ -4,6 +4,7 @@ package telegram
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -21,6 +22,7 @@ type Provider struct {
 	webhookHandler  http.Handler
 	settingsHandler http.Handler
 	leaseHandler    http.Handler
+	operatorHandler http.Handler
 }
 
 // New constructs the channel.telegram module provider.
@@ -33,10 +35,15 @@ func New(webhookHandler http.Handler, handlers ...http.Handler) *Provider {
 	if len(handlers) > 1 {
 		lh = handlers[1]
 	}
+	var oh http.Handler
+	if len(handlers) > 2 {
+		oh = handlers[2]
+	}
 	return &Provider{
 		webhookHandler:  webhookHandler,
 		settingsHandler: sh,
 		leaseHandler:    lh,
+		operatorHandler: oh,
 	}
 }
 
@@ -60,7 +67,12 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/channel/telegram/lease/heartbeat",
 				"POST /api/channel/telegram/lease/release",
 				"POST /api/channel/telegram/webhook",
+				"GET /api/channel/telegram/operator/sessions",
+				"GET /api/channel/telegram/operator/sessions/{chat_id}/messages",
+				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages",
+				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry",
 			},
+			Permissions: []string{"telegram.operator.read", "telegram.operator.write"},
 			// GOAL-006 R5 (判据 #5 补做 Admin UI tab): the telegram-settings
 			// page + menu ride the settings.read gate (mail W26 red line: no
 			// new permission keys).
@@ -76,6 +88,9 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
+	if p.operatorHandler == nil {
+		return fmt.Errorf("%s: operator handler is required", ModuleID)
+	}
 	if p.settingsHandler != nil {
 		if err := reg.HTTP(kernel.RouteContribution{
 			ContributionIdentity: kernel.ContributionIdentity{
@@ -120,6 +135,47 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			}); err != nil {
 				return err
 			}
+		}
+	}
+	for _, route := range []struct {
+		method  string
+		pattern string
+	}{
+		{http.MethodGet, "/api/channel/telegram/operator/sessions"},
+		{http.MethodGet, "/api/channel/telegram/operator/sessions/{chat_id}/messages"},
+		{http.MethodPost, "/api/channel/telegram/operator/sessions/{chat_id}/messages"},
+		{http.MethodPost, "/api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"},
+	} {
+		if err := reg.HTTP(kernel.RouteContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: kernel.RouteKey(route.method, route.pattern)},
+			Method:               route.method,
+			Pattern:              route.pattern,
+			Handler:              p.operatorHandler,
+			Public:               false,
+		}); err != nil {
+			return err
+		}
+	}
+	for _, permission := range []kernel.PermissionContribution{
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram.operator.read"},
+			Permission:           "telegram.operator.read",
+			Resource:             "telegram.operator",
+			Action:               "read",
+			PolicyID:             authsessiondata.PolicyAdminEditorViewer,
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram.operator.write"},
+			Permission:           "telegram.operator.write",
+			Resource:             "telegram.operator",
+			Action:               "write",
+			PolicyID:             authsessiondata.PolicyAdmin,
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		},
+	} {
+		if err := reg.Authorization(permission); err != nil {
+			return err
 		}
 	}
 	if p.webhookHandler != nil {

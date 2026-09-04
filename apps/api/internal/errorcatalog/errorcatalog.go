@@ -34,20 +34,20 @@ var Catalog = map[string]Entry{
 	"SERVICE_DEGRADED":      {"error.serviceDegraded", "service is operating in degraded mode", "服务当前处于降级模式"},
 	"SERVICE_READ_ONLY":     {"error.serviceReadOnly", "service is read-only", "服务当前为只读模式"},
 
-	"INVALID_LOGIN_BODY":     {"error.invalidLoginBody", "body must be JSON with username and password", "请求体必须是包含用户名和密码的 JSON"},
-	"LOGIN_FAILED":           {"error.loginFailed", "authentication unavailable", "认证服务暂不可用"},
-	"INVALID_REFRESH_BODY":   {"error.invalidRefreshBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
-	"MISSING_REFRESH_TOKEN":  {"error.missingRefreshToken", "refresh token required in cookie, header, or body", "需要在 cookie、header 或 body 中提供 refresh token"},
-	"REFRESH_FAILED":         {"error.refreshFailed", "refresh unavailable", "刷新服务暂不可用"},
-	"INVALID_LOGOUT_BODY":    {"error.invalidLogoutBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
-	"LOGOUT_FAILED":          {"error.logoutFailed", "logout unavailable", "退出服务暂不可用"},
-	"INVALID_PATCH_BODY":     {"error.invalidPatchBody", "body must be JSON", "请求体必须是 JSON"},
-	"SCHEMA_NOT_FOUND":       {"error.schemaNotFound", "no page document for that pageId", "该 pageId 没有对应的页面文档"},
-	"SETTINGS_NOT_FOUND":     {"error.settingsNotFound", "no settings with that id", "该 id 没有对应的设置"},
-	"INVALID_SITE_TITLE":     {"error.invalidSiteTitle", "siteTitle must not be empty", "站点标题不能为空"},
-	"INVALID_LOGO_URL":       {"error.invalidLogoUrl", "logoUrl fields must be empty, a same-origin path, or an http(s) URL", "Logo URL 必须为空、同源路径或 http(s) URL"},
-	"INVALID_DEFAULT_LOCALE": {"error.invalidDefaultLocale", "defaultLocale must be auto, zh-CN or en-US", "默认语种必须是 auto、zh-CN 或 en-US"},
-	"INVALID_DEFAULT_THEME":  {"error.invalidDefaultTheme", "defaultTheme must be auto, light or dark", "默认主题必须是 auto、light 或 dark"},
+	"INVALID_LOGIN_BODY":        {"error.invalidLoginBody", "body must be JSON with username and password", "请求体必须是包含用户名和密码的 JSON"},
+	"LOGIN_FAILED":              {"error.loginFailed", "authentication unavailable", "认证服务暂不可用"},
+	"INVALID_REFRESH_BODY":      {"error.invalidRefreshBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
+	"MISSING_REFRESH_TOKEN":     {"error.missingRefreshToken", "refresh token required in cookie, header, or body", "需要在 cookie、header 或 body 中提供 refresh token"},
+	"REFRESH_FAILED":            {"error.refreshFailed", "refresh unavailable", "刷新服务暂不可用"},
+	"INVALID_LOGOUT_BODY":       {"error.invalidLogoutBody", "body must be JSON with refreshToken", "请求体必须是包含 refreshToken 的 JSON"},
+	"LOGOUT_FAILED":             {"error.logoutFailed", "logout unavailable", "退出服务暂不可用"},
+	"INVALID_PATCH_BODY":        {"error.invalidPatchBody", "body must be JSON", "请求体必须是 JSON"},
+	"SCHEMA_NOT_FOUND":          {"error.schemaNotFound", "no page document for that pageId", "该 pageId 没有对应的页面文档"},
+	"SETTINGS_NOT_FOUND":        {"error.settingsNotFound", "no settings with that id", "该 id 没有对应的设置"},
+	"INVALID_SITE_TITLE":        {"error.invalidSiteTitle", "siteTitle must not be empty", "站点标题不能为空"},
+	"INVALID_LOGO_URL":          {"error.invalidLogoUrl", "logoUrl fields must be empty, a same-origin path, or an http(s) URL", "Logo URL 必须为空、同源路径或 http(s) URL"},
+	"INVALID_DEFAULT_LOCALE":    {"error.invalidDefaultLocale", "defaultLocale must be auto, zh-CN or en-US", "默认语种必须是 auto、zh-CN 或 en-US"},
+	"INVALID_DEFAULT_THEME":     {"error.invalidDefaultTheme", "defaultTheme must be auto, light or dark", "默认主题必须是 auto、light 或 dark"},
 	"INVALID_TIMEZONE":          {"error.invalidTimezone", "siteTimezone must be auto or a valid IANA timezone", "默认时区必须是 auto 或有效的 IANA 时区"},
 	"INVALID_DEFAULT_CURRENCY":  {"error.invalidDefaultCurrency", "defaultCurrency must be empty or a valid ISO 4217 code", "默认货币必须是空或有效的 ISO 4217 代码"},
 	"INVALID_RETENTION_DAYS":    {"error.invalidRetentionDays", "operationLogRetentionDays must be between 1 and 3650", "审计日志保留天数必须是 1 到 3650 之间的整数"},
@@ -139,15 +139,15 @@ var Catalog = map[string]Entry{
 	"INVALID_CAPTCHA": {"error.invalidCaptcha", "captcha verification failed", "验证码校验失败"},
 
 	// S-10 (GOAL-017 D-002 §3/§4): MFA codes.
-	"INVALID_MFA_BODY":    {"error.invalidMfaBody", "body must be JSON with proof and code", "请求体必须是包含 proof 和 code 的 JSON"},
+	"INVALID_MFA_BODY": {"error.invalidMfaBody", "body must be JSON with proof and code", "请求体必须是包含 proof 和 code 的 JSON"},
 	// W7 F-007: MFA enrollment step-up requires the current password.
 	"MFA_CURRENT_PASSWORD_REQUIRED": {"error.mfaCurrentPasswordRequired", "currentPassword is required to start MFA enrollment", "启用 MFA 需要验证当前密码"},
-	"MFA_INVALID":         {"error.mfaInvalid", "invalid second-factor code", "第二因素验证码无效"},
-	"MFA_PROOF_EXPIRED":   {"error.mfaProofExpired", "second-factor proof expired; sign in again", "第二因素验证已过期，请重新登录"},
-	"MFA_PROOF_EXHAUSTED": {"error.mfaProofExhausted", "too many failed attempts; sign in again", "失败次数过多，请重新登录"},
-	"MFA_NOT_ENROLLED":    {"error.mfaNotEnrolled", "no MFA enrollment for this account", "该账号未启用 MFA"},
-	"MFA_PENDING_ONLY":    {"error.mfaPendingOnly", "MFA is not activated yet", "MFA 尚未激活"},
-	"MFA_ALREADY_ACTIVE":  {"error.mfaAlreadyActive", "MFA is already active", "MFA 已激活"},
+	"MFA_INVALID":                   {"error.mfaInvalid", "invalid second-factor code", "第二因素验证码无效"},
+	"MFA_PROOF_EXPIRED":             {"error.mfaProofExpired", "second-factor proof expired; sign in again", "第二因素验证已过期，请重新登录"},
+	"MFA_PROOF_EXHAUSTED":           {"error.mfaProofExhausted", "too many failed attempts; sign in again", "失败次数过多，请重新登录"},
+	"MFA_NOT_ENROLLED":              {"error.mfaNotEnrolled", "no MFA enrollment for this account", "该账号未启用 MFA"},
+	"MFA_PENDING_ONLY":              {"error.mfaPendingOnly", "MFA is not activated yet", "MFA 尚未激活"},
+	"MFA_ALREADY_ACTIVE":            {"error.mfaAlreadyActive", "MFA is already active", "MFA 已激活"},
 
 	// S-09 (GOAL-016 D-002 §3): data-permission codes.
 	"INVALID_SCOPE":         {"error.invalidScope", "scope must be all or self", "数据范围必须是 all 或 self"},
@@ -187,9 +187,9 @@ var Catalog = map[string]Entry{
 	"RECYCLE_ITEM_ALREADY_RESTORED": {"error.recycleItemAlreadyRestored", "recycle item is already restored", "回收站记录已恢复"},
 
 	// VP-017 R7 (GOAL-008 D-001): outbound-mail admin surface codes.
-	"INVALID_MAIL_CONFIG":   {"error.invalidMailConfig", "invalid outbound-mail configuration", "出站邮件配置无效"},
-	"MAIL_SWITCH_REJECTED":  {"error.mailSwitchRejected", "new channel configuration failed validation; the previous channel keeps serving", "新渠道配置校验未通过，继续沿用原渠道"},
-	"MAIL_SEND_FAILED":      {"error.mailSendFailed", "the test message could not be sent", "测试邮件发送失败"},
+	"INVALID_MAIL_CONFIG":  {"error.invalidMailConfig", "invalid outbound-mail configuration", "出站邮件配置无效"},
+	"MAIL_SWITCH_REJECTED": {"error.mailSwitchRejected", "new channel configuration failed validation; the previous channel keeps serving", "新渠道配置校验未通过，继续沿用原渠道"},
+	"MAIL_SEND_FAILED":     {"error.mailSendFailed", "the test message could not be sent", "测试邮件发送失败"},
 
 	// workspace-018 R3 (GOAL-004 D-001 §3): account email identity codes.
 	"EMAIL_INVALID":         {"error.emailInvalid", "invalid email address", "邮箱地址无效"},
@@ -203,16 +203,25 @@ var Catalog = map[string]Entry{
 	// workspace-019 R2 (GOAL-003 D-001 §6): self-recovery codes. Unknown
 	// account / no challenge / wrong code deliberately share ONE code so the
 	// pre-auth surface stays enumeration-neutral.
-	"INVALID_RECOVERY_BODY":            {"error.invalidRecoveryBody", "body must be JSON with account, code and newPassword", "请求体必须是包含 account、code 和 newPassword 的 JSON"},
-	"RECOVERY_CODE_INVALID":            {"error.recoveryCodeInvalid", "recovery code is invalid", "恢复码无效"},
-	"RECOVERY_CODE_EXPIRED":            {"error.recoveryCodeExpired", "recovery code expired; request a new one", "恢复码已过期，请重新获取"},
-	"RECOVERY_SECOND_FACTOR_REQUIRED":  {"error.recoverySecondFactorRequired", "your second factor is required to finish recovery", "完成恢复需要第二因素验证码"},
+	"INVALID_RECOVERY_BODY":           {"error.invalidRecoveryBody", "body must be JSON with account, code and newPassword", "请求体必须是包含 account、code 和 newPassword 的 JSON"},
+	"RECOVERY_CODE_INVALID":           {"error.recoveryCodeInvalid", "recovery code is invalid", "恢复码无效"},
+	"RECOVERY_CODE_EXPIRED":           {"error.recoveryCodeExpired", "recovery code expired; request a new one", "恢复码已过期，请重新获取"},
+	"RECOVERY_SECOND_FACTOR_REQUIRED": {"error.recoverySecondFactorRequired", "your second factor is required to finish recovery", "完成恢复需要第二因素验证码"},
 
 	// workspace-019 R3 (GOAL-004 D-001 §3): invitation codes. Unknown /
 	// expired / consumed / revoked share ONE code on the pre-auth surface.
 	"INVALID_INVITE_BODY": {"error.invalidInviteBody", "body must be JSON with token, username and password", "请求体必须是包含 token、username 和 password 的 JSON"},
 	"INVITE_INVALID":      {"error.inviteInvalid", "invitation is unknown, expired, already used or revoked", "邀请无效：不存在、已过期、已使用或已撤销"},
 	"INVITE_ROLE_GONE":    {"error.inviteRoleGone", "invited roles changed; ask for a new invitation", "邀请中的角色已变更，请索取新邀请"},
+
+	// VP-033 R3 C3: Telegram operator console runtime and outbound state codes.
+	"TELEGRAM_OPERATOR_UNAVAILABLE": {"error.telegramOperatorUnavailable", "Telegram operator is temporarily unavailable", "Telegram 人工台暂不可用"},
+	"TELEGRAM_CHAT_NOT_FOUND":       {"error.telegramChatNotFound", "no Telegram session for that chat", "没有该聊天对应的 Telegram 会话"},
+	"TELEGRAM_REQUEST_NOT_FOUND":    {"error.telegramRequestNotFound", "no Telegram request with that id", "没有该 id 对应的 Telegram 请求"},
+	"TELEGRAM_REQUEST_IN_PROGRESS":  {"error.telegramRequestInProgress", "another Telegram attempt is still pending", "另一个 Telegram 尝试仍在处理中"},
+	"TELEGRAM_REQUEST_CONFLICT":     {"error.telegramRequestConflict", "request id is already bound to a different payload", "请求 id 已绑定不同载荷"},
+	"TELEGRAM_RETRY_NOT_ALLOWED":    {"error.telegramRetryNotAllowed", "this Telegram attempt cannot be retried", "该 Telegram 尝试不可重试"},
+	"TELEGRAM_SEND_FAILED":          {"error.telegramSendFailed", "Telegram message could not be sent", "Telegram 消息发送失败"},
 
 	// VP-029 R3 (GOAL-003): prepaid voucher codes.
 	// E-008/E-009: batchId optional (server auto-generates VB-… ids); amount is

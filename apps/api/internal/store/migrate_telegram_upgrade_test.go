@@ -45,7 +45,7 @@ func TestMigrateV66TelegramRowPreservesExistingConfigOnV67(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(applied) < 68 || applied[65].version != 66 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" || applied[67].version != 68 || applied[67].name != "telegram_ingress" {
+	if len(applied) < 69 || applied[65].version != 66 || applied[66].version != 67 || applied[66].name != "telegram_config_connection" || applied[67].version != 68 || applied[67].name != "telegram_ingress" || applied[68].version != 69 || applied[68].name != "telegram_outbound" {
 		tail := applied
 		if len(tail) > 3 {
 			tail = tail[len(tail)-3:]

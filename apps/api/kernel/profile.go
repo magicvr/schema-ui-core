@@ -206,14 +206,15 @@ func BuiltinModules() []Module {
 		// app.modules (config.yaml) or a dedicated dogfood profile (D-003 §3).
 		{ID: "dev.examples", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.schema-render", "core.navigation-capability"}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions", "form-with-upload", "data-display", "admin-list-batch"}, Fragments: []string{"examples"}}},
 		// VP-030 (GOAL-003/GOAL-004): channel.telegram — Telegram bot channel runtime.
-		// Exposes the public webhook, authenticated settings endpoints, and the
-		// authenticated console-session polling lease.
+		// Exposes the public webhook, authenticated settings endpoints, the
+		// authenticated console-session polling lease, and the operator console
+		// session/transcript/send surface.
 		// GOAL-006 R5 (判据 #5 补做): telegram-settings page + menu_telegram.
 		// admin.settings is a hard dependency so menu_telegram can reference
 		// settings.read (declared by admin.settings in the same ContributionSet;
 		// no new permission keys — R-001 / A-002).
 		// Compiled candidate; not enabled in mvp/admin defaults (channel extension).
-		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"}, Requires: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityNavigation}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/lease/acquire", "POST /api/channel/telegram/lease/heartbeat", "POST /api/channel/telegram/lease/release", "POST /api/channel/telegram/webhook"}, Pages: []string{"telegram-settings"}, Navigation: []string{"menu_telegram"}, Fragments: []string{"telegram-settings"}}},
+		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"}, Requires: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityNavigation}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/lease/acquire", "POST /api/channel/telegram/lease/heartbeat", "POST /api/channel/telegram/lease/release", "POST /api/channel/telegram/webhook", "GET /api/channel/telegram/operator/sessions", "GET /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"}, Pages: []string{"telegram-settings"}, Navigation: []string{"menu_telegram"}, Permissions: []string{"telegram.operator.read", "telegram.operator.write"}, Fragments: []string{"telegram-settings"}}},
 	}
 }
 

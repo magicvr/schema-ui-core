@@ -86,10 +86,15 @@ func TestTelegramChannelComposition(t *testing.T) {
 				"POST /api/channel/telegram/lease/heartbeat",
 				"POST /api/channel/telegram/lease/release",
 				"POST /api/channel/telegram/webhook",
+				"GET /api/channel/telegram/operator/sessions",
+				"GET /api/channel/telegram/operator/sessions/{chat_id}/messages",
+				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages",
+				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry",
 			},
-			Pages:      []string{"telegram-settings"},
-			Navigation: []string{"menu_telegram"},
-			Fragments:  []string{"telegram-settings"},
+			Permissions: []string{"telegram.operator.read", "telegram.operator.write"},
+			Pages:       []string{"telegram-settings"},
+			Navigation:  []string{"menu_telegram"},
+			Fragments:   []string{"telegram-settings"},
 		},
 	}
 
@@ -103,14 +108,19 @@ func TestTelegramChannelComposition(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 6 {
+	if len(set.Routes) != 10 {
 		t.Fatalf("unexpected route contributions: %+v", set.Routes)
 	}
 
 	// 5. Test webhook route execution
 	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", nil)
 	w := httptest.NewRecorder()
-	set.Routes[5].Handler.ServeHTTP(w, req)
+	for _, route := range set.Routes {
+		if route.Pattern == "/api/channel/telegram/webhook" {
+			route.Handler.ServeHTTP(w, req)
+			break
+		}
+	}
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK, got %d", w.Code)
 	}
@@ -142,8 +152,18 @@ func (d *dummyTelegramProvider) Register(ctx context.Context, reg kernel.Registr
 			method, pattern = "POST", "/api/channel/telegram/lease/heartbeat"
 		} else if r == "POST /api/channel/telegram/lease/release" {
 			method, pattern = "POST", "/api/channel/telegram/lease/release"
-		} else {
+		} else if r == "POST /api/channel/telegram/webhook" {
 			method, pattern = "POST", "/api/channel/telegram/webhook"
+		} else if r == "GET /api/channel/telegram/operator/sessions" {
+			method, pattern = "GET", "/api/channel/telegram/operator/sessions"
+		} else if r == "GET /api/channel/telegram/operator/sessions/{chat_id}/messages" {
+			method, pattern = "GET", "/api/channel/telegram/operator/sessions/{chat_id}/messages"
+		} else if r == "POST /api/channel/telegram/operator/sessions/{chat_id}/messages" {
+			method, pattern = "POST", "/api/channel/telegram/operator/sessions/{chat_id}/messages"
+		} else if r == "POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry" {
+			method, pattern = "POST", "/api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"
+		} else {
+			return nil
 		}
 		if err := reg.HTTP(kernel.RouteContribution{
 			ContributionIdentity: kernel.ContributionIdentity{
@@ -153,7 +173,19 @@ func (d *dummyTelegramProvider) Register(ctx context.Context, reg kernel.Registr
 			Method:  method,
 			Pattern: pattern,
 			Handler: d.handler,
-			Public:  true,
+			Public:  r == "POST /api/channel/telegram/webhook",
+		}); err != nil {
+			return err
+		}
+	}
+	for _, p := range d.desc.Contributions.Permissions {
+		if err := reg.Authorization(kernel.PermissionContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: "channel.telegram", Key: p},
+			Permission:           p,
+			Resource:             "telegram.operator",
+			Action:               map[string]string{"telegram.operator.read": "read", "telegram.operator.write": "write"}[p],
+			PolicyID:             map[string]string{"telegram.operator.read": "system.admin-editor-viewer", "telegram.operator.write": "system.admin"}[p],
+			SystemDataVersion:    1,
 		}); err != nil {
 			return err
 		}

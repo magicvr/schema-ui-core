@@ -628,7 +628,21 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil {
 		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(tr.Manager))
 		tgLease := a.Middleware(telegraminternal.NewLeaseHandler(tr.Connection))
-		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings, tgLease))
+		tgOperator := a.Middleware(handler.NewTelegramOperatorHandler(
+			func() (int64, string, string, string) {
+				if tr.Manager == nil {
+					return 0, "unconfigured", "none", ""
+				}
+				status := tr.Manager.ConnectionStatus()
+				return status.BotID, status.State, status.Receiver, tr.Manager.GetToken()
+			},
+			func() bool {
+				return tr.DispatcherState != nil && tr.DispatcherState.HasBusinessHandlers()
+			},
+			telegramstore.NewRepository(st),
+			tr.Sender,
+		))
+		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings, tgLease, tgOperator))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
@@ -830,10 +844,14 @@ func newEventBus(cfg *config.Config, logger *slog.Logger) kernel.EventBus {
 // TelegramRuntime holds the process-level Telegram ports and state (F-001).
 type TelegramRuntime struct {
 	Dispatcher kernel.TelegramDispatcher
-	Sender     kernel.TelegramSender
-	Manager    *telegraminternal.RuntimeManager
-	Connection *telegraminternal.ConnectionManager
-	Webhook    *telegraminternal.WebhookHandler
+	// DispatcherState is the concrete runtime probe used by the operator
+	// surface to reject business-handler occupancy without widening the kernel
+	// TelegramDispatcher contract.
+	DispatcherState *telegraminternal.Dispatcher
+	Sender          kernel.TelegramSender
+	Manager         *telegraminternal.RuntimeManager
+	Connection      *telegraminternal.ConnectionManager
+	Webhook         *telegraminternal.WebhookHandler
 }
 
 type telegramRuntimeOptions struct {
@@ -909,11 +927,12 @@ func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store,
 		connection := telegraminternal.NewConnectionManager(rt, disp, botAPI, pollingAPI, webhook.HandlePollingUpdate)
 		rt.SetSettingsChangedHandler(connection.Reconcile)
 		return &TelegramRuntime{
-			Dispatcher: disp,
-			Sender:     sender,
-			Manager:    rt,
-			Connection: connection,
-			Webhook:    webhook,
+			Dispatcher:      disp,
+			DispatcherState: disp,
+			Sender:          sender,
+			Manager:         rt,
+			Connection:      connection,
+			Webhook:         webhook,
 		}, nil
 	}
 	return &TelegramRuntime{

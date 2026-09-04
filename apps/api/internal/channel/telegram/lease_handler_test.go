@@ -45,6 +45,13 @@ func TestLeaseHandler_AuthSessionAndLifecycle(t *testing.T) {
 			wantStatus: http.StatusMethodNotAllowed,
 		},
 		{
+			name:       "operator reader permission is accepted",
+			path:       "/api/channel/telegram/lease/acquire",
+			method:     http.MethodPost,
+			identity:   &account.User{ID: "user-operator", SessionID: "browser-session-1", Permissions: []string{"telegram.operator.read"}},
+			wantStatus: http.StatusOK,
+		},
+		{
 			name:       "unknown operation",
 			path:       "/api/channel/telegram/lease/unknown",
 			method:     http.MethodPost,

@@ -38,7 +38,7 @@ func TestClassifyIdentity(t *testing.T) {
 		{"empty", nil, nil, false, identityEmpty},
 		{"ledger", []string{"schema_migrations", "users"}, ledger, true, identityOursLedger},
 		{"r2", []string{"users", "refresh_tokens"}, nil, true, identityOursR2},
-		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges", "password_policy", "user_password_history", "user_invites", "login_failures", "subjects", "vouchers", "voucher_batches", "telegram_config", "telegram_sessions", "telegram_inbound_messages"}, nil, true, identityOursCompleteNoLedger},
+		{"complete no ledger", []string{"users", "refresh_tokens", "operation_log", "jobs", "service_credentials", "operation_log_session", "mail_outbox", "mail_config", "email_verification_challenges", "password_recovery_challenges", "password_policy", "user_password_history", "user_invites", "login_failures", "subjects", "vouchers", "voucher_batches", "telegram_config", "telegram_sessions", "telegram_inbound_messages", "telegram_outbound_messages"}, nil, true, identityOursCompleteNoLedger},
 		{"four tables without catalog head", []string{"users", "refresh_tokens", "operation_log", "jobs", "roles"}, nil, true, identityLostLedgerUnsafe},
 		{"partial users only", []string{"users"}, nil, true, identityOursPartialNoLedger},
 		{"foreign users", []string{"users"}, nil, false, identityForeign},
@@ -117,6 +117,7 @@ var lockedHeadExtraTables = map[int][]string{
 	66: {"telegram_config"},                                // workspace-030 (GOAL-004/005 F-002): persistent encrypted channel configuration
 	67: {},                                                 // workspace-033 R2: additive Telegram mode/URL columns
 	68: {"telegram_sessions", "telegram_inbound_messages"}, // workspace-033 R3 C2: Telegram session and inbound receipt tables
+	69: {"telegram_outbound_messages"},                     // workspace-033 R3 C3: Telegram outbound state machine
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {
