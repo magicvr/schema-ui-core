@@ -1,13 +1,13 @@
 ---
 doc_type: vision-plan
 id: VP-032-rate-limiter-atomic-port
-title: 限流器端口原子化（AllowRecord）
-status: active
+title: 限流器端口原子化（AllowRecord/Reserve/Cancel）
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-032-rate-limiter-atomic-port
 created: 2026-09-03
-updated: 2026-09-03
-version: 0.2.0
+updated: 2026-09-04
+version: 0.3.0
 parent: null
 ---
 
@@ -100,7 +100,16 @@ parent: null
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
+- **`active → closed` v0.3.0 · 2026-09-04 · 用户书面确认**（VRev-074 self `pass` · 0 required）。
+- 五条方向级退出判据全部 verified（证据矩阵：workspace-032 Root [E-004](../workspaces/workspace-032-rate-limiter-atomic-port/GOAL-001-rate-limiter-atomic-port/02-execution/E-004-r3-evidence-matrix-and-close.md)）：
+  1. 原子性：`AllowRecord`/`Reserve` 单锁原子 + 并发预算/无穿透回归 + `-race`；
+  2. 行为等价：14/14 全迁（4 处立即消费 `AllowRecord` + 10 处失败预算 `Reserve`/`Cancel`，逐路径语义冻结于 GOAL-003 D-002 §3）；
+  3. 兼容：`Allow`/`Record`/`AllowRecord`/`Reserve`/`Cancel`/`RetryAfterSeconds`/`Clear` 保留，`Allow` 无副作用；
+  4. 边界保持：未重开 VP-027、未实现 Redis、未改 Profile 默认集、未消耗 RT-Q05 trigger；
+  5. 审计闭合：全工作区开放 required = 0（GOAL-002/003 全闭合；Root A-001 self + A-002 grok independent 双 `pass`）。
+- 口径承接：判据 #2「失败预算在 `Clear` 后净状态等价」表述由 GOAL-003 D-002 令牌化 `Reserve`/`Cancel` 取代（键级 `Clear` 无法只回滚当次占槽）；I-032-002 `revised`、I-032-003 `verified`；登记于规划修订短史。
+- 关门后跟踪：RT-Q05 Redis 实现保持 trigger-gated；VP-031 激活时按 roadmap 复核进程内限流评估是否仍覆盖业务域流量。
+- lead `workspace-032-rate-limiter-atomic-port` 已结项（Root `done` 3/3）。
 
 ## 规划修订短史
 

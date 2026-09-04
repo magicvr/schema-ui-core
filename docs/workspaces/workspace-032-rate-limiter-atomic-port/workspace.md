@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · 限流器端口原子化（已结项）
 
-本工作区是 [VP-032-rate-limiter-atomic-port](../../vision/plans/VP-032-rate-limiter-atomic-port.md)（**`active`** v0.2.0 · 2026-09-03 用户指令激活）的唯一 lead delivery workspace。**架构分支**（承接 VP-027 residual R-007 · 不重开 VP-027）：在 `kernel.RateLimiter` 新增原子 `AllowRecord` 与令牌化 `Reserve`/`Cancel`，迁移冻结 14 处 Allow→Record 使用点（4 立即消费 + 10 失败预算），消除 TOCTOU；内存供应商实现；Redis 仍 RT-Q05 trigger-gated。**工作区已结项**（2026-09-04）：Root `done` 3/3，关门双审 A-001 self + A-002 grok independent 均 `pass` / 0 required；VP-032 文案承接留 `/vision` 关门/VRev。
+本工作区是 [VP-032-rate-limiter-atomic-port](../../vision/plans/VP-032-rate-limiter-atomic-port.md)（**`closed`** v0.3.0 · 2026-09-04 用户书面确认 · VRev-074 self `pass`）的唯一 lead delivery workspace。**架构分支**（承接 VP-027 residual R-007 · 不重开 VP-027）：在 `kernel.RateLimiter` 新增原子 `AllowRecord` 与令牌化 `Reserve`/`Cancel`，迁移冻结 14 处 Allow→Record 使用点（4 立即消费 + 10 失败预算），消除 TOCTOU；内存供应商实现；Redis 仍 RT-Q05 trigger-gated。**工作区已结项**（2026-09-04）：Root `done` 3/3，关门双审 A-001 self + A-002 grok independent 均 `pass` / 0 required。
 
 - **Root** `GOAL-001-rate-limiter-atomic-port`：**`done`** · **3/3**（R1 合同落盘已关门 → R2 14 处迁移+handler 回归已关门 → R3 证据与关门已关门），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-03）：[VRev-073](../../vision/reviews/VRev-073-vp032-rate-limiter-atomic-port-activation.md) self `pass`（0 required；I-032-001/002 已冻结）；**架构类轻量 freshness PASS**（`42036a3c` → `b1c03acd`：协议 pin / 依赖锁 / Profile 默认集 / provenance 零变更；区间代码 = VP-030 已审结目）不暂挂 `go`。
@@ -33,8 +33,8 @@ parent: null
 | Root Goal | `GOAL-001-rate-limiter-atomic-port` | `parent: null`；**done** · 3/3 |
 | canonical 范围 | `docs/workspaces/workspace-032-rate-limiter-atomic-port/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
-| 愿景角色 | `delivery` | VP-032 lead（active）；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-032-rate-limiter-atomic-port`（`active` v0.2.0） | 2026-09-03 激活/开区（VRev-073 self `pass`；arch 类 freshness PASS `42036a3c`→`b1c03acd`） |
+| 愿景角色 | `delivery` | VP-032 lead（`closed` v0.3.0 · 2026-09-04 用户书面确认）；不改变 Charter primary workspace |
+| 规划对齐 | `primary_plan` = `VP-032-rate-limiter-atomic-port`（`closed` v0.3.0） | 2026-09-03 激活/开区（VRev-073 self `pass`；arch 类 freshness PASS `42036a3c`→`b1c03acd`）；2026-09-04 关门（VRev-074 self `pass` · 用户书面确认） |
 
 ## 愿景对齐
 
