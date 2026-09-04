@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.3.1
+version: 0.3.2
 progress: 2/5
 plan_refs:
   - VP-033-telegram-operator-console
@@ -43,7 +43,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 |--------|------|------|
 | C1 | R2 关键参数裁决、实施计划与 required 信息闭合 | **完成**：D-001；I-033-014～016 verified；A-002 self + A-003 independent pass |
 | C2 | Telegram 配置 schema、迁移、runtime 回读与 settings API | **完成**：v67 additive migration；DB authoritative（含空列）；settings PATCH；A-005 self + A-006 Grok independent pass；A-007 response |
-| C3 | Bot API client、connection manager、互斥切换与 Fx 生命周期 | 待开始；依赖 C1，部分依赖 C2 |
+| C3 | Bot API client、connection manager、互斥切换与 Fx 生命周期 | 实施完成、self `pass`；Grok independent 待审；依赖 C1/C2 |
 | C4 | Admin settings UI、占用位/heartbeat 接缝与跨层集成 | 待开始；依赖 C2/C3 |
 | C5 | Fake Bot API、退出/错误矩阵、self + independent 阶段审视 | 待开始；依赖 C2～C4 |
 
@@ -55,9 +55,9 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 | I-033-015 | required | 未绑定 polling 的 heartbeat 是引用计数还是单 lease，以及 TTL/失效 drain 语义 | 方案 / C3/C4 | C1 | 用户裁决；D-001；补 lease 并发/过期测试 | **verified** | 未延期 | 活跃控制台会话引用计数；每个 lease 基线 20 秒；归零/失效后 drain |
 | I-033-016 | required | `getUpdates` 长轮询请求 timeout 与独立 HTTP client 余量的默认值 | 方案 / C3 | C1 | 用户裁决；D-001；补正常等待/取消/错误/timeout 测试 | **verified** | 未延期 | 请求 30 秒；专用 polling client 40 秒；不复用 10 秒 sendMessage client |
 | I-033-017 | non-blocking | disabled profile 下 Telegram HTTP surface 是否继续按现有 module gating 处理 | 实施 / C4 | C3 | R2 计划核对 provider/composition 现状并记录 | open | 可沿用现有 profile 语义 | A-002 F-007 recommended；不重开默认 Profile 红线 |
-| I-033-018 | non-blocking | `HasBusinessHandlers` 放在具体 dispatcher/adapter 还是扩展 kernel 端口 | 实施 / C3 | C3 | R2 实现决策与编译期/行为测试 | open | 可在 C3 记录 | A-002 F-006 recommended |
+| I-033-018 | non-blocking | `HasBusinessHandlers` 放在具体 dispatcher/adapter 还是扩展 kernel 端口 | 实施 / C3 | C3 | R2 实现决策与编译期/行为测试 | **verified** | 已由 `Dispatcher.HasBusinessHandlers` 与 C3 行为测试核对 | A-009 |
 
-R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；C2 已由 A-005 self、A-006 Grok independent 与 A-007 response 完成并关闭检查点，progress 为 2/5。A-007 中将整个 GOAL-003 写为 `done` 的表述已由 A-008 纠正；当前目标仍为 `active · 2/5`，C3～C5 尚未完成。A-006 F-001～F-005 为不阻断 C2 的 recommended open，分别转入 C3/C5；C3 仍必须按 D-001 + GOAL-002 D-002 + D-003 实施并保留未实现边界。I-033-017～018 为 non-blocking open。
+R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；C2 已由 A-005 self、A-006 Grok independent 与 A-007 response 完成并关闭检查点，progress 为 2/5。A-007 中将整个 GOAL-003 写为 `done` 的表述已由 A-008 纠正；当前目标仍为 `active · 2/5`，C3～C5 尚未完成。A-009 已记录 C3 实施 self `pass`，但独立审计尚未完成。A-006 F-001～F-005 为不阻断 C2 的 recommended open，分别转入 C3/C5；C3 仍必须按 D-001 + GOAL-002 D-002 + D-003 实施并保留未实现边界。I-033-017 为 non-blocking open，I-033-018 已 verified。
 
 ## 父目标
 
