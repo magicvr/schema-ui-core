@@ -128,3 +128,47 @@ func TestRepositoryRecordInboundSQLiteCallback(t *testing.T) {
 		t.Fatalf("callback row = kind %q id %q data %q", kind, callbackID, callbackData)
 	}
 }
+
+func TestRepositoryRecordInboundRejectsNonPositiveUpdateID(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram-invalid-update.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	repository := NewRepository(st)
+	base := InboundMessage{
+		BotID:       101,
+		UpdateID:    1,
+		ChatID:      8003,
+		ChatType:    "private",
+		MessageKind: "text",
+		Text:        "hello",
+		ReceivedAt:  time.Date(2026, 9, 4, 14, 0, 0, 0, time.UTC),
+	}
+	for _, updateID := range []int64{0, -1} {
+		message := base
+		message.UpdateID = updateID
+		inserted, err := repository.RecordInbound(context.Background(), message)
+		if err == nil {
+			t.Fatalf("update_id %d returned nil error", updateID)
+		}
+		if inserted {
+			t.Fatalf("update_id %d returned inserted=true on validation failure", updateID)
+		}
+	}
+
+	var messageCount, sessionCount int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messageCount); err != nil {
+			return err
+		}
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_sessions`).Scan(&sessionCount)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if messageCount != 0 || sessionCount != 0 {
+		t.Fatalf("invalid update ids persisted messages=%d sessions=%d", messageCount, sessionCount)
+	}
+}

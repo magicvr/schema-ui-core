@@ -127,6 +127,9 @@ func (m InboundMessage) validate() error {
 	if m.BotID <= 0 {
 		return fmt.Errorf("telegram store: bot id must be positive")
 	}
+	if m.UpdateID <= 0 {
+		return fmt.Errorf("telegram store: update id must be positive")
+	}
 	if m.ChatID == 0 {
 		return fmt.Errorf("telegram store: chat id is required")
 	}

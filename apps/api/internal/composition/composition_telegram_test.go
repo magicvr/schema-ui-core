@@ -559,6 +559,15 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 	if !commandCalled {
 		t.Fatalf("expected command handler on shared dispatcher to be called via mounted webhook")
 	}
+	var persistedInbound int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages WHERE bot_id = ? AND update_id = ?`, 101, 1).Scan(&persistedInbound)
+	}); err != nil {
+		t.Fatalf("query mounted webhook receipt: %v", err)
+	}
+	if persistedInbound != 1 {
+		t.Fatalf("mounted webhook persisted receipts = %d, want 1", persistedInbound)
+	}
 
 	// 3. Settings endpoint without auth -> 401 Unauthorized
 	reqSettings := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)

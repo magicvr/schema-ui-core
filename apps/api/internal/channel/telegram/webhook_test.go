@@ -37,6 +37,24 @@ func (failingTelegramTxRunner) Run(context.Context, func(kernel.Tx) error) error
 	return errors.New("forced subject persistence failure")
 }
 
+type failingTelegramInboundTxRunner struct{}
+
+func (failingTelegramInboundTxRunner) Run(context.Context, func(kernel.Tx) error) error {
+	return errors.New("forced inbound persistence failure")
+}
+
+type failOnceTelegramTxRunner struct {
+	delegate kernel.Store
+	failures int32
+}
+
+func (r *failOnceTelegramTxRunner) Run(ctx context.Context, fn func(kernel.Tx) error) error {
+	if atomic.CompareAndSwapInt32(&r.failures, 1, 0) {
+		return errors.New("forced transient subject persistence failure")
+	}
+	return r.delegate.Run(ctx, fn)
+}
+
 func TestWebhook_UnconfiguredToken_Returns503(t *testing.T) {
 	h := NewWebhookHandler(HandlerConfig{
 		TokenGetter:  func() string { return "" },
@@ -262,6 +280,134 @@ func TestWebhook_CallbackDispatch(t *testing.T) {
 	}
 	if !callbackCalled || cbUpdate.CallbackData != "btn_confirm" || cbUpdate.UserID != "333" || cbUpdate.ChatID != "444" {
 		t.Fatalf("unexpected callback update: %+v", cbUpdate)
+	}
+}
+
+func TestWebhook_BotIdentityFailureReturns500(t *testing.T) {
+	payload := UpdatePayload{
+		UpdateID: 1004,
+		Message: &MessagePayload{
+			From: &UserPayload{ID: 333},
+			Chat: &ChatPayload{ID: 444},
+			Text: "hello",
+		},
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name   string
+		getter func() (int64, error)
+	}{
+		{name: "missing", getter: nil},
+		{name: "zero", getter: func() (int64, error) { return 0, nil }},
+		{name: "error", getter: func() (int64, error) { return 0, errors.New("identity failed") }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := NewWebhookHandler(HandlerConfig{
+				TokenGetter:  func() string { return "bot-token" },
+				SecretGetter: func() string { return "secret" },
+				BotIDGetter:  tt.getter,
+				InboundStore: telegramstore.NewRepository(nil),
+			})
+			req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+			req.Header.Set(HeaderTelegramSecretToken, "secret")
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, req)
+			if w.Code != http.StatusInternalServerError {
+				t.Fatalf("bot identity failure status = %d, want 500", w.Code)
+			}
+		})
+	}
+}
+
+func TestWebhook_InboundPersistenceFailureReturns500(t *testing.T) {
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "secret" },
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(failingTelegramInboundTxRunner{}),
+	})
+	body, err := json.Marshal(UpdatePayload{
+		UpdateID: 1006,
+		Message: &MessagePayload{
+			Chat: &ChatPayload{ID: 444},
+			Text: "hello",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+	req.Header.Set(HeaderTelegramSecretToken, "secret")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("inbound persistence failure status = %d, want 500", w.Code)
+	}
+}
+
+func TestWebhook_CallbackDispatchDeduplicates(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram_callback_idempotency.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	dispatcher := NewDispatcher()
+	var dispatchCount atomic.Int32
+	if err := dispatcher.RegisterCallback("approve", func(context.Context, kernel.TelegramUpdate) error {
+		dispatchCount.Add(1)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "secret" },
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
+		Dispatcher:   dispatcher,
+	})
+	body, err := json.Marshal(UpdatePayload{
+		UpdateID: 1007,
+		CallbackQuery: &CallbackQueryPayload{
+			ID:   "callback-1007",
+			Data: "approve",
+			From: &UserPayload{ID: 333},
+			Message: &MessagePayload{
+				MessageID: 555,
+				Chat:      &ChatPayload{ID: 444, Type: "group"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+		req.Header.Set(HeaderTelegramSecretToken, "secret")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("callback request %d status = %d, want 200", i+1, w.Code)
+		}
+	}
+	if got := dispatchCount.Load(); got != 1 {
+		t.Fatalf("callback duplicate dispatch count = %d, want 1", got)
+	}
+	var messageCount int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messageCount)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if messageCount != 1 {
+		t.Fatalf("callback duplicate message count = %d, want 1", messageCount)
 	}
 }
 
@@ -592,6 +738,115 @@ func TestWebhook_SubjectPersistenceFailureDoesNotMintReceipt(t *testing.T) {
 	}
 }
 
+func TestWebhook_SubjectPersistenceFailureThenRecovery(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram_subject_recovery.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	dispatcher := NewDispatcher()
+	var dispatchCount atomic.Int32
+	if err := dispatcher.RegisterCommand("recover", func(context.Context, kernel.TelegramUpdate) error {
+		dispatchCount.Add(1)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	subjectRunner := &failOnceTelegramTxRunner{delegate: st, failures: 1}
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "secret" },
+		SubjectStore: subject.NewStore(subjectRunner),
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
+		Dispatcher:   dispatcher,
+	})
+	body, err := json.Marshal(UpdatePayload{
+		UpdateID: 5002,
+		Message: &MessagePayload{
+			From: &UserPayload{ID: 55},
+			Chat: &ChatPayload{ID: 505},
+			Text: "/recover",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, wantStatus := range []int{http.StatusInternalServerError, http.StatusOK} {
+		req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+		req.Header.Set(HeaderTelegramSecretToken, "secret")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != wantStatus {
+			t.Fatalf("recovery request %d status = %d, want %d", i+1, w.Code, wantStatus)
+		}
+	}
+	if got := dispatchCount.Load(); got != 1 {
+		t.Fatalf("recovery dispatch count = %d, want 1", got)
+	}
+	var messageCount, subjectCount int
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messageCount); err != nil {
+			return err
+		}
+		return tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM subjects WHERE issuer = 'telegram' AND external_id = '55'`).Scan(&subjectCount)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if messageCount != 1 || subjectCount != 1 {
+		t.Fatalf("recovery persistence counts messages=%d subjects=%d, want 1/1", messageCount, subjectCount)
+	}
+}
+
+func TestWebhook_DispatchHandlerErrorIsAcknowledgedWithoutRetry(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "telegram_handler_error.db")
+	st, err := testsupport.OpenStore(path, "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	dispatcher := NewDispatcher()
+	var dispatchCount atomic.Int32
+	if err := dispatcher.RegisterCommand("fail", func(context.Context, kernel.TelegramUpdate) error {
+		dispatchCount.Add(1)
+		return errors.New("handler failed")
+	}); err != nil {
+		t.Fatal(err)
+	}
+	h := NewWebhookHandler(HandlerConfig{
+		TokenGetter:  func() string { return "bot-token" },
+		SecretGetter: func() string { return "secret" },
+		BotIDGetter:  func() (int64, error) { return 101, nil },
+		InboundStore: telegramstore.NewRepository(st),
+		Dispatcher:   dispatcher,
+	})
+	body, err := json.Marshal(UpdatePayload{
+		UpdateID: 1008,
+		Message: &MessagePayload{
+			Chat: &ChatPayload{ID: 444},
+			Text: "/fail",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", bytes.NewReader(body))
+		req.Header.Set(HeaderTelegramSecretToken, "secret")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("handler-error request %d status = %d, want 200", i+1, w.Code)
+		}
+	}
+	if got := dispatchCount.Load(); got != 1 {
+		t.Fatalf("handler-error dispatch count = %d, want 1", got)
+	}
+}
+
 func TestHandlePollingUpdatePersistsAndDeduplicates(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "telegram_polling_idempotency.db")
 	st, err := testsupport.OpenStore(path, "admin", "hash", false)
@@ -659,6 +914,27 @@ func TestNormalizeInbound_PrivateChatUsesSenderName(t *testing.T) {
 	}
 	if got.ChatTitle != "Ada Lovelace" {
 		t.Fatalf("private chat title = %q, want sender name", got.ChatTitle)
+	}
+}
+
+func TestNormalizeInbound_PrivateCallbackUsesSenderName(t *testing.T) {
+	now := time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)
+	got, _, supported := normalizeInbound(UpdatePayload{
+		UpdateID: 4002,
+		CallbackQuery: &CallbackQueryPayload{
+			ID:   "callback-private",
+			Data: "approve",
+			From: &UserPayload{ID: 88, FirstName: "Ada", LastName: "Lovelace"},
+			Message: &MessagePayload{
+				Chat: &ChatPayload{ID: 8001, Type: "private"},
+			},
+		},
+	}, now)
+	if !supported {
+		t.Fatal("private callback update was not supported")
+	}
+	if got.ChatTitle != "Ada Lovelace" {
+		t.Fatalf("private callback chat title = %q, want sender name", got.ChatTitle)
 	}
 }
 

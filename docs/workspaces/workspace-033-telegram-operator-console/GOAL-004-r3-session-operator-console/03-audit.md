@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 1.1.0
+version: 1.2.0
 ---
 
 # GOAL-004 · R3 审计索引
@@ -24,15 +24,16 @@ version: 1.1.0
 | [A-010-r3-c2-a008-closure-independent](03-audit/A-010-r3-c2-a008-closure-independent.md) | 2026-09-04 | independent | A-008 F-001/F-002 闭合复审；D-005/D-006；webhook/polling/Store 接缝与 C2 实施放行 | **pass** | **0** | `03-audit/A-010-r3-c2-a008-closure-independent.md` |
 | [A-011-r3-c2-a010-response](03-audit/A-011-r3-c2-a010-response.md) | 2026-09-04 | self | 响应 A-010 independent pass；确认 C2 生产代码实施可开始 | **pass** | **0** | `03-audit/A-011-r3-c2-a010-response.md` |
 | [A-012-r3-c2-implementation-self](03-audit/A-012-r3-c2-implementation-self.md) | 2026-09-04 | self | C2 v68/入站 repository/webhook/polling/PG/并发实现自审 | **pass** | **0** | `03-audit/A-012-r3-c2-implementation-self.md` |
+| [A-013-r3-c2-implementation-independent](03-audit/A-013-r3-c2-implementation-independent.md) | 2026-09-04 | independent | C2 实现关门：v68/repository/webhook/polling/PG/offset；C2 是否可关闭 | **pass** | **0** | `03-audit/A-013-r3-c2-implementation-independent.md` |
 
 ## 信息就绪核对（按 scope）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | VP-033 / R1 / R2 前置与父级对齐 | verified | R2 已 `done · 5/5`；Root active · 2/4；R3 parent 正确 |
-| I-033-009/010/019～022 | user-decided；I-033-020 合同已补全；A-008 F-001/F-002 经 D-005 补全、A-010 Grok independent `pass` 确认响应侧 `fixed`；C2 代码已实现，待 independent 实现审计 | D-002 记录七项主方向；D-003 响应 A-003 F-001；A-004 self；A-005 Grok independent `pass`；A-006 响应；A-007 self；A-008 原文 conditional/open=2 保留；D-006/A-009 响应；A-010 闭合复审；A-011 响应；D-007 非阻断项裁决；A-012 self；不把 self 当作 independent 或 C2 关门 |
+| I-033-009/010/019～022 | user-decided；I-033-020 合同已补全；A-008 F-001/F-002 经 D-005 补全、A-010 Grok independent `pass` 确认响应侧 `fixed`；C2 实现经 A-013 Grok independent `pass`，C2 检查点可关闭（响应前不改 status/progress） | D-002 记录七项主方向；D-003 响应 A-003 F-001；A-004 self；A-005 Grok independent `pass`；A-006 响应；A-007 self；A-008 原文 conditional/open=2 保留；D-006/A-009 响应；A-010 闭合复审；A-011 响应；D-007 非阻断项裁决；A-012 self；A-013 Grok independent 实现关门 `pass`（不采信 A-012）；A-008/A-010 原文不改写 |
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
 
 ## 审计记录（ledger）
 
-`03-audit/` 平铺；正式意见必须落盘（self / independent 共用序列）。A-001～A-011 原文保留。A-008 为 Grok independent 合同审计（conditional，开放 required = 2，原文不改写）；A-009 记录用户选择 fixed 后的 self 响应；A-010 为 Grok independent 闭合复审（pass，开放 required = 0），确认 F-001/F-002 在响应侧 `fixed`；A-011 记录响应并放行 C2 代码实施；A-012 为 C2 实现 self pass，记录 D-007 非阻断项实现与验证，等待 Grok independent 实现审计。
+`03-audit/` 平铺；正式意见必须落盘（self / independent 共用序列）。A-001～A-012 原文保留。A-008 为 Grok independent 合同审计（conditional，开放 required = 2，原文不改写）；A-009 记录用户选择 fixed 后的 self 响应；A-010 为 Grok independent 闭合复审（pass，开放 required = 0），确认 F-001/F-002 在响应侧 `fixed`（原文不改写）；A-011 记录响应并放行 C2 代码实施；A-012 为 C2 实现 self pass，不作为独立证据；A-013 为 Grok independent 实现关门审计（pass，开放 required = 0），判定 C2 检查点可关闭，recommended F-001～F-003 不阻断。

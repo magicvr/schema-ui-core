@@ -118,6 +118,7 @@ func TestConnectionManager_PollingDispatchesAndDrains(t *testing.T) {
 	webhook := NewWebhookHandler(HandlerConfig{Dispatcher: dispatcher, Sender: NewCaptureSender()})
 	var getUpdatesCalls atomic.Int32
 	secondPoll := make(chan struct{})
+	secondOffset := make(chan int64, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/botbot-token/getMe":
@@ -133,6 +134,12 @@ func TestConnectionManager_PollingDispatchesAndDrains(t *testing.T) {
 	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		if getUpdatesCalls.Add(1) == 1 {
 			return botAPIJSONResponse(`{"ok":true,"result":[{"update_id":11,"message":{"from":{"id":456},"chat":{"id":123},"text":"/status"}}]}`), nil
+		}
+		var request getUpdatesPayload
+		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+			t.Errorf("decode second getUpdates request: %v", err)
+		} else {
+			secondOffset <- request.Offset
 		}
 		select {
 		case <-secondPoll:
@@ -156,6 +163,14 @@ func TestConnectionManager_PollingDispatchesAndDrains(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("polling drain request was not established")
 	}
+	select {
+	case got := <-secondOffset:
+		if got != 12 {
+			t.Fatalf("second polling offset = %d, want 12 after update 11", got)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("second polling offset was not observed")
+	}
 	stopCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	stopErr := manager.Stop(stopCtx)
@@ -168,6 +183,68 @@ func TestConnectionManager_PollingDispatchesAndDrains(t *testing.T) {
 	}
 	if getUpdatesCalls.Load() < 1 {
 		t.Fatal("expected at least one getUpdates call")
+	}
+}
+
+func TestConnectionManager_PollingRateLimitAdvancesOffset(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/botbot-token/getMe":
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"id":16,"is_bot":true,"username":"rate_limit_bot"}}`))
+		case "/botbot-token/deleteWebhook":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	var getUpdatesCalls atomic.Int32
+	var handlerCalls atomic.Int32
+	secondOffset := make(chan int64, 1)
+	pollingClient := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		call := getUpdatesCalls.Add(1)
+		var request getUpdatesPayload
+		if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+			return nil, err
+		}
+		if call == 1 {
+			return botAPIJSONResponse(`{"ok":true,"result":[{"update_id":77,"message":{"chat":{"id":123},"text":"hello"}}]}`), nil
+		}
+		secondOffset <- request.Offset
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	})}
+	updateHandler := func(context.Context, UpdatePayload) error {
+		handlerCalls.Add(1)
+		return &rateLimitExceededError{retryAfter: 1}
+	}
+	manager := NewConnectionManager(rm, NewDispatcher(), NewBotAPIClient(rm, server.Client(), server.URL), NewPollingBotAPIClient(rm, pollingClient, "https://telegram.test"), updateHandler)
+	if err := manager.AcquireLease(context.Background(), "console-1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	select {
+	case got := <-secondOffset:
+		if got != 78 {
+			t.Fatalf("polling offset after rate limit = %d, want 78", got)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("polling did not issue a follow-up request after rate limit")
+	}
+	stopCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := manager.Stop(stopCtx); err != nil {
+		t.Fatalf("Stop: %v", err)
+	}
+	if got := handlerCalls.Load(); got != 1 {
+		t.Fatalf("rate-limited handler calls = %d, want 1", got)
+	}
+	if got := getUpdatesCalls.Load(); got != 2 {
+		t.Fatalf("getUpdates calls after rate limit = %d, want 2", got)
 	}
 }
 

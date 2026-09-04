@@ -319,15 +319,19 @@ func normalizeInbound(payload UpdatePayload, now time.Time) (telegramstore.Inbou
 		chat := callback.Message.Chat
 		var userID int64
 		var senderUsername string
+		chatTitle := chat.Title
 		if callback.From != nil {
 			userID = callback.From.ID
 			senderUsername = callback.From.Username
+			if strings.EqualFold(chat.Type, "private") && strings.TrimSpace(chatTitle) == "" {
+				chatTitle = strings.TrimSpace(strings.Join([]string{callback.From.FirstName, callback.From.LastName}, " "))
+			}
 		}
 		return telegramstore.InboundMessage{
 				UpdateID:        payload.UpdateID,
 				ChatID:          chat.ID,
 				ChatType:        chat.Type,
-				ChatTitle:       chat.Title,
+				ChatTitle:       chatTitle,
 				ChatUsername:    chat.Username,
 				UserID:          userID,
 				MessageID:       callback.Message.MessageID,
