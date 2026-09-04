@@ -64,7 +64,7 @@ func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntimeManager: %v", err)
 	}
-	handler := NewSettingsHandler(rm)
+	handler := NewSettingsHandler(rm, func() bool { return true })
 
 	// 1. Unauthenticated GET -> 401
 	reqUnauth := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)
@@ -122,6 +122,9 @@ func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 	if !status.Configured || !status.TokenSet || !status.SecretSet {
 		t.Fatalf("unexpected status: %+v", status)
 	}
+	if !status.BusinessOccupied {
+		t.Fatalf("expected settings response to report business occupancy: %+v", status)
+	}
 
 	// PATCH settings updates secrets
 	patchBody := `{"bot_token":"updated-token-9999"}`
@@ -132,6 +135,13 @@ func TestSettingsHandler_AuthenticationAndPermissions(t *testing.T) {
 
 	if wPatch.Code != http.StatusOK {
 		t.Fatalf("PATCH expected 200, got %d", wPatch.Code)
+	}
+	var patchedStatus RuntimeStatus
+	if err := json.NewDecoder(wPatch.Body).Decode(&patchedStatus); err != nil {
+		t.Fatalf("decode PATCH response: %v", err)
+	}
+	if !patchedStatus.BusinessOccupied {
+		t.Fatalf("expected PATCH response to report business occupancy: %+v", patchedStatus)
 	}
 
 	// Check runtime state

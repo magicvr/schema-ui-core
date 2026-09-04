@@ -2,6 +2,7 @@ package composition
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -653,6 +654,21 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatalf("newMuxWithExtraProviders(lease): %v", err)
+	}
+	reqSettingsOccupied := httptest.NewRequest(http.MethodGet, "/api/channel/telegram/settings", nil)
+	wSettingsOccupied := httptest.NewRecorder()
+	muxLease.ServeHTTP(wSettingsOccupied, reqSettingsOccupied)
+	if wSettingsOccupied.Code != http.StatusOK {
+		t.Fatalf("settings through composed mux status=%d body=%s", wSettingsOccupied.Code, wSettingsOccupied.Body.String())
+	}
+	var composedSettings struct {
+		BusinessOccupied bool `json:"business_occupied"`
+	}
+	if err := json.NewDecoder(wSettingsOccupied.Body).Decode(&composedSettings); err != nil {
+		t.Fatalf("decode composed settings response: %v", err)
+	}
+	if !composedSettings.BusinessOccupied {
+		t.Fatalf("expected composed settings to report the registered business handler as occupied")
 	}
 	reqLease := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/lease/acquire", nil)
 	wLease := httptest.NewRecorder()

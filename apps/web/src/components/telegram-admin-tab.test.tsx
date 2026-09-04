@@ -42,8 +42,16 @@ const STATUS = {
   webhook_public_base_url: "",
   connection_state: "running",
   receiver: "polling",
+  business_occupied: false,
   bot_username: "fixture_bot",
   captured_messages_count: 3,
+};
+
+const OPERATOR_STATUS = {
+  ...STATUS,
+  mode: "webhook",
+  receiver: "webhook",
+  bot_id: 42,
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -72,6 +80,13 @@ async function settle() {
   });
 }
 
+async function flushPromises() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
 const setNativeValue = (el: HTMLInputElement, value: string) => {
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, value);
   el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -95,6 +110,210 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     // Values are never pre-filled from the server (write-only).
     expect(token.value).toBe("");
     expect(secret.value).toBe("");
+  });
+
+  it("loads operator sessions and transcript while fail-closing the composer before capability proof", async () => {
+    const container = renderTab(async (input) => {
+      const url = String(input);
+      if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+      if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+        return jsonResponse({
+          items: [{ chatId: "8001", chatType: "private", title: "Alice", username: "alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages?page=1&pageSize=100") {
+        return jsonResponse({
+          items: [
+            { chatId: "8001", direction: "inbound", status: "received", occurredAt: "2026-09-05T00:00:00Z", updateId: "9001", text: "hello" },
+            { chatId: "8001", direction: "outbound", status: "failed", occurredAt: "2026-09-05T00:01:00Z", requestId: "operator-1", text: "reply" },
+          ],
+          total: 2,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    expect(container.querySelector("[data-telegram-session='8001']")).not.toBeNull();
+    expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("hello");
+    expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("reply");
+    const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;
+    expect(composer).not.toBeNull();
+    expect(composer.disabled).toBe(true);
+    expect(container.querySelector("[data-telegram-composer]")?.textContent).toContain("Send");
+    expect(container.querySelector("[data-telegram-retry='operator-1']")).toHaveProperty("disabled", true);
+  });
+
+  it("pauses the ten-second operator refresh while hidden and refreshes immediately on visibility restore", async () => {
+    vi.useFakeTimers();
+    try {
+      const sessionCalls: string[] = [];
+      const container = renderTab(async (input) => {
+        const url = String(input);
+        if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+        if (url.startsWith("/api/channel/telegram/operator/sessions?")) {
+          sessionCalls.push(url);
+          return jsonResponse({ items: [], total: 0, page: 1, pageSize: 100 });
+        }
+        return jsonResponse({}, 404);
+      });
+      await flushPromises();
+      expect(sessionCalls).toHaveLength(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(9_999);
+      });
+      expect(sessionCalls).toHaveLength(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      await flushPromises();
+      expect(sessionCalls).toHaveLength(2);
+
+      Object.defineProperty(document, "hidden", { configurable: true, value: true });
+      await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20_000);
+      });
+      expect(sessionCalls).toHaveLength(2);
+
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+      await flushPromises();
+      expect(sessionCalls).toHaveLength(3);
+      expect(container.querySelector("[data-telegram-operator]")).not.toBeNull();
+    } finally {
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      vi.useRealTimers();
+    }
+  });
+
+  it("coalesces a visibility-triggered refresh with an in-flight operator refresh", async () => {
+    vi.useFakeTimers();
+    try {
+      let releaseSessions!: (response: Response) => void;
+      const pendingSessions = new Promise<Response>((resolve) => {
+        releaseSessions = resolve;
+      });
+      let sessionCalls = 0;
+      const container = renderTab(async (input) => {
+        const url = String(input);
+        if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+        if (url.startsWith("/api/channel/telegram/operator/sessions?")) {
+          sessionCalls += 1;
+          return pendingSessions;
+        }
+        return jsonResponse({}, 404);
+      });
+
+      await flushPromises();
+      expect(sessionCalls).toBe(1);
+
+      Object.defineProperty(document, "hidden", { configurable: true, value: true });
+      await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+      await flushPromises();
+      expect(sessionCalls).toBe(1);
+
+      await act(async () => {
+        releaseSessions(jsonResponse({ items: [], total: 0, page: 1, pageSize: 100 }));
+        await pendingSessions;
+        await Promise.resolve();
+      });
+      expect(sessionCalls).toBe(1);
+      expect(container.querySelector("[data-telegram-operator]")).not.toBeNull();
+    } finally {
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      vi.useRealTimers();
+    }
+  });
+
+  it("coalesces same-chat transcript loads while the messages request is in flight", async () => {
+    vi.useFakeTimers();
+    try {
+      let releaseTimeline!: (response: Response) => void;
+      const pendingTimeline = new Promise<Response>((resolve) => {
+        releaseTimeline = resolve;
+      });
+      let timelineCalls = 0;
+      const container = renderTab(async (input) => {
+        const url = String(input);
+        if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+        if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+          return jsonResponse({
+            items: [{ chatId: "8001", chatType: "private", title: "Alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+            total: 1,
+            page: 1,
+            pageSize: 100,
+          });
+        }
+        if (url === "/api/channel/telegram/operator/sessions/8001/messages?page=1&pageSize=100") {
+          timelineCalls += 1;
+          return pendingTimeline;
+        }
+        return jsonResponse({}, 404);
+      });
+
+      await flushPromises();
+      await flushPromises();
+      expect(timelineCalls).toBe(1);
+      const session = container.querySelector("[data-telegram-session='8001']") as HTMLButtonElement;
+      expect(session).not.toBeNull();
+
+      await act(async () => {
+        session.click();
+        await Promise.resolve();
+      });
+      expect(timelineCalls).toBe(1);
+
+      await act(async () => {
+        releaseTimeline(jsonResponse({ items: [], total: 0, page: 1, pageSize: 100 }));
+        await pendingTimeline;
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(timelineCalls).toBe(1);
+    } finally {
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      vi.useRealTimers();
+    }
+  });
+
+  it("hides the operator console while business handlers occupy the Telegram receiver", async () => {
+    const calls: string[] = [];
+    const container = renderTab(async (input) => {
+      calls.push(String(input));
+      if (String(input) === "/api/channel/telegram/settings") {
+        return jsonResponse({ ...OPERATOR_STATUS, mode: "polling", receiver: "polling", business_occupied: true });
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    expect(container.querySelector("[data-telegram-operator]")).toBeNull();
+    expect(calls).not.toContain("/api/channel/telegram/lease/acquire");
+  });
+
+  it("fail-closes the operator console when the occupancy signal is missing", async () => {
+    const calls: string[] = [];
+    const container = renderTab(async (input) => {
+      calls.push(String(input));
+      if (String(input) === "/api/channel/telegram/settings") {
+        return jsonResponse({ ...OPERATOR_STATUS, mode: "polling", receiver: "polling", business_occupied: undefined });
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    expect(container.querySelector("[data-telegram-operator]")).toBeNull();
+    expect(calls).not.toContain("/api/channel/telegram/lease/acquire");
   });
 
   it("acquires a polling lease and renders the live connection status", async () => {

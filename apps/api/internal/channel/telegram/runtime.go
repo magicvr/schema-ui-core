@@ -50,6 +50,7 @@ type RuntimeStatus struct {
 	WebhookPublicBaseURL  string `json:"webhook_public_base_url"`
 	ConnectionState       string `json:"connection_state"`
 	Receiver              string `json:"receiver"`
+	BusinessOccupied      bool   `json:"business_occupied"`
 	BotID                 int64  `json:"bot_id,omitempty"`
 	BotUsername           string `json:"bot_username,omitempty"`
 	LastError             string `json:"last_error,omitempty"`

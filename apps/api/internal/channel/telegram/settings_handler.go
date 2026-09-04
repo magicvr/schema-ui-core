@@ -11,12 +11,17 @@ import (
 
 // SettingsHandler exposes Admin diagnostic status and hot-switch management endpoints.
 type SettingsHandler struct {
-	runtime *RuntimeManager
+	runtime          *RuntimeManager
+	businessOccupied func() bool
 }
 
 // NewSettingsHandler constructs a new SettingsHandler.
-func NewSettingsHandler(runtime *RuntimeManager) *SettingsHandler {
-	return &SettingsHandler{runtime: runtime}
+func NewSettingsHandler(runtime *RuntimeManager, businessOccupied ...func() bool) *SettingsHandler {
+	var probe func() bool
+	if len(businessOccupied) > 0 {
+		probe = businessOccupied[0]
+	}
+	return &SettingsHandler{runtime: runtime, businessOccupied: probe}
 }
 
 // updateSettingsRequest defines the JSON payload for PATCH /api/channel/telegram/settings.
@@ -58,7 +63,7 @@ func (h *SettingsHandler) handleGet(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(RuntimeStatus{})
 		return
 	}
-	_ = json.NewEncoder(w).Encode(h.runtime.Status())
+	_ = json.NewEncoder(w).Encode(h.status())
 }
 
 func (h *SettingsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
@@ -97,5 +102,13 @@ func (h *SettingsHandler) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(h.runtime.Status())
+	_ = json.NewEncoder(w).Encode(h.status())
+}
+
+func (h *SettingsHandler) status() RuntimeStatus {
+	status := h.runtime.Status()
+	if h.businessOccupied != nil {
+		status.BusinessOccupied = h.businessOccupied()
+	}
+	return status
 }

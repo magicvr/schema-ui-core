@@ -5,7 +5,7 @@
 // empty keeps current — F-002 / R-005), plus the captured-message counter for
 // the mock outbound sink. Secrets never leave the API in plaintext or partial
 // masks.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useTranslate } from "@/i18n/runtime";
 import { registerCustomComponent, type CustomComponentProps } from "@/renderer/custom-components";
@@ -19,6 +19,7 @@ interface TelegramSettingsStatus {
   webhook_public_base_url?: string;
   connection_state?: string;
   receiver?: string;
+  business_occupied?: boolean;
   bot_id?: number;
   bot_username?: string;
   last_error?: string;
@@ -34,6 +35,35 @@ interface TelegramLeaseResult {
   receiver?: string;
 }
 
+interface TelegramSession {
+  chatId: string;
+  chatType: string;
+  title: string;
+  username?: string;
+  lastMessageAt: string;
+}
+
+interface TelegramTimelineItem {
+  chatId: string;
+  direction: "inbound" | "outbound" | string;
+  status: string;
+  occurredAt: string;
+  updateId?: string;
+  messageId?: string;
+  userId?: string;
+  senderUsername?: string;
+  requestId?: string;
+  retryOf?: string | null;
+  text: string;
+}
+
+interface TelegramPagedResponse<T> {
+  items?: T[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
+}
+
 const telegramPollingMode = "polling";
 const telegramLeaseIntervalMs = 10_000;
 const telegramLeasePaths: Record<LeaseAction, string> = {
@@ -41,6 +71,8 @@ const telegramLeasePaths: Record<LeaseAction, string> = {
   heartbeat: "/api/channel/telegram/lease/heartbeat",
   release: "/api/channel/telegram/lease/release",
 };
+const telegramOperatorSessionsPath = "/api/channel/telegram/operator/sessions";
+const telegramOperatorPageQuery = "?page=1&pageSize=100";
 
 const inputClass =
   "h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20";
@@ -63,6 +95,29 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [leaseState, setLeaseState] = useState<"inactive" | "acquiring" | "active" | "error">("inactive");
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" || !document.hidden);
+  const [sessionsLoadState, setSessionsLoadState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [sessions, setSessions] = useState<TelegramSession[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [timelineLoadState, setTimelineLoadState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [timeline, setTimeline] = useState<TelegramTimelineItem[]>([]);
+  const [operatorCapability, setOperatorCapability] = useState<"unknown" | "allowed" | "denied" | "error">("unknown");
+  const [composerText, setComposerText] = useState("");
+  const selectedChatRef = useRef<string | null>(null);
+  const operatorRefreshRef = useRef<Promise<void> | null>(null);
+  const timelineFlightsRef = useRef(new Map<string, Promise<void>>());
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChatId;
+  }, [selectedChatId]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      setPageVisible(typeof document === "undefined" || !document.hidden);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   const loadStatus = useCallback(async () => {
     setLoadState("loading");
@@ -101,7 +156,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   );
 
   useEffect(() => {
-    if (loadState !== "ready" || status?.mode !== telegramPollingMode) {
+    if (loadState !== "ready" || status?.mode !== telegramPollingMode || status.business_occupied !== false) {
       setLeaseState("inactive");
       return;
     }
@@ -128,14 +183,17 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
           });
     };
 
+    let pageIsVisible = typeof document === "undefined" || !document.hidden;
+
     const scheduleHeartbeat = () => {
+      if (!pageIsVisible) return;
       timer = setTimeout(() => {
         void heartbeat();
       }, telegramLeaseIntervalMs);
     };
 
     const heartbeat = async () => {
-      if (disposed) return;
+      if (disposed || !pageIsVisible) return;
       // HeartbeatLease intentionally creates an unknown lease to recover a
       // lost acquire response. Mark the lease as potentially live before the
       // request starts so cleanup always queues release after this request.
@@ -152,6 +210,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     };
 
     const acquire = async () => {
+      if (disposed || !pageIsVisible) return;
       setLeaseState("acquiring");
       const result = await queueLease("acquire");
       if (disposed) {
@@ -169,17 +228,160 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       scheduleHeartbeat();
     };
 
+    const onVisibilityChange = () => {
+      pageIsVisible = typeof document === "undefined" || !document.hidden;
+      if (!pageIsVisible) {
+        if (timer !== undefined) clearTimeout(timer);
+        return;
+      }
+      if (leaseHeld) {
+        void heartbeat();
+      } else {
+        void acquire();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     void acquire();
     return () => {
       disposed = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (timer !== undefined) clearTimeout(timer);
       if (leaseHeld) void queueLease("release");
     };
-  }, [callLease, loadState, status?.mode]);
+  }, [callLease, loadState, status?.business_occupied, status?.mode]);
 
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  const operatorReady = status !== null
+    && status.configured
+    && status.business_occupied === false
+    && status.connection_state === "running"
+    && typeof status.bot_id === "number"
+    && status.bot_id > 0
+    && (status.receiver !== telegramPollingMode || leaseState === "active");
+
+  const loadTimeline = useCallback(async (chatId: string): Promise<void> => {
+    const existing = timelineFlightsRef.current.get(chatId);
+    if (existing !== undefined) {
+      await existing;
+      return;
+    }
+
+    const request = (async () => {
+      setTimelineLoadState("loading");
+      try {
+        const response = await fetcher(
+          `${telegramOperatorSessionsPath}/${encodeURIComponent(chatId)}/messages${telegramOperatorPageQuery}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!response.ok) {
+          if (selectedChatRef.current === chatId) setTimelineLoadState("error");
+          return;
+        }
+        const body = (await response.json()) as TelegramPagedResponse<TelegramTimelineItem>;
+        if (selectedChatRef.current === chatId) {
+          setTimeline(Array.isArray(body.items) ? body.items : []);
+          setTimelineLoadState("ready");
+        }
+      } catch {
+        if (selectedChatRef.current === chatId) setTimelineLoadState("error");
+      }
+    })();
+    timelineFlightsRef.current.set(chatId, request);
+    try {
+      await request;
+    } finally {
+      if (timelineFlightsRef.current.get(chatId) === request) {
+        timelineFlightsRef.current.delete(chatId);
+      }
+    }
+  }, [fetcher]);
+
+  const loadSessions = useCallback(async (): Promise<TelegramSession[] | null> => {
+    setSessionsLoadState("loading");
+    try {
+      const response = await fetcher(
+        `${telegramOperatorSessionsPath}${telegramOperatorPageQuery}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!response.ok) {
+        setSessionsLoadState("error");
+        return null;
+      }
+      const body = (await response.json()) as TelegramPagedResponse<TelegramSession>;
+      const nextSessions = Array.isArray(body.items) ? body.items : [];
+      setSessions(nextSessions);
+      const currentChatId = selectedChatRef.current;
+      const nextChatId = currentChatId !== null && nextSessions.some((session) => session.chatId === currentChatId)
+        ? currentChatId
+        : nextSessions[0]?.chatId ?? null;
+      selectedChatRef.current = nextChatId;
+      setSelectedChatId(nextChatId);
+      if (nextChatId === null) {
+        setTimeline([]);
+        setTimelineLoadState("ready");
+      }
+      setSessionsLoadState("ready");
+      return nextSessions;
+    } catch {
+      setSessionsLoadState("error");
+      return null;
+    }
+  }, [fetcher]);
+
+  const refreshOperatorSurface = useCallback(async () => {
+    const existing = operatorRefreshRef.current;
+    if (existing !== null) {
+      await existing;
+      return;
+    }
+    const request = (async () => {
+      const nextSessions = await loadSessions();
+      if (nextSessions === null) return;
+      const nextChatId = selectedChatRef.current;
+      if (nextChatId !== null) await loadTimeline(nextChatId);
+    })();
+    operatorRefreshRef.current = request;
+    try {
+      await request;
+    } finally {
+      if (operatorRefreshRef.current === request) operatorRefreshRef.current = null;
+    }
+  }, [loadSessions, loadTimeline]);
+
+  useEffect(() => {
+    if (!operatorReady || !pageVisible) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const refresh = async () => {
+      await refreshOperatorSurface();
+      if (!disposed && pageVisible && (typeof document === "undefined" || !document.hidden)) {
+        timer = setTimeout(() => {
+          void refresh();
+        }, telegramLeaseIntervalMs);
+      }
+    };
+
+    void refresh();
+    return () => {
+      disposed = true;
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [operatorReady, pageVisible, refreshOperatorSurface]);
+
+  useEffect(() => {
+    if (!operatorReady || selectedChatId === null) {
+      setOperatorCapability("unknown");
+      setTimeline([]);
+      setTimelineLoadState(operatorReady ? "ready" : "idle");
+      return;
+    }
+    void loadTimeline(selectedChatId);
+  }, [loadTimeline, operatorReady, selectedChatId]);
 
   async function extractError(response: Response): Promise<string> {
     try {
@@ -431,6 +633,130 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         <p className="text-xs text-muted-foreground">
           {t("schema.telegram.status.captured")} {status.captured_messages_count}
         </p>
+      ) : null}
+
+      {status !== null && status.configured && status.business_occupied === false && typeof status.bot_id === "number" && status.bot_id > 0 ? (
+        <section data-telegram-operator className="space-y-3 rounded-md border border-border/60 bg-muted/10 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold">{t("schema.telegram.operator.title")}</h3>
+            <button
+              type="button"
+              data-telegram-operator-refresh
+              disabled={!operatorReady || sessionsLoadState === "loading"}
+              onClick={() => void refreshOperatorSurface()}
+              className="rounded-md border border-input/80 px-2.5 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {sessionsLoadState === "loading" ? t("feedback.loading") : t("schema.telegram.operator.refresh")}
+            </button>
+          </div>
+
+          {!operatorReady ? (
+            <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.unavailable")}</p>
+          ) : sessionsLoadState === "error" ? (
+            <p role="alert" className="text-xs text-destructive">{t("schema.telegram.operator.loadFailed")}</p>
+          ) : sessions.length === 0 && sessionsLoadState === "ready" ? (
+            <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.empty")}</p>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)]">
+              <nav aria-label={t("schema.telegram.operator.select")} data-telegram-sessions className="space-y-1">
+                {sessions.map((session) => {
+                  const displayName = session.title || session.username || session.chatId;
+                  return (
+                    <button
+                      type="button"
+                      key={session.chatId}
+                      data-telegram-session={session.chatId}
+                      aria-pressed={selectedChatId === session.chatId}
+                      onClick={() => {
+                        selectedChatRef.current = session.chatId;
+                        setSelectedChatId(session.chatId);
+                        void loadTimeline(session.chatId);
+                      }}
+                      className="block w-full rounded-md border border-transparent px-2.5 py-2 text-left text-xs hover:bg-muted aria-pressed:border-border aria-pressed:bg-muted/60"
+                    >
+                      <span className="block truncate font-medium">{displayName}</span>
+                      <span className="block text-muted-foreground">{session.chatType} · {session.chatId}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+
+              <div data-telegram-transcript className="min-w-0 space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground">{t("schema.telegram.operator.timeline")}</h4>
+                {timelineLoadState === "loading" ? (
+                  <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.timelineLoading")}</p>
+                ) : timelineLoadState === "error" ? (
+                  <p role="alert" className="text-xs text-destructive">{t("schema.telegram.operator.timelineFailed")}</p>
+                ) : timeline.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.timelineEmpty")}</p>
+                ) : (
+                  <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                    {timeline.map((item, index) => {
+                      const directionLabel = item.direction === "inbound"
+                        ? t("schema.telegram.operator.inbound")
+                        : t("schema.telegram.operator.outbound");
+                      const statusLabel = item.status === "pending"
+                        ? t("schema.telegram.operator.pending")
+                        : item.status === "sent"
+                          ? t("schema.telegram.operator.sent")
+                          : item.status === "failed"
+                            ? t("schema.telegram.operator.failed")
+                            : item.status;
+                      return (
+                        <article
+                          key={`${item.direction}-${item.requestId ?? item.updateId ?? item.occurredAt}-${index}`}
+                          data-telegram-message
+                          data-direction={item.direction}
+                          className="rounded-md border border-border/50 bg-background/70 px-3 py-2 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                            <span>{directionLabel} · {statusLabel}</span>
+                            <time dateTime={item.occurredAt}>{item.occurredAt}</time>
+                          </div>
+                          <p className="mt-1 whitespace-pre-wrap break-words">{item.text}</p>
+                          {item.direction === "outbound" && item.status === "failed" ? (
+                            <button
+                              type="button"
+                              data-telegram-retry={item.requestId}
+                              disabled={operatorCapability !== "allowed"}
+                              className="mt-2 rounded-md border border-input/80 px-2 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {t("schema.telegram.operator.retry")}
+                            </button>
+                          ) : null}
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <fieldset
+                  data-telegram-composer
+                  disabled={operatorCapability !== "allowed" || !operatorReady}
+                  className="space-y-2 rounded-md border border-border/50 p-3 disabled:opacity-60"
+                >
+                  <legend className="px-1 text-xs font-semibold">{t("schema.telegram.operator.composer")}</legend>
+                  <textarea
+                    aria-label={t("schema.telegram.operator.composerText")}
+                    value={composerText}
+                    onChange={(event) => setComposerText(event.target.value)}
+                    placeholder={t("schema.telegram.operator.composerPlaceholder")}
+                    rows={3}
+                    className="min-h-20 w-full resize-y rounded-md border border-input/80 bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <p role="status" className="text-xs text-muted-foreground">
+                      {operatorCapability === "unknown"
+                        ? t("schema.telegram.operator.capabilityPending")
+                        : t("schema.telegram.operator.capabilityUnavailable")}
+                    </p>
+                    <button type="button" disabled className={buttonClass}>{t("schema.telegram.operator.send")}</button>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+          )}
+        </section>
       ) : null}
 
       {feedback !== null ? (

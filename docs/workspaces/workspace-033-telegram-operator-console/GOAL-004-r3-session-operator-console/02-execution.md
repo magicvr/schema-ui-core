@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.4.0
+version: 1.8.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -28,7 +28,11 @@ version: 1.4.0
 | [E-014-r3-c3-recommended-remediation](02-execution/E-014-r3-c3-recommended-remediation.md) | 2026-09-05 | R3 C3 A-023 推荐项修复 | `fa0caa70` 已落盘；A-024 response；F-001/F-002 fixed；等待 independent re-audit，R3 active · 2/4 | `02-execution/E-014-r3-c3-recommended-remediation.md` |
 | [E-015-r3-c3-a025-remediation](02-execution/E-015-r3-c3-a025-remediation.md) | 2026-09-05 | R3 C3 A-025 推荐项修复 | A-026 response；retry token/空 token durable/composition 401 钉已补；等待最终 independent，R3 active · 2/4 | `02-execution/E-015-r3-c3-a025-remediation.md` |
 | [E-016-r3-c3-closeout](02-execution/E-016-r3-c3-closeout.md) | 2026-09-05 | R3 C3 检查点关闭 | A-027 Grok independent final pass；A-028 response；C3 完成；R3 active · 3/4；C4 可开始 | `02-execution/E-016-r3-c3-closeout.md` |
+| [E-017-r3-c4-ui-foundation](02-execution/E-017-r3-c4-ui-foundation.md) | 2026-09-05 | R3 C4 UI 基础切片 | 会话列表/成绩单、10 秒单飞、失焦暂停/恢复即刷已实现；A-029 self；capability API 形状待用户裁决；R3 active · 3/4 | `02-execution/E-017-r3-c4-ui-foundation.md` |
+| [E-018-r3-c4-a030-response](02-execution/E-018-r3-c4-a030-response.md) | 2026-09-05 | R3 C4 A-030 响应 | F-001 双语文案、F-002 10 秒/单飞测试、F-003 占用隐藏与 lease fail-closed 已处理；A-031 self；修复后 independent re-audit 待进行；R3 active · 3/4 | `02-execution/E-018-r3-c4-a030-response.md` |
+| [E-019-r3-c4-a032-response](02-execution/E-019-r3-c4-a032-response.md) | 2026-09-05 | R3 C4 A-032 推荐项响应 | 精确发送键、同 chat 成绩单单飞、composition/缺省占用/lease 热更新接缝已处理；A-033 self；修复后 independent re-audit 待进行；R3 active · 3/4 | `02-execution/E-019-r3-c4-a032-response.md` |
+| [E-020-r3-c4-a034-response](02-execution/E-020-r3-c4-a034-response.md) | 2026-09-05 | R3 C4 A-034 独立复审响应 | A-034 Grok independent pass；A-032 三项 recommended fixed；无新增 required/recommended；I-033-023 待裁决；R3 active · 3/4 | `02-execution/E-020-r3-c4-a034-response.md` |
 
 ## 事实边界
 
-只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；`fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 与 A-025 independent re-audit 已记录；随后补齐 A-025 F-001 recommended，A-026 response、A-027 最终 Grok independent close-out `pass` 与 A-028 response 已记录，C3 已关闭，R3 为 `active · 3/4`，C4 下一步。定向测试、隔离 C3 race 和本机 PostgreSQL gated 测试通过；全量 handler race 曾出现 wallet/SQLite 并发争用，作为环境/基线波动保留。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；`fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 与 A-025 independent re-audit 已记录；随后补齐 A-025 F-001 recommended，A-026 response、A-027 最终 Grok independent close-out `pass` 与 A-028 response 已记录，C3 已关闭，R3 为 `active · 3/4`；E-017/A-029 已记录 C4 会话列表、成绩单与基础刷新切片，E-018/A-031 已响应 A-030 的双语文案、10 秒/单飞测试和业务占用隐藏/lease 接缝，修复后 independent re-audit 尚待执行，`I-033-023` capability API 形状待用户裁决，C4 仍未关门。定向 Web 10/10、全量 92/1205、API Telegram/composition 定向测试通过；`npm run build` 的写集外 form-controls 类型错误仍为已知基线，未修改。
