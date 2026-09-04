@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r2-connection-settings
 doc: audit
-status: active
+status: done
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.16.0
+version: 0.18.1
 ---
 
 # GOAL-003 · R2 审计索引
@@ -41,7 +41,9 @@ version: 0.16.0
 | [A-015-r2-c4-implementation-independent](03-audit/A-015-r2-c4-implementation-independent.md) | 2026-09-04 | independent | R2 C4 Admin settings UI、lease HTTP 认证/会话隔离、manager/Fx 接缝、profile gating 与相关测试 | **pass** | **0** | `03-audit/A-015-r2-c4-implementation-independent.md` |
 | [A-016-r2-c4-audit-response](03-audit/A-016-r2-c4-audit-response.md) | 2026-09-04 | self | 响应 A-015 并关闭 R2 C4 检查点 | **pass** | **0** | `03-audit/A-016-r2-c4-audit-response.md` |
 | [A-017-r2-c5-implementation-self](03-audit/A-017-r2-c5-implementation-self.md) | 2026-09-04 | self | R2 C5 Fake Bot API、错误/退出矩阵、迁移/导出/并发与 Fx lifecycle | **pass** | **0** | `03-audit/A-017-r2-c5-implementation-self.md` |
+| [A-018-r2-c5-implementation-independent](03-audit/A-018-r2-c5-implementation-independent.md) | 2026-09-04 | independent | R2 C5 Fake Bot API、错误/退出矩阵、迁移/导出/并发、Fx lifecycle 与 UI/i18n 边界 | **pass** | **0** | `03-audit/A-018-r2-c5-implementation-independent.md` |
+| [A-019-r2-c5-audit-response](03-audit/A-019-r2-c5-audit-response.md) | 2026-09-04 | self | 响应 A-017 self 与 A-018 Grok independent，并关闭 C5/GOAL-003 | **pass** | **0** | `03-audit/A-019-r2-c5-audit-response.md` |
 
 ## 结论状态
 
-R2 C1 已由用户裁决、A-002 self `pass` 与 A-003 independent `pass`（open required = 0）核对；A-001 原文保留。A-004 已完成 `/govern` 响应。C2 生产实现已由 A-005 self `pass` 与 A-006 Grok independent `pass`（open required = 0）核对，A-007 已完成 `/govern` 响应并关闭 C2 检查点（progress 2/5）。A-008 纠正了 A-007 中将整个 GOAL-003 投影为 `done` 的错误。A-003 F-001 以代码+回归测试合法 `fixed`；A-006 F-001～F-005 仍为推荐性后续项，不构成 C2 required 阻断。A-009 已核对 C3 初次实施，A-010 Grok independent 原文保留为 **fail**、open_required=`3`；其 F-001～F-003 已由 `4cc96b06` 修复、A-011 self `pass`，并由 A-012 Grok independent re-audit 标为 `fixed`（A-012 **pass**、open_required=`0`）。A-013 已响应并合法闭合三项 required，关闭 C3，GOAL-003 当前为 `active · 3/5`。A-014 已核对 C4 实现 self `pass`、open_required=`0`（原文保留）。A-015 Grok independent 已独立核验当前 HEAD 与测试，**pass**、open_required=`0`；A-016 已响应并关闭 C4，GOAL-003 当前为 `active · 4/5`。A-017 self 已核对 C5 实现与验证，`pass`、open_required=`0`，但不关闭 C5；C5 independent 审计待进行。A-015 F-001～F-004 与 A-010 F-004～F-005 / A-012 F-001～F-002 仍为 recommended open，已由 E-012/A-017 记录部分补证但未静默闭合。
+R2 C1 已由用户裁决、A-002 self `pass` 与 A-003 independent `pass`（open required = 0）核对；A-001 原文保留。A-004 已完成 `/govern` 响应。C2 生产实现已由 A-005 self `pass` 与 A-006 Grok independent `pass`（open required = 0）核对，A-007 已完成 `/govern` 响应并关闭 C2 检查点（progress 2/5）。A-008 纠正了 A-007 中将整个 GOAL-003 投影为 `done` 的错误。A-003 F-001 以代码+回归测试合法 `fixed`；A-006 F-001～F-005 仍为推荐性后续项，不构成 C2 required 阻断。A-009 已核对 C3 初次实施，A-010 Grok independent 原文保留为 **fail**、open_required=`3`；其 F-001～F-003 已由 `4cc96b06` 修复、A-011 self `pass`，并由 A-012 Grok independent re-audit 标为 `fixed`（A-012 **pass**、open_required=`0`）。A-013 已响应并合法闭合三项 required，关闭 C3，GOAL-003 当前为 `active · 3/5`。A-014 已核对 C4 实现 self `pass`、open_required=`0`（原文保留）。A-015 Grok independent 已独立核验当前 HEAD 与测试，**pass**、open_required=`0`；A-016 已响应并关闭 C4，GOAL-003 当前为 `active · 4/5`。A-017 self 已核对 C5 实现与验证，`pass`、open_required=`0`；A-018 Grok independent 已独立核验当前 HEAD `c1800f7d` / 实现提交 `690259fe` 与定向测试，**pass**、`open_required=0`；A-019 已响应并关闭 C5 及 GOAL-003，progress `5/5`。A-001～A-018 原文未改写。A-015 F-001～F-004、A-010 F-004～F-005、A-012 F-001～F-002、A-006 后续项及 A-018 F-001～F-002 仍为 recommended open，未静默闭合。

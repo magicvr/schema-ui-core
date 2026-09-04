@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-connection-settings
 title: R2 · Telegram 连接与设置实现
-status: active
+status: done
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.3.6
-progress: 4/5
+version: 0.4.0
+progress: 5/5
 plan_refs:
   - VP-033-telegram-operator-console
 primary_plan: VP-033-telegram-operator-console
@@ -29,11 +29,11 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 
 ## 成功标准
 
-- [ ] mode、webhook URL、token/secret 的配置、持久化、迁移、重启回读与 settings API 边界可核对，且不泄漏密钥。
-- [ ] Bot API client 支持 `getMe`、`setWebhook`、`deleteWebhook`、`getUpdates`，长轮询 client 与 `sendMessage` client 分离并遵守 D-003 timeout 语义。
-- [ ] connection manager 实现 webhook/polling 互斥切换、idle/receiver 状态、业务占用位/heartbeat lease 与 shutdown drain，并接入 Fx composition。
-- [ ] Admin Telegram settings 页面支持 mode、显式 URL 与 write-only secrets，保持现有权限、Profile 与 i18n 边界。
-- [ ] Fake Bot API、API/Web/组合根和生命周期测试覆盖 R1-V-002～R1-V-009；R2 相关 required finding 归零后才进入 R3。
+- [x] mode、webhook URL、token/secret 的配置、持久化、迁移、重启回读与 settings API 边界可核对，且不泄漏密钥。
+- [x] Bot API client 支持 `getMe`、`setWebhook`、`deleteWebhook`、`getUpdates`，长轮询 client 与 `sendMessage` client 分离并遵守 D-003 timeout 语义。
+- [x] connection manager 实现 webhook/polling 互斥切换、idle/receiver 状态、业务占用位/heartbeat lease 与 shutdown drain，并接入 Fx composition。
+- [x] Admin Telegram settings 页面支持 mode、显式 URL 与 write-only secrets，保持现有权限、Profile 与 i18n 边界。
+- [x] Fake Bot API、API/Web/组合根和生命周期测试覆盖 R1-V-002～R1-V-009；R2 相关 required finding 归零后才进入 R3。
 
 ## 阶段路线图（P-001）
 
@@ -45,7 +45,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 | C2 | Telegram 配置 schema、迁移、runtime 回读与 settings API | **完成**：v67 additive migration；DB authoritative（含空列）；settings PATCH；A-005 self + A-006 Grok independent pass；A-007 response |
 | C3 | Bot API client、connection manager、互斥切换与 Fx 生命周期 | **完成**：A-010 F-001～F-003 fixed；A-012 Grok independent pass；A-013 response；progress 3/5 |
 | C4 | Admin settings UI、占用位/heartbeat 接缝与跨层集成 | **完成**：E-010/E-011；A-014 self + A-015 Grok independent pass；A-016 response；progress 4/5 |
-| C5 | Fake Bot API、退出/错误矩阵、self + independent 阶段审视 | **self 完成，independent 待进行**：E-012；A-017 self `pass`；提交 `690259fe`；GOAL-003 仍 `active · 4/5` |
+| C5 | Fake Bot API、退出/错误矩阵、self + independent 阶段审视 | **完成**：E-012/E-013；A-017 self + A-018 Grok independent `pass`；A-019 response；提交 `690259fe`；GOAL-003 `done · 5/5` |
 
 ## 信息就绪与未知项（P-005）
 
@@ -57,7 +57,7 @@ serves_summary: 承载 Root R2：Telegram Bot API 管理调用、mode/显式 web
 | I-033-017 | non-blocking | disabled profile 下 Telegram HTTP surface 是否继续按现有 module gating 处理 | 实施 / C4 | C3 | provider/composition disabled profile 404 测试 | **verified** | 未延期 | A-014；settings、lease、webhook、schema 均未注册 |
 | I-033-018 | non-blocking | `HasBusinessHandlers` 放在具体 dispatcher/adapter 还是扩展 kernel 端口 | 实施 / C3 | C3 | R2 实现决策与编译期/行为测试 | **verified** | 已由 `Dispatcher.HasBusinessHandlers` 与 C3 行为测试核对 | A-009 |
 
-R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；C2 已由 A-005 self、A-006 Grok independent 与 A-007 response 完成并关闭检查点，progress 为 2/5。A-007 中将整个 GOAL-003 写为 `done` 的表述已由 A-008 纠正。A-009 已记录 C3 实施 self `pass`；A-010 independent fail 的 F-001～F-003 已由 `4cc96b06` 修复、A-011 self `pass`，并由 A-012 Grok independent re-audit `pass` 确认，A-013 已合法闭合并关闭 C3。A-014 self、A-015 Grok independent 与 A-016 response 已关闭 C4，当前目标为 `active · 4/5`；C5 实现与 self 核验已由 E-012/A-017 和提交 `690259fe` 记录，independent 审计与响应待进行。A-010 F-004～F-005、A-012/A-015 recommended findings 与 A-006 后续项仍保持开放，不构成 C4 或 C5 required 阻断。I-033-017 与 I-033-018 均已 verified。
+R2 C1 的 3 项 required 信息已由用户裁决并写入 D-001，A-002 self 与 A-003 independent response 均 `pass`；C2 已由 A-005 self、A-006 Grok independent 与 A-007 response 完成并关闭检查点，progress 为 2/5。A-007 中将整个 GOAL-003 写为 `done` 的表述已由 A-008 纠正。A-009 已记录 C3 实施 self `pass`；A-010 independent fail 的 F-001～F-003 已由 `4cc96b06` 修复、A-011 self `pass`，并由 A-012 Grok independent re-audit `pass` 确认，A-013 已合法闭合并关闭 C3。A-014 self、A-015 Grok independent 与 A-016 response 已关闭 C4，progress 为 4/5。C5 实现与 self 核验已由 E-012/A-017 和提交 `690259fe` 记录；A-018 Grok independent `pass`、open required = 0，A-019 已响应并关闭 C5 与 GOAL-003，progress 为 5/5。A-010 F-004～F-005、A-012/A-015/A-018 recommended findings 与 A-006 后续项仍保持开放，不构成 R2 关闭或 R3 入口的 required 阻断。I-033-017 与 I-033-018 均已 verified。
 
 ## 父目标
 
