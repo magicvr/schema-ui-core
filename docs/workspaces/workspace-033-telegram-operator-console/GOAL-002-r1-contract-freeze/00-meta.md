@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.1.0
-progress: 0/3
+version: 0.2.0
+progress: 2/3
 plan_refs:
   - VP-033-telegram-operator-console
 primary_plan: VP-033-telegram-operator-console
@@ -39,8 +39,8 @@ serves_summary: 承载 Root R1 合同冻结：连接模式、轮询生命周期�
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | 用户方案裁决与 R1 合同冻结 | 待确认 |
-| C2 | 状态/接口/失败语义/验证矩阵落盘 | 待开始 |
+| C1 | 用户方案裁决与 R1 合同冻结 | **完成**：D-002 accepted |
+| C2 | 状态/接口/失败语义/验证矩阵落盘 | **完成**：D-002 R1 合同与 R1-V-001～008 |
 | C3 | R1 阶段审视与 R2 放行建议 | 待开始 |
 
 ## 信息就绪与未知项（P-005）
@@ -50,11 +50,11 @@ serves_summary: 承载 Root R1 合同冻结：连接模式、轮询生命周期�
 | I-033-001～008 | inherited | VP-033 入站、轮询、占用位、产品边界、Privacy Mode、公网 URL | R1 合同 | R1 | verified | Root `00-meta.md` 与 VP-033；已由用户书面冻结 |
 | I-033-009 | non-blocking | Admin 短轮询间隔的默认秒数 | R1 UI 合同 | R1 | open | 可在 R1 合同中给出默认值，不解除 SSE 接缝 |
 | I-033-010 | non-blocking | 发言权探测与缓存失效策略 | R3 | R3 | open | R3 冻结；不阻断本 R1 |
-| I-033-011 | required | `mode` 与显式 webhook 公网 base URL 的持久化/配置边界 | R2 配置与重启语义 | R1 | open | 待用户选择：复用 `auth.public_base_url` 与 DB mode，或建立 Telegram 专属配置面 |
-| I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | open | 待用户确认默认 polling 的持久化与生产推荐 webhook 的表达方式 |
-| I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | open | 待用户确认采用 Telegram connection manager 接入 composition `Start/Stop` |
+| I-033-011 | required | `mode` 与显式 webhook 公网 base URL 的持久化/配置边界 | R2 配置与重启语义 | R1 | **verified** | 用户 2026-09-04 书面选择 Telegram 专属 `webhook_public_base_url` 配置/持久化面；D-002 |
+| I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **verified** | 用户 2026-09-04 书面选择缺省 `polling`、生产显式 `webhook`；D-002 |
+| I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **verified** | 用户 2026-09-04 书面选择 Telegram connection manager + composition `OnStop` drain；D-002 |
 
-当前 R1 方案冻结所需的 required 信息为 `I-033-011`～`I-033-013`；未关闭前不得进入受其影响的 R2 实施。其余开放项均为 non-blocking，不能被写成已验证。
+当前 R1 方案冻结所需的 required 信息 `I-033-011`～`I-033-013` 已由用户决定并以 D-002 记录为 `verified`；R2 仍须等待 C3 阶段审视与放行建议。其余开放项均为 non-blocking，不能被写成已验证。
 
 ## 父目标
 

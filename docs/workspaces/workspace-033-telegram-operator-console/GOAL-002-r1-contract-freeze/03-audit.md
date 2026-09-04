@@ -5,14 +5,14 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.1.0
+version: 0.2.0
 ---
 
 # GOAL-002 · R1 03-audit 索引
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
-| — | — | — | — | — | 3 | 尚未到 R1 阶段审计节点；`I-033-011`～`I-033-013` 为未关闭 required 信息门禁 | — |
+| — | — | — | — | — | 0 | 尚未到 R1 阶段审计节点；`I-033-011`～`I-033-013` 已由 D-002 记录为 verified | — |
 
 ## 信息就绪核对（按 scope）
 
@@ -20,8 +20,8 @@ version: 0.1.0
 |--------|------|------|
 | I-033-001～008 | verified | 承接 VP-033 与 Root 的用户书面冻结 |
 | I-033-009/010 | non-blocking open | 分别最晚 R1 / R3；不构成当前 required finding |
-| I-033-011～013 | required open | 影响 R1 方案冻结与 R2 实施；待用户裁决 |
-| 到期 required | I-033-011～013 | R1 方案冻结前必须关闭或取得合规 residual 留痕 |
+| I-033-011～013 | required verified | 用户书面裁决已由 D-002 记录；R2 仍受 C3 阶段审视门控 |
+| 到期 required | 无 | required 信息已处理；R1 C3 审视尚未完成 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
 ## 审计记录（ledger）

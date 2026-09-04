@@ -5,14 +5,15 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.1.0
+version: 0.2.0
 ---
 
 # GOAL-002-r1-contract-freeze · 01-decision 索引
 
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
-| [D-001-r1-scope-and-gates](01-decision/D-001-r1-scope-and-gates.md) | 2026-09-04 | R1 范围与方案门禁 | 承接已冻结产品合同；列出待用户裁决的实现选择 | proposed |
+| [D-001-r1-scope-and-gates](01-decision/D-001-r1-scope-and-gates.md) | 2026-09-04 | R1 范围与方案门禁 | 承接已冻结产品合同；列出待用户裁决的实现选择 | superseded |
+| [D-002-r1-contract-freeze](01-decision/D-002-r1-contract-freeze.md) | 2026-09-04 | R1 合同冻结与用户方案裁决 | 冻结 Telegram 专属 URL、polling 缺省和 connection manager；形成行为/失败语义与验证矩阵 | accepted |
 
 ## 决策记录（ledger）
 

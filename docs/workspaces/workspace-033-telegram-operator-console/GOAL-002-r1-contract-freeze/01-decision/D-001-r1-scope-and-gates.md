@@ -3,7 +3,7 @@ doc_type: goal-decision
 id: D-001-r1-scope-and-gates
 parent: GOAL-002-r1-contract-freeze
 date: 2026-09-04
-status: proposed
+status: superseded
 version: 0.1.0
 ---
 
@@ -29,4 +29,4 @@ Root 已按 VP-033 建立 R1 → R2 → R3 → R4 的串行路线。R1 横跨连
 
 ## 当前状态
 
-本记录为 `proposed`，只冻结阶段边界与决策门，不冻结上表中的实现方案。收到用户书面选择后，以新 D-002 记录 accepted 结果，并同步 `I-033-011`～`I-033-013`、R1 检查点和 Root 投影。
+本记录的待决策状态已由用户在 2026-09-04 书面裁决，并由 [D-002-r1-contract-freeze](D-002-r1-contract-freeze.md) 取代。原条目保留作为方案门的历史记录；R1 合同、验证矩阵和信息项投影以 D-002 为准。

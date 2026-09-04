@@ -20,8 +20,8 @@ version: 0.1.0
 |--------|------|------|
 | I-033-001～008 | verified | 激活冻结已投影至 Root meta |
 | I-033-009/010 | non-blocking open | 分别最晚 R1 / R3；不构成当前 required finding |
-| I-033-011～013 | required open | R1 方案冻结与 R2 实施门禁；待用户裁决 |
-| 到期 required | I-033-011～013 | Root R1 已进入进行中；关闭前不进入受影响的 R2 实施 |
+| I-033-011～013 | required verified | 用户书面裁决已由 R1 D-002 记录；R2 仍受 R1 C3 审视门控 |
+| 到期 required | 无 | required 信息已处理；Root R1 阶段尚未完成审视 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
 ## 审计记录（ledger）
