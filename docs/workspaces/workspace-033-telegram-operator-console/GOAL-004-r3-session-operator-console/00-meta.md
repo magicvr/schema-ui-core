@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-04
-version: 0.4.0
+version: 0.5.0
 progress: 1/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -17,7 +17,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 ## 概述
 
-本目标承接已关闭的 R2，交付 VP-033 的会话与人工台阶段：从 webhook/polling 的共同入站路径识别 Telegram 实际投递的文本更新，按 chat 形成私聊/群会话与文本成绩单，并为未绑定且连接成功的 Admin 提供人工代 bot 发言和发言权反馈。C1 已经 A-005 Grok independent `pass` 与 A-006 response 关闭；C2 进入规划/选型，尚未实施代码。
+本目标承接已关闭的 R2，交付 VP-033 的会话与人工台阶段：从 webhook/polling 的共同入站路径识别 Telegram 实际投递的文本更新，按 chat 形成私聊/群会话与文本成绩单，并为未绑定且连接成功的 Admin 提供人工代 bot 发言和发言权反馈。C1 已经 A-005 Grok independent `pass` 与 A-006 response 关闭；C2 已取得 D-004 用户裁决，进入 self/independent 合同审视，尚未实施代码。
 
 ## 已冻结边界
 
@@ -41,7 +41,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | R3 数据/权限/发言权合同、信息需求与用户裁决冻结 | **完成**：D-002+D-003/E-002～E-004；A-002 self `pass`；A-003 F-001 → A-004 `fixed`；A-005 Grok independent `pass`；A-006 response；开放 required = 0 |
-| C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | **规划/选型中**：C1 已关闭；schema、迁移形态、共同入站接线与测试参数待用户裁决后实施 |
+| C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | **合同审视中**：D-004 已选双表/规范化字段/兼容现有 handler 失败语义；self + Grok independent 审视通过后实施 |
 | C3 | 会话列表/成绩单/人工发送 API、权限与运行时接线 | 待开始；依赖 C2 |
 | C4 | Admin 人工台 UI、发言权反馈、端到端验证与 independent 审计 | 待开始；依赖 C3 |
 
@@ -62,4 +62,4 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 ## 台账布局
 
-`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-003、E-001～E-004、A-001～A-006 已记录 R3 建立、C1 裁决/审计闭合与 C2 入口，后续按编号递增。
+`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-004、E-001～E-005、A-001～A-006 已记录 R3 建立、C1 审计闭合与 C2 用户裁决入口，后续按编号递增。
