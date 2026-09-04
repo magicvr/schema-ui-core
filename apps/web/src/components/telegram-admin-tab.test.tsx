@@ -100,8 +100,12 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
   it("acquires a polling lease and renders the live connection status", async () => {
     const calls: Array<{ url: string; method?: string }> = [];
     const container = renderTab(async (input, init) => {
-      calls.push({ url: String(input), method: init?.method });
-      return jsonResponse(STATUS);
+      const url = String(input);
+      calls.push({ url, method: init?.method });
+      if (url === "/api/channel/telegram/settings") {
+        return jsonResponse({ ...STATUS, connection_state: "idle", receiver: "none" });
+      }
+      return jsonResponse({ ok: true, connection_state: "running", receiver: "polling" });
     });
     await settle();
 
@@ -112,6 +116,28 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(container.querySelector("[data-telegram-connection]")).not.toBeNull();
     expect(container.textContent).toContain("Connection: Running · Polling");
     expect(container.textContent).toContain("Console lease: Active");
+  });
+
+  it("releases the polling lease when the tab unmounts", async () => {
+    const calls: Array<{ url: string; method?: string }> = [];
+    const container = renderTab(async (input, init) => {
+      calls.push({ url: String(input), method: init?.method });
+      if (String(input) === "/api/channel/telegram/settings") return jsonResponse(STATUS);
+      return jsonResponse({ ok: true, connection_state: "running", receiver: "polling" });
+    });
+    await settle();
+
+    const mounted = activeRoots.find((entry) => entry.container === container);
+    expect(mounted).toBeDefined();
+    await act(async () => mounted!.root.unmount());
+    activeRoots.splice(activeRoots.indexOf(mounted!), 1);
+    mounted!.container.remove();
+    await settle();
+
+    expect(calls).toContainEqual({
+      url: "/api/channel/telegram/lease/release",
+      method: "POST",
+    });
   });
 
   it("PATCHes receiver mode and webhook origin as non-secret settings", async () => {

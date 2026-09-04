@@ -28,6 +28,12 @@ interface TelegramSettingsStatus {
 
 type LeaseAction = "acquire" | "heartbeat" | "release";
 
+interface TelegramLeaseResult {
+  ok: boolean;
+  connection_state?: string;
+  receiver?: string;
+}
+
 const telegramPollingMode = "polling";
 const telegramLeaseIntervalMs = 10_000;
 const telegramLeasePaths: Record<LeaseAction, string> = {
@@ -77,12 +83,18 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   }, [fetcher]);
 
   const callLease = useCallback(
-    async (action: LeaseAction): Promise<boolean> => {
+    async (action: LeaseAction): Promise<TelegramLeaseResult> => {
       try {
         const response = await fetcher(telegramLeasePaths[action], { method: "POST" });
-        return response.ok;
+        if (!response.ok) return { ok: false };
+        const body = (await response.json()) as Omit<TelegramLeaseResult, "ok"> & { ok?: boolean };
+        return {
+          ok: body.ok !== false,
+          connection_state: body.connection_state,
+          receiver: body.receiver,
+        };
       } catch {
-        return false;
+        return { ok: false };
       }
     },
     [fetcher],
@@ -97,12 +109,23 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     let disposed = false;
     let leaseHeld = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let leaseQueue = Promise.resolve();
+    let leaseQueue: Promise<TelegramLeaseResult> = Promise.resolve({ ok: true });
 
     const queueLease = (action: LeaseAction) => {
       const result = leaseQueue.then(() => callLease(action));
-      leaseQueue = result.then(() => undefined, () => undefined);
+      leaseQueue = result.then(() => ({ ok: true }), () => ({ ok: false }));
       return result;
+    };
+
+    const applyLeaseSnapshot = (result: TelegramLeaseResult) => {
+      if (result.connection_state === undefined && result.receiver === undefined) return;
+      setStatus((current) => current === null
+        ? current
+        : {
+            ...current,
+            connection_state: result.connection_state ?? current.connection_state,
+            receiver: result.receiver ?? current.receiver,
+          });
     };
 
     const scheduleHeartbeat = () => {
@@ -113,10 +136,14 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
 
     const heartbeat = async () => {
       if (disposed) return;
-      const ok = await queueLease("heartbeat");
+      // HeartbeatLease intentionally creates an unknown lease to recover a
+      // lost acquire response. Mark the lease as potentially live before the
+      // request starts so cleanup always queues release after this request.
+      leaseHeld = true;
+      const result = await queueLease("heartbeat");
       if (disposed) return;
-      if (ok) {
-        leaseHeld = true;
+      if (result.ok) {
+        applyLeaseSnapshot(result);
         setLeaseState("active");
       } else {
         setLeaseState("error");
@@ -126,17 +153,18 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
 
     const acquire = async () => {
       setLeaseState("acquiring");
-      const ok = await queueLease("acquire");
+      const result = await queueLease("acquire");
       if (disposed) {
-        if (ok) void queueLease("release");
+        if (result.ok) void queueLease("release");
         return;
       }
-      if (!ok) {
+      if (!result.ok) {
         setLeaseState("error");
         scheduleHeartbeat();
         return;
       }
       leaseHeld = true;
+      applyLeaseSnapshot(result);
       setLeaseState("active");
       scheduleHeartbeat();
     };
