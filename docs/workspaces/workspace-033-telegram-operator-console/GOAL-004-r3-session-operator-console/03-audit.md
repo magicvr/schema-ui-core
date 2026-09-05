@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-session-operator-console
 doc: audit
-status: active
+status: done
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 3.7.0
+version: 3.8.0
 ---
 
 # GOAL-004 · R3 审计索引
@@ -51,6 +51,7 @@ version: 3.7.0
 | [A-037-r3-c4-capability-contract-independent-gpt-sol](03-audit/A-037-r3-c4-capability-contract-independent-gpt-sol.md) | 2026-09-05 | independent | gpt-5.6-sol · medium 独立审计 D-011 capability 合同、Go/Web 接缝与 C4 实施前置条件 | **fail** | **4** | `03-audit/A-037-r3-c4-capability-contract-independent-gpt-sol.md` |
 | [A-038-r3-c4-capability-implementation-self](03-audit/A-038-r3-c4-capability-implementation-self.md) | 2026-09-05 | self | 响应 A-037 F-037-1～F-037-4；capability implementation、测试与非阻断覆盖 | **pass** | **0** | `03-audit/A-038-r3-c4-capability-implementation-self.md` |
 | [A-039-r3-c4-capability-implementation-independent-gpt-sol](03-audit/A-039-r3-c4-capability-implementation-independent-gpt-sol.md) | 2026-09-05 | independent | 当前 HEAD capability implementation、A-037 fixed 响应与 da9d955e Web 构建错误修复 | **pass** | **0** | `03-audit/A-039-r3-c4-capability-implementation-independent-gpt-sol.md` |
+| [A-040-r3-c4-a039-response](03-audit/A-040-r3-c4-a039-response.md) | 2026-09-05 | self | 响应 A-039 independent close-out；闭合 A-037 required；关闭 C4 | **pass** | **0** | `03-audit/A-040-r3-c4-a039-response.md` |
 
 ## 信息就绪核对（按 scope）
 
@@ -61,8 +62,8 @@ version: 3.7.0
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
 | C3 实现就绪 | **pass（最终 independent close-out，已响应）** | A-027 Grok independent `pass`（open required = 0）；A-028 已响应并关闭 C3 检查点；HEAD `023122c7`；确认 A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 响应侧 `fixed`（原文不改写 A-001～A-027）；本会话 gated PostgreSQL **PASS**（不是 skip）；C4 仍待开始 |
 | C3 合同就绪 | **pass（合同侧，已响应）** | D-010 已记录用户裁决；A-019 响应 A-018 并将 F-001～F-007 补入 D-009；A-020 Grok independent re-audit `pass`，A-021 response 确认 A-018 F-001/F-002/F-003 响应侧 `fixed`（原文不改写）；合同门禁已放行，C3 检查点后由 A-027/A-028 完成关闭 |
-| C4 UI 基础切片 | **pass（A-032 推荐覆盖钉 independent re-audit 已响应；A-038 已响应 capability implementation；不关闭 C4）** | A-034 Grok independent `pass`（open required = 0）；A-035 已响应并确认 A-032 F-001/F-002/F-003 `fixed`（原文不改写 A-001～A-034）；D-011 已记录用户选择独立 capability 路由及缓存/403/显式重探合同；A-036 self `pass`、A-037 GPT-5.6-sol independent contract `fail`、A-038 self response `pass`（open required = 0）；`form-controls.tsx` L946–947 已由 `da9d955e` 修复，build 与 Web 全量测试通过；等待 implementation independent，不放行 C4 关门 |
-| C4 capability 合同/实施就绪 | **pass（A-039 independent implementation close-out；待 A-040 编排响应后关闭 C4）** | A-037 原文 fail 保留；`cae40b3a` 已落地 route/service/injection、GetChatMember/结构化 403、cache/single-flight/精确失效和 Web 生命周期，`da9d955e` 已修复 Web 日期边界类型错误；A-038 self 与 A-039 GPT-5.6-sol independent 均确认 F-037-1～F-037-4 响应侧 fixed，build 与 Web 全量测试通过；无开放 required，待编排器记录响应并关闭 C4 |
+| C4 UI 基础切片 | **pass（A-032/A-034 independent 与 A-038/A-039/A-040 已响应；C4 已关闭）** | A-034 Grok independent `pass`（open required = 0）；A-035 已响应并确认 A-032 F-001/F-002/F-003 `fixed`；D-011 已记录用户选择独立 capability 路由；A-036 self、A-037 GPT-5.6-sol independent contract `fail`、A-038 self、A-039 GPT-5.6-sol independent implementation `pass`、A-040 response；`form-controls.tsx` L946–947 已由 `da9d955e` 修复，build 与 Web 全量测试通过；C4 done · 4/4 |
+| C4 capability 合同/实施就绪 | **pass（A-039 independent implementation close-out；A-040 已响应）** | A-037 原文 fail 保留；`cae40b3a` 已落地 route/service/injection、GetChatMember/结构化 403、cache/single-flight/精确失效和 Web 生命周期，`da9d955e` 已修复 Web 日期边界类型错误；A-038 self 与 A-039 GPT-5.6-sol independent 均确认 F-037-1～F-037-4 响应侧 fixed，build 与 Web 全量测试通过；无开放 required；C4 已关闭 |
 
 ## 审计记录（ledger）
 
@@ -87,6 +88,12 @@ F-037-1～F-037-4 的 handler/composition、GetChatMember/结构化 403、成员
 guard 与 send/retry，以及 `da9d955e` 的 datePicker ISO 边界解析/渲染和 npm build；未发现
 新增 required 或 recommended finding。A-037/A-038 原文保留；未执行真实 Telegram 联调、
 浏览器 E2E 或生产外部依赖验证；本条不直接改 C4 status/progress，待 A-040 编排响应。
+
+A-040 为对 A-039 的 self 编排响应（`pass`，开放 required = 0）。A-039 未新增 finding，
+A-037 F-037-1～F-037-4 均已有代码、测试、接线和 independent 复核证据，按 `fixed` 路径
+闭合；未接受 residual，不作 overrule。C4 目标状态更新为 `done · 4/4`，I-033-023
+更新为 decision + contract + implementation + independent pass；R3 Root 保持 active，
+下一阶段为 R4 证据矩阵、红线核账与 Root 关门审计。
 
 A-035 为响应 A-034 Grok independent `pass` 的 self close-out response：A-032 三项 recommended 覆盖钉已确认响应侧 `fixed`，A-034 无新增 required/recommended finding；原文 A-001～A-034 保留。本条不改 status/progress、不关闭 C4。D-011 已记录用户选择独立 capability 路由，I-033-023 已由 collecting 进入 verified (user decision)，实现与后续 independent 审计仍未完成。
 

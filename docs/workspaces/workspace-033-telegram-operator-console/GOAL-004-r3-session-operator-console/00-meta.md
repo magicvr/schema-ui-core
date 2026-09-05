@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-session-operator-console
 title: R3 · 会话落盘与未绑定人工 IM
-status: active
+status: done
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.9.0
-progress: 3/4
+version: 2.0.0
+progress: 4/4
 plan_refs:
   - VP-033-telegram-operator-console
 primary_plan: VP-033-telegram-operator-console
@@ -29,10 +29,10 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 ## 成功标准
 
 - [x] 入站文本在 webhook 与 polling 共同路径上按会话落盘，具备可核对的 chat/user 元数据、方向、Telegram message/update 标识和幂等边界；不回灌历史。
-- [ ] 未绑定且连接成功时可列出有入站活动的私聊/群并展示该会话文本成绩单；已绑定时人工台入口隐藏，仍遵守 R2 占用位与 Profile 边界。
+- [x] 未绑定且连接成功时可列出有入站活动的私聊/群并展示该会话文本成绩单；已绑定时人工台入口隐藏，仍遵守 R2 占用位与 Profile 边界。
 - [x] 管理员可经鉴权 API 使用现有 Telegram sender 发送文本；发送成功与失败状态、重复提交和持久化顺序可核对，不泄漏 token/secret。
-- [ ] 发言权策略已由用户裁决并落盘；composer 在无权时禁用，缓存/403 失效路径和非 403 错误均有测试事实。
-- [ ] R3 API/Web/迁移/运行时/并发边界有 self + independent 审视，required finding 归零后才进入 R4。
+- [x] 发言权策略已由用户裁决并落盘；composer 在无权时禁用，缓存/403 失效路径和非 403 错误均有测试事实。
+- [x] R3 API/Web/迁移/运行时/并发边界有 self + independent 审视，required finding 归零后才进入 R4。
 
 ## 阶段路线图（P-001）
 
@@ -43,7 +43,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 | C1 | R3 数据/权限/发言权合同、信息需求与用户裁决冻结 | **完成**：D-002+D-003/E-002～E-004；A-002 self `pass`；A-003 F-001 → A-004 `fixed`；A-005 Grok independent `pass`；A-006 response；开放 required = 0 |
 | C2 | Telegram 文本入站、会话/消息持久化、迁移与幂等边界 | **完成**：A-013 Grok independent `pass`（0 required）；按用户范围修复 F-001～F-003，A-014 self `pass`；A-015 修复后 Grok independent `pass`（0 required）；A-016 response；开放 required = 0 |
 | C3 | 会话列表/成绩单/人工发送 API、权限与运行时接线 | **完成**：A-023 Grok independent implementation pass；A-024 响应 F-001/F-002；A-025 remediation independent pass；A-026 响应 F-001；A-027 Grok independent final close-out `pass`（open required = 0）；A-028 response；R3 active · 3/4 |
-| C4 | Admin 人工台 UI、发言权反馈、端到端验证与 independent 审计 | **进行中**：E-017/A-029 完成会话列表、成绩单与基础刷新切片；E-018/A-031 已响应 A-030，A-032/A-034 independent pass 后 E-019/A-033/A-035 已补齐推荐覆盖钉；D-011 已选择独立 capability 路由并冻结缓存/403/显式重探合同；composer 仍待 capability 实现接通 |
+| C4 | Admin 人工台 UI、发言权反馈、端到端验证与 independent 审计 | **完成**：E-017～E-022/A-029～A-038 完成 UI、合同、capability 实现与构建错误修复；A-039 GPT-5.6-sol independent implementation close-out `pass`（open required = 0）；A-040 已响应并关闭 C4 |
 
 ## 信息就绪与未知项（P-005）
 
@@ -55,7 +55,7 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 | I-033-020 | required | 入站文本准入、UpdateID/messageID 幂等、重复投递与 webhook 重试的落盘/分发顺序 | C1/C2 | C1 | 用户裁决；补 webhook/polling/retry/concurrency 测试 | **verified (decision + contract + implementation + independent pass)** | 未延期 | D-002 + D-003；D-005/D-007；A-010/A-013/A-015 independent；A-014/A-016 response |
 | I-033-021 | required | 人工台读取/发送 API 的权限边界：复用 `settings.read/write` 或专用 operator 权限 | C1/C3 | C1 | 用户裁决；更新 Provider/RBAC/auth 测试 | **verified (decision + contract + implementation + independent pass)** | 未延期 | D-002：专用 `telegram.operator.read/write`；D-009/A-019：认证包装、Provider/profile 同步、operator lease 授权；A-023/A-027 independent pass；A-028 response |
 | I-033-022 | required | 发送成功/失败的消息状态、落盘先后、失败重试与重复提交语义；是否记录失败消息 | C1/C3 | C1 | 用户裁决；补 sender/store/API 并发与失败测试 | **verified (decision + contract + implementation + independent pass)** | 未延期 | D-002 + D-008：`pending`→`sent/failed`、新 request + `retry_of`、无自动重试；D-009/A-019：PG `ON CONFLICT` 与 root pending 约束；A-023/A-027 independent pass；A-028 response |
-| I-033-023 | required | C4 `getChatMember` capability API 的承载方式与 60 秒 bot/chat 缓存所有权：独立 capability、成绩单附带或会话列表附带 | C4 API/UI/关门 | C4 | 用户裁决三种互斥 API 形状；记录缓存、403 失效和显式重探合同 | **verified (user decision)** | 未延期 | D-011：独立 capability 路由；channel.telegram capability service owner；60 秒 absolute TTL、single-flight、403 失效、`refresh=1` 显式重探 |
+| I-033-023 | required | C4 `getChatMember` capability API 的承载方式与 60 秒 bot/chat 缓存所有权：独立 capability、成绩单附带或会话列表附带 | C4 API/UI/关门 | C4 | 用户裁决三种互斥 API 形状；记录缓存、403 失效和显式重探合同 | **verified (decision + contract + implementation + independent pass)** | 未延期 | D-011；A-036/A-037/A-038/A-039/A-040：独立 capability 路由；channel.telegram capability service owner；60 秒 absolute TTL、single-flight、403 失效、`refresh=1` 显式重探 |
 
 ## 父目标
 
@@ -63,4 +63,4 @@ serves_summary: 承载 Root R3：Telegram 实际投递文本的会话落盘、�
 
 ## 台账布局
 
-`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-011、E-001～E-021、A-001～A-036 已记录 R3 建立、C1/C2 审计闭合、C3 合同与实现、非阻断项修复、最终 independent close-out、C3 关闭、C4 UI 基础切片、D-011 用户裁决及 A-030/A-032/A-034 响应；后续按编号递增。
+`01-decision/`、`02-execution/`、`03-audit/` 平铺 ledger；D-001～D-011、E-001～E-023、A-001～A-040 已记录 R3 建立、C1/C2 审计闭合、C3 合同与实现、非阻断项修复、最终 independent close-out、C3 关闭、C4 UI 基础切片、D-011 用户裁决、capability 实现、构建错误修复、A-039 independent close-out 与 A-040 C4 关闭响应。
