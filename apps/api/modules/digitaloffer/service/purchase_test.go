@@ -567,14 +567,28 @@ func runPurchaseMatrix(t *testing.T, newEnv func(t *testing.T) *testEnv) {
 		if _, total, err := env.svc.ListOffers(store.OfferFilter{Q: "🎫", Page: 1, PageSize: 10}); err != nil || total != 1 {
 			t.Fatalf("emoji Q match = %d rows err %v, want 1", total, err)
 		}
-		// The rune boundary: a 100-rune Q that prefixes the oversized term
-		// stays valid; truncation must never split a rune.
-		long := strings.Repeat("汉", 99) + "a"
-		if got := len([]rune(long)); got != 100 {
+		// The rune boundary with distinguishable data: prefix P is exactly
+		// 100 runes; two offers embed P with a distinguishing 101st rune. A
+		// 101-rune Q must truncate to P and match BOTH offers — if the 101st
+		// rune survived truncation, only one would match.
+		prefix := strings.Repeat("汉", 99) + "a"
+		if got := len([]rune(prefix)); got != 100 {
 			t.Fatalf("boundary setup = %d runes, want 100", got)
 		}
-		if _, _, err := env.svc.ListOffers(store.OfferFilter{Q: long + "a", Page: 1, PageSize: 10}); err != nil {
-			t.Fatalf("101-rune Q must truncate cleanly to 100 runes: %v", err)
+		for _, tail := range []string{"G", "B"} {
+			if _, err := env.svc.CreateOffer(context.Background(), actor, service.CreateOfferInput{
+				Name: prefix + tail, PriceAmount: 100, Currency: "CNY",
+				EntitlementForm: store.FormCount, CountPerPurchase: 1, OnSale: true,
+			}, now); err != nil {
+				t.Fatal(err)
+			}
+		}
+		offers101, total101, err := env.svc.ListOffers(store.OfferFilter{Q: prefix + "B", Page: 1, PageSize: 10})
+		if err != nil {
+			t.Fatalf("101-rune Q: %v", err)
+		}
+		if total101 != 2 || len(offers101) != 2 {
+			t.Fatalf("101-rune Q matched %d rows, want 2 (the 101st rune must be truncated away)", total101)
 		}
 		if _, _, err := env.svc.ListOffers(store.OfferFilter{Q: strings.Repeat("a", 101), Page: 1, PageSize: 10}); err != nil {
 			t.Fatalf("oversized ascii Q: %v", err)
