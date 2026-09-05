@@ -216,6 +216,15 @@ func BuiltinModules() []Module {
 		// no new permission keys — R-001 / A-002).
 		// Compiled candidate; not enabled in mvp/admin defaults (channel extension).
 		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"}, Requires: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityNavigation}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/lease/acquire", "POST /api/channel/telegram/lease/heartbeat", "POST /api/channel/telegram/lease/release", "POST /api/channel/telegram/webhook", "GET /api/channel/telegram/operator/sessions", "GET /api/channel/telegram/operator/sessions/{chat_id}/capability", "GET /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"}, Pages: []string{"telegram-settings", "telegram-operator"}, Navigation: []string{"menu_telegram"}, Permissions: []string{"telegram.operator.read", "telegram.operator.write"}, Fragments: []string{"telegram-settings"}}},
+		// VP-031 (workspace-031): biz.digital-offer — sellable digital offers,
+		// thin purchases over the wallet money primitives and per-subject
+		// entitlements. Compiled candidate; NOT enabled in mvp/admin defaults —
+		// assembly is plan-driven via app.modules (custom preset/list) only.
+		// The descriptor MUST stay identical to
+		// modules/digitaloffer.Provider.Descriptor() (A-006 F-003: without this
+		// registry entry ResolvePlan cannot resolve the module, so the
+		// composition.HasModule branch was unreachable from any config path).
+		{ID: "biz.digital-offer", Version: "1.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render", "core.operationlog"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/digitaloffer/offers", "POST /api/digitaloffer/offers", "PATCH /api/digitaloffer/offers/{id}", "GET /api/digitaloffer/purchases", "GET /api/digitaloffer/entitlements", "POST /api/digitaloffer/entitlements/{id}/void", "GET /api/biz/offers"}, Pages: []string{"digitaloffer-offers", "digitaloffer-entitlements"}, Navigation: []string{"menu_digitaloffer_offers", "menu_digitaloffer_entitlements"}, Permissions: []string{"digitaloffer.read", "digitaloffer.offer.manage", "digitaloffer.entitlement.void"}, Fragments: []string{"digitaloffer"}}},
 	}
 }
 

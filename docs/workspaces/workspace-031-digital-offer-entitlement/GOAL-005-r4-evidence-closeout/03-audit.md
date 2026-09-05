@@ -21,3 +21,5 @@ version: 0.1.0
 ## 审计记录（ledger）
 
 `03-audit/` 平铺；编号递增。
+| A-006 | 2026-09-05 | independent | workspace-031 Root/GOAL-005 close-out：迁移、Manifest、schema、模块注册与组合根可达性 | **fail** | **4** | 当前 `biz.digital-offer` Provider 未进入 `kernel.BuiltinModules()`，配置启用路径不可达；0070 全局迁移策略未闭合；Offer Delete 缺失；缺少从配置到 Manifest/schema/HTTP 的真实组合验收 | [A-006-independent-runtime-integration-audit.md](03-audit/A-006-independent-runtime-integration-audit.md) |
+| A-007 | 2026-09-05 | self | 响应 A-006（F-003～F-006 required） | pass | 0 | 全部 closed：F-003 BuiltinModules 注册 + F-006 组合根验收测试（fixed）；F-004 按 D-002 §2 收窄（contract-conformant）；F-005 迁移策略裁决 = 保留 compiled-global（D-003）；Root/GOAL-005/VP-031 关门撤回 | [A-007-self-response-a006.md](03-audit/A-007-self-response-a006.md) |
