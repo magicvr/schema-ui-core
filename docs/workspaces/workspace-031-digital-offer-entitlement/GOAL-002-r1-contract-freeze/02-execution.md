@@ -13,6 +13,7 @@ version: 0.1.0
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
 | [E-001-info-adjudication](02-execution/E-001-info-adjudication.md) | 2026-09-05 | C1 信息裁决 | P-004 用户裁决 I-031-001～003；I-031-004/005 默认冻结；Root/VP-031 台账回写 | done |
+| [E-002-contract-audit-cycle](02-execution/E-002-contract-audit-cycle.md) | 2026-09-05 | C3 审计循环 | A-001 self（5 fixed）→ A-002 codex independent（3 required + 2 recommended）→ A-003 self 响应全部 fixed；待 A-004 closure 复审 | done |
 
 ## 执行记录（ledger）
 

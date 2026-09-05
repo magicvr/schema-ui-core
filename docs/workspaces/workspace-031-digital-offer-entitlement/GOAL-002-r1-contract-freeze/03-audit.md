@@ -12,7 +12,9 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
-| （待 C3：A-001 self 合同自审；A-002 independent codex 审计） | | | | | | | |
+| A-001 | 2026-09-05 | self | D-002 合同与 D-001/VP-031/V-F119/代码先例 | conditional | 0 | 5 项 finding 已 fixed；进入 independent A-002 | [A-001](03-audit/A-001-self-contract-self-review.md) |
+| A-002 | 2026-09-05 | independent | D-002 v0.1.0 draft 对照 VP-031、D-001、V-F119 与代码先例可达性 | conditional | 0 | 3 required + 2 recommended 已由 A-003 全部 fixed 闭合；closure 复审见 A-004 | [A-002](03-audit/A-002-independent-contract-audit.md) |
+| A-003 | 2026-09-05 | self | 响应 A-002（F-001～F-005） | pass | 0 | 全部 fixed：§4.4 mutation/幂等协议、§5.2 并发算法、§7 审计 fail-closed、§5.1/§9 reason 映射、workspace.md 同步 | [A-003](03-audit/A-003-self-response-a002.md) |
 
 ## 信息就绪核对（按 scope）
 

@@ -31,7 +31,7 @@ version: 0.1.0
 - 模块 id：**`biz.digital-offer`**（D-001）。
 - 代码位置：`apps/api/modules/digitaloffer/`（Go 包名 `digitaloffer`），布局对齐 wallet 先例：`provider.go`（ModuleID、New、路由/权限/页面贡献）、`store/`、`migration/`、`schema/`、`manifest/`。
 - 装配：`composition.go` 以 `plan.HasModule("biz.digital-offer")` 门控，**不进** `mvp`/`admin` 默认 Profile 集。
-- 模块输入依赖（构造注入）：`*walletstore.Repository`（钱包资金原语）、`*subject.Store`（VP-029 主体）、`operationlog.Recorder`（审计）、`kernel.RateLimiterProvider`（限流）、可选 `kernel.TelegramDispatcher`（通道缝）。
+- 模块输入依赖（构造注入）：`*walletstore.Repository`（钱包资金原语）、`*subject.Store`（VP-029 主体）、`operationlog.TransactionalRecorder`（fail-closed 审计，§7）、`kernel.RateLimiterProvider`（限流）、可选 `kernel.TelegramDispatcher`（通道缝）。
 - 对 `admin.wallet` / `channel.telegram` 的依赖均为**消费依赖**：本模块不修改其行为，不要求其 HTTP 面启用（直接消费 store/service 层，先例：wallet subject 消费）。
 
 ## 2. Offer 模型（表 `digital_offers`）
@@ -71,6 +71,7 @@ version: 0.1.0
 
 - **有效判定（惰性派生，无后台 job）**：duration 型有效 = `status='active' AND expires_at > now`；count 型有效 = `status='active' AND remaining_count > 0`。`expired` / `exhausted` 是派生谓词，不落库变更。
 - 判据 3 三态映射：有效（valid）/ 过期（expired）/ 耗尽（exhausted）均可经 §5 核验 API 测得；另含 `voided`（作废）与 `no_entitlement`（从未持有）。
+- **offer 下架或改价不影响已发放权益的有效性**：有效性仅由本节谓词与作废状态决定。
 - 叠加语义：同 subject 多份有效权益**并存**（每份一行）；duration 型任一行在窗内即有效（取最晚 `expires_at` 展示）；count 型消耗规则见 §5.2。
 - 作废：`voided` 终态，本波**不可逆**（纠错重发可另行购买或后续波次引入人工发放）。
 
@@ -101,10 +102,14 @@ version: 0.1.0
 store.Run(ctx, func(tx kernel.Tx) error {
   1. 读 offer（tx 内）：status 必须 = 'on_sale'，否则 ErrOfferNotOnSale
   2. 校验 subject 存在（subjects 表，tx 内）；不存在 → ErrSubjectNotFound
-  3. 幂等：按 (subject_id, request_id) 查既有凭证；命中 → 原样返回（成功幂等重放）
-  4. 币种校验：subject 钱包账户 currency == offer.currency，否则 ErrCurrencyMismatch
-  5. walletRepo.MutateInTx(tx, freeze)        // available → frozen（余额不足 → ErrInsufficient 透出）
-  6. walletRepo.MutateInTx(tx, deduct_frozen) // frozen → deducted
+  3. 幂等：按 (subject_id, request_id) 查既有凭证；命中 → 原样返回（成功幂等重放）；
+     命中但 offer_id ≠ 请求 offerID → ErrRequestIdConflict（幂等负载 = offerID）
+  4. 取 subject 钱包账户：walletRepo.GetOrCreateSubjectAccountInTx(tx, subjectID, now)
+     （每 subject 单账户单币种，先例 voucher.Redeem）；
+     账户 currency ≠ offer.currency → ErrCurrencyMismatch 拒绝（跨币种 offer 首波不可购）
+  5. walletRepo.MutateInTx(tx, freeze)        // available → frozen（余额不足 → ErrInsufficient 透出）；
+                                              // ref_type='biz_offer_purchase', ref_id=purchase.id
+  6. walletRepo.MutateInTx(tx, deduct_frozen) // frozen → deducted；同上 ref 反链
   7. INSERT digital_purchases (status='fulfilled')
   8. INSERT digital_entitlements（duration → expires_at；count → remaining_count）
 })
@@ -113,6 +118,38 @@ store.Run(ctx, func(tx kernel.Tx) error {
 - 任一步失败 → **整体回滚**：无购买凭证、无权益、无冻结残留。冻结从未对外可见，等价于「失败 unfreeze」的更强 fail-closed 形态（VP-031 判据 2 的「同事务」支路）。
 - **本波不存在「freeze 已提交但购买失败」状态**，故购买路径无 unfreeze 补偿分支；`unfreeze` 保留为 wallet Admin 资金纠错入口（已有）。若未来引入分段提交（如异步履约），必须修订本合同：补 unfreeze 补偿 + 孤儿冻结对账 + pending 状态机。
 - 并发正确性依赖钱包事务内余额校验与 `ErrVersionConflict`；offer 状态以事务内读取为准，`version` 乐观锁兜底管理面并发改价/下架。
+
+### 4.4 购买 wallet mutation 与并发幂等协议（可执行冻结）
+
+**调用协议**（真实签名 `MutateInTx(tx, accountID, in LedgerEntryInput, entryID, now)`；freeze/deduct_frozen 的 `AmountDelta` 必须为**正数**，语义由钱包 apply 表决定：freeze = available−d / frozen+d；deduct_frozen = total−d / frozen−d）：
+
+- 事务外一次性预生成（同一 `now`）：`purchaseID = newID(now)`、`entryIDFreeze = newID(now)`、`entryIDDeduct = newID(now)`（互异）。
+- 两笔流水的 `LedgerEntryInput` 冻结如下（两笔均传 `account.ID`）：
+
+| 字段 | freeze 笔 | deduct_frozen 笔 |
+|------|-----------|------------------|
+| EntryType | `freeze` | `deduct_frozen` |
+| AmountDelta | `offer.price_amount`（正） | 同左 |
+| RefType / RefID | `biz_offer_purchase` / `purchaseID` | 同左 |
+| IdempotencyKey | `<request_id>:freeze` | `<request_id>:deduct` |
+| Memo | `digital-offer purchase <purchaseID>` | 同左 |
+| ActorID / ActorName | `subjectID` / `Subject`（对齐 voucher Redeem 先例） | 同左 |
+
+- 事务内顺序：验证（§4.2 步骤 1–4）→ freeze → deduct_frozen → INSERT purchase → INSERT entitlement。
+- 幂等负载：wallet 侧同 key 同 payload = 重放返回既有 entry；同 key 异 payload = `ErrIdempotencyConflict`（钱包原语自带）。
+
+**并发冲突协议**（有界重试，整事务粒度，最多 3 次；每次尝试以回滚收尾，无部分状态）：
+
+| 冲突 | 处理 |
+|------|------|
+| `ErrInsufficient` / 币种不匹配 / 非 on_sale / subject 不存在 | 终态错误，不重试 |
+| `ErrVersionConflict`（钱包乐观锁） | 重跑整个事务（重读 offer 与账户） |
+| wallet `errIdempotencyRace` | 重跑整个事务 |
+| purchase `UNIQUE(subject_id, request_id)` 竞争 | 回读既有凭证：`offer_id` 相同 → 幂等重放返回；不同 → `BIZOFFER_REQUEST_CONFLICT` |
+| 重试耗尽 | 返回错误；无任何落库（各尝试均回滚） |
+
+- 验收并发测试（R2，双数据库）：同 `(subject_id, request_id)` 双发 → 恰一凭证/一次扣款/一份权益；同 request_id 异 offer → `BIZOFFER_REQUEST_CONFLICT`；不同 request 同账户并发竞争余额恰够一次 → 恰一成功、无冻结残留；重试后无重复 ledger/凭证/权益。
+- Telegram `buy` 的 `request_id` 派生规则冻结：`tg:<subject_id>:<update_id>`（通道重试天然幂等）。
 
 ### 4.3 入口与鉴权
 
@@ -132,15 +169,39 @@ store.Run(ctx, func(tx kernel.Tx) error {
 
 - duration 型：存在任一 `active` 且 `expires_at > now` 的行 → valid。
 - count 型：存在任一 `active` 且 `remaining_count > 0` 的行 → valid。
-- 全部行均 `voided` → `voided`；有行但全部过期 → `expired`；count 型全部 `remaining_count=0` → `exhausted`；无行 → `no_entitlement`。
+- 混合多行聚合规则（确定性冻结）：任一行有效 → `valid`（取最晚 `expires_at` / 最大 `remaining_count` 供展示）；无任何行 → `no_entitlement`；否则按 **`expired` → `exhausted` → `voided`** 顺序取第一个命中的聚合状态（存在已过期 duration 行 → `expired`；否则存在耗尽 count 行 → `exhausted`；否则全部行 voided → `voided`）。
 
 ### 5.2 消耗（count 型）
 
-`Consume(ctx, subjectID, n, now) → error`：
+`Consume(ctx, subjectID, offerID, n, now) → error`：
 
-- 单事务内按 `created_at ASC` 逐行原子扣减：`UPDATE digital_entitlements SET remaining_count = remaining_count - ? WHERE id = ? AND remaining_count >= ?`，以 RowsAffected 确认；总可用 < n → `ErrEntitlementInsufficient`，整体回滚。
-- duration 型不参与消耗（窗内不限次）。
-- 并发消耗不得超扣（ RowsAffected 守卫 + 事务串行化）。
+- 仅消耗**该 offer** 的 count 型权益行；duration 型不参与消耗（窗内不限次）。
+- **跨方言并发算法（冻结，SQLite/PostgreSQL 均可证明；平台默认隔离级别为 READ COMMITTED，不承诺 serializable）**：
+
+```text
+Run(ctx, tx):
+  for attempt in 1..3:
+    needed = n
+    rows = SELECT id, remaining_count FROM digital_entitlements
+           WHERE subject_id=? AND offer_id=? AND form='count'
+             AND status='active' AND remaining_count>0
+           ORDER BY created_at ASC, id ASC
+    for row in rows (needed > 0 时):
+      take = min(row.remaining_count, needed)
+      aff = UPDATE digital_entitlements
+            SET remaining_count = remaining_count - ?, updated_at = ?
+            WHERE id = ? AND subject_id=? AND offer_id=?
+              AND form='count' AND status='active' AND remaining_count >= ?
+      if aff == 1: needed -= take          // else：行已被并发作废/耗尽，不计入
+    if needed == 0: COMMIT; return nil
+    ROLLBACK                                // 已扣行随事务回滚，全有或全无
+  return ErrEntitlementInsufficient
+```
+
+- 最终写入谓词锁定主体、offer、形态、active 与余额五条件；`RowsAffected=0` 视为该行竞争失效并在下一 attempt 重读候选；全有或全无（部分扣减从不单独提交）。
+- **与 void 的线性化**：void 为 `UPDATE ... SET status='voided' WHERE id=? AND status='active'`（`RowsAffected=0` = 已作废 → 幂等成功）；consume 的最终 UPDATE 谓词含 `status='active'`，两语句在行级以谓词重检顺序化：void 先提交则该行不再是候选，consume 先提交则 void 仍成功（仅作废剩余次数）。两方言均成立（SQLite 写者串行；PG 行锁 + READ COMMITTED 谓词重检）。
+- 调用方：提供能力的通道/服务（判据 3「提供前统一核验」的消耗侧）；首波由测试与未来通道封装行使，核验 API（§5.1）是统一接缝。
+- 验收测试（R3，双数据库）：单行/多行、总量恰够、两个消费者总量足够都成功、仅一方应成功、`RowsAffected` 竞争、并发 void、混合 expired/voided 行不参与消耗。
 
 ### 5.3 C 端列表（HTTP）
 
@@ -181,6 +242,9 @@ store.Run(ctx, func(tx kernel.Tx) error {
 | POST | `/api/digitaloffer/entitlements/{id}/void` | digitaloffer.entitlement.void |
 
 - **无人工发放端点**（D-001）；作废走 `POST .../void`（幂等：已作废再作废返回成功）。
+- **审计 fail-closed（冻结）**：全部 Admin 域写操作（offer 创建/编辑/上下架、entitlement void）与审计写入共用**同一 caller-owned 事务**：`store.Run(ctx, func(tx){ 域写(tx); operationlog.TransactionalRecorder.RecordOperationTx(tx, op) })`；审计写入失败 → 域写一并回滚（判据 1 与 D-001 作废审计的可追溯性成立）。事件名冻结：`bizoffer.offer.create` / `bizoffer.offer.update` / `bizoffer.offer.status` / `bizoffer.entitlement.void`；record id = 域行 id；actor = 会话用户；detail = 变更前后 JSON（status 变更含 before/after）。重复 void 无状态变化 → 成功且**不追加**审计事件（幂等）。普通 `RecordOperation`（自启事务）不用于本模块写路径。
+- 购买路径不写 operationlog：可追溯性由不可变凭证行 + 钱包流水 ref 反链（§4.2/§4.4）承担（C 端无会话 actor）。
+- 验收测试（R2/R3）：强制审计失败注入 → 域行与审计行同存同亡（均不存在）；重复 void 不产生第二条审计。
 - Admin UI：schema 驱动页面（`schema/digitaloffer-offers.json`、`schema/digitaloffer-entitlements.json` + 导航/manifest fragment），本波**无自定义 React 组件**（判据 1「协议页面」由协议渲染满足；先例：wallet 页面）。
 - 购买列表为只读审计视图（Admin 不代购、不改凭证）。
 
@@ -207,11 +271,13 @@ store.Run(ctx, func(tx kernel.Tx) error {
 | `BIZOFFER_CURRENCY_MISMATCH` | error.bizOfferCurrencyMismatch | offer 币种与主体钱包账户不符 |
 | `BIZOFFER_INSUFFICIENT_FUNDS` | error.bizOfferInsufficientFunds | 余额不足（透出钱包 ErrInsufficient） |
 | `BIZOFFER_SUBJECT_NOT_FOUND` | error.bizOfferSubjectNotFound | subject 不存在 |
-| `BIZOFFER_ENTITLEMENT_INVALID` | error.bizOfferEntitlementInvalid | 权益无效（expired/exhausted/voided/no_entitlement） |
-| `BIZOFFER_REQUEST_CONFLICT` | error.bizOfferRequestConflict | 同 request_id 但负载不同（对齐 wallet 幂等冲突语义） |
+| `BIZOFFER_ENTITLEMENT_INVALID` | error.bizOfferEntitlementInvalid | 权益无效（`Check` reason ≠ none；detail 携带 reason；HTTP 403 / Telegram 同因文案） |
+| `BIZOFFER_ENTITLEMENT_INSUFFICIENT` | error.bizOfferEntitlementInsufficient | `Consume` 可用次数不足（`ErrEntitlementInsufficient`；HTTP 409） |
+| `BIZOFFER_REQUEST_CONFLICT` | error.bizOfferRequestConflict | 同 request_id 但 offer 不同（对齐 wallet 幂等冲突语义） |
 | `BIZOFFER_FORM_CONFLICT` | error.bizOfferFormConflict | offer 形态不可变字段被修改 |
 
 - 域 sentinel（`store` 包）由 handler 映射到上述冻结码，先例：`writeWalletError`。
+- reason/sentinel → 码映射（冻结）：`Check` 聚合 reason（§5.1）→ `BIZOFFER_ENTITLEMENT_INVALID` + reason detail；`ErrEntitlementInsufficient` → `BIZOFFER_ENTITLEMENT_INSUFFICIENT`；钱包 `ErrInsufficient` → `BIZOFFER_INSUFFICIENT_FUNDS`；HTTP 与 Telegram 入口对同一状态返回一致 reason/文案（表驱动测试覆盖 active/voided/expired/exhausted 组合）。
 
 ## 10. 迁移、Profile 与红线
 
@@ -222,8 +288,8 @@ store.Run(ctx, func(tx kernel.Tx) error {
 
 ## 11. R2/R3 实施切片（预告，不改变判据）
 
-- R2：§1、§2、§4、§7（offer 部分与购买链路）、§8（purchase 桶）、§9、§10 迁移 + 判据 2 并发测试（同 subject 并发购买余额恰够一次 → 恰一成功；幂等双发 → 一凭证一扣款一份权益；并发消耗不超扣）。
-- R3：§3 核验/消耗、§5、§6 Telegram 命令、§7 权益作废 UI、§8 查询桶。
+- R2：§1、§2、§4（含 §4.4 并发幂等协议）、§7（offer 部分与审计 fail-closed）、§8（purchase 桶）、§9、§10 迁移 + §4.4 并发验收测试（双数据库）+ §7 审计失败注入测试。
+- R3：§3 核验/消耗（§5.1 聚合规则、§5.2 并发算法与测试）、§6 Telegram 命令（含 `tg:` request_id 派生）、§7 权益作废 UI 与 void 幂等、§8 查询桶、§9 reason 映射表驱动测试。
 - R4：证据矩阵（判据逐条 → 测试/代码/审计路径）、边界核账、关门审计。
 
 ## 12. 未选方案（合同级）
