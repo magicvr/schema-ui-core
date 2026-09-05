@@ -77,6 +77,25 @@ describe("S2 form-controls design-system consumption", () => {
     expect(notes).not.toBeNull();
     expect(notes?.value).toBe("hi");
   });
+
+  it("renders numeric and date constraints with the registry-compatible types", async () => {
+    const container = await mount(
+      <FormControls
+        fields={[
+          { id: "quantity", label: "Quantity", type: "inputNumber", min: 1, max: 100 },
+          { id: "expiresAt", label: "Expiry", type: "datePicker", min: "2001-09-09", max: "2099-12-31" },
+        ]}
+        values={{ quantity: 5, expiresAt: "2026-09-05" }}
+        onChange={() => undefined}
+      />,
+    );
+    const quantity = container.querySelector<HTMLInputElement>("#field-quantity");
+    expect(quantity?.min).toBe("1");
+    expect(quantity?.max).toBe("100");
+    const expiry = container.querySelector<HTMLInputElement>("#field-expiresAt");
+    expect(expiry?.min).toBe("2001-09-09");
+    expect(expiry?.max).toBe("2099-12-31");
+  });
 });
 
 describe("S2 recordView Drawer/Sheet presentation", () => {

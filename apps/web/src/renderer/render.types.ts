@@ -709,8 +709,12 @@ export function gateRenderFormFields(
       ...(entry.mode === "multiple" ? { mode: "multiple" } : {}),
       ...(typeof entry.startField === "string" ? { startField: entry.startField } : {}),
       ...(typeof entry.endField === "string" ? { endField: entry.endField } : {}),
-      ...(typeof entry.min === "number" ? { min: entry.min } : {}),
-      ...(typeof entry.max === "number" ? { max: entry.max } : {}),
+      ...(typeof entry.min === "number" || (entry.type === "datePicker" && typeof entry.min === "string")
+        ? { min: entry.min }
+        : {}),
+      ...(typeof entry.max === "number" || (entry.type === "datePicker" && typeof entry.max === "string")
+        ? { max: entry.max }
+        : {}),
       ...(typeof entry.step === "number" ? { step: entry.step } : {}),
       ...(typeof entry.precision === "number" ? { precision: entry.precision } : {}),
       // GOAL-014 D-002 §3: pass through submit-time validation constraints

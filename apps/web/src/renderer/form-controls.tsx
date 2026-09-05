@@ -920,8 +920,8 @@ function FieldControl({
             readOnly={readOnly}
             required={required}
             describedBy={errorId}
-            min={field.min}
-            max={field.max}
+            min={typeof field.min === "number" ? field.min : undefined}
+            max={typeof field.max === "number" ? field.max : undefined}
             step={field.step}
             onChange={emitChange}
           />
@@ -943,8 +943,8 @@ function FieldControl({
           readOnly={readOnly}
           required={required}
           describedBy={errorId}
-          min={field.min}
-          max={field.max}
+          min={typeof field.min === "string" ? field.min : undefined}
+          max={typeof field.max === "string" ? field.max : undefined}
           onChange={emitChange}
         />
       );
