@@ -51,7 +51,101 @@ function operatorMessages() {
   })).reverse();
 }
 
-async function installTelegramFixtures(page: import("@playwright/test").Page): Promise<void> {
+type TelegramFixtureOptions = {
+  sessions?: Array<{
+    chatId: string;
+    chatType: string;
+    title?: string;
+    username?: string;
+    lastMessageAt?: string;
+  }>;
+  messagesByChatId?: Record<string, Array<Record<string, unknown>>>;
+};
+
+function groupAndChannelOperatorSessions() {
+  return [
+    {
+      chatId: "chat-group",
+      chatType: "group",
+      title: "Support group",
+      username: "support",
+      lastMessageAt: "2026-09-05T02:02:00Z",
+    },
+    {
+      chatId: "chat-channel",
+      chatType: "channel",
+      title: "Announcements",
+      username: "announcements",
+      lastMessageAt: "2026-09-05T03:02:00Z",
+    },
+  ];
+}
+
+function groupAndChannelOperatorMessages(): Record<string, Array<Record<string, unknown>>> {
+  const groupMessages = [
+    {
+      chatId: "chat-group",
+      direction: "inbound",
+      status: "received",
+      occurredAt: "2026-09-05T02:00:00Z",
+      updateId: "group-1",
+      senderUsername: "alice",
+      text: "Message from Alice",
+    },
+    {
+      chatId: "chat-group",
+      direction: "inbound",
+      status: "received",
+      occurredAt: "2026-09-05T02:01:00Z",
+      updateId: "group-2",
+      text: "Message without a sender username",
+    },
+    {
+      chatId: "chat-group",
+      direction: "outbound",
+      status: "sent",
+      occurredAt: "2026-09-05T02:02:00Z",
+      requestId: "group-3",
+      text: "Bot response",
+    },
+  ].reverse();
+  const channelMessages = [
+    {
+      chatId: "chat-channel",
+      direction: "inbound",
+      status: "received",
+      occurredAt: "2026-09-05T03:00:00Z",
+      updateId: "channel-1",
+      senderUsername: "channel_editor",
+      text: "Message from the channel editor",
+    },
+    {
+      chatId: "chat-channel",
+      direction: "inbound",
+      status: "received",
+      occurredAt: "2026-09-05T03:01:00Z",
+      updateId: "channel-2",
+      text: "Channel message without a sender username",
+    },
+    {
+      chatId: "chat-channel",
+      direction: "outbound",
+      status: "sent",
+      occurredAt: "2026-09-05T03:02:00Z",
+      requestId: "channel-3",
+      text: "Bot channel response",
+    },
+  ].reverse();
+  return { "chat-group": groupMessages, "chat-channel": channelMessages };
+}
+
+async function installTelegramFixtures(
+  page: import("@playwright/test").Page,
+  options: TelegramFixtureOptions = {},
+): Promise<void> {
+  const sessions = options.sessions ?? operatorSessions();
+  const messagesByChatId: Record<string, Array<Record<string, unknown>>> = options.messagesByChatId
+    ?? { "chat-1": operatorMessages() };
   await page.route("**/api/channel/telegram/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/api/channel/telegram/settings") {
@@ -59,21 +153,27 @@ async function installTelegramFixtures(page: import("@playwright/test").Page): P
       return;
     }
     if (url.pathname === "/api/channel/telegram/operator/sessions") {
-      const items = operatorSessions();
+      const items = sessions;
       await route.fulfill(jsonResponse({ items, total: items.length, page: 1, pageSize: 100 }));
       return;
     }
-    if (url.pathname === "/api/channel/telegram/operator/sessions/chat-1/messages") {
+    const match = url.pathname.match(/^\/api\/channel\/telegram\/operator\/sessions\/([^/]+)\/(messages|capability)$/);
+    if (match !== null) {
+      const chatId = decodeURIComponent(match[1]);
+      if (!(chatId in messagesByChatId)) {
+        await route.continue();
+        return;
+      }
+      if (match[2] === "capability") {
+        await route.fulfill(jsonResponse({ chatId, canSend: true }));
+        return;
+      }
       if (route.request().method() === "POST") {
         await route.fulfill(jsonResponse({ status: "sent" }, 201));
         return;
       }
-      const items = operatorMessages();
+      const items = messagesByChatId[chatId];
       await route.fulfill(jsonResponse({ items, total: items.length, page: 1, pageSize: 100 }));
-      return;
-    }
-    if (url.pathname === "/api/channel/telegram/operator/sessions/chat-1/capability") {
-      await route.fulfill(jsonResponse({ chatId: "chat-1", canSend: true }));
       return;
     }
     await route.continue();
@@ -212,6 +312,36 @@ test("Telegram operator keeps document/main fixed while sessions and messages sc
     documentScrollTop: (document.scrollingElement ?? document.documentElement).scrollTop,
   }));
   expect(afterSessionScroll).toEqual(beforeScroll);
+});
+
+test("Telegram operator uses message senders for group and channel conversations", async ({ page }) => {
+  test.skip(appProfile !== "custom", "requires APP_PROFILE=custom so channel.telegram is enabled");
+
+  await signInAsAdmin(page);
+  await installTelegramFixtures(page, {
+    sessions: groupAndChannelOperatorSessions(),
+    messagesByChatId: groupAndChannelOperatorMessages(),
+  });
+  await page.getByRole("link", { name: "Telegram channel" }).click();
+  await expect(page.locator("#page-title")).toHaveText("Telegram channel");
+  await page.getByRole("button", { name: "Open operator conversations" }).click();
+
+  await expect(page.locator('[data-telegram-session="chat-group"]')).toBeVisible();
+  await expect(page.locator('[data-telegram-message-list] [data-telegram-message]')).toHaveCount(3);
+  const groupSenders = page.locator('[data-telegram-message-list] [data-telegram-sender]');
+  await expect(groupSenders.nth(0)).toHaveText("alice");
+  await expect(groupSenders.nth(1)).toHaveText("User");
+  await expect(groupSenders.nth(2)).toHaveText("Bot");
+  expect(await groupSenders.allTextContents()).not.toContain("Support group");
+
+  await page.locator('[data-telegram-session="chat-channel"]').click();
+  await expect(page.locator('[data-telegram-message]').filter({ hasText: "Message from the channel editor" })).toBeVisible();
+  const channelSenders = page.locator('[data-telegram-message-list] [data-telegram-sender]');
+  await expect(channelSenders).toHaveCount(3);
+  await expect(channelSenders.nth(0)).toHaveText("channel_editor");
+  await expect(channelSenders.nth(1)).toHaveText("User");
+  await expect(channelSenders.nth(2)).toHaveText("Bot");
+  expect(await channelSenders.allTextContents()).not.toContain("Announcements");
 });
 
 test("ordinary long pages retain page-level vertical scrolling", async ({ page }) => {
