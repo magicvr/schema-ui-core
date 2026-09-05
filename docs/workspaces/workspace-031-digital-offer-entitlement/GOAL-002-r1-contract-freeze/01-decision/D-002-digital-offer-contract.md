@@ -121,6 +121,8 @@ store.Run(ctx, func(tx kernel.Tx) error {
 
 ### 4.4 购买 wallet mutation 与并发幂等协议（可执行冻结）
 
+**事务结构**：有界重试循环位于 `store.Run` **之外**；每次 attempt 调用一次 `store.Run(ctx, fn)`（一次 attempt = 一个事务；`kernel.Tx` 不暴露 Commit/Rollback，callback 返回 nil 即提交、返回 error 即回滚——A-004 F-002 修订）。最多 3 次 attempt；每次 attempt 以**回读开始**。
+
 **调用协议**（真实签名 `MutateInTx(tx, accountID, in LedgerEntryInput, entryID, now)`；freeze/deduct_frozen 的 `AmountDelta` 必须为**正数**，语义由钱包 apply 表决定：freeze = available−d / frozen+d；deduct_frozen = total−d / frozen−d）：
 
 - 事务外一次性预生成（同一 `now`）：`purchaseID = newID(now)`、`entryIDFreeze = newID(now)`、`entryIDDeduct = newID(now)`（互异）。
@@ -135,21 +137,29 @@ store.Run(ctx, func(tx kernel.Tx) error {
 | Memo | `digital-offer purchase <purchaseID>` | 同左 |
 | ActorID / ActorName | `subjectID` / `Subject`（对齐 voucher Redeem 先例） | 同左 |
 
-- 事务内顺序：验证（§4.2 步骤 1–4）→ freeze → deduct_frozen → INSERT purchase → INSERT entitlement。
-- 幂等负载：wallet 侧同 key 同 payload = 重放返回既有 entry；同 key 异 payload = `ErrIdempotencyConflict`（钱包原语自带）。
+**单次 attempt 事务内顺序**：
 
-**并发冲突协议**（有界重试，整事务粒度，最多 3 次；每次尝试以回滚收尾，无部分状态）：
+```text
+1. 回读：SELECT purchase WHERE subject_id=? AND request_id=?
+   命中 → offer_id 相同：幂等重放返回（终态成功）；不同：ErrRequestIdConflict（终态）
+2. 校验 offer on_sale / subject 存在 / GetOrCreateSubjectAccountInTx + 币种匹配（终态错误见表）
+3. walletRepo.MutateInTx(freeze)      // 余额不足 → ErrInsufficient（终态）
+4. walletRepo.MutateInTx(deduct_frozen)
+5. INSERT digital_purchases           // 唯一违反（自表）→ kernel.IsUniqueViolation 识别 → 本次 attempt 失败
+6. INSERT digital_entitlements
+```
 
-| 冲突 | 处理 |
-|------|------|
-| `ErrInsufficient` / 币种不匹配 / 非 on_sale / subject 不存在 | 终态错误，不重试 |
-| `ErrVersionConflict`（钱包乐观锁） | 重跑整个事务（重读 offer 与账户） |
-| wallet `errIdempotencyRace` | 重跑整个事务 |
-| purchase `UNIQUE(subject_id, request_id)` 竞争 | 回读既有凭证：`offer_id` 相同 → 幂等重放返回；不同 → `BIZOFFER_REQUEST_CONFLICT` |
-| 重试耗尽 | 返回错误；无任何落库（各尝试均回滚） |
+**错误分类（跨包可执行；不要求识别 wallet 包内未导出 sentinel——A-004 F-001 修订）**：
 
-- 验收并发测试（R2，双数据库）：同 `(subject_id, request_id)` 双发 → 恰一凭证/一次扣款/一份权益；同 request_id 异 offer → `BIZOFFER_REQUEST_CONFLICT`；不同 request 同账户并发竞争余额恰够一次 → 恰一成功、无冻结残留；重试后无重复 ledger/凭证/权益。
+| 类别 | 错误 | 处理 |
+|------|------|------|
+| 终态（不重试） | `ErrInsufficient`、币种不匹配、非 on_sale、subject 不存在、`ErrRequestIdConflict` | 直接映射 §9 错误码返回 |
+| 竞争（可重试） | 钱包 `ErrVersionConflict`；自表 INSERT 的 `kernel.IsUniqueViolation`；**其余一切非终态错误**（含 wallet 内部唯一竞争——该 sentinel 未导出，跨包不可分类，统一表现为 attempt 失败） | 本次 attempt 整体回滚，回到外层循环重试 |
+| 重试耗尽 | 3 次 attempt 后仍失败 | 返回通用错误；所有 attempt 均已回滚，无部分状态 |
+
+- 竞争收敛论证：同 `(subject_id, request_id)` 并发双发时，失败方在**下一次 attempt 的第 1 步回读**命中已提交的胜者凭证 → 幂等重放，无需触碰 wallet ledger；wallet 侧互异幂等键（`:freeze`/`:deduct`）+ purchase 唯一守卫保证「一凭证、一扣款、一份权益」。不同 request 竞争同一账户余额由钱包 `ErrVersionConflict` 串行化。
 - Telegram `buy` 的 `request_id` 派生规则冻结：`tg:<subject_id>:<update_id>`（通道重试天然幂等）。
+- 验收并发测试（R2，双数据库）：同 `(subject_id, request_id)` 双发 → 恰一凭证/一次扣款/一份权益；同 request_id 异 offer → `BIZOFFER_REQUEST_CONFLICT`；不同 request 同账户竞争余额恰够一次 → 恰一成功、无冻结残留；重试耗尽路径无残留。
 
 ### 4.3 入口与鉴权
 
@@ -176,11 +186,12 @@ store.Run(ctx, func(tx kernel.Tx) error {
 `Consume(ctx, subjectID, offerID, n, now) → error`：
 
 - 仅消耗**该 offer** 的 count 型权益行；duration 型不参与消耗（窗内不限次）。
-- **跨方言并发算法（冻结，SQLite/PostgreSQL 均可证明；平台默认隔离级别为 READ COMMITTED，不承诺 serializable）**：
+- **跨方言并发算法（冻结，SQLite/PostgreSQL 均可证明；A-004 F-002 修订）**：有界 attempt 循环位于 `store.Run` **之外**，每次 attempt 一个全新事务；callback 内**不含** COMMIT/ROLLBACK（`kernel.Tx` 无此方法，callback 返回值即提交/回滚语义）。
 
 ```text
-Run(ctx, tx):
-  for attempt in 1..3:
+// 外层（每次 attempt 一个 store.Run 事务）
+for attempt in 1..3:
+  outcome = store.Run(ctx, func(tx):
     needed = n
     rows = SELECT id, remaining_count FROM digital_entitlements
            WHERE subject_id=? AND offer_id=? AND form='count'
@@ -193,13 +204,20 @@ Run(ctx, tx):
             WHERE id = ? AND subject_id=? AND offer_id=?
               AND form='count' AND status='active' AND remaining_count >= ?
       if aff == 1: needed -= take          // else：行已被并发作废/耗尽，不计入
-    if needed == 0: COMMIT; return nil
-    ROLLBACK                                // 已扣行随事务回滚，全有或全无
-  return ErrEntitlementInsufficient
+    if needed == 0: return committed-OK    // callback 返回 nil → 事务提交
+    return deterministic-insufficient      // callback 返回该错误 → 本次事务回滚
+  )
+  if outcome == committed-OK: return nil
+  if outcome == deterministic-insufficient:
+    // 本次事务内候选总量确实不足（读时已锁行语义下成立）→ 终态错误
+    return ErrEntitlementInsufficient
+  // 其余 outcome（竞争失败）→ 下一个 attempt 全新事务重读候选
+return ErrEntitlementInsufficient（重试耗尽）
 ```
 
-- 最终写入谓词锁定主体、offer、形态、active 与余额五条件；`RowsAffected=0` 视为该行竞争失效并在下一 attempt 重读候选；全有或全无（部分扣减从不单独提交）。
-- **与 void 的线性化**：void 为 `UPDATE ... SET status='voided' WHERE id=? AND status='active'`（`RowsAffected=0` = 已作废 → 幂等成功）；consume 的最终 UPDATE 谓词含 `status='active'`，两语句在行级以谓词重检顺序化：void 先提交则该行不再是候选，consume 先提交则 void 仍成功（仅作废剩余次数）。两方言均成立（SQLite 写者串行；PG 行锁 + READ COMMITTED 谓词重检）。
+- 全有或全无：部分扣减行随本次事务回滚，从不单独提交；成功 attempt 原子提交全部扣减。
+- **与 void 的线性化**：void 为 `UPDATE ... SET status='voided' WHERE id=? AND status='active'`（`RowsAffected=0` = 已作废 → 幂等成功）；consume 的最终 UPDATE 谓词含 `status='active'`，两语句在行级以谓词重检顺序化：void 先提交则该行不再是候选，consume 先提交则 void 仍成功（仅作废剩余次数）。
+- **隔离级别声明（按 A-004 F-002 修订）**：平台**不固定**事务隔离级别——PostgreSQL `BeginTx(ctx, nil)` 未显式设置 TxOptions（隔离级别由部署数据库默认决定，典型 READ COMMITTED），SQLite 写者串行。本算法**不依赖 serializable**：正确性仅依赖 (a) 最终 UPDATE 的五条件谓词在行锁/写者串行下的重检，(b) 全新事务重读候选的有界重试，(c) 终态不足由「该事务内候选行扣尽仍不足」确定性判定。
 - 调用方：提供能力的通道/服务（判据 3「提供前统一核验」的消耗侧）；首波由测试与未来通道封装行使，核验 API（§5.1）是统一接缝。
 - 验收测试（R3，双数据库）：单行/多行、总量恰够、两个消费者总量足够都成功、仅一方应成功、`RowsAffected` 竞争、并发 void、混合 expired/voided 行不参与消耗。
 

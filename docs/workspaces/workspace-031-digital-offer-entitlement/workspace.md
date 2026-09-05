@@ -34,7 +34,7 @@ parent: null
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| R1 | 合同冻结：Offer 字段、购买状态机、权益形态、命令清单、事务与限流边界 | **进行中**（GOAL-002：C1 信息裁决关门 2026-09-05，I-031-001～005 verified；C2 合同 D-002 draft + A-001/A-002 审计循环中） |
+| R1 | 合同冻结：Offer 字段、购买状态机、权益形态、命令清单、事务与限流边界 | **进行中**（GOAL-002：C1 关门 2026-09-05，I-031-001～005 verified；C2/C3 审计循环：A-001 self → A-002 independent conditional → A-003 响应 → A-004 independent closure `fail`（2 required：跨包错误契约 / Consume 事务边界）→ A-005 响应已修订，待 A-006 closure 复审） |
 | R2 | Offer CRUD、购买凭证、钱包 `freeze → deduct_frozen` / 失败 `unfreeze` | 待开始；依赖 R1 |
 | R3 | 权益校验、过期/耗尽语义、可选 Telegram Register | 待开始；依赖 R2 |
 | R4 | 证据矩阵、边界核账、审计闭合与关门 | 待开始；依赖 R1～R3 |
