@@ -129,6 +129,9 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 	if tr == nil || tr.DispatcherState == nil {
 		t.Fatal("expected a live Telegram dispatcher on the Fx-injected runtime")
 	}
+	if tr.Dispatcher != tr.DispatcherState {
+		t.Fatal("runtime must expose the SAME dispatcher instance to the digital-offer wiring and the kernel port (A-014 F-001)")
+	}
 	if !tr.DispatcherState.HasBusinessHandlers() {
 		t.Fatal("digital-offer commands must be registered on the live dispatcher (price/buy/entitlements)")
 	}
@@ -167,6 +170,32 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 	}
 	if !client.captured("222", "用法：/buy") {
 		t.Fatalf("/buy handler did not reply with usage: captured %+v", client.snapshot())
+	}
+
+	// 3b. Explicit dispatcher identity by observable effect (A-014 F-001): the
+	// webhook must dispatch through the very instance we drive directly.
+	// Register a probe command on the Fx-injected dispatcher AFTER startup,
+	// then drive the real webhook with it — the probe handler executing proves
+	// pointer identity end-to-end through the webhook surface.
+	probeRan := make(chan struct{})
+	if err := tr.DispatcherState.RegisterCommand("probe_f008", func(ctx context.Context, upd kernel.TelegramUpdate) error {
+		close(probeRan)
+		return nil
+	}); err != nil {
+		t.Fatalf("register probe command: %v", err)
+	}
+	probePayload := `{"update_id":4,"message":{"message_id":14,"from":{"id":678,"is_bot":false,"first_name":"Alice"},"chat":{"id":12345,"type":"private"},"text":"/probe_f008"}}`
+	rr = httptest.NewRecorder()
+	probeReq := httptest.NewRequest(http.MethodPost, "/api/channel/telegram/webhook", strings.NewReader(probePayload))
+	probeReq.Header.Set(telegraminternal.HeaderTelegramSecretToken, "correct-secret")
+	mux.ServeHTTP(rr, probeReq)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("webhook /probe_f008 = %d %s, want 200", rr.Code, rr.Body.String())
+	}
+	select {
+	case <-probeRan:
+	case <-time.After(5 * time.Second):
+		t.Fatal("webhook did not dispatch through the Fx-injected dispatcher (probe command never ran)")
 	}
 
 	// 4. Structured manifest: parse the aggregated document and assert page

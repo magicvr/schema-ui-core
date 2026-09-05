@@ -105,16 +105,52 @@ func TestDigitalOfferCompositionRoot(t *testing.T) {
 	defer stopCancel()
 	defer func() { _ = app.Stop(stopCtx) }()
 
-	// 1. Manifest carries both digital-offer pages (aggregated from the
-	// fragment contribution).
+	// 1. Manifest carries both digital-offer pages with their route/schemaUrl
+	// and sidebar navigation refs (structured assertion — A-014 F-001 aligns
+	// this disabled-branch test with the Telegram-enabled one).
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/.well-known/schema-ui/app-manifest.json", nil))
 	if rr.Code != http.StatusOK {
 		t.Fatalf("manifest = %d", rr.Code)
 	}
-	manifestBody := rr.Body.String()
-	if !strings.Contains(manifestBody, "digitaloffer-offers") || !strings.Contains(manifestBody, "digitaloffer-entitlements") {
-		t.Fatalf("manifest missing digital-offer pages: %s", manifestBody)
+	var manifestDoc struct {
+		Pages []struct {
+			PageID    string `json:"pageId"`
+			Route     string `json:"route"`
+			SchemaURL string `json:"schemaUrl"`
+		} `json:"pages"`
+		Navigation struct {
+			Sidebar []struct {
+				PageRef string `json:"pageRef"`
+			} `json:"sidebar"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &manifestDoc); err != nil {
+		t.Fatalf("manifest is not valid JSON: %v", err)
+	}
+	manifestPages := map[string]struct{ route, schemaURL string }{}
+	for _, p := range manifestDoc.Pages {
+		manifestPages[p.PageID] = struct{ route, schemaURL string }{p.Route, p.SchemaURL}
+	}
+	for _, want := range []struct {
+		id, route, schemaURL string
+	}{
+		{"digitaloffer-offers", "/digitaloffer-offers", "/api/schema/digitaloffer-offers"},
+		{"digitaloffer-entitlements", "/digitaloffer-entitlements", "/api/schema/digitaloffer-entitlements"},
+	} {
+		got, ok := manifestPages[want.id]
+		if !ok || got.route != want.route || got.schemaURL != want.schemaURL {
+			t.Fatalf("manifest page %s = %+v, want route %s schemaUrl %s", want.id, got, want.route, want.schemaURL)
+		}
+	}
+	manifestRefs := map[string]bool{}
+	for _, n := range manifestDoc.Navigation.Sidebar {
+		manifestRefs[n.PageRef] = true
+	}
+	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements"} {
+		if !manifestRefs[ref] {
+			t.Fatalf("manifest sidebar missing pageRef %s (refs %v)", ref, manifestRefs)
+		}
 	}
 
 	// 2. Schema documents: unauthenticated 401, admin 200 with the right

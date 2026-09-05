@@ -12,7 +12,7 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
-| （Root 关门审计台账位于 GOAL-005：第 1 次关门 A-001～A-005（A-004 independent pass）；撤回后 A-006 runtime-integration fail → 整改 → A-010 independent `pass` 0 required → A-011 重新关门；第 3 轮撤回：A-012 independent `conditional` 2 required（F-007/F-008）→ A-013 self 响应 closed ×2——均 2026-09-05，详见 GOAL-005 `03-audit.md`） | | | | | | | |
+| （Root 关门审计台账位于 GOAL-005：第 1 次关门 A-001～A-005（A-004 independent pass）；撤回后 A-006 runtime-integration fail → 整改 → A-010 independent `pass` 0 required → A-011 重新关门；第 3 轮撤回：A-012 independent `conditional` 2 required（F-007/F-008）→ A-013 self 响应 closed ×2 → A-014 independent focused finding-closure `pass` 0 required → F-001 前置加固 A-015（self）→ 第 3 次关门——均 2026-09-05，详见 GOAL-005 `03-audit.md`） | | | | | | | |
 
 ## 信息就绪核对（按 scope）
 

@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-evidence-closeout
 title: R4 证据矩阵/边界核账/关门审计
-status: active
+status: done
 parent: GOAL-001-digital-offer-entitlement
 created: 2026-09-05
 updated: 2026-09-05
-version: 0.2.0
-progress: 1/2
+version: 0.3.0
+progress: 2/2
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -26,9 +26,9 @@ serves_summary: 承载 VP-031 R4（分母 = GOAL-002 D-002 v1.2.0）：VP-031 �
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | **证据矩阵 + 边界核账**：判据 1～8 逐条映射证据路径；红线/Profile/subject-only/ Charter 未改核对 | **已关门**（2026-09-05 · E-001） |
-| C2 | **关门审计与 Root 关门**：self + codex independent 关门审计；意见响应；Root/goal-tree/VP-031 投影同步 | **重开中**（第 3 轮：A-012 independent re-audit `conditional` 2 required（F-007/F-008 证据缺口）→ 关门撤回 → D-004 fixed ×2 → A-013 closed ×2；待 focused independent closure 复审 `pass` 后重新关门） |
+| C2 | **关门审计与 Root 关门**：self + codex independent 关门审计；意见响应；Root/goal-tree/VP-031 投影同步 | **已关门**（第 3 次关门：A-012 `conditional` 2 required（F-007/F-008）→ D-004 fixed ×2 + A-013 closed ×2 → A-014 independent `pass` 0 required → F-001 关门前置加固（A-015 fixed）→ 2026-09-05 重新关门 2/2） |
 
-`progress` = 已关门检查点数 / 2。当前 **1/2**（C2 因 A-012 重开，closure 撤回）。
+`progress` = 已关门检查点数 / 2。当前 **2/2**（第 3 次关门完成）。
 
 ## 成功标准（方向级）
 

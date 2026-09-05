@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-digital-offer-entitlement
 title: 数字 Offer 与权益
-status: active
+status: done
 parent: null
 created: 2026-09-05
 updated: 2026-09-05
-version: 0.2.0
-progress: 3/4
+version: 0.3.0
+progress: 4/4
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -39,7 +39,7 @@ serves_summary: 业务域分支 · 数字 Offer + 薄购买凭证 + 本域权益
 | R1 | 合同：Offer 字段、购买状态机、权益形态、命令清单、事务与限流边界 | **已关门**（2026-09-05 · GOAL-002：D-001 裁决 + D-002 v1.0.0 accepted；审计 A-001～A-007 闭合，A-006 independent `pass` open required 0） |
 | R2 | Offer + 购买 + 钱包扣款 | **已关门**（2026-09-05 · GOAL-003 done 4/4；A-008 independent `pass` open required 0） |
 | R3 | 权益校验 + 可选 Telegram 注册 | **已关门**（2026-09-05 · GOAL-004 done 3/3；A-002 independent `pass` 0 required） |
-| R4 | 证据与关门 | **重开中**（第 3 轮：GOAL-005 C2 因 A-012 `conditional` 2 required 重开——F-007/F-008 证据缺口；D-004 fixed ×2 + A-013 closed ×2；待 focused independent closure 复审 `pass` 后重新关门） |
+| R4 | 证据与关门 | **已关门**（第 3 次关门 2026-09-05 · GOAL-005 done 2/2：A-012 `conditional` 2 required（F-007/F-008）→ D-004 fixed ×2 + A-013 closed ×2 → A-014 independent `pass` 0 required → F-001 关门前置加固（A-015 fixed）→ 重新关门） |
 
 ## 信息就绪与未知项（P-005）
 
