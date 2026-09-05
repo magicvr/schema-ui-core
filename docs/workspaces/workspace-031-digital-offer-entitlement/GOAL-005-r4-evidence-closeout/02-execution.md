@@ -13,6 +13,7 @@ version: 0.1.0
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
 | [E-001-evidence-matrix](02-execution/E-001-evidence-matrix.md) | 2026-09-05 | C1 证据矩阵与边界核账 | VP-031 判据 1～8 逐条映射证据；边界核账五项通过 | done |
+| [E-002-closeout-audit-cycle](02-execution/E-002-closeout-audit-cycle.md) | 2026-09-05 | C2 关门审计循环 | A-001 self → A-002 independent conditional（2 required）→ A-003 响应修复 → A-004 independent `pass` 0 required → A-005 关门登记 | done |
 
 ## 执行记录（ledger）
 

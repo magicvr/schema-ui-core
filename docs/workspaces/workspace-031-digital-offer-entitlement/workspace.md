@@ -24,7 +24,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-031-digital-offer-entitlement` | 与 canonical 路径一致 |
-| Root Goal | `GOAL-001-digital-offer-entitlement` | `parent: null`；**active · 3/4**（R1/R2/R3 已关门） |
+| Root Goal | `GOAL-001-digital-offer-entitlement` | `parent: null`；**done · 4/4**（R1～R4 全部关门；VP-031 closed） |
 | canonical 范围 | `docs/workspaces/workspace-031-digital-offer-entitlement/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料；不得引用未固定材料 |
 | 愿景角色 | `delivery` | VP-031 唯一 lead；不改变 Charter primary workspace |
@@ -37,7 +37,7 @@ parent: null
 | R1 | 合同冻结：Offer 字段、购买状态机、权益形态、命令清单、事务与限流边界 | **关门**（2026-09-05 · GOAL-002 done 3/3：D-001 裁决 + D-002 v1.0.0 accepted；A-001～A-007 审计闭合，A-006 independent `pass`） |
 | R2 | Offer CRUD、购买凭证、钱包 `freeze → deduct_frozen` / 失败 `unfreeze` | **关门**（2026-09-05 · GOAL-003 done 4/4；A-001～A-009 审计循环，A-008 independent `pass` open required 0） |
 | R3 | 权益校验、过期/耗尽语义、可选 Telegram Register | **关门**（2026-09-05 · GOAL-004 done 3/3；A-002 independent `pass` 0 required） |
-| R4 | 证据矩阵、边界核账、审计闭合与关门 | **进行中**（GOAL-005 承载） |
+| R4 | 证据矩阵、边界核账、审计闭合与关门 | **关门**（2026-09-05 · GOAL-005 done 2/2；A-004 independent closure `pass` open required 0） |
 
 ## 激活边界
 

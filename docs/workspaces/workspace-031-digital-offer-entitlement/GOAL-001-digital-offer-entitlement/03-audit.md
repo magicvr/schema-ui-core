@@ -12,6 +12,7 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| （Root 关门审计台账位于 GOAL-005：A-001 self / A-002 independent conditional / A-003 响应 / A-004 independent `pass` 0 required / A-005 关门登记——2026-09-05） | | | | | | | |
 
 ## 信息就绪核对（按 scope）
 
