@@ -7,12 +7,13 @@ status: accepted
 version: 1.0.0
 ---
 
-# D-002 · 数字 Offer 业务域合同 v1.1.0
+# D-002 · 数字 Offer 业务域合同 v1.2.0
 
 > R1 合同正文。R2/R3/R4 的实施、验收与关门以本文为分母；偏离本文需先以 02 决策修订合同再实施。
 > 框架性裁决（权益形态 / 购买状态机 / 人工发放边界 / 模块 id / 命令清单）见 D-001，本文不得与之冲突。
 > 落盘状态：`accepted`（2026-09-05 · A-006 independent closure `pass` 后冻结；v1.0.0 · C2/C3 关门）。
 > **v1.1.0（2026-09-05 · GOAL-003 D-001 附录）**：§9 增补 `BIZOFFER_VERSION_CONFLICT` 与 `INVALID_BIZOFFER_REQUEST`（实施期被 error-contract 钉死测试要求显式化；均为加法修订，不改变既有条款语义）。`BIZOFFER_ENTITLEMENT_INVALID` 的目录登记随 R3 Check/Consume 面落地。
+> **v1.2.0（2026-09-05 · GOAL-003 D-002 附录）**：§4.2/§4.4 购买事务内步骤重排——凭证 INSERT 前置于钱包流 水，作为请求守卫最先裁决。原因：PG READ COMMITTED 下并发同请求的各调用各自预生成不同 purchaseID，若钱包流 水先于守卫，败者会以相同幂等键、不同 RefID 触达 ledger，触发 wallet `ErrIdempotencyConflict`（终态）破坏收敛。重排后败者在守卫处失败并回读重放；happy-path 语义不变（同事务全有或全无）。
 
 ## 0. 对齐与判据映射
 
@@ -108,10 +109,10 @@ store.Run(ctx, func(tx kernel.Tx) error {
   4. 取 subject 钱包账户：walletRepo.GetOrCreateSubjectAccountInTx(tx, subjectID, now)
      （每 subject 单账户单币种，先例 voucher.Redeem）；
      账户 currency ≠ offer.currency → ErrCurrencyMismatch 拒绝（跨币种 offer 首波不可购）
-  5. walletRepo.MutateInTx(tx, freeze)        // available → frozen（余额不足 → ErrInsufficient 透出）；
+  5. INSERT digital_purchases (status='fulfilled')   // v1.2.0：凭证前置为请求守卫
+  6. walletRepo.MutateInTx(tx, freeze)        // available → frozen（余额不足 → ErrInsufficient 透出）；
                                               // ref_type='biz_offer_purchase', ref_id=purchase.id
-  6. walletRepo.MutateInTx(tx, deduct_frozen) // frozen → deducted；同上 ref 反链
-  7. INSERT digital_purchases (status='fulfilled')
+  7. walletRepo.MutateInTx(tx, deduct_frozen) // frozen → deducted；同上 ref 反链
   8. INSERT digital_entitlements（duration → expires_at；count → remaining_count）
 })
 ```

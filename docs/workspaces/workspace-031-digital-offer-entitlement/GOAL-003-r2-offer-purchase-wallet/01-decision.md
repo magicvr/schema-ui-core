@@ -12,7 +12,8 @@ version: 0.1.0
 
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
-| （C1 切片方案如需决策记录时登记；实施细节以 GOAL-002 D-002 v1.0.0 为分母） | | | | |
+| [D-001-error-codes-addendum](01-decision/D-001-error-codes-addendum.md) | 2026-09-05 | 合同附录（错误码） | §9 加法修订 BIZOFFER_VERSION_CONFLICT / INVALID_BIZOFFER_REQUEST；ENTITLEMENT_INVALID 登记随 R3 | accepted |
+| [D-002-tx-order-addendum](01-decision/D-002-tx-order-addendum.md) | 2026-09-05 | 合同附录（事务步骤重排） | PG 并发缺陷修复：凭证 INSERT 前置为请求守卫；D-002 → v1.2.0 | accepted |
 
 ## 决策记录（ledger）
 

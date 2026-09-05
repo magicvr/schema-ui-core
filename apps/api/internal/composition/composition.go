@@ -628,6 +628,7 @@ func newMuxWithExtraProviders(
 			walletstore.NewRepository(st),
 			subject.NewStore(st),
 			operations,
+			rateLimiters,
 		)
 		providers = append(providers, digitaloffermodule.New(a, digitalOfferService, rateLimiters))
 	}

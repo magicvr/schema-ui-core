@@ -42,6 +42,18 @@ const purchaseRefType = "biz_offer_purchase"
 // OUTSIDE store.Run; each attempt is one fresh transaction.
 const maxPurchaseAttempts = 3
 
+// ErrRateLimited maps to the frozen generic RATE_LIMITED code (D-002 §8):
+// the purchase request-count bucket denied this request.
+var ErrRateLimited = errors.New("digital-offer purchase rate limited")
+
+// Purchase bucket constants (D-002 §8): bizoffer|purchase|<subject_id>,
+// 1 minute / 10 requests — request counting via AllowRecord, never Clear.
+const (
+	purchaseLimiterWindow   = time.Minute
+	purchaseLimiterMax      = 10
+	purchaseLimiterCapacity = 1 << 16
+)
+
 // Actor carries the admin-session identity for fail-closed audit rows.
 type Actor struct {
 	ID            string
@@ -56,14 +68,30 @@ type Service struct {
 	wallet     *walletstore.Repository
 	subjects   *subject.Store
 	operations operationlog.TransactionalRecorder
+	limiter    kernel.RateLimiter
 	now        func() time.Time
+	// faultHook is a test-only injection point (D-002 §4.4 acceptance):
+	// when set, it is invoked after each named purchase step inside the
+	// transaction and a non-nil error aborts the attempt as retryable.
+	faultHook func(step string) error
 }
 
 // NewService constructs the domain service. store and wallet must share the
 // same platform runner so purchase attempts span both domains in ONE
-// kernel.Tx (D-002 §4.2).
-func NewService(repo *store.Repository, wallet *walletstore.Repository, subjects *subject.Store, operations operationlog.TransactionalRecorder) *Service {
-	return &Service{repo: repo, wallet: wallet, subjects: subjects, operations: operations, now: time.Now}
+// kernel.Tx (D-002 §4.2). limiters may be nil only in tests that never call
+// Purchase — the §8 purchase bucket is mandatory on the production surface.
+func NewService(repo *store.Repository, wallet *walletstore.Repository, subjects *subject.Store, operations operationlog.TransactionalRecorder, limiters kernel.RateLimiterProvider) *Service {
+	var limiter kernel.RateLimiter
+	if limiters != nil {
+		limiter = limiters.NewRateLimiter(purchaseLimiterWindow, purchaseLimiterMax, purchaseLimiterCapacity)
+	}
+	return &Service{repo: repo, wallet: wallet, subjects: subjects, operations: operations, limiter: limiter, now: time.Now}
+}
+
+// SetPurchaseFaultHookForTest installs the §4.4 acceptance failure-injection
+// seam. Steps: "freeze", "deduct", "purchase", "entitlement".
+func (s *Service) SetPurchaseFaultHookForTest(hook func(step string) error) {
+	s.faultHook = hook
 }
 
 // Offer returns the store package for the handler layer's read needs.
@@ -258,6 +286,13 @@ func (s *Service) Purchase(ctx context.Context, subjectID, offerID, requestID st
 	if subjectID == "" || offerID == "" || requestID == "" {
 		return nil, store.ErrInvalidOffer
 	}
+	// §8 purchase bucket: request counting per call — AllowRecord, and the
+	// key-wide Clear is never invoked (V-F119).
+	if s.limiter != nil {
+		if !s.limiter.AllowRecord("bizoffer|purchase|"+subjectID, now) {
+			return nil, ErrRateLimited
+		}
+	}
 	purchaseID, err := newID(now)
 	if err != nil {
 		return nil, err
@@ -356,7 +391,24 @@ func (s *Service) purchaseAttempt(ctx context.Context, subjectID, offerID, reque
 			return store.ErrCurrencyMismatch
 		}
 
-		// Attempt steps 5–6: wallet freeze → deduct_frozen inside the SAME tx.
+		// Attempt step 3 (D-002 v1.2.0 §4.2 reorder): the purchase voucher is
+		// inserted FIRST so the UNIQUE(subject_id, request_id) guard resolves
+		// concurrent replays BEFORE any wallet mutation — a loser never
+		// reaches the ledger with its divergent pre-generated purchase id.
+		purchase := &store.Purchase{
+			ID: purchaseID, SubjectID: subjectID, OfferID: offer.ID, OfferName: offer.Name,
+			Amount: offer.PriceAmount, Currency: offer.Currency,
+			FreezeEntryID: entryFreezeID, DeductEntryID: entryDeductID,
+			RequestID: requestID, Status: "fulfilled", CreatedAt: now,
+		}
+		if err := s.repo.InsertPurchaseInTx(tx, *purchase); err != nil {
+			return err
+		}
+		if err := s.fault("purchase"); err != nil {
+			return err
+		}
+
+		// Attempt wallet steps: freeze → deduct_frozen inside the SAME tx.
 		freezeIn := walletstore.LedgerEntryInput{
 			EntryType:      walletstore.EntryFreeze,
 			AmountDelta:    offer.PriceAmount,
@@ -368,6 +420,9 @@ func (s *Service) purchaseAttempt(ctx context.Context, subjectID, offerID, reque
 			ActorName:      "Subject",
 		}
 		if _, _, err := s.wallet.MutateInTx(tx, account.ID, freezeIn, entryFreezeID, now); err != nil {
+			return err
+		}
+		if err := s.fault("freeze"); err != nil {
 			return err
 		}
 		deductIn := walletstore.LedgerEntryInput{
@@ -383,19 +438,11 @@ func (s *Service) purchaseAttempt(ctx context.Context, subjectID, offerID, reque
 		if _, _, err := s.wallet.MutateInTx(tx, account.ID, deductIn, entryDeductID, now); err != nil {
 			return err
 		}
-
-		// Attempt step 7: the purchase voucher (append-only).
-		purchase := &store.Purchase{
-			ID: purchaseID, SubjectID: subjectID, OfferID: offer.ID, OfferName: offer.Name,
-			Amount: offer.PriceAmount, Currency: offer.Currency,
-			FreezeEntryID: entryFreezeID, DeductEntryID: entryDeductID,
-			RequestID: requestID, Status: "fulfilled", CreatedAt: now,
-		}
-		if err := s.repo.InsertPurchaseInTx(tx, *purchase); err != nil {
+		if err := s.fault("deduct"); err != nil {
 			return err
 		}
 
-		// Attempt step 8: the entitlement grant.
+		// Attempt final step: the entitlement grant.
 		ent := &store.Entitlement{
 			ID: entitlementID, SubjectID: subjectID, OfferID: offer.ID,
 			PurchaseID: purchase.ID, Form: offer.EntitlementForm,
@@ -410,6 +457,9 @@ func (s *Service) purchaseAttempt(ctx context.Context, subjectID, offerID, reque
 			ent.RemainingCount = &count
 		}
 		if err := s.repo.InsertEntitlementInTx(tx, *ent); err != nil {
+			return err
+		}
+		if err := s.fault("entitlement"); err != nil {
 			return err
 		}
 		result = &PurchaseResult{Purchase: purchase, Entitlement: ent}
@@ -460,6 +510,15 @@ func (s *Service) VoidEntitlement(ctx context.Context, actor Actor, id string, n
 // lives here, NOT inside the callback).
 func (s *Service) runnerRun(ctx context.Context, fn func(tx kernel.Tx) error) error {
 	return s.repo.Runner().Run(ctx, fn)
+}
+
+// fault invokes the test-only failure injection for one purchase step; nil
+// hook (production) is always a no-op.
+func (s *Service) fault(step string) error {
+	if s.faultHook == nil {
+		return nil
+	}
+	return s.faultHook(step)
 }
 
 // recordOperationTx pairs the audit row with the domain write inside the

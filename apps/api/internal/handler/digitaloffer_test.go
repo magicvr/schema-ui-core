@@ -58,6 +58,7 @@ func newDigitalOfferEnv(t *testing.T) (*authTestEnv, *service.Service, *stubTxRe
 		walletstore.NewRepository(env.st),
 		subject.NewStore(env.st),
 		rec,
+		ratelimit.NewProvider(),
 	)
 	for _, r := range DigitalOfferRoutes(env.a, svc, "biz.digital-offer", ratelimit.NewProvider()) {
 		env.mux.Handle(r.Method+" "+r.Pattern, r.Handler)

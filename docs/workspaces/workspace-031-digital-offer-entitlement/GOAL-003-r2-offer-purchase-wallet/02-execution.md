@@ -12,7 +12,7 @@ version: 0.1.0
 
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
-| （实施事实按检查点登记） | | | | |
+| [E-001-r2-implementation](02-execution/E-001-r2-implementation.md) | 2026-09-05 | C1/C2/C3 实施 | 切片方案 + 模块骨架 + 购买链路与双库验收；全仓回归绿 | done |
 
 ## 执行记录（ledger）
 

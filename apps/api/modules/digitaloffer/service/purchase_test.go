@@ -1,7 +1,9 @@
-// GOAL-003 C3 acceptance tests (workspace-031 · GOAL-002 D-002 v1.0.0 §4):
+// GOAL-003 C3 acceptance tests (workspace-031 · GOAL-002 D-002 v1.1.0 §4):
 // the single-transaction purchase path — freeze → deduct_frozen → purchase
 // voucher → entitlement in ONE kernel.Tx, idempotent replay, bounded retry on
-// races, and the §4.4 concurrency invariants.
+// races, retry-exhaustion zero-residue and the §8 purchase bucket. The
+// scenario matrix runs against SQLite always and against real PostgreSQL when
+// PG_TEST_* is configured (A-002 F-002 dual-database demand).
 package service_test
 
 import (
@@ -11,11 +13,13 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/pgtest"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	storepkg "github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -31,6 +35,7 @@ var now = time.Unix(1700000000, 0).UTC()
 
 type testEnv struct {
 	t          *testing.T
+	st         kernel.Store
 	wallet     *walletstore.Repository
 	subjects   *subject.Store
 	svc        *service.Service
@@ -54,6 +59,24 @@ func (s *stubRecorder) RecordOperationTx(_ kernel.Tx, op operationlog.Operation)
 	return nil
 }
 
+func (s *stubRecorder) events() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]string(nil), s.ops...)
+}
+
+func (s *stubRecorder) reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ops = nil
+}
+
+func (s *stubRecorder) setFail(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.fail = err
+}
+
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
 	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "digitaloffer.db"), "admin", "hash", false)
@@ -61,17 +84,26 @@ func newTestEnv(t *testing.T) *testEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	return newTestEnvOn(t, st)
+	return newTestEnvOn(t, st, true)
 }
 
-func newTestEnvOn(t *testing.T, st kernel.Store) *testEnv {
+// newTestEnvOn builds the service over an explicit store. withLimiter wires
+// the §8 purchase bucket (production shape and dedicated limiter scenarios);
+// money-path matrix scenarios run without it so request counting does not
+// intersect transaction semantics.
+func newTestEnvOn(t *testing.T, st kernel.Store, withLimiter bool) *testEnv {
 	t.Helper()
 	rec := &stubRecorder{}
+	var limiters kernel.RateLimiterProvider
+	if withLimiter {
+		limiters = ratelimit.NewProvider()
+	}
 	return &testEnv{
 		t:          t,
+		st:         st,
 		wallet:     walletstore.NewRepository(st),
 		subjects:   subject.NewStore(st),
-		svc:        service.NewService(store.NewRepository(st), walletstore.NewRepository(st), subject.NewStore(st), rec),
+		svc:        service.NewService(store.NewRepository(st), walletstore.NewRepository(st), subject.NewStore(st), rec, limiters),
 		operations: rec,
 	}
 }
@@ -123,323 +155,451 @@ func (e *testEnv) seedOffer(form string, price int64, status string) *store.Offe
 	return offer
 }
 
-// TestPurchaseSingleTransaction proves §4.2: a successful purchase commits
-// freeze + deduct_frozen ledger entries, the purchase voucher and the
-// entitlement in one visible state, with wallet refs back-linked.
-func TestPurchaseSingleTransaction(t *testing.T) {
-	for _, form := range []string{store.FormDuration, store.FormCount} {
-		t.Run(form, func(t *testing.T) {
-			env := newTestEnv(t)
-			subjectID := env.seedSubject("buyer-"+form, 1000, "")
-			offer := env.seedOffer(form, 400, store.StatusOnSale)
+func (e *testEnv) accountOf(subjectID string) *walletstore.Account {
+	e.t.Helper()
+	acct, err := e.wallet.GetSubjectAccountByOwner(subjectID)
+	if err != nil {
+		e.t.Fatalf("load account: %v", err)
+	}
+	return acct
+}
 
-			res, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
-			if err != nil {
-				t.Fatalf("purchase: %v", err)
+func (e *testEnv) ledgerKinds(accountID string) map[string]int {
+	e.t.Helper()
+	entries, _, err := e.wallet.ListEntries(accountID, "", "", 1, 200)
+	if err != nil {
+		e.t.Fatalf("list entries: %v", err)
+	}
+	kinds := map[string]int{}
+	for _, entry := range entries {
+		kinds[entry.EntryType]++
+		if entry.EntryType == walletstore.EntryFreeze || entry.EntryType == walletstore.EntryDeductFrozen {
+			if entry.RefType != "biz_offer_purchase" {
+				e.t.Fatalf("ledger ref = %s/%s, want biz_offer_purchase back-link", entry.RefType, entry.RefID)
 			}
-			if res.Replayed {
-				t.Fatal("first purchase must not be a replay")
-			}
-			if res.Purchase.Status != "fulfilled" || res.Purchase.Amount != 400 {
-				t.Fatalf("purchase = %+v", res.Purchase)
-			}
-			if res.Entitlement.PurchaseID != res.Purchase.ID || res.Entitlement.SubjectID != subjectID {
-				t.Fatalf("entitlement = %+v", res.Entitlement)
-			}
-			switch form {
-			case store.FormDuration:
-				if res.Entitlement.ExpiresAt == nil || !res.Entitlement.ExpiresAt.After(now) {
-					t.Fatalf("duration entitlement expires = %v", res.Entitlement.ExpiresAt)
-				}
-			case store.FormCount:
-				if res.Entitlement.RemainingCount == nil || *res.Entitlement.RemainingCount != 5 {
-					t.Fatalf("count entitlement remaining = %v", res.Entitlement.RemainingCount)
-				}
-			}
+		}
+	}
+	return kinds
+}
 
-			// Wallet ledger: exactly freeze + deduct_frozen, total dropped by
-			// 400, no frozen residue, ref back-link present.
-			acct, err := env.wallet.GetSubjectAccountByOwner(subjectID)
-			if err != nil {
-				t.Fatalf("load account: %v", err)
-			}
-			if acct.BalanceTotal != 600 || acct.BalanceAvailable != 600 || acct.BalanceFrozen != 0 {
-				t.Fatalf("balances = %+v", acct)
-			}
-			for _, entryID := range []string{res.Purchase.FreezeEntryID, res.Purchase.DeductEntryID} {
-				if entryID == "" {
-					t.Fatal("purchase must reference both ledger entries")
+// runPurchaseMatrix executes the D-002 §4.2/§4.4 acceptance scenarios that
+// must hold on every dialect (SQLite and PostgreSQL).
+func runPurchaseMatrix(t *testing.T) {
+	t.Run("single transaction", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		res, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
+		if err != nil {
+			t.Fatalf("purchase: %v", err)
+		}
+		if res.Replayed {
+			t.Fatal("first purchase must not be a replay")
+		}
+		if res.Purchase.Status != "fulfilled" || res.Purchase.Amount != 400 {
+			t.Fatalf("purchase = %+v", res.Purchase)
+		}
+		if res.Entitlement.PurchaseID != res.Purchase.ID || res.Entitlement.SubjectID != subjectID {
+			t.Fatalf("entitlement = %+v", res.Entitlement)
+		}
+		if res.Entitlement.RemainingCount == nil || *res.Entitlement.RemainingCount != 5 {
+			t.Fatalf("count entitlement remaining = %v", res.Entitlement.RemainingCount)
+		}
+		acct := env.accountOf(subjectID)
+		if acct.BalanceTotal != 600 || acct.BalanceAvailable != 600 || acct.BalanceFrozen != 0 {
+			t.Fatalf("balances = %+v", acct)
+		}
+		kinds := env.ledgerKinds(acct.ID)
+		if kinds[walletstore.EntryFreeze] != 1 || kinds[walletstore.EntryDeductFrozen] != 1 {
+			t.Fatalf("ledger kinds = %v, want exactly one freeze and one deduct_frozen", kinds)
+		}
+	})
+
+	t.Run("single transaction duration form", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormDuration, 400, store.StatusOnSale)
+		res, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
+		if err != nil {
+			t.Fatalf("purchase: %v", err)
+		}
+		if res.Entitlement.ExpiresAt == nil || !res.Entitlement.ExpiresAt.After(now) {
+			t.Fatalf("duration entitlement expires = %v", res.Entitlement.ExpiresAt)
+		}
+	})
+
+	t.Run("terminal failure paths leave zero residue", func(t *testing.T) {
+		cases := []struct {
+			name    string
+			balance int64
+			setup   func(e *testEnv, seededID string) (string, string)
+			want    error
+		}{
+			{"insufficient funds", 100, func(e *testEnv, _ string) (string, string) {
+				offer := e.seedOffer(store.FormCount, 400, store.StatusOnSale)
+				return e.seedSubject("payer", 100, ""), offer.ID
+			}, walletstore.ErrInsufficient},
+			{"offer not on sale", 1000, func(e *testEnv, subjectID string) (string, string) {
+				offer := e.seedOffer(store.FormCount, 400, store.StatusDraft)
+				return subjectID, offer.ID
+			}, store.ErrOfferNotOnSale},
+			{"unknown subject", 1000, func(e *testEnv, _ string) (string, string) {
+				offer := e.seedOffer(store.FormCount, 400, store.StatusOnSale)
+				return "subject-does-not-exist", offer.ID
+			}, store.ErrSubjectNotFound},
+			{"unknown offer", 1000, func(e *testEnv, subjectID string) (string, string) {
+				return subjectID, "offer-does-not-exist"
+			}, store.ErrNotFound},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				env := newTestEnvOn(t, mustSQLite(t), false)
+				seededID := env.seedSubject("buyer", tc.balance, "")
+				wantSubjectID, offerID := tc.setup(env, seededID)
+				_, err := env.svc.Purchase(context.Background(), wantSubjectID, offerID, "req-x", time.Now().UTC())
+				if !errors.Is(err, tc.want) {
+					t.Fatalf("err = %v, want %v", err, tc.want)
 				}
-			}
-			entries, _, err := env.wallet.ListEntries(acct.ID, "", "", 1, 50)
-			if err != nil {
-				t.Fatalf("list entries: %v", err)
-			}
-			kinds := map[string]int{}
-			for _, e := range entries {
-				kinds[e.EntryType]++
-				switch e.EntryType {
-				case walletstore.EntryFreeze, walletstore.EntryDeductFrozen:
-					if e.RefType != "biz_offer_purchase" || e.RefID != res.Purchase.ID {
-						t.Fatalf("ledger ref = %s/%s, want biz_offer_purchase/%s", e.RefType, e.RefID, res.Purchase.ID)
+				purchases, total, err := env.svc.ListPurchases(store.PurchaseFilter{Page: 1, PageSize: 50})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if total != 0 || len(purchases) != 0 {
+					t.Fatalf("failed purchase must not persist a voucher: %d rows", total)
+				}
+				if acct, err := env.wallet.GetSubjectAccountByOwner(wantSubjectID); err == nil {
+					if acct.BalanceFrozen != 0 || acct.BalanceTotal != tc.balance {
+						t.Fatalf("balances after failure = %+v, want untouched %d", acct, tc.balance)
 					}
 				}
-			}
-			if kinds[walletstore.EntryFreeze] != 1 || kinds[walletstore.EntryDeductFrozen] != 1 {
-				t.Fatalf("ledger kinds = %v, want exactly one freeze and one deduct_frozen", kinds)
-			}
-		})
-	}
-}
+			})
+		}
+	})
 
-// TestPurchaseFailurePaths proves the §4.2 terminal rejections leave NO
-// purchase voucher, NO entitlement and NO frozen residue.
-func TestPurchaseFailurePaths(t *testing.T) {
-	cases := []struct {
-		name    string
-		balance int64
-		setup   func(e *testEnv, subjectID string) (string, string)
-		want    error
-	}{
-		{"insufficient funds", 100, func(e *testEnv, subjectID string) (string, string) {
-			offer := e.seedOffer(store.FormCount, 400, store.StatusOnSale)
-			return subjectID, offer.ID
-		}, walletstore.ErrInsufficient},
-		{"offer not on sale", 1000, func(e *testEnv, subjectID string) (string, string) {
-			offer := e.seedOffer(store.FormCount, 400, store.StatusDraft)
-			return subjectID, offer.ID
-		}, store.ErrOfferNotOnSale},
-		{"unknown subject", 1000, func(e *testEnv, subjectID string) (string, string) {
-			offer := e.seedOffer(store.FormCount, 400, store.StatusOnSale)
-			return "subject-does-not-exist", offer.ID
-		}, store.ErrSubjectNotFound},
-		{"unknown offer", 1000, func(e *testEnv, subjectID string) (string, string) {
-			return subjectID, "offer-does-not-exist"
-		}, store.ErrNotFound},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			env := newTestEnv(t)
-			seededID := env.seedSubject("buyer", tc.balance, "")
-			wantSubjectID, offerID := tc.setup(env, seededID)
-			_, err := env.svc.Purchase(context.Background(), wantSubjectID, offerID, "req-x", time.Now().UTC())
-			if !errors.Is(err, tc.want) {
-				t.Fatalf("err = %v, want %v", err, tc.want)
-			}
-			purchases, total, err := env.svc.ListPurchases(store.PurchaseFilter{Page: 1, PageSize: 50})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if total != 0 || len(purchases) != 0 {
-				t.Fatalf("failed purchase must not persist a voucher: %d rows", total)
-			}
-			acct, err := env.wallet.GetSubjectAccountByOwner(wantSubjectID)
-			if err == nil && (acct.BalanceFrozen != 0 || acct.BalanceTotal != tc.balance) {
-				t.Fatalf("balances after failure = %+v, want untouched %d", acct, tc.balance)
-			}
-		})
-	}
-}
+	t.Run("idempotent replay and cross-offer conflict", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
 
-// TestPurchaseIdempotentReplay proves §4.4: the same (subject, request) pair
-// replays the SAME voucher with no second deduction; a different offer under
-// the same request id is a hard conflict.
-func TestPurchaseIdempotentReplay(t *testing.T) {
-	env := newTestEnv(t)
-	subjectID := env.seedSubject("buyer", 1000, "")
-	offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
-
-	first, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
-	if err != nil {
-		t.Fatalf("first purchase: %v", err)
-	}
-	second, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
-	if err != nil {
-		t.Fatalf("replay: %v", err)
-	}
-	if !second.Replayed || second.Purchase.ID != first.Purchase.ID {
-		t.Fatalf("replay mismatch: %+v vs %+v", second, first)
-	}
-	acct, _ := env.wallet.GetSubjectAccountByOwner(subjectID)
-	if acct.BalanceTotal != 600 {
-		t.Fatalf("balance after replay = %d, want 600", acct.BalanceTotal)
-	}
-
-	other := env.seedOffer(store.FormCount, 100, store.StatusOnSale)
-	if _, err := env.svc.Purchase(context.Background(), subjectID, other.ID, "req-1", time.Now().UTC()); !errors.Is(err, store.ErrRequestIdConflict) {
-		t.Fatalf("cross-offer replay err = %v, want ErrRequestIdConflict", err)
-	}
-}
-
-// TestPurchaseConcurrentSameRequest proves the §4.4 convergence invariant:
-// concurrent double-fire of one request yields exactly one voucher, one
-// deduction and one entitlement (SQLite writers serialize; the loser replays).
-func TestPurchaseConcurrentSameRequest(t *testing.T) {
-	env := newTestEnv(t)
-	subjectID := env.seedSubject("buyer", 1000, "")
-	offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
-
-	const n = 6
-	results := make([]*service.PurchaseResult, n)
-	errs := make([]error, n)
-	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			results[i], errs[i] = env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-dup", time.Now().UTC())
-		}(i)
-	}
-	wg.Wait()
-	for i, err := range errs {
+		first, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
 		if err != nil {
-			t.Fatalf("attempt %d: %v", i, err)
+			t.Fatalf("first purchase: %v", err)
+		}
+		second, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-1", time.Now().UTC())
+		if err != nil {
+			t.Fatalf("replay: %v", err)
+		}
+		if !second.Replayed || second.Purchase.ID != first.Purchase.ID {
+			t.Fatalf("replay mismatch: %+v vs %+v", second, first)
+		}
+		if acct := env.accountOf(subjectID); acct.BalanceTotal != 600 {
+			t.Fatalf("balance after replay = %d, want 600", acct.BalanceTotal)
+		}
+
+		other := env.seedOffer(store.FormCount, 100, store.StatusOnSale)
+		if _, err := env.svc.Purchase(context.Background(), subjectID, other.ID, "req-1", time.Now().UTC()); !errors.Is(err, store.ErrRequestIdConflict) {
+			t.Fatalf("cross-offer replay err = %v, want ErrRequestIdConflict", err)
+		}
+	})
+
+	t.Run("concurrent same request converges", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		const n = 6
+		results := make([]*service.PurchaseResult, n)
+		errs := make([]error, n)
+		var wg sync.WaitGroup
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				results[i], errs[i] = env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-dup", time.Now().UTC())
+			}(i)
+		}
+		wg.Wait()
+		ids := map[string]int{}
+		for i, err := range errs {
+			if err != nil {
+				t.Fatalf("attempt %d: %v", i, err)
+			}
+			ids[results[i].Purchase.ID]++
+		}
+		if len(ids) != 1 {
+			t.Fatalf("distinct vouchers = %d, want exactly 1", len(ids))
+		}
+		if acct := env.accountOf(subjectID); acct.BalanceTotal != 600 || acct.BalanceFrozen != 0 {
+			t.Fatalf("balances = %+v, want one deduction only", acct)
+		}
+		_, total, _ := env.svc.ListEntitlements(store.EntitlementFilter{SubjectID: subjectID, Page: 1, PageSize: 50})
+		if total != 1 {
+			t.Fatalf("entitlements = %d, want 1", total)
+		}
+	})
+
+	t.Run("concurrent balance race leaves no frozen residue", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 400, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		const n = 6
+		success := 0
+		errs := make([]error, n)
+		var wg sync.WaitGroup
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				_, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, fmt.Sprintf("req-%d", i), time.Now().UTC())
+				errs[i] = err
+			}(i)
+		}
+		wg.Wait()
+		for i, err := range errs {
+			if err == nil {
+				success++
+				continue
+			}
+			if !errors.Is(err, walletstore.ErrInsufficient) {
+				t.Fatalf("attempt %d: non-terminal error %v", i, err)
+			}
+		}
+		if success != 1 {
+			t.Fatalf("successful purchases = %d, want exactly 1", success)
+		}
+		if acct := env.accountOf(subjectID); acct.BalanceTotal != 0 || acct.BalanceAvailable != 0 || acct.BalanceFrozen != 0 {
+			t.Fatalf("balances = %+v, want fully consumed with no frozen residue", acct)
+		}
+	})
+
+	t.Run("currency mismatch rejected", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "CNY")
+		offer, err := env.svc.CreateOffer(context.Background(), service.Actor{ID: "admin-1", Name: "Admin"}, service.CreateOfferInput{
+			Name: "usd-offer", PriceAmount: 100, Currency: "USD", EntitlementForm: store.FormCount, CountPerPurchase: 1, OnSale: true,
+		}, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-usd", time.Now().UTC()); !errors.Is(err, store.ErrCurrencyMismatch) {
+			t.Fatalf("err = %v, want ErrCurrencyMismatch", err)
+		}
+	})
+
+	t.Run("retry exhaustion leaves zero residue", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		attempts := 0
+		env.svc.SetPurchaseFaultHookForTest(func(step string) error {
+			if step == "deduct" {
+				attempts++
+				return errors.New("injected transient failure")
+			}
+			return nil
+		})
+		_, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-exhaust", time.Now().UTC())
+		if err == nil || !strings.Contains(err.Error(), "attempts exhausted") {
+			t.Fatalf("err = %v, want bounded exhaustion", err)
+		}
+		if attempts != 3 {
+			t.Fatalf("deduct attempts = %d, want exactly 3", attempts)
+		}
+		acct := env.accountOf(subjectID)
+		if acct.BalanceTotal != 1000 || acct.BalanceFrozen != 0 || acct.BalanceAvailable != 1000 {
+			t.Fatalf("balances = %+v, want untouched after exhaustion", acct)
+		}
+		kinds := env.ledgerKinds(acct.ID)
+		if kinds[walletstore.EntryFreeze] != 0 || kinds[walletstore.EntryDeductFrozen] != 0 {
+			t.Fatalf("ledger kinds = %v, want no purchase entries after exhaustion", kinds)
+		}
+		_, total, _ := env.svc.ListPurchases(store.PurchaseFilter{Page: 1, PageSize: 50})
+		if total != 0 {
+			t.Fatalf("exhausted purchase must not persist a voucher")
+		}
+		_, total, _ = env.svc.ListEntitlements(store.EntitlementFilter{SubjectID: subjectID, Page: 1, PageSize: 50})
+		if total != 0 {
+			t.Fatalf("exhausted purchase must not grant entitlements")
+		}
+	})
+
+	t.Run("terminal error is not retried", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		calls := 0
+		env.svc.SetPurchaseFaultHookForTest(func(step string) error {
+			calls++
+			return walletstore.ErrInsufficient
+		})
+		if _, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-term", time.Now().UTC()); !errors.Is(err, walletstore.ErrInsufficient) {
+			t.Fatalf("err = %v, want terminal ErrInsufficient", err)
+		}
+		if calls != 1 {
+			t.Fatalf("hook calls = %d, want exactly 1 (terminal errors are not retried)", calls)
+		}
+		if acct := env.accountOf(subjectID); acct.BalanceTotal != 1000 || acct.BalanceFrozen != 0 {
+			t.Fatalf("balances = %+v, want untouched", acct)
+		}
+	})
+
+	t.Run("transient failure then success has no duplicates", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		subjectID := env.seedSubject("buyer", 1000, "")
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		calls := 0
+		env.svc.SetPurchaseFaultHookForTest(func(step string) error {
+			if step == "purchase" {
+				calls++
+				if calls == 1 {
+					return errors.New("injected transient failure")
+				}
+			}
+			return nil
+		})
+		res, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-recover", time.Now().UTC())
+		if err != nil {
+			t.Fatalf("purchase: %v", err)
+		}
+		if res.Replayed {
+			t.Fatal("retry success must be a fresh commit, not a replay")
+		}
+		if acct := env.accountOf(subjectID); acct.BalanceTotal != 600 || acct.BalanceFrozen != 0 {
+			t.Fatalf("balances = %+v, want exactly one deduction", acct)
+		}
+		kinds := env.ledgerKinds(env.accountOf(subjectID).ID)
+		if kinds[walletstore.EntryFreeze] != 1 || kinds[walletstore.EntryDeductFrozen] != 1 {
+			t.Fatalf("ledger kinds = %v, want exactly one freeze and one deduct_frozen", kinds)
+		}
+		_, total, _ := env.svc.ListEntitlements(store.EntitlementFilter{SubjectID: subjectID, Page: 1, PageSize: 50})
+		if total != 1 {
+			t.Fatalf("entitlements = %d, want 1", total)
+		}
+	})
+
+	t.Run("admin writes fail closed with audit", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		actor := service.Actor{ID: "admin-1", Name: "Admin"}
+		offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
+
+		env.operations.reset()
+		price := int64(500)
+		if _, err := env.svc.UpdateOffer(context.Background(), actor, offer.ID, service.UpdateOfferInput{PriceAmount: &price}, offer.Version, now); err != nil {
+			t.Fatalf("update offer: %v", err)
+		}
+		if events := env.operations.events(); len(events) != 1 || events[0] != service.EventOfferUpdate {
+			t.Fatalf("audit events = %v, want exactly one %s", events, service.EventOfferUpdate)
+		}
+
+		subjectID := env.seedSubject("buyer", 1000, "")
+		res, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-void", time.Now().UTC())
+		if err != nil {
+			t.Fatal(err)
+		}
+		env.operations.reset()
+		if _, err := env.svc.VoidEntitlement(context.Background(), actor, res.Entitlement.ID, time.Now().UTC()); err != nil {
+			t.Fatalf("void: %v", err)
+		}
+		if events := env.operations.events(); len(events) != 1 || events[0] != service.EventEntitlementVoid {
+			t.Fatalf("void audit = %v, want exactly one %s", events, service.EventEntitlementVoid)
+		}
+		env.operations.reset()
+		again, err := env.svc.VoidEntitlement(context.Background(), actor, res.Entitlement.ID, time.Now().UTC())
+		if err != nil || !again.AlreadyVoided {
+			t.Fatalf("repeat void = %+v err %v, want idempotent success", again, err)
+		}
+		if events := env.operations.events(); len(events) != 0 {
+			t.Fatalf("repeat void must not append audit rows, got %v", events)
+		}
+
+		env.operations.setFail(errors.New("forced audit failure"))
+		in := service.CreateOfferInput{Name: "rolled-back", PriceAmount: 1, Currency: "CNY", EntitlementForm: store.FormCount, CountPerPurchase: 1}
+		if _, err := env.svc.CreateOffer(context.Background(), actor, in, now); err == nil {
+			t.Fatal("create must fail when the audit write fails")
+		}
+		env.operations.setFail(nil)
+		if _, total, err := env.svc.ListOffers(store.OfferFilter{Q: "rolled-back", Page: 1, PageSize: 10}); (err == nil && total != 0) || err != nil {
+			t.Fatalf("domain write must roll back with the audit failure (total=%d err=%v)", total, err)
+		}
+	})
+
+	t.Run("search handles multibyte and oversized Q", func(t *testing.T) {
+		env := newTestEnvOn(t, mustSQLite(t), false)
+		actor := service.Actor{ID: "admin-1", Name: "Admin"}
+		if _, err := env.svc.CreateOffer(context.Background(), actor, service.CreateOfferInput{
+			Name: "会员套餐 🎫", PriceAmount: 100, Currency: "CNY", EntitlementForm: store.FormCount, CountPerPurchase: 1, OnSale: true,
+		}, now); err != nil {
+			t.Fatal(err)
+		}
+		// 60 CJK runes = 180 bytes: must not produce invalid UTF-8 or an error.
+		if _, _, err := env.svc.ListOffers(store.OfferFilter{Q: strings.Repeat("汉", 60), Page: 1, PageSize: 10}); err != nil {
+			t.Fatalf("multibyte oversized Q: %v", err)
+		}
+		offers, total, err := env.svc.ListOffers(store.OfferFilter{Q: "会员套餐", Page: 1, PageSize: 10})
+		if err != nil || total != 1 || len(offers) != 1 {
+			t.Fatalf("multibyte match = %d rows err %v, want 1", total, err)
+		}
+		if _, _, err := env.svc.ListOffers(store.OfferFilter{Q: strings.Repeat("a", 101), Page: 1, PageSize: 10}); err != nil {
+			t.Fatalf("oversized ascii Q: %v", err)
+		}
+	})
+}
+
+// TestPurchaseMatrixSQLite runs the full matrix on the default SQLite dialect.
+func TestPurchaseMatrixSQLite(t *testing.T) {
+	runPurchaseMatrix(t)
+}
+
+// TestPurchaseRateLimited proves §8: the Service API purchase bucket
+// (bizoffer|purchase|<subject_id>, 1 min / 10, AllowRecord, never Clear).
+func TestPurchaseRateLimited(t *testing.T) {
+	env := newTestEnv(t) // limiter wired (production shape)
+	subjectID := env.seedSubject("buyer", 100, "")
+	offer := env.seedOffer(store.FormCount, 1, store.StatusOnSale)
+
+	base := time.Unix(1700000000, 0).UTC()
+	for i := 0; i < 10; i++ {
+		if _, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, fmt.Sprintf("req-%d", i), base.Add(time.Duration(i)*time.Second)); err != nil {
+			t.Fatalf("purchase %d within budget: %v", i, err)
 		}
 	}
-	ids := map[string]int{}
-	for _, r := range results {
-		ids[r.Purchase.ID]++
+	// Budget exhausted: denied without touching the domain.
+	if _, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-denied", base.Add(11*time.Second)); !errors.Is(err, service.ErrRateLimited) {
+		t.Fatalf("err = %v, want ErrRateLimited", err)
 	}
-	if len(ids) != 1 {
-		t.Fatalf("distinct vouchers = %d, want exactly 1", len(ids))
+	purchases, total, _ := env.svc.ListPurchases(store.PurchaseFilter{Page: 1, PageSize: 50})
+	if total != 10 || len(purchases) != 10 {
+		t.Fatalf("purchases = %d, want 10", total)
 	}
-	acct, _ := env.wallet.GetSubjectAccountByOwner(subjectID)
-	if acct.BalanceTotal != 600 || acct.BalanceFrozen != 0 {
-		t.Fatalf("balances = %+v, want one deduction only", acct)
+	// Subject isolation: a different subject has its own bucket.
+	other := env.seedSubject("other", 100, "")
+	if _, err := env.svc.Purchase(context.Background(), other, offer.ID, "req-other", base.Add(12*time.Second)); err != nil {
+		t.Fatalf("other subject must have an independent bucket: %v", err)
 	}
-	_, total, _ := env.svc.ListEntitlements(store.EntitlementFilter{SubjectID: subjectID, Page: 1, PageSize: 50})
-	if total != 1 {
-		t.Fatalf("entitlements = %d, want 1", total)
+	// Window recovery: after the sliding window passes, the first subject is
+	// allowed again (no key-wide Clear ever invoked).
+	if _, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-later", base.Add(61*time.Second)); err != nil {
+		t.Fatalf("window recovery: %v", err)
 	}
 }
 
-// TestPurchaseConcurrentBalanceRace proves 判据 2: with balance for exactly
-// one purchase, concurrent distinct requests yield exactly one success and no
-// frozen residue.
-func TestPurchaseConcurrentBalanceRace(t *testing.T) {
-	env := newTestEnv(t)
-	subjectID := env.seedSubject("buyer", 400, "")
-	offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
-
-	const n = 6
-	success := 0
-	errs := make([]error, n)
-	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			_, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, fmt.Sprintf("req-%d", i), time.Now().UTC())
-			errs[i] = err
-		}(i)
-	}
-	wg.Wait()
-	for i, err := range errs {
-		if err == nil {
-			success++
-			continue
-		}
-		if !errors.Is(err, walletstore.ErrInsufficient) {
-			t.Fatalf("attempt %d: non-terminal error %v", i, err)
-		}
-	}
-	if success != 1 {
-		t.Fatalf("successful purchases = %d, want exactly 1", success)
-	}
-	acct, _ := env.wallet.GetSubjectAccountByOwner(subjectID)
-	if acct.BalanceTotal != 0 || acct.BalanceAvailable != 0 || acct.BalanceFrozen != 0 {
-		t.Fatalf("balances = %+v, want fully consumed with no frozen residue", acct)
-	}
-}
-
-// TestPurchaseCurrencyMismatch proves the §4.4 account-currency gate.
-func TestPurchaseCurrencyMismatch(t *testing.T) {
-	env := newTestEnv(t)
-	subjectID := env.seedSubject("buyer", 1000, "CNY")
-	in := service.CreateOfferInput{Name: "usd-offer", PriceAmount: 100, Currency: "USD", EntitlementForm: store.FormCount, CountPerPurchase: 1, OnSale: true}
-	offer, err := env.svc.CreateOffer(context.Background(), service.Actor{ID: "admin-1", Name: "Admin"}, in, now)
+func mustSQLite(t *testing.T) kernel.Store {
+	t.Helper()
+	st, err := testsupport.OpenStore(filepath.Join(t.TempDir(), "matrix.db"), "admin", "hash", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-usd", time.Now().UTC()); !errors.Is(err, store.ErrCurrencyMismatch) {
-		t.Fatalf("err = %v, want ErrCurrencyMismatch", err)
-	}
+	t.Cleanup(func() { _ = st.Close() })
+	return st
 }
 
-// TestAdminWritesFailClosedAudit proves §7: offer create/update/status and
-// entitlement void append audit rows in the same transaction; an audit failure
-// rolls the domain write back.
-func TestAdminWritesFailClosedAudit(t *testing.T) {
-	env := newTestEnv(t)
-	actor := service.Actor{ID: "admin-1", Name: "Admin"}
-	offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
-
-	env.operations.mu.Lock()
-	env.operations.ops = nil
-	env.operations.mu.Unlock()
-	price := int64(500)
-	if _, err := env.svc.UpdateOffer(context.Background(), actor, offer.ID, service.UpdateOfferInput{PriceAmount: &price}, offer.Version, now); err != nil {
-		t.Fatalf("update offer: %v", err)
-	}
-	env.operations.mu.Lock()
-	events := append([]string(nil), env.operations.ops...)
-	env.operations.mu.Unlock()
-	if len(events) != 1 || events[0] != service.EventOfferUpdate {
-		t.Fatalf("audit events = %v, want exactly one %s", events, service.EventOfferUpdate)
-	}
-
-	// Void with audit, then repeat: idempotent success, no second audit row.
-	subjectID := env.seedSubject("buyer", 1000, "")
-	res, err := env.svc.Purchase(context.Background(), subjectID, offer.ID, "req-void", time.Now().UTC())
-	if err != nil {
-		t.Fatal(err)
-	}
-	env.operations.mu.Lock()
-	env.operations.ops = nil
-	env.operations.mu.Unlock()
-	if _, err := env.svc.VoidEntitlement(context.Background(), actor, res.Entitlement.ID, time.Now().UTC()); err != nil {
-		t.Fatalf("void: %v", err)
-	}
-	env.operations.mu.Lock()
-	events = append([]string(nil), env.operations.ops...)
-	env.operations.mu.Unlock()
-	if len(events) != 1 || events[0] != service.EventEntitlementVoid {
-		t.Fatalf("void audit = %v, want exactly one %s", events, service.EventEntitlementVoid)
-	}
-	env.operations.mu.Lock()
-	env.operations.ops = nil
-	env.operations.mu.Unlock()
-	again, err := env.svc.VoidEntitlement(context.Background(), actor, res.Entitlement.ID, time.Now().UTC())
-	if err != nil || !again.AlreadyVoided {
-		t.Fatalf("repeat void = %+v err %v, want idempotent success", again, err)
-	}
-	env.operations.mu.Lock()
-	events = append([]string(nil), env.operations.ops...)
-	env.operations.mu.Unlock()
-	if len(events) != 0 {
-		t.Fatalf("repeat void must not append audit rows, got %v", events)
-	}
-
-	// Audit failure injection: the domain write must roll back with it.
-	env.operations.mu.Lock()
-	env.operations.fail = errors.New("forced audit failure")
-	env.operations.mu.Unlock()
-	in := service.CreateOfferInput{Name: "rolled-back", PriceAmount: 1, Currency: "CNY", EntitlementForm: store.FormCount, CountPerPurchase: 1}
-	if _, err := env.svc.CreateOffer(context.Background(), actor, in, now); err == nil {
-		t.Fatal("create must fail when the audit write fails")
-	}
-	env.operations.mu.Lock()
-	env.operations.fail = nil
-	env.operations.mu.Unlock()
-	offers, total, err := env.svc.ListOffers(store.OfferFilter{Q: "rolled-back", Page: 1, PageSize: 10})
-	if err == nil && (total != 0 || len(offers) != 0) {
-		t.Fatalf("domain write must roll back with the audit failure, found %d rows", total)
-	}
-}
-
-// TestPurchasePostgresAcceptance runs the §4.2/§4.4 happy path plus the
-// concurrent double-fire invariant against PostgreSQL (env-gated, D-002
-// dual-dialect demand).
+// TestPurchasePostgresAcceptance runs the §4.2/§4.4 matrix against real
+// PostgreSQL (env-gated; D-002 dual-dialect demand, A-002 F-002).
 func TestPurchasePostgresAcceptance(t *testing.T) {
 	dsn := pgtest.DSN()
 	if dsn == "" {
@@ -476,10 +636,12 @@ func TestPurchasePostgresAcceptance(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 
-	env := newTestEnvOn(t, st)
+	runPurchaseMatrix(t)
+	env := newTestEnvOn(t, st, false)
 	subjectID := env.seedSubject("pg-buyer", 1000, "")
 	offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
 
+	// PG-specific concurrent double-fire (distinct goroutines, same request).
 	const n = 4
 	results := make([]*service.PurchaseResult, n)
 	errs := make([]error, n)
@@ -502,11 +664,7 @@ func TestPurchasePostgresAcceptance(t *testing.T) {
 	if len(ids) != 1 {
 		t.Fatalf("pg distinct vouchers = %d, want exactly 1", len(ids))
 	}
-	acct, err := env.wallet.GetSubjectAccountByOwner(subjectID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if acct.BalanceTotal != 600 || acct.BalanceFrozen != 0 {
+	if acct := env.accountOf(subjectID); acct.BalanceTotal != 600 || acct.BalanceFrozen != 0 {
 		t.Fatalf("pg balances = %+v, want one deduction only", acct)
 	}
 }

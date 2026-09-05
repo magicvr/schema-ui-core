@@ -381,6 +381,8 @@ func writeDigitalOfferError(w http.ResponseWriter, r *http.Request, err error) {
 		writeLocalizedError(w, r, http.StatusConflict, "BIZOFFER_VERSION_CONFLICT", "the offer changed concurrently; reload and retry")
 	case errors.Is(err, store.ErrInvalidOffer):
 		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BIZOFFER_REQUEST", "invalid digital offer request")
+	case errors.Is(err, service.ErrRateLimited):
+		writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many purchase attempts; try again later")
 	default:
 		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "digital offer operation failed")
 	}

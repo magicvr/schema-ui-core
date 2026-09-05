@@ -251,7 +251,7 @@ func (r *Repository) ListOffers(filter OfferFilter) ([]Offer, int, error) {
 func offerWhere(filter OfferFilter) (string, []any, error) {
 	where := "WHERE 1=1"
 	args := []any{}
-	if q := strings.TrimSpace(filter.Q); q != "" {
+	if q := searchQ(filter.Q); q != "" {
 		where += " AND (LOWER(name) LIKE LOWER(?) ESCAPE '\\' OR LOWER(id) LIKE LOWER(?) ESCAPE '\\')"
 		like := "%" + escapeLike(q) + "%"
 		args = append(args, like, like)
@@ -397,7 +397,7 @@ func (r *Repository) ListPurchases(filter PurchaseFilter) ([]Purchase, int, erro
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := "WHERE 1=1"
 		args := []any{}
-		if q := strings.TrimSpace(filter.Q); q != "" {
+		if q := searchQ(filter.Q); q != "" {
 			where += " AND (LOWER(id) LIKE LOWER(?) ESCAPE '\\' OR LOWER(offer_name) LIKE LOWER(?) ESCAPE '\\')"
 			like := "%" + escapeLike(q) + "%"
 			args = append(args, like, like)
@@ -517,7 +517,7 @@ func (r *Repository) ListEntitlements(filter EntitlementFilter) ([]Entitlement, 
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		where := "WHERE 1=1"
 		args := []any{}
-		if q := strings.TrimSpace(filter.Q); q != "" {
+		if q := searchQ(filter.Q); q != "" {
 			where += " AND (LOWER(id) LIKE LOWER(?) ESCAPE '\\' OR LOWER(subject_id) LIKE LOWER(?) ESCAPE '\\')"
 			like := "%" + escapeLike(q) + "%"
 			args = append(args, like, like)
@@ -665,6 +665,18 @@ func nullableInt(active bool, v int64) any {
 		return nil
 	}
 	return v
+}
+
+// searchQ normalizes a user-supplied search term: trimmed and hard-capped to
+// 100 runes (byte slicing could split a multi-byte UTF-8 rune and make
+// PostgreSQL reject the parameter).
+func searchQ(q string) string {
+	q = strings.TrimSpace(q)
+	runes := []rune(q)
+	if len(runes) > 100 {
+		runes = runes[:100]
+	}
+	return string(runes)
 }
 
 // escapeLike escapes SQL LIKE metacharacters (wallet W13 F-011 principle).

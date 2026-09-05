@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-digital-offer-entitlement
 created: 2026-09-05
 updated: 2026-09-05
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -25,12 +25,12 @@ serves_summary: 承载 VP-031 R2 实施（分母 = GOAL-002 D-002 v1.0.0）：di
 
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
-| C1 | **切片方案**：文件/接口清单映射 D-002 条款（迁移 DDL、store API、provider 贡献、composition 装配、错误码注册） | 待开始 |
-| C2 | **模块骨架落地**：`apps/api/modules/digitaloffer/`（migration + store + offer service + provider + manifest + schema）+ composition 装配 + errorcatalog 注册；构建与既有测试绿 | 待开始 |
-| C3 | **购买链路与验收**：单事务购买（§4.2/§4.4）+ 并发验收测试（双数据库）+ Admin 路由/权限/审计 fail-closed 测试 + C 端列表 | 待开始 |
-| C4 | **审视与关门**：self 审计 + codex independent 审计（资金路径门禁）；意见响应；Root/goal-tree 回写 | 待开始 |
+| C1 | **切片方案**：文件/接口清单映射 D-002 条款（迁移 DDL、store API、provider 贡献、composition 装配、错误码注册） | **已关门**（2026-09-05 · E-001） |
+| C2 | **模块骨架落地**：`apps/api/modules/digitaloffer/`（migration + store + offer service + provider + manifest + schema）+ composition 装配 + errorcatalog 注册；构建与既有测试绿 | **已关门**（2026-09-05 · E-001；commit 0e65f392） |
+| C3 | **购买链路与验收**：单事务购买（§4.2/§4.4）+ 并发验收测试（双数据库）+ Admin 路由/权限/审计 fail-closed 测试 + C 端列表 | **已关门**（2026-09-05 · E-001；SQLite + 真 PG 矩阵全绿） |
+| C4 | **审视与关门**：self 审计 + codex independent 审计（资金路径门禁）；意见响应；Root/goal-tree 回写 | 进行中（A-001 → A-002 fail → A-003 响应修复完成，待 A-004 closure 复审） |
 
-`progress` = 已关门检查点数 / 4。当前 **0/4**。
+`progress` = 已关门检查点数 / 4。当前 **3/4**。
 
 ## 成功标准（方向级）
 
