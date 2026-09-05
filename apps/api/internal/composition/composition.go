@@ -623,6 +623,18 @@ func newMuxWithExtraProviders(
 	// platform runner so each purchase attempt spans both domains in ONE
 	// kernel.Tx (D-002 §4.2); subject existence is gated in-tx (§4.4).
 	if plan.HasModule("biz.digital-offer") {
+		// §6: channel enabled -> the §6 commands register on the live
+		// dispatcher; otherwise the DisabledDispatcher no-op keeps the module
+		// testable and Bot-API independent.
+		var tgDispatcher kernel.TelegramDispatcher
+		var tgSender kernel.TelegramSender
+		if plan.HasModule("channel.telegram") && tr != nil && tr.DispatcherState != nil {
+			tgDispatcher = tr.DispatcherState
+			tgSender = tr.Sender
+		} else {
+			tgDispatcher = telegraminternal.NewDisabledDispatcher()
+			tgSender = telegraminternal.NewDisabledSender()
+		}
 		digitalOfferService := digitalofferservice.NewService(
 			digitalofferstore.NewRepository(st),
 			walletstore.NewRepository(st),
@@ -630,7 +642,7 @@ func newMuxWithExtraProviders(
 			operations,
 			rateLimiters,
 		)
-		providers = append(providers, digitaloffermodule.New(a, digitalOfferService, rateLimiters))
+		providers = append(providers, digitaloffermodule.New(a, digitalOfferService, rateLimiters, tgDispatcher, tgSender))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

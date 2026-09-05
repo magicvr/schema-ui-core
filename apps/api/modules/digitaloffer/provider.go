@@ -24,14 +24,17 @@ const ModuleID = "biz.digital-offer"
 
 // Provider implements kernel.Provider for biz.digital-offer.
 type Provider struct {
-	a        *auth.Authenticator
-	service  *digitalofferservice.Service
-	limiters kernel.RateLimiterProvider
+	a          *auth.Authenticator
+	service    *digitalofferservice.Service
+	limiters   kernel.RateLimiterProvider
+	dispatcher kernel.TelegramDispatcher // nil = channel surface not assembled
+	sender     kernel.TelegramSender
 }
 
-// New constructs the digital-offer provider.
-func New(a *auth.Authenticator, service *digitalofferservice.Service, limiters kernel.RateLimiterProvider) *Provider {
-	return &Provider{a: a, service: service, limiters: limiters}
+// New constructs the digital-offer provider. dispatcher may be nil when the
+// channel surface is not assembled; otherwise the §6 commands register on it.
+func New(a *auth.Authenticator, service *digitalofferservice.Service, limiters kernel.RateLimiterProvider, dispatcher kernel.TelegramDispatcher, sender kernel.TelegramSender) *Provider {
+	return &Provider{a: a, service: service, limiters: limiters, dispatcher: dispatcher, sender: sender}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -63,6 +66,11 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
+	if p.dispatcher != nil {
+		if err := p.service.RegisterTelegram(p.dispatcher, p.sender); err != nil {
+			return err
+		}
+	}
 	for _, route := range handler.DigitalOfferRoutes(p.a, p.service, ModuleID, p.limiters) {
 		if err := reg.HTTP(route); err != nil {
 			return err

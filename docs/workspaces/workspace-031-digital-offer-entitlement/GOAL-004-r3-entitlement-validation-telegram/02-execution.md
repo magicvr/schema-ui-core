@@ -12,7 +12,7 @@ version: 0.1.0
 
 | id | date | scope | summary | status |
 |----|------|-------|---------|--------|
-| （实施事实按检查点登记） | | | | |
+| [E-001-r3-implementation](02-execution/E-001-r3-implementation.md) | 2026-09-05 | C1/C2 实施 | Check/Consume + Telegram Register + 查询桶；双库与通道测试全绿 | done |
 
 ## 执行记录（ledger）
 

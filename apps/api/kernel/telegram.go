@@ -113,6 +113,7 @@ type TelegramUpdate struct {
 	Command      string // Command name without leading slash or @bot suffix; empty for non-commands
 	Text         string // Message text (verbatim); may be empty for callback queries
 	CallbackData string // callback_query.data; empty for standard messages
+	UpdateID     int64  // Telegram update_id (VP-031 §6: business modules derive idempotent request ids from it)
 }
 
 // TelegramHandler is the callback function for an inbound Telegram update.

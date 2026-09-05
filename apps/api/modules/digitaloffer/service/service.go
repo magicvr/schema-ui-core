@@ -64,12 +64,14 @@ type Actor struct {
 
 // Service implements the digital-offer domain surface.
 type Service struct {
-	repo       *store.Repository
-	wallet     *walletstore.Repository
-	subjects   *subject.Store
-	operations operationlog.TransactionalRecorder
-	limiter    kernel.RateLimiter
-	now        func() time.Time
+	repo           *store.Repository
+	wallet         *walletstore.Repository
+	subjects       *subject.Store
+	operations     operationlog.TransactionalRecorder
+	limiter        kernel.RateLimiter
+	queryLimiter   kernel.RateLimiter
+	telegramSender kernel.TelegramSender
+	now            func() time.Time
 	// faultHook is a test-only injection point (D-002 §4.4 acceptance):
 	// when set, it is invoked after each named purchase step inside the
 	// transaction and a non-nil error aborts the attempt as retryable.
@@ -81,11 +83,12 @@ type Service struct {
 // kernel.Tx (D-002 §4.2). limiters may be nil only in tests that never call
 // Purchase — the §8 purchase bucket is mandatory on the production surface.
 func NewService(repo *store.Repository, wallet *walletstore.Repository, subjects *subject.Store, operations operationlog.TransactionalRecorder, limiters kernel.RateLimiterProvider) *Service {
-	var limiter kernel.RateLimiter
+	var limiter, queryLimiter kernel.RateLimiter
 	if limiters != nil {
 		limiter = limiters.NewRateLimiter(purchaseLimiterWindow, purchaseLimiterMax, purchaseLimiterCapacity)
+		queryLimiter = limiters.NewRateLimiter(queryLimiterWindow, queryLimiterMax, queryLimiterCapacity)
 	}
-	return &Service{repo: repo, wallet: wallet, subjects: subjects, operations: operations, limiter: limiter, now: time.Now}
+	return &Service{repo: repo, wallet: wallet, subjects: subjects, operations: operations, limiter: limiter, queryLimiter: queryLimiter, now: time.Now}
 }
 
 // SetPurchaseFaultHookForTest installs the §4.4 acceptance failure-injection
@@ -567,4 +570,335 @@ func auditDetail(action string, fields map[string]any) *string {
 	}
 	s := string(raw)
 	return &s
+}
+
+// Check reasons (D-002 §5.1): expired/exhausted are derived predicates; the
+// aggregate is deterministic so every entry point reports the same state.
+const (
+	ReasonNone          = "none"
+	ReasonNoEntitlement = "no_entitlement"
+	ReasonExpired       = "expired"
+	ReasonExhausted     = "exhausted"
+	ReasonVoided        = "voided"
+)
+
+// CheckResult reports the unified entitlement validation outcome (§5.1).
+type CheckResult struct {
+	Valid  bool
+	Reason string
+}
+
+// Check validates whether subjectID holds a currently valid entitlement for
+// offerID (D-002 §5.1). Channels and services MUST call this before providing
+// the capability. Aggregate priority: valid → no_entitlement → expired →
+// exhausted → voided.
+func (s *Service) Check(ctx context.Context, subjectID, offerID string, now time.Time) (CheckResult, error) {
+	subjectID = strings.TrimSpace(subjectID)
+	offerID = strings.TrimSpace(offerID)
+	if subjectID == "" || offerID == "" {
+		return CheckResult{}, store.ErrInvalidOffer
+	}
+	var rows []store.Entitlement
+	err := s.runnerRun(ctx, func(tx kernel.Tx) error {
+		var qErr error
+		rows, qErr = s.repo.ListEntitlementsBySubjectOfferInTx(tx, subjectID, offerID)
+		return qErr
+	})
+	if err != nil {
+		return CheckResult{}, err
+	}
+	if len(rows) == 0 {
+		return CheckResult{Valid: false, Reason: ReasonNoEntitlement}, nil
+	}
+	valid := false
+	everValid := false
+	anyVoided := false
+	anyCount := false
+	hasExpired := false
+	hasExhausted := false
+	for _, r := range rows {
+		if r.Form == store.FormDuration {
+			everValid = true
+			if r.Status == store.EntitlementActive && r.ExpiresAt != nil && r.ExpiresAt.After(now) {
+				valid = true
+			}
+			if r.Status == store.EntitlementActive && r.ExpiresAt != nil && !r.ExpiresAt.After(now) {
+				hasExpired = true
+			}
+		} else {
+			anyCount = true
+			if r.Status == store.EntitlementActive && r.RemainingCount != nil && *r.RemainingCount > 0 {
+				valid = true
+			}
+			if r.Status == store.EntitlementActive && r.RemainingCount != nil && *r.RemainingCount == 0 {
+				hasExhausted = true
+			}
+		}
+		if r.Status == store.EntitlementVoided {
+			anyVoided = true
+		}
+	}
+	if valid {
+		return CheckResult{Valid: true, Reason: ReasonNone}, nil
+	}
+	switch {
+	case hasExpired:
+		return CheckResult{Valid: false, Reason: ReasonExpired}, nil
+	case hasExhausted:
+		return CheckResult{Valid: false, Reason: ReasonExhausted}, nil
+	case anyVoided && !anyCount && !everValid:
+		return CheckResult{Valid: false, Reason: ReasonVoided}, nil
+	case anyVoided:
+		return CheckResult{Valid: false, Reason: ReasonVoided}, nil
+	default:
+		return CheckResult{Valid: false, Reason: ReasonNoEntitlement}, nil
+	}
+}
+
+// Consume takes n uses from the subject's count entitlements for one offer
+// (D-002 §5.2): the attempt loop lives OUTSIDE store.Run; every attempt is a
+// fresh transaction whose candidates are re-read; partial deductions roll back
+// with the attempt; the final UPDATE re-checks all five predicates so a
+// concurrent void or consumer linearizes per row.
+func (s *Service) Consume(ctx context.Context, subjectID, offerID string, n int64, now time.Time) error {
+	subjectID = strings.TrimSpace(subjectID)
+	offerID = strings.TrimSpace(offerID)
+	if subjectID == "" || offerID == "" || n < 1 {
+		return store.ErrInvalidOffer
+	}
+	var lastErr error
+	for attempt := 0; attempt < maxPurchaseAttempts; attempt++ {
+		err := s.consumeAttempt(ctx, subjectID, offerID, n, now)
+		if err == nil {
+			return nil
+		}
+		if errors.Is(err, errConsumeInsufficient) {
+			return store.ErrEntitlementInsufficient
+		}
+		lastErr = err
+	}
+	if lastErr == nil {
+		lastErr = store.ErrEntitlementInsufficient
+	}
+	return fmt.Errorf("consume attempts exhausted: %w", lastErr)
+}
+
+// consumeAttempt outcome errors: errConsumeInsufficient is deterministic
+// (every active row was drained inside this attempt); anything else is a
+// race and the outer loop retries with a fresh transaction.
+var errConsumeInsufficient = errors.New("digital-offer entitlement insufficient for this consume")
+
+func (s *Service) consumeAttempt(ctx context.Context, subjectID, offerID string, n int64, now time.Time) error {
+	return s.runnerRun(ctx, func(tx kernel.Tx) error {
+		candidates, err := s.repo.ListConsumeCandidatesInTx(tx, subjectID, offerID)
+		if err != nil {
+			return err
+		}
+		needed := n
+		for _, c := range candidates {
+			if needed <= 0 {
+				break
+			}
+			take := c.RemainingCount
+			if take > needed {
+				take = needed
+			}
+			ok, err := s.repo.DecrementEntitlementInTx(tx, c.ID, subjectID, offerID, take, now)
+			if err != nil {
+				return err
+			}
+			if ok {
+				needed -= take
+			}
+		}
+		if needed > 0 {
+			return errConsumeInsufficient
+		}
+		return nil
+	})
+}
+
+// Query bucket constants (D-002 §8): bizoffer|price|<subject_id> covers the
+// Telegram price and entitlements queries — 1 minute / 30 requests.
+const (
+	queryLimiterWindow   = time.Minute
+	queryLimiterMax      = 30
+	queryLimiterCapacity = 1 << 16
+)
+
+// Telegram command names (D-001 I-031-004 / D-002 §6).
+const (
+	TelegramCommandPrice        = "price"
+	TelegramCommandBuy          = "buy"
+	TelegramCommandEntitlements = "entitlements"
+)
+
+// telegramUserTexts are the fail-closed reply fragments for §6 handlers.
+const (
+	telegramIdentityMissingText = "无法识别您的账户身份，请稍后重试或联系管理员完成绑定。"
+	telegramBuyUsageText        = "用法：/buy <offer_id>（offer_id 见 /price 列表）"
+	telegramNoEntitlementsText  = "您当前没有有效权益。"
+)
+
+// RegisterTelegram wires the §6 command handlers onto the channel dispatcher
+// (kernel.TelegramDispatcher). When channel.telegram is disabled the
+// composition injects the DisabledDispatcher no-op, so this call stays
+// side-effect free and module tests never depend on the Bot API. Reply
+// messages go through sender; a nil sender fails commands closed.
+func (s *Service) RegisterTelegram(dispatcher kernel.TelegramDispatcher, sender kernel.TelegramSender) error {
+	if dispatcher == nil {
+		return errors.New("digitaloffer: telegram dispatcher is nil")
+	}
+	s.telegramSender = sender
+	handlers := map[string]func(ctx context.Context, upd kernel.TelegramUpdate) error{
+		TelegramCommandPrice:        s.telegramPrice,
+		TelegramCommandBuy:          s.telegramBuy,
+		TelegramCommandEntitlements: s.telegramEntitlements,
+	}
+	for name, h := range handlers {
+		if err := dispatcher.RegisterCommand(name, h); err != nil {
+			return fmt.Errorf("register telegram command %s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+func (s *Service) telegramPrice(ctx context.Context, upd kernel.TelegramUpdate) error {
+	if err := s.queryAllowed(upd.SubjectID); err != nil {
+		return s.telegramReply(ctx, upd, "请求过于频繁，请稍后再试。")
+	}
+	offers, err := s.ListOnSale()
+	if err != nil {
+		return err
+	}
+	var b strings.Builder
+	b.WriteString("在售数字服务：\n")
+	for i, o := range offers {
+		fmt.Fprintf(&b, "%d. %s — %d %s（%s）\n   id: %s\n", i+1, o.Name, o.PriceAmount, o.Currency, formLabel(o.EntitlementForm), o.ID)
+		if i == 19 {
+			b.WriteString("…（仅显示前 20 项）\n")
+			break
+		}
+	}
+	if len(offers) == 0 {
+		b.WriteString("（暂无在售项目）")
+	}
+	return s.telegramReply(ctx, upd, strings.TrimRight(b.String(), "\n"))
+}
+
+func (s *Service) telegramBuy(ctx context.Context, upd kernel.TelegramUpdate) error {
+	// Fail-closed identity gate (D-002 §6): no mapped subject, no purchase.
+	if strings.TrimSpace(upd.SubjectID) == "" {
+		return s.telegramReply(ctx, upd, telegramIdentityMissingText)
+	}
+	fields := strings.Fields(strings.TrimPrefix(upd.Text, "/buy"))
+	if len(fields) < 1 || strings.TrimSpace(fields[0]) == "" {
+		return s.telegramReply(ctx, upd, telegramBuyUsageText)
+	}
+	offerID := fields[0]
+	requestID := fmt.Sprintf("tg:%s:%d", upd.SubjectID, upd.UpdateID)
+	res, err := s.Purchase(ctx, upd.SubjectID, offerID, requestID, time.Now().UTC())
+	if err != nil {
+		return s.telegramReply(ctx, upd, telegramErrorText(err))
+	}
+	var b strings.Builder
+	if res.Replayed {
+		b.WriteString("该购买已完成（幂等重放），未重复扣款。\n")
+	} else {
+		b.WriteString("购买成功！\n")
+	}
+	fmt.Fprintf(&b, "凭证：%s\n服务：%s\n金额：%d %s\n", res.Purchase.ID, res.Purchase.OfferName, res.Purchase.Amount, res.Purchase.Currency)
+	switch res.Entitlement.Form {
+	case store.FormDuration:
+		fmt.Fprintf(&b, "权益：时长型，有效期至 %s", res.Entitlement.ExpiresAt.UTC().Format("2006-01-02 15:04"))
+	case store.FormCount:
+		fmt.Fprintf(&b, "权益：次数型，剩余 %d 次", *res.Entitlement.RemainingCount)
+	}
+	return s.telegramReply(ctx, upd, b.String())
+}
+
+func (s *Service) telegramEntitlements(ctx context.Context, upd kernel.TelegramUpdate) error {
+	if err := s.queryAllowed(upd.SubjectID); err != nil {
+		return s.telegramReply(ctx, upd, "请求过于频繁，请稍后再试。")
+	}
+	if strings.TrimSpace(upd.SubjectID) == "" {
+		return s.telegramReply(ctx, upd, telegramIdentityMissingText)
+	}
+	now := time.Now().UTC()
+	rows, total, err := s.ListEntitlements(store.EntitlementFilter{SubjectID: upd.SubjectID, Status: store.EntitlementActive, Page: 1, PageSize: 20})
+	if err != nil {
+		return err
+	}
+	if total == 0 {
+		return s.telegramReply(ctx, upd, telegramNoEntitlementsText)
+	}
+	var b strings.Builder
+	b.WriteString("我的有效权益：\n")
+	shown := 0
+	for _, r := range rows {
+		if r.Form == store.FormDuration && r.ExpiresAt != nil && !r.ExpiresAt.After(now) {
+			continue // expired rows are a derived predicate, never listed
+		}
+		if r.Form == store.FormCount && (r.RemainingCount == nil || *r.RemainingCount <= 0) {
+			continue // exhausted rows are a derived predicate, never listed
+		}
+		shown++
+		switch r.Form {
+		case store.FormDuration:
+			fmt.Fprintf(&b, "%d. %s — 时长型，有效期至 %s\n", shown, r.OfferID, r.ExpiresAt.UTC().Format("2006-01-02 15:04"))
+		case store.FormCount:
+			fmt.Fprintf(&b, "%d. %s — 次数型，剩余 %d 次\n", shown, r.OfferID, *r.RemainingCount)
+		}
+	}
+	if shown == 0 {
+		return s.telegramReply(ctx, upd, telegramNoEntitlementsText)
+	}
+	return s.telegramReply(ctx, upd, strings.TrimRight(b.String(), "\n"))
+}
+
+// queryAllowed applies the §8 price/entitlements query bucket.
+func (s *Service) queryAllowed(subjectID string) error {
+	if s.queryLimiter == nil {
+		return nil
+	}
+	if !s.queryLimiter.AllowRecord("bizoffer|price|"+subjectID, time.Now().UTC()) {
+		return ErrRateLimited
+	}
+	return nil
+}
+
+func (s *Service) telegramReply(ctx context.Context, upd kernel.TelegramUpdate, text string) error {
+	if s.telegramSender == nil {
+		return errors.New("digitaloffer: telegram sender is nil")
+	}
+	return s.telegramSender.Send(ctx, kernel.TelegramMessage{ChatID: upd.ChatID, Text: text})
+}
+
+// telegramErrorText maps purchase failures to user-facing reply text (§9).
+func telegramErrorText(err error) string {
+	switch {
+	case errors.Is(err, walletstore.ErrInsufficient):
+		return "余额不足，无法完成购买。"
+	case errors.Is(err, store.ErrOfferNotOnSale):
+		return "该服务当前未上架。"
+	case errors.Is(err, store.ErrNotFound):
+		return "未找到该 offer，请用 /price 查看在售列表。"
+	case errors.Is(err, store.ErrCurrencyMismatch):
+		return "服务币种与您的钱包账户不一致，无法购买。"
+	case errors.Is(err, store.ErrSubjectNotFound):
+		return "账户身份尚未注册，请稍后重试。"
+	case errors.Is(err, store.ErrRequestIdConflict), errors.Is(err, walletstore.ErrIdempotencyConflict):
+		return "请求冲突，请重新发送购买指令。"
+	case errors.Is(err, ErrRateLimited):
+		return "购买过于频繁，请稍后再试。"
+	default:
+		return "购买失败，请稍后重试。"
+	}
+}
+
+func formLabel(form string) string {
+	if form == store.FormDuration {
+		return "时长型"
+	}
+	return "次数型"
 }

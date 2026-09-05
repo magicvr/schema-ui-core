@@ -471,6 +471,32 @@ func (r *Repository) GetEntitlement(id string) (*Entitlement, error) {
 	return &e, nil
 }
 
+// ListEntitlementsBySubjectOfferInTx returns every entitlement row for one
+// (subject, offer) pair — the §5.1 Check aggregate reads them all and derives
+// the reason (no status filter here).
+func (r *Repository) ListEntitlementsBySubjectOfferInTx(tx kernel.Tx, subjectID, offerID string) ([]Entitlement, error) {
+	rows, err := tx.Query(context.Background(),
+		`SELECT id, subject_id, offer_id, purchase_id, form, expires_at, remaining_count, status, created_at, updated_at
+		 FROM digital_entitlements WHERE subject_id = ? AND offer_id = ? ORDER BY created_at ASC, id ASC`,
+		subjectID, offerID)
+	if err != nil {
+		return nil, fmt.Errorf("list entitlements by subject/offer: %w", err)
+	}
+	defer rows.Close()
+	var out []Entitlement
+	for rows.Next() {
+		var e Entitlement
+		var created, updated int64
+		var expires, remaining any
+		if err := rows.Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &created, &updated); err != nil {
+			return nil, fmt.Errorf("scan digital entitlement: %w", err)
+		}
+		decodeEntitlementTimes(&e, expires, remaining, created, updated)
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
 // GetEntitlementInTx loads one entitlement inside a caller-owned transaction
 // (nested Run is forbidden — D-002 §7 void must stay on one tx).
 func (r *Repository) GetEntitlementInTx(tx kernel.Tx, id string) (*Entitlement, error) {

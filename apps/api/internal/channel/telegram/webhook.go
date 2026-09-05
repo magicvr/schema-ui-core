@@ -307,10 +307,11 @@ func normalizeInbound(payload UpdatePayload, now time.Time) (telegramstore.Inbou
 				SenderUsername: senderUsername,
 				ReceivedAt:     now,
 			}, kernel.TelegramUpdate{
-				ChatID:  strconv.FormatInt(message.Chat.ID, 10),
-				UserID:  optionalTelegramID(userID),
-				Command: command,
-				Text:    message.Text,
+				ChatID:   strconv.FormatInt(message.Chat.ID, 10),
+				UserID:   optionalTelegramID(userID),
+				Command:  command,
+				Text:     message.Text,
+				UpdateID: payload.UpdateID,
 			}, true
 	}
 
