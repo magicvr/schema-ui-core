@@ -63,9 +63,10 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if len(desc.Contributions.Permissions) != 2 || desc.Contributions.Permissions[0] != "telegram.operator.read" || desc.Contributions.Permissions[1] != "telegram.operator.write" {
 		t.Fatalf("unexpected operator permissions: %+v", desc.Contributions.Permissions)
 	}
-	// GOAL-006 R5: telegram-settings page + menu_telegram navigation declared.
-	if len(desc.Contributions.Pages) != 1 || desc.Contributions.Pages[0] != "telegram-settings" {
-		t.Fatalf("expected telegram-settings page contribution, got %+v", desc.Contributions.Pages)
+	// Telegram settings is the sidebar page and telegram-operator is its inner
+	// conversation page; only the former owns menu_telegram.
+	if len(desc.Contributions.Pages) != 2 || desc.Contributions.Pages[0] != "telegram-settings" || desc.Contributions.Pages[1] != "telegram-operator" {
+		t.Fatalf("expected Telegram settings + operator page contributions, got %+v", desc.Contributions.Pages)
 	}
 	if len(desc.Contributions.Navigation) != 1 || desc.Contributions.Navigation[0] != "menu_telegram" {
 		t.Fatalf("expected menu_telegram navigation contribution, got %+v", desc.Contributions.Navigation)
@@ -88,7 +89,7 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if len(reg.permissions) != 2 || reg.permissions[0].Permission != "telegram.operator.read" || reg.permissions[1].Permission != "telegram.operator.write" {
 		t.Fatalf("unexpected registered permissions: %+v", reg.permissions)
 	}
-	if len(reg.pages) != 1 || reg.pages[0].PageID != "telegram-settings" || reg.pages[0].DataSource != "/api/channel/telegram/settings" {
+	if len(reg.pages) != 2 || reg.pages[0].PageID != "telegram-settings" || reg.pages[0].DataSource != "/api/channel/telegram/settings" || reg.pages[1].PageID != "telegram-operator" || reg.pages[1].DataSource != "/api/channel/telegram/operator/sessions" {
 		t.Fatalf("unexpected page contributions: %+v", reg.pages)
 	}
 	if len(reg.navigation) != 1 || reg.navigation[0].NodeID != "menu_telegram" || reg.navigation[0].PageID != "telegram-settings" {
@@ -179,8 +180,37 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 	if len(operatorPermissions) != 2 || !operatorPermissions["telegram.operator.read"] || !operatorPermissions["telegram.operator.write"] {
 		t.Fatalf("expected operator permissions in ContributionSet, got %+v", set.Permissions)
 	}
-	if len(set.Pages) != 1 || set.Pages[0].PageID != "telegram-settings" {
-		t.Fatalf("expected telegram-settings page in ContributionSet, got %+v", set.Pages)
+	if len(set.Pages) != 2 {
+		t.Fatalf("expected Telegram settings + operator pages in ContributionSet, got %+v", set.Pages)
+	}
+	pageByID := map[string]kernel.PageContribution{}
+	for _, page := range set.Pages {
+		pageByID[page.PageID] = page
+	}
+	settingsPage, ok := pageByID["telegram-settings"]
+	if !ok {
+		t.Fatal("telegram-settings page contribution missing")
+	}
+	if settingsPage.DataSource != "/api/channel/telegram/settings" ||
+		settingsPage.ModuleID != moduletg.ModuleID ||
+		settingsPage.Key != "telegram-settings" ||
+		settingsPage.Owner != moduletg.ModuleID ||
+		len(settingsPage.Resources) != 1 || settingsPage.Resources[0] != "telegram-settings" ||
+		len(settingsPage.Actions) != 2 || settingsPage.Actions[0] != "list" || settingsPage.Actions[1] != "update" {
+		t.Fatalf("settings page contribution = %#v", settingsPage)
+	}
+
+	operatorPage, ok := pageByID["telegram-operator"]
+	if !ok {
+		t.Fatal("telegram-operator page contribution missing")
+	}
+	if operatorPage.DataSource != "/api/channel/telegram/operator/sessions" ||
+		operatorPage.ModuleID != moduletg.ModuleID ||
+		operatorPage.Key != "telegram-operator" ||
+		operatorPage.Owner != moduletg.ModuleID ||
+		len(operatorPage.Resources) != 1 || operatorPage.Resources[0] != "telegram.operator" ||
+		len(operatorPage.Actions) != 2 || operatorPage.Actions[0] != "list" || operatorPage.Actions[1] != "update" {
+		t.Fatalf("operator page contribution = %#v", operatorPage)
 	}
 	if len(set.Navigation) != 1 || set.Navigation[0].NodeID != "menu_telegram" {
 		t.Fatalf("expected menu_telegram navigation in ContributionSet, got %+v", set.Navigation)

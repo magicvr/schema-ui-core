@@ -74,10 +74,9 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry",
 			},
 			Permissions: []string{"telegram.operator.read", "telegram.operator.write"},
-			// GOAL-006 R5 (判据 #5 补做 Admin UI tab): the telegram-settings
-			// page + menu ride the settings.read gate (mail W26 red line: no
-			// new permission keys).
-			Pages:      []string{"telegram-settings"},
+			// The settings page remains the sidebar entry; the operator page is
+			// an inner route reached from that page (no new permission keys).
+			Pages:      []string{"telegram-settings", "telegram-operator"},
 			Navigation: []string{"menu_telegram"},
 			Fragments:  []string{"telegram-settings"},
 		},
@@ -194,9 +193,9 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			return err
 		}
 	}
-	// GOAL-006 R5 (判据 #5 补做 Admin UI tab): the telegram-settings page is
-	// always contributed (schema documents are static); the underlying
-	// GET/PATCH settings APIs keep their own per-route auth gates.
+	// The settings and operator pages are always contributed (schema documents
+	// are static); the underlying settings/operator APIs keep their own
+	// per-route auth gates.
 	if err := reg.Schema(kernel.PageContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram-settings"},
 		PageID:               "telegram-settings",
@@ -205,6 +204,17 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		DataSource:           "/api/channel/telegram/settings",
 		Owner:                ModuleID,
 		Document:             telegramschema.SchemaDocuments()["telegram-settings"],
+	}); err != nil {
+		return err
+	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram-operator"},
+		PageID:               "telegram-operator",
+		Resources:            []string{"telegram.operator"},
+		Actions:              []string{"list", "update"},
+		DataSource:           "/api/channel/telegram/operator/sessions",
+		Owner:                ModuleID,
+		Document:             telegramschema.SchemaDocuments()["telegram-operator"],
 	}); err != nil {
 		return err
 	}

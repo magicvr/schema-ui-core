@@ -94,7 +94,7 @@ func TestTelegramChannelComposition(t *testing.T) {
 				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry",
 			},
 			Permissions: []string{"telegram.operator.read", "telegram.operator.write"},
-			Pages:       []string{"telegram-settings"},
+			Pages:       []string{"telegram-settings", "telegram-operator"},
 			Navigation:  []string{"menu_telegram"},
 			Fragments:   []string{"telegram-settings"},
 		},

@@ -16,6 +16,13 @@
       "schemaUrl": "/api/schema/telegram-settings",
       "route": "/telegram-settings",
       "titleKey": "manifest.title.telegramSettings"
+    },
+    {
+      "pageId": "telegram-operator",
+      "title": "Operator conversations",
+      "schemaUrl": "/api/schema/telegram-operator",
+      "route": "/telegram-settings/operator",
+      "titleKey": "manifest.title.telegramOperator"
     }
   ],
   "navigation": {

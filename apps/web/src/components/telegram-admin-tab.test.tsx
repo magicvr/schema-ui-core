@@ -58,8 +58,17 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-function renderTab(fetchMock: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) {
+type TelegramSurface = "settings" | "operator";
+
+function renderTab(
+  fetchMock: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  surface: TelegramSurface = "operator",
+) {
   vi.stubGlobal("fetch", vi.fn(fetchMock));
+  const node = {
+    ...NODE,
+    props: surface === "operator" ? { surface } : {},
+  };
   const container = document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -67,11 +76,15 @@ function renderTab(fetchMock: (input: RequestInfo | URL, init?: RequestInit) => 
   act(() => {
     root.render(
       <I18nProvider>
-        <TelegramAdminTab node={NODE as never} context={{}} />
+        <TelegramAdminTab node={node as never} context={{}} />
       </I18nProvider>,
     );
   });
   return container;
+}
+
+function renderSettingsTab(fetchMock: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) {
+  return renderTab(fetchMock, "settings");
 }
 
 async function settle() {
@@ -99,7 +112,9 @@ const setNativeTextAreaValue = (el: HTMLTextAreaElement, value: string) => {
 
 describe("TelegramAdminTab (GOAL-006 R5)", () => {
   it("loads status and shows write-only token/secret inputs with keep-current placeholder", async () => {
-    const container = renderTab(async (input) => {
+    const calls: string[] = [];
+    const container = renderSettingsTab(async (input) => {
+      calls.push(String(input));
       if (String(input).startsWith("/api/channel/telegram/settings")) return jsonResponse(STATUS);
       return jsonResponse({}, 404);
     });
@@ -116,6 +131,10 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(token.value).toBe("");
     expect(secret.value).toBe("");
     expect(container.querySelector("[data-telegram-polling-warning]")?.textContent).toContain("multiple replicas");
+    expect(container.querySelector("[data-telegram-operator]")).toBeNull();
+    expect(container.textContent).not.toContain("Mock-captured messages:");
+    expect(calls).not.toContain("/api/channel/telegram/operator/sessions?page=1&pageSize=100");
+    expect(calls).not.toContain("/api/channel/telegram/lease/acquire");
   });
 
   it("loads operator sessions and transcript while fail-closing the composer before capability proof", async () => {
@@ -145,10 +164,12 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     });
     await settle();
 
+    expect(container.querySelector("[data-telegram-operator-page]")).not.toBeNull();
     expect(container.querySelector("[data-telegram-session='8001']")).not.toBeNull();
     expect(container.querySelector("[data-telegram-polling-warning]")).toBeNull();
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("hello");
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("reply");
+    expect(container.textContent).toContain("Mock-captured messages: 3");
     const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;
     expect(composer).not.toBeNull();
     expect(composer.disabled).toBe(true);
@@ -552,7 +573,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
 
   it("PATCHes receiver mode and webhook origin as non-secret settings", async () => {
     const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
-    const container = renderTab(async (input, init) => {
+    const container = renderSettingsTab(async (input, init) => {
       const url = String(input);
       calls.push({ url, method: init?.method, body: init?.body === undefined ? undefined : JSON.parse(String(init.body)) });
       if (url === "/api/channel/telegram/settings" && init?.method === "PATCH") {
@@ -579,7 +600,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
 
   it("PATCHes only non-empty values and refreshes status + clears inputs", async () => {
     const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
-    const container = renderTab(async (input, init) => {
+    const container = renderSettingsTab(async (input, init) => {
       const url = String(input);
       calls.push({ url, method: init?.method, body: init?.body === undefined ? undefined : JSON.parse(String(init.body)) });
       if (url.startsWith("/api/channel/telegram/settings") && init?.method === "PATCH") {
@@ -606,7 +627,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
 
   it("offers a two-step clear action that PATCHes empty strings (R-004)", async () => {
     const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
-    const container = renderTab(async (input, init) => {
+    const container = renderSettingsTab(async (input, init) => {
       const url = String(input);
       calls.push({ url, method: init?.method, body: init?.body === undefined ? undefined : JSON.parse(String(init.body)) });
       if (url.startsWith("/api/channel/telegram/settings") && init?.method === "PATCH") {

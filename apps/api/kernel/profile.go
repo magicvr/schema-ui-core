@@ -209,12 +209,13 @@ func BuiltinModules() []Module {
 		// Exposes the public webhook, authenticated settings endpoints, the
 		// authenticated console-session polling lease, and the operator console
 		// session/transcript/send surface.
-		// GOAL-006 R5 (判据 #5 补做): telegram-settings page + menu_telegram.
+		// Telegram settings is the sidebar page; telegram-operator is its
+		// inner conversation page. menu_telegram still points at settings.
 		// admin.settings is a hard dependency so menu_telegram can reference
 		// settings.read (declared by admin.settings in the same ContributionSet;
 		// no new permission keys — R-001 / A-002).
 		// Compiled candidate; not enabled in mvp/admin defaults (channel extension).
-		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"}, Requires: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityNavigation}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/lease/acquire", "POST /api/channel/telegram/lease/heartbeat", "POST /api/channel/telegram/lease/release", "POST /api/channel/telegram/webhook", "GET /api/channel/telegram/operator/sessions", "GET /api/channel/telegram/operator/sessions/{chat_id}/capability", "GET /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"}, Pages: []string{"telegram-settings"}, Navigation: []string{"menu_telegram"}, Permissions: []string{"telegram.operator.read", "telegram.operator.write"}, Fragments: []string{"telegram-settings"}}},
+		{ID: "channel.telegram", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.server-registration", "core.schema-render", "core.navigation-capability", "admin.settings"}, Requires: []Capability{CapabilityHTTP, CapabilitySchema, CapabilityNavigation}, Contributions: ContributionKeys{Routes: []string{"GET /api/channel/telegram/settings", "PATCH /api/channel/telegram/settings", "POST /api/channel/telegram/lease/acquire", "POST /api/channel/telegram/lease/heartbeat", "POST /api/channel/telegram/lease/release", "POST /api/channel/telegram/webhook", "GET /api/channel/telegram/operator/sessions", "GET /api/channel/telegram/operator/sessions/{chat_id}/capability", "GET /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages", "POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"}, Pages: []string{"telegram-settings", "telegram-operator"}, Navigation: []string{"menu_telegram"}, Permissions: []string{"telegram.operator.read", "telegram.operator.write"}, Fragments: []string{"telegram-settings"}}},
 	}
 }
 

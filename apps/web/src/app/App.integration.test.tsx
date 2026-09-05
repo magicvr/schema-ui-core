@@ -193,6 +193,78 @@ describe("App shell integration", () => {
     expect(breadcrumb?.querySelector('button[aria-label]')).toBeNull();
   });
 
+  it("opens the Telegram operator page through an app-internal navigate action", async () => {
+    const manifest = validateAppManifest({
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+      app: { appId: "integration", name: "Integration", homePageRef: "home" },
+      pages: [
+        { pageId: "home", title: "Home", schemaUrl: "/schema/home", route: "/home" },
+        {
+          pageId: "telegram-settings",
+          title: "Telegram channel",
+          schemaUrl: "/schema/telegram-settings",
+          route: "/telegram-settings",
+        },
+        {
+          pageId: "telegram-operator",
+          title: "Operator conversations",
+          schemaUrl: "/schema/telegram-operator",
+          route: "/telegram-settings/operator",
+        },
+      ],
+      navigation: {
+        top: [{ pageRef: "home", label: "Home" }],
+        sidebar: [{ pageRef: "telegram-settings", label: "Telegram channel" }],
+      },
+    });
+    const documents: Record<string, unknown> = {
+      "/schema/home": schemaDocument("home", "Home", "Schema home body"),
+      "/schema/telegram-settings": {
+        meta: {
+          pageId: "telegram-settings",
+          title: "Telegram channel",
+          protocolVersion: "2.7",
+          requiredCapabilities: ["app.manifest", "app.navigation", "actions.page.trigger"],
+        },
+        actions: {
+          openTelegramOperator: { type: "navigate", url: "/telegram-settings/operator" },
+        },
+        body: {
+          type: "section",
+          children: [{ type: "actionButton", props: { label: "Open operator conversations", actionId: "openTelegramOperator" } }],
+        },
+      },
+      "/schema/telegram-operator": schemaDocument(
+        "telegram-operator",
+        "Operator conversations",
+        "Operator chat body",
+      ),
+    };
+    const container = await renderApp("/telegram-settings", {}, documents, undefined, manifest);
+    const entryButton = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.trim() === "Open operator conversations",
+    );
+    expect(entryButton).not.toBeUndefined();
+
+    await act(async () => {
+      entryButton!.click();
+      await Promise.resolve();
+    });
+
+    expect(window.location.pathname).toBe("/telegram-settings/operator");
+    expect(container.querySelector("h1")?.textContent).toBe("Operator conversations");
+    expect(container.textContent).toContain("Operator chat body");
+    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    expect(breadcrumb?.textContent).toContain("Telegram channel");
+    expect(breadcrumb?.textContent).toContain("Operator conversations");
+
+    const backButton = breadcrumb?.querySelector('button[aria-label]') as HTMLButtonElement | null;
+    expect(backButton).not.toBeNull();
+    await act(async () => backButton?.click());
+    expect(window.location.pathname).toBe("/telegram-settings");
+  });
+
 
   // GOAL-015 F-001 (grok audit): a schema-driven navigate action (type
   // navigate + row navigateMapping, e.g. the dictionary types page 「条目」

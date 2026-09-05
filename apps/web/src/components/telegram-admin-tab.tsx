@@ -96,6 +96,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const t = useTranslate();
   const crud = useSchemaCrud();
   const fetcher = crud?.fetcher ?? globalThis.fetch;
+  const isOperatorSurface = _props.node.props?.surface === "operator";
 
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [status, setStatus] = useState<TelegramSettingsStatus | null>(null);
@@ -173,7 +174,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   );
 
   useEffect(() => {
-    if (loadState !== "ready" || status?.mode !== telegramPollingMode || status.business_occupied !== false) {
+    if (!isOperatorSurface || loadState !== "ready" || status?.mode !== telegramPollingMode || status.business_occupied !== false) {
       setLeaseState("inactive");
       return;
     }
@@ -266,13 +267,14 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       if (timer !== undefined) clearTimeout(timer);
       if (leaseHeld) void queueLease("release");
     };
-  }, [callLease, loadState, status?.business_occupied, status?.mode]);
+  }, [callLease, isOperatorSurface, loadState, status?.business_occupied, status?.mode]);
 
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
 
-  const operatorReady = status !== null
+  const operatorReady = isOperatorSurface
+    && status !== null
     && status.configured
     && status.business_occupied === false
     && status.connection_state === "running"
@@ -417,7 +419,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   }, [loadCapability, loadSessions, loadTimeline]);
 
   useEffect(() => {
-    if (!operatorReady || !pageVisible) return;
+    if (!isOperatorSurface || !operatorReady || !pageVisible) return;
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -435,18 +437,18 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       disposed = true;
       if (timer !== undefined) clearTimeout(timer);
     };
-  }, [operatorReady, pageVisible, refreshOperatorSurface]);
+  }, [isOperatorSurface, operatorReady, pageVisible, refreshOperatorSurface]);
 
   useEffect(() => {
-    if (!operatorReady || selectedChatId === null) {
+    if (!isOperatorSurface || !operatorReady || selectedChatId === null) {
       setOperatorCapability("unknown");
       setTimeline([]);
-      setTimelineLoadState(operatorReady ? "ready" : "idle");
+      setTimelineLoadState(isOperatorSurface && operatorReady ? "ready" : "idle");
       return;
     }
     void loadTimeline(selectedChatId);
     void loadCapability(selectedChatId, true);
-  }, [loadCapability, loadTimeline, operatorReady, selectedChatId]);
+  }, [isOperatorSurface, loadCapability, loadTimeline, operatorReady, selectedChatId]);
 
   async function extractError(response: Response, fallbackKey = "schema.telegram.feedback.saveFailed"): Promise<string> {
     try {
@@ -610,10 +612,18 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     }
   }
 
+  const surfaceTitleKey = isOperatorSurface
+    ? "schema.telegram.operator.title"
+    : "schema.settings.toolbar.telegram";
+
   if (loadState === "error") {
     return (
-      <section data-telegram-admin-tab className="space-y-3 rounded-xl border border-border/70 bg-card/85 p-4">
-        <h2 className="text-sm font-semibold">{t("schema.settings.toolbar.telegram")}</h2>
+      <section
+        data-telegram-admin-tab
+        data-telegram-operator-page={isOperatorSurface ? "true" : undefined}
+        className="space-y-3 rounded-xl border border-border/70 bg-card/85 p-4"
+      >
+        <h2 className="text-sm font-semibold">{t(surfaceTitleKey)}</h2>
         <p role="alert" className="text-sm text-destructive">{t("schema.telegram.feedback.loadFailed")}</p>
       </section>
     );
@@ -659,9 +669,13 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         : null;
 
   return (
-    <section data-telegram-admin-tab className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4">
+    <section
+      data-telegram-admin-tab
+      data-telegram-operator-page={isOperatorSurface ? "true" : undefined}
+      className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4"
+    >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">{t("schema.settings.toolbar.telegram")}</h2>
+        <h2 className="text-sm font-semibold">{t(surfaceTitleKey)}</h2>
         {status !== null ? (
           <span className="text-xs text-muted-foreground">
             {status.configured
@@ -691,6 +705,8 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
 
       {loadState === "loading" ? <p className="text-sm text-muted-foreground">{t("feedback.loading")}</p> : null}
 
+      {!isOperatorSurface ? (
+        <>
       <div className="grid gap-2 sm:grid-cols-[12rem_1fr] sm:items-center">
         {fieldLabel("schema.telegram.field.botToken", "telegram-bot-token")}
         <input
@@ -778,13 +794,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         ) : null}
       </div>
 
-      {status !== null && typeof status.captured_messages_count === "number" ? (
-        <p className="text-xs text-muted-foreground">
-          {t("schema.telegram.status.captured")} {status.captured_messages_count}
-        </p>
+        </>
       ) : null}
 
-      {status !== null && status.configured && status.business_occupied === false && typeof status.bot_id === "number" && status.bot_id > 0 ? (
+      {isOperatorSurface && status !== null && status.configured && status.business_occupied === false && typeof status.bot_id === "number" && status.bot_id > 0 ? (
         <section data-telegram-operator className="space-y-3 rounded-md border border-border/60 bg-muted/10 p-3">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">{t("schema.telegram.operator.title")}</h3>
@@ -798,6 +811,11 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
               {sessionsLoadState === "loading" ? t("feedback.loading") : t("schema.telegram.operator.refresh")}
             </button>
           </div>
+          {typeof status.captured_messages_count === "number" ? (
+            <p className="text-xs text-muted-foreground">
+              {t("schema.telegram.status.captured")} {status.captured_messages_count}
+            </p>
+          ) : null}
 
           {!operatorReady ? (
             <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.unavailable")}</p>

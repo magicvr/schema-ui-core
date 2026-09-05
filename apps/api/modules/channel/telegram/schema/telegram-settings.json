@@ -6,8 +6,15 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "permissions.inheritance"
+      "permissions.inheritance",
+      "actions.page.trigger"
     ]
+  },
+  "actions": {
+    "openTelegramOperator": {
+      "type": "navigate",
+      "url": "/telegram-settings/operator"
+    }
   },
   "body": {
     "type": "section",
@@ -18,6 +25,27 @@
         "id": "telegram-admin-tab",
         "component": "telegram-admin-tab",
         "props": {}
+      },
+      {
+        "type": "section",
+        "id": "telegram-operator-entry",
+        "children": [
+          {
+            "type": "text",
+            "id": "telegram-operator-entry-description",
+            "props": {
+              "textKey": "schema.telegram.operator.entryDescription"
+            }
+          },
+          {
+            "type": "actionButton",
+            "id": "telegram-operator-entry-button",
+            "props": {
+              "labelKey": "schema.telegram.operator.open",
+              "actionId": "openTelegramOperator"
+            }
+          }
+        ]
       }
     ]
   }

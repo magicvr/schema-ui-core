@@ -6,10 +6,10 @@ import "embed"
 // page gating.
 const ModuleID = "channel.telegram"
 
-// PageIDs are the page identifiers this module contributes. GOAL-006 R5
-// (判据 #5 补做 Admin UI tab) adds the standalone telegram-settings page
-// hosted by the telegram-admin-tab custom component.
-func PageIDs() []string { return []string{"telegram-settings"} }
+// PageIDs are the page identifiers this module contributes. The settings page
+// owns connection configuration, while telegram-operator is a non-sidebar
+// inner page that hosts the actual conversation console.
+func PageIDs() []string { return []string{"telegram-settings", "telegram-operator"} }
 
 //go:embed *.json
 var schemaFiles embed.FS
@@ -21,6 +21,7 @@ var schemaFiles embed.FS
 func SchemaDocuments() map[string][]byte {
 	return map[string][]byte{
 		"telegram-settings": mustRead("telegram-settings.json"),
+		"telegram-operator": mustRead("telegram-operator.json"),
 	}
 }
 
