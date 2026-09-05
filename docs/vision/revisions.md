@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-05
 parent: null
-version: 0.4.43
+version: 0.4.44
 ---
 
 # Charter 修订台账
@@ -84,3 +84,4 @@ version: 0.4.43
 | VR-067 | 2026-09-05 | editorial | VP-030 关门投影 | 用户指令“走流程闭门 VP-030 和 VP-033，如有问题指出而不是闭门”；workspace-030 Root `GOAL-001-telegram-channel-runtime` `done` 4/4+R5，I-030-001～007 verified，A-008 independent `pass` + A-009 response，R-009 bounded accepted-residual 已有用户书面裁决；**VRev-076 self `pass`**（八条方向级判据全 verified，open required = 0）。VP-030 `active → closed` v0.3.0。此前 VRev-072 V-F116 与 VRev-075 V-F118 的推荐排序意见由本次事实解决。RT-M03 继续等待 VP-033 同轮闭门后投影为 delivered；不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-068 | 2026-09-05 | editorial | VP-033 关门投影 | 同一用户指令授权；workspace-033 Root `GOAL-001-telegram-operator-console` `done` 4/4，A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass` + A-004 response，A-015 IM 后续响应 open required/recommended = 0；**VRev-077 self `pass`**（八条方向级判据全 verified，open required = 0）。VP-033 `active → closed` v0.3.0；RT-M03 `active → delivered`。VP-030 已由 VRev-076 同轮关闭；不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-069 | 2026-09-05 | editorial | VP-030/VP-033 关门投影状态同步响应 | VRev-078 independent fail 发现 2 个聚合 required（具体 3 个陈旧文本位置）：workspace-030 workspace.md 与 Root 00-meta.md 仍写 VP-030 active v0.2.0，workspace-033 Root 00-meta.md 仍写 VP-033 active。self 响应复核同一 Root meta 后发现第 4 个同类位置并归入 F-002；VRev-079 已将 4 个现行投影位置 fixed 为 VP-030/VP-033 closed v0.3.0，历史 active 文字保留；当前 open required = 0。无 Charter vision_id@version、目的/边界或 primary workspace 变化，无 strategic、无 re-align。 |
+| VR-070 | 2026-09-05 | editorial | VP-031 激活 + 开区 | 用户书面确认 H-002 采用同进程模块。VRev-080 self `pass`（open required = 0）：业务域 freshness PASS（写入前 clean HEAD `bd9ed5e`，消费 VP-008 `go`）；VP-029 硬前置满足；RT-Q03/RT-Q05 均完成评估并判定本波不需要 Redis。VP-031 `planned → active` v0.2.0；lead `workspace-031-digital-offer-entitlement` / Root `GOAL-001-digital-offer-entitlement` 由 `/govern` 建立为 `active · 0/4`。I-031-001～003 保持 R1 required，未关闭前不得进入 R2；V-F119 recommended 不阻断。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |

@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-031-digital-offer-entitlement
 title: 数字 Offer 与权益
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace:
+lead_workspace: workspace-031-digital-offer-entitlement
 created: 2026-09-02
-updated: 2026-09-03
-version: 0.1.1
+updated: 2026-09-05
+version: 0.2.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`planned`**（2026-09-02 · v0.1.0 · 0 区） |
-| lead_workspace | 未绑定（激活时按惯例 `workspace-031-digital-offer-entitlement`） |
-| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；**激活前必须**：① 业务域 freshness（含 H-002 同进程再确认）② RT-Q03/Q05 评估登记 ③ 激活审视 |
+| status | **`active`**（2026-09-05 · v0.2.0 · 1 区 · VRev-080 self `pass`） |
+| lead_workspace | `workspace-031-digital-offer-entitlement`（唯一 lead delivery；Root `GOAL-001-digital-offer-entitlement` `active · 0/4`） |
+| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活审视 = [VRev-080](../reviews/VRev-080-vp031-digital-offer-entitlement-activation.md) self `pass`（0 required；业务域 freshness PASS；H-002 同进程书面确认；RT-Q03/Q05 = 本波不需要 Redis） |
 | 组合位置 | **业务域分支** · 本仓库**第一个**业务域 VP。卖的是数字服务/权益，**不是**电商 Catalog/SKU/税/库存/物流订单 |
 
 ## 意图
@@ -65,12 +65,21 @@ parent: null
 | **VP-011** | S-07/S-08/S-13 仍是未交付 residual，**不**在本 VP 兑现为电商模块。本 VP **不是** S-13 订单管理的替代立项 |
 | **路线图业务域候选 1/3** | 本 VP **收窄**为数字 Offer + 薄购买 + 权益；不声称 Catalog 或「订单/支付/退款/退货」整域已成立 |
 | **Admin 扩展接缝 · Entitlement** | 本 VP 实现**本域**权益表与校验。通用 Approval/Entitlement 框架仍 gated |
-| **VP-008 `go`** | 业务域 freshness：候选身份 + 解锁 scope + **H-002 同进程再确认**（用户 2026-09-02 已口头确认同进程；激活时仍须走发现机制写进 freshness 记录） |
+| **VP-008 `go`** | 业务域 freshness：候选身份 + 解锁 scope + **H-002 同进程再确认**（用户 2026-09-05 已书面确认同进程；VRev-080 已完成 freshness 记录） |
 | **VP-026 / VP-027** | **业务域 VP 激活即触发**评估义务：缓存是否需要（Offer 读取可结论「不需要」）；限流是否已被 VP-030 覆盖。评估不可跳过 |
 | **VP-029** | **硬前置**：主体 + 钱包资金原语（至少 freeze/deduct/unfreeze；购买扣款不走凭证核销） |
 | **VP-030** | 软前置：无通道时本域仍可经 API 测通；有通道时本模块注册命令。不把 webhook 当本 VP 范围 |
 | **VP-033** | 占用位的典型占用者：本模块 Register 之后，033 人工台入口必须隐藏。不把运营台/轮询模式当本 VP 范围 |
 | **VP-009 / VP-010** | 购买/核销安全与符合性 gap 归持续程序 |
+
+## 激活记录（VRev-080）
+
+- `consumer_vp`: `VP-031-digital-offer-entitlement`（`vision_ref = schema-ui-core-admin-foundation@0.4.0`）
+- `go_issued_at`: 2026-08-10（VP-008 候选 `ed99e88`；消费有效性 2026-08-19 恢复）
+- `last_freshness_review_at`: 2026-09-05（VRev-080；写入前 clean HEAD `bd9ed5e062cd965ec4f2221ec5d00351023e76f2`；H-002 同进程书面确认；业务域 freshness PASS）
+- `next_freshness_review_trigger`: H-002 主要形态、Profile 默认集、协议 provenance、依赖锁、Offer/权益迁移与 Manifest/装配语义、生产部署/密钥边界变化，或多实例部署触发 RT-Q03/Q05 复核。
+- `RT-Q03`: Offer/权益首波以权威存储为正确性来源；本波不需要 Redis。
+- `RT-Q05`: Telegram ingress 继续由 VP-030 覆盖；业务端点使用独立进程内请求计数桶；本波不需要 Redis。R1 必须冻结桶 key/阈值/拒绝语义，且不得以 key-wide `Clear` 清除既有历史。
 
 ## 方向级退出判据
 
@@ -99,7 +108,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | lead | — | `planned` 0 区；硬前置 VP-029；软前置 VP-030 |
+| `workspace-031-digital-offer-entitlement` | `GOAL-001-digital-offer-entitlement` | lead | 2026-09-05 | 唯一 delivery；Root `active · 0/4`；R1～R4 尚未开始 |
 
 ## 关门记录
 
@@ -111,3 +120,4 @@ parent: null
 |------|--------|
 | 2026-09-02 | 初创 `planned`：用户否决电商类目/商品/订单三件套；确认基座一方数字 Offer+权益；H-002 同进程。业务域分支首个 VP。 |
 | 2026-09-03 | 边界指针：Register 后占用 VP-033 人工台入口；运营台不在本 VP。 |
+| 2026-09-05 | 用户书面确认 H-002 采用同进程模块；VRev-080 self `pass`（0 required），业务域 freshness PASS；RT-Q03/Q05 评估均结论“本波不需要 Redis”；VP-031 `planned → active` v0.2.0，绑定 `workspace-031-digital-offer-entitlement` 并交 `/govern` 建立 Root。 |

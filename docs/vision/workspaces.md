@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-05
 parent: null
-version: 0.49.7
+version: 0.49.8
 ---
 
 # 工作区贡献图
@@ -42,6 +42,7 @@ version: 0.49.7
 | workspace-028-event-bus-port | docs/workspaces/workspace-028-event-bus-port/ | GOAL-001-event-bus-port | delivery | VP-028-event-bus-port | **done**（2026-09-01 激活开区 · 四轮同日/随后全链关门：Root `GOAL-001-event-bus-port` `done` 4/4；**VP-028 `closed` v0.3.0**；outbox/broker 仍 trigger-gated，不消耗 RT-Q02） |
 | workspace-029-wallet-prepaid-instrument | docs/workspaces/workspace-029-wallet-prepaid-instrument/ | GOAL-001-wallet-prepaid-instrument | delivery | VP-029-wallet-prepaid-instrument | **done**（2026-09-02 激活开区 · 当日全量交付结项：Root `GOAL-001-wallet-prepaid-instrument` `done` 5/5；**VP-029 `closed` v0.5.0（用户指令授权 · VRev-069 pass）**；判据 #1～#10 全量 verified；GOAL-002～005 全 done） |
 | workspace-030-telegram-channel-runtime | docs/workspaces/workspace-030-telegram-channel-runtime/ | GOAL-001-telegram-channel-runtime | delivery | VP-030-telegram-channel-runtime | **done**（2026-09-03 激活开区 · Root `GOAL-001-telegram-channel-runtime` `done` 4/4+R5；2026-09-05 VRev-076 self `pass`，八条判据 verified，VP-030 `active → closed` v0.3.0；R-009 继续为 A-009 已接受的 bounded residual） |
+| workspace-031-digital-offer-entitlement | docs/workspaces/workspace-031-digital-offer-entitlement/ | GOAL-001-digital-offer-entitlement | delivery | VP-031-digital-offer-entitlement | **active**（2026-09-05 激活开区 · Root `GOAL-001-digital-offer-entitlement` `active · 0/4`；R1～R4 尚未开始；I-031-001～003 required 未冻结；V-F119 recommended；建区不等于业务实现） |
 | workspace-032-rate-limiter-atomic-port | docs/workspaces/workspace-032-rate-limiter-atomic-port/ | GOAL-001-rate-limiter-atomic-port | delivery | VP-032-rate-limiter-atomic-port | **done**（2026-09-03 激活开区 · 2026-09-04 全链结项：Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3（R1 合同冻结 → R2 14 处迁移+handler 回归（A-002 证伪后 D-002 令牌化 Reserve/Cancel 修复）→ R3 证据与关门）；关门双审 A-001 self `pass` + A-002 grok independent `pass`（0 required）；**VP-032 `closed` v0.3.0（2026-09-04 用户书面确认 · VRev-074 pass）**，判据 #2 失败预算口径承接由 GOAL-003 D-002 取代并登记于规划短史） |
 | workspace-033-telegram-operator-console | docs/workspaces/workspace-033-telegram-operator-console/ | GOAL-001-telegram-operator-console | delivery | VP-033-telegram-operator-console | **done**（2026-09-04 激活开区 · 2026-09-05 Root `GOAL-001-telegram-operator-console` `done · 4/4`；R4 A-001/A-002/A-003/A-004 完成，A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`；A-015 IM 最终响应后 open required/recommended = 0；VRev-077 self `pass`，VP-033 `active → closed` v0.3.0） |
 
