@@ -6,8 +6,10 @@ package service_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -15,13 +17,90 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pgtest"
+	storepkg "github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/service"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/store"
 )
 
+// dialectRunners names the dialect factories so R3 scenarios run on SQLite
+// and — when PG_TEST_* is configured — on one shared real PostgreSQL database
+// (each scenario namespaced by an incrementing salt).
+func dialectRunners(t *testing.T) []struct {
+	name string
+	fn   func(t *testing.T) *testEnv
+} {
+	runners := []struct {
+		name string
+		fn   func(t *testing.T) *testEnv
+	}{
+		{"sqlite", func(t *testing.T) *testEnv { return newTestEnvOn(t, mustSQLite(t), false) }},
+	}
+	if pgtest.DSN() == "" {
+		t.Log("PG_TEST_* not set; R3 scenario matrix runs SQLite only")
+		return runners
+	}
+	st := openSharedPG(t)
+	var seq atomic.Int64
+	runners = append(runners, struct {
+		name string
+		fn   func(t *testing.T) *testEnv
+	}{"pg", func(t *testing.T) *testEnv {
+		e := newTestEnvOn(t, st, false)
+		e.salt = fmt.Sprintf("r3-%d", seq.Add(1))
+		return e
+	}})
+	return runners
+}
+
+// openSharedPG opens one fresh real-PostgreSQL database with the full
+// compiled migration catalog (env-gated callers; see TestPurchasePostgresAcceptance).
+func openSharedPG(t *testing.T) kernel.Store {
+	t.Helper()
+	base, err := url.Parse(pgtest.DSN())
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := sql.Open("pgx", base.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = admin.Close() })
+	const dbName = "r3check"
+	if _, err := admin.ExecContext(context.Background(), "DROP DATABASE IF EXISTS "+dbName+" WITH (FORCE)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.ExecContext(context.Background(), "CREATE DATABASE "+dbName); err != nil {
+		t.Fatal(err)
+	}
+	u := *base
+	u.Path = "/" + dbName
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(context.Background(), "DROP DATABASE IF EXISTS "+dbName+" WITH (FORCE)")
+	})
+	catalog, err := compiled.PersistenceCatalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := storepkg.Open(context.Background(), storepkg.OpenOptions{Dialect: kernel.DialectPostgres, DSN: u.String()}, catalog)
+	if err != nil {
+		t.Fatalf("open postgres store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	return st
+}
+
 func TestCheckAggregation(t *testing.T) {
-	env := newTestEnv(t)
+	for _, newEnv := range dialectRunners(t) {
+		newEnv := newEnv
+		t.Run(fmt.Sprintf("env-%s", newEnv.name), func(t *testing.T) { checkAggregation(t, newEnv.fn) })
+	}
+}
+
+func checkAggregation(t *testing.T, newEnv func(t *testing.T) *testEnv) {
+	env := newEnv(t)
 	subjectID := env.seedSubject("buyer", 1000, "")
 	offer := env.seedOffer(store.FormCount, 400, store.StatusOnSale)
 
@@ -67,7 +146,14 @@ func TestCheckAggregation(t *testing.T) {
 }
 
 func TestCheckDurationExpiry(t *testing.T) {
-	env := newTestEnv(t)
+	for _, newEnv := range dialectRunners(t) {
+		newEnv := newEnv
+		t.Run(fmt.Sprintf("env-%s", newEnv.name), func(t *testing.T) { checkDurationExpiry(t, newEnv.fn) })
+	}
+}
+
+func checkDurationExpiry(t *testing.T, newEnv func(t *testing.T) *testEnv) {
+	env := newEnv(t)
 	subjectID := env.seedSubject("buyer", 1000, "")
 	offer := env.seedOffer(store.FormDuration, 400, store.StatusOnSale)
 
@@ -89,6 +175,13 @@ func TestCheckDurationExpiry(t *testing.T) {
 }
 
 func TestConsumeScenarios(t *testing.T) {
+	for _, newEnv := range dialectRunners(t) {
+		newEnv := newEnv
+		t.Run(fmt.Sprintf("env-%s", newEnv.name), func(t *testing.T) { consumeScenarios(t, newEnv.fn) })
+	}
+}
+
+func consumeScenarios(t *testing.T, newEnv func(t *testing.T) *testEnv) {
 	t.Run("insufficient total is terminal with zero deduction", func(t *testing.T) {
 		env := newTestEnv(t)
 		subjectID := env.seedSubject("buyer", 1000, "")
