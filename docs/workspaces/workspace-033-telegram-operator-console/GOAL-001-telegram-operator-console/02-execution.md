@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.9.0
+version: 2.0.0
 ---
 
 # GOAL-001-telegram-operator-console · 02-execution 索引
@@ -43,7 +43,8 @@ version: 1.9.0
 | [E-028-r4-polling-warning-remediation](02-execution/E-028-r4-polling-warning-remediation.md) | 2026-09-05 | Root R4 F-001 修复 | A-001 self audit 的 polling 单实例 UI 警示已 fixed；Web targeted/full tests 与 build 通过；Root active · 3/4，等待 independent close-out | done |
 | [E-029-r4-root-closeout](02-execution/E-029-r4-root-closeout.md) | 2026-09-05 | Root R4 证据与关门 | A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent pass；A-004 response；Root done · 4/4；VP-033 仍 active | done |
 | [E-030-post-close-operator-inner-page](02-execution/E-030-post-close-operator-inner-page.md) | 2026-09-05 | 关门后 Telegram 人工会话入口与内页分离 | 设置页仅保留配置与入口；人工会话、运行态计数、lease/polling 与 chat 能力移至 `/telegram-settings/operator`；代码 checkpoint `6a94ba28` | done |
+| [E-031-post-close-operator-refresh-scroll](02-execution/E-031-post-close-operator-refresh-scroll.md) | 2026-09-05 | 关门后人工会话刷新稳定性与滚动布局修正 | 后台刷新保留已有消息；会话列表/消息列表独立滚动，composer 固定可见；代码 checkpoint `dc7ac5e5` | done |
 
 ## 执行记录（ledger）
 
-`02-execution/` 平铺；编号递增；时间线只记事实。E-001～E-030 已登记本 Root 的开区、R1～R3 投影、R4 关门以及关门后的 Telegram 人工会话入口与内页分离修正。Root 仍为 `done · 4/4`；本次只追加实现事实与审计响应，不重新打开 Root 或 workspace，VP-033 仍为 `active`。
+`02-execution/` 平铺；编号递增；时间线只记事实。E-001～E-031 已登记本 Root 的开区、R1～R3 投影、R4 关门以及关门后的 Telegram 人工会话入口、刷新稳定性与滚动布局修正。Root 仍为 `done · 4/4`；本次只追加实现事实与审计响应，不重新打开 Root 或 workspace，VP-033 仍为 `active`。
