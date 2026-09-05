@@ -4,15 +4,15 @@ title: Telegram Bot 人工控制台
 status: active
 parent: null
 created: 2026-09-04
-updated: 2026-09-04
-version: 0.2.1
+updated: 2026-09-05
+version: 0.3.0
 ---
 
 # GOAL-001-telegram-operator-console · 03-audit 索引
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
-| — | — | — | — | — | 0 | 尚未到 Goal 审计节点；VRev-075 属愿景层 self Review，不混写本台账 | — |
+| [A-001-r4-root-close-self-audit](03-audit/A-001-r4-root-close-self-audit.md) | 2026-09-05 | self | GOAL-001 Root R4 全退出判据与当前 API/Web 验证 | **fail** | **1** | R1～R3 证据可核对、回归/build 通过；发现 F-001：polling 多副本会丢 Update 的 UI 警示缺失，需修复后独立复审 | [A-001-r4-root-close-self-audit.md](03-audit/A-001-r4-root-close-self-audit.md) |
 
 ## 信息就绪核对（按 scope）
 
@@ -26,4 +26,5 @@ version: 0.2.1
 
 ## 审计记录（ledger）
 
-`03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。
+`03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。A-001
+已记录 Root R4 self finding F-001；在其 fixed 并完成 independent re-audit 前不得关门。
