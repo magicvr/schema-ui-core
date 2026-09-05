@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-031-digital-offer-entitlement
 created: 2026-09-02
 updated: 2026-09-05
-version: 0.2.0
+version: 0.2.1
 parent: null
 ---
 
@@ -98,11 +98,11 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
 |----|--------------|------|----------|----------|------|
-| I-031-001 | 首波权益形态：仅时长、仅次数、或二者并存（一 Offer 一种）。 | required | 判据 1/3 | R1 | open |
-| I-031-002 | 购买状态最小子集（是否要 `pending` 还是同步一拍 fulfilled）。 | required | 判据 2 | R1 | open |
-| I-031-003 | 是否允许 Admin 人工发放/撤销权益（客服纠错）。 | required | 判据 3 | R1 | open |
-| I-031-004 | Telegram 命令清单（若 030 已启用）。 | non-blocking | 判据 5 | R1 | open |
-| I-031-005 | 模块 id（建议 `biz.digital-offer`）。 | non-blocking | 装配 | R1 | open |
+| I-031-001 | 首波权益形态：仅时长、仅次数、或二者并存（一 Offer 一种）。 | required | 判据 1/3 | R1 | **verified**（2026-09-05 用户裁决：二者并存，一 Offer 固定一种；workspace-031 GOAL-002 D-001） |
+| I-031-002 | 购买状态最小子集（是否要 `pending` 还是同步一拍 fulfilled）。 | required | 判据 2 | R1 | **verified**（2026-09-05 用户裁决：同步一拍 fulfilled，无 pending；GOAL-002 D-001） |
+| I-031-003 | 是否允许 Admin 人工发放/撤销权益（客服纠错）。 | required | 判据 3 | R1 | **verified**（2026-09-05 用户裁决：只读 + 作废，不开放人工发放；GOAL-002 D-001） |
+| I-031-004 | Telegram 命令清单（若 030 已启用）。 | non-blocking | 判据 5 | R1 | **verified**（默认冻结 price / buy / entitlements；GOAL-002 D-001，用户可否决） |
+| I-031-005 | 模块 id（建议 `biz.digital-offer`）。 | non-blocking | 装配 | R1 | **verified**（默认冻结 `biz.digital-offer`；GOAL-002 D-001，用户可否决） |
 
 ## 工作区绑定
 
@@ -121,3 +121,4 @@ parent: null
 | 2026-09-02 | 初创 `planned`：用户否决电商类目/商品/订单三件套；确认基座一方数字 Offer+权益；H-002 同进程。业务域分支首个 VP。 |
 | 2026-09-03 | 边界指针：Register 后占用 VP-033 人工台入口；运营台不在本 VP。 |
 | 2026-09-05 | 用户书面确认 H-002 采用同进程模块；VRev-080 self `pass`（0 required），业务域 freshness PASS；RT-Q03/Q05 评估均结论“本波不需要 Redis”；VP-031 `planned → active` v0.2.0，绑定 `workspace-031-digital-offer-entitlement` 并交 `/govern` 建立 Root。 |
+| 2026-09-05 | R1 信息裁决回写（v0.2.1，镜像同步）：I-031-001～003 用户书面裁决（二者并存 / 同步 fulfilled / 只读+作废），I-031-004/005 默认冻结；证据 = workspace-031 GOAL-002 D-001，合同正文 = GOAL-002 D-002。 |
