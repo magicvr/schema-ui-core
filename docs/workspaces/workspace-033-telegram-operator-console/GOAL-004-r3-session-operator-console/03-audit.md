@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 3.5.0
+version: 3.6.0
 ---
 
 # GOAL-004 · R3 审计索引
@@ -49,6 +49,7 @@ version: 3.5.0
 | [A-035-r3-c4-a034-response](03-audit/A-035-r3-c4-a034-response.md) | 2026-09-05 | self | 响应 A-034 independent pass；确认 A-032 三项 recommended fixed；不选择 I-033-023 | **pass** | **0** | `03-audit/A-035-r3-c4-a034-response.md` |
 | [A-036-r3-c4-capability-contract-self](03-audit/A-036-r3-c4-capability-contract-self.md) | 2026-09-05 | self | 用户选择独立 capability 路由；冻结 getChatMember、60 秒缓存、single-flight、403 失效、显式重探与 UI/发送接缝；放行合同 independent 审计 | **pass** | **0** | `03-audit/A-036-r3-c4-capability-contract-self.md` |
 | [A-037-r3-c4-capability-contract-independent-gpt-sol](03-audit/A-037-r3-c4-capability-contract-independent-gpt-sol.md) | 2026-09-05 | independent | gpt-5.6-sol · medium 独立审计 D-011 capability 合同、Go/Web 接缝与 C4 实施前置条件 | **fail** | **4** | `03-audit/A-037-r3-c4-capability-contract-independent-gpt-sol.md` |
+| [A-038-r3-c4-capability-implementation-self](03-audit/A-038-r3-c4-capability-implementation-self.md) | 2026-09-05 | self | 响应 A-037 F-037-1～F-037-4；capability implementation、测试与非阻断覆盖 | **pass** | **0** | `03-audit/A-038-r3-c4-capability-implementation-self.md` |
 
 ## 信息就绪核对（按 scope）
 
@@ -59,14 +60,24 @@ version: 3.5.0
 | 资料引用 | 无 | workspace `shared_materials_catalog: none` |
 | C3 实现就绪 | **pass（最终 independent close-out，已响应）** | A-027 Grok independent `pass`（open required = 0）；A-028 已响应并关闭 C3 检查点；HEAD `023122c7`；确认 A-018 F-004～F-007、A-023 F-001/F-002、A-025 F-001 响应侧 `fixed`（原文不改写 A-001～A-027）；本会话 gated PostgreSQL **PASS**（不是 skip）；C4 仍待开始 |
 | C3 合同就绪 | **pass（合同侧，已响应）** | D-010 已记录用户裁决；A-019 响应 A-018 并将 F-001～F-007 补入 D-009；A-020 Grok independent re-audit `pass`，A-021 response 确认 A-018 F-001/F-002/F-003 响应侧 `fixed`（原文不改写）；合同门禁已放行，C3 检查点后由 A-027/A-028 完成关闭 |
-| C4 UI 基础切片 | **pass（A-032 推荐覆盖钉 independent re-audit 已响应；capability 合同已由 A-036 self 通过，A-037 independent fail；不关闭 C4）** | A-034 Grok independent `pass`（open required = 0）；A-035 已响应并确认 A-032 F-001/F-002/F-003 `fixed`（原文不改写 A-001～A-034）；D-011 已记录用户选择独立 capability 路由及缓存/403/显式重探合同；A-036 self `pass`（open required = 0）；A-037 由 gpt-5.6-sol 子代理独立审计为 `fail`，F-037-1～F-037-4 均开放；写集外 `form-controls.tsx` L946–947 `tsc` 基线仍失败；不放行 C4 关门 |
-| C4 capability 合同/实施就绪 | **fail（A-037 independent，open required = 4）** | capability route/service/injection、GetChatMember/结构化 403、cache/single-flight/精确失效、Web capability 生命周期均尚未形成可验证闭环；须按 fixed 路径实施并复核 |
+| C4 UI 基础切片 | **pass（A-032 推荐覆盖钉 independent re-audit 已响应；A-038 已响应 capability implementation；不关闭 C4）** | A-034 Grok independent `pass`（open required = 0）；A-035 已响应并确认 A-032 F-001/F-002/F-003 `fixed`（原文不改写 A-001～A-034）；D-011 已记录用户选择独立 capability 路由及缓存/403/显式重探合同；A-036 self `pass`、A-037 GPT-5.6-sol independent contract `fail`、A-038 self response `pass`（open required = 0）；`form-controls.tsx` L946–947 已由 `da9d955e` 修复，build 与 Web 全量测试通过；等待 implementation independent，不放行 C4 关门 |
+| C4 capability 合同/实施就绪 | **conditional（A-038 self response pass；implementation independent pending）** | A-037 原文 fail 保留；`cae40b3a` 已落地 route/service/injection、GetChatMember/结构化 403、cache/single-flight/精确失效和 Web 生命周期，`da9d955e` 已修复 Web 日期边界类型错误；A-038 将 F-037-1～F-037-4 响应为 fixed，build 与 Web 全量测试已通过；尚未取得当前实现的 independent verdict，不能关闭 C4 |
 
 ## 审计记录（ledger）
 
 A-036 为 I-033-023 capability 合同 self gate：用户已选择 D-011 的独立 capability 路由，合同覆盖 `getChatMember` 状态映射、60 秒 bot/chat cache、single-flight、Telegram 403 精确失效、`refresh=1` 显式重探、非 403 错误及现有发送/UI 状态机接缝；`open_required: 0`。本条不修改 status/progress，不关闭 C4，等待 independent 合同审计。
 
 A-037 为一次性 `subagent (gpt-5.6-sol · reasoning medium)` 的 independent capability 合同审计（`fail`，开放 required = 4）。当前 handler/composition 尚无 capability route/service 注入，Bot API 尚无 `GetChatMember` 与结构化 403，cache/single-flight/403 精确失效尚未接通，Web capability 请求与生命周期也未落地。A-036 原文保留；F-037-1～F-037-4 不接受 residual 或 overrule，须按 fixed 路径形成代码、测试与错误目录证据后由 `/govern` 响应。
+
+A-038 为对 A-037 F-037-1～F-037-4 的 self implementation response（`pass`，开放 required = 0）。
+在 checkpoint `cae40b3a` 上已核对 capability route/service/composition、GetChatMember 与结构化
+403、独立 namespace/60 秒 absolute TTL/single-flight/403 精确失效，以及 Web capability
+生命周期、发送/retry fail-closed 接缝；全 API、Telegram/handler race、全 Web 92/1213
+与 Telegram 15/15 验证通过。用户要求清除构建错误后，`da9d955e` 修复
+`form-controls.tsx:946-947` 的类型分支、保留 `datePicker` ISO 边界并补充解析/DOM 回归测试，
+`npm run build` 已通过，三个构建生成 conformance 文件已恢复。A-037 原文保留，四项
+finding 响应侧标为 `fixed`，不把 self response 当作 independent 成功依据；下一步等待
+GPT-5.6-sol（medium）independent implementation audit，不关闭 C4。
 
 A-035 为响应 A-034 Grok independent `pass` 的 self close-out response：A-032 三项 recommended 覆盖钉已确认响应侧 `fixed`，A-034 无新增 required/recommended finding；原文 A-001～A-034 保留。本条不改 status/progress、不关闭 C4。D-011 已记录用户选择独立 capability 路由，I-033-023 已由 collecting 进入 verified (user decision)，实现与后续 independent 审计仍未完成。
 

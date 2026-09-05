@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.9.0
+version: 2.0.0
 ---
 
 # GOAL-004 · R3 执行索引
@@ -33,7 +33,8 @@ version: 1.9.0
 | [E-019-r3-c4-a032-response](02-execution/E-019-r3-c4-a032-response.md) | 2026-09-05 | R3 C4 A-032 推荐项响应 | 精确发送键、同 chat 成绩单单飞、composition/缺省占用/lease 热更新接缝已处理；A-033 self；修复后 independent re-audit 待进行；R3 active · 3/4 | `02-execution/E-019-r3-c4-a032-response.md` |
 | [E-020-r3-c4-a034-response](02-execution/E-020-r3-c4-a034-response.md) | 2026-09-05 | R3 C4 A-034 独立复审响应 | A-034 Grok independent pass；A-032 三项 recommended fixed；无新增 required/recommended；I-033-023 待裁决；R3 active · 3/4 | `02-execution/E-020-r3-c4-a034-response.md` |
 | [E-021-r3-c4-capability-decision](02-execution/E-021-r3-c4-capability-decision.md) | 2026-09-05 | R3 C4 capability 路由裁决与合同门禁 | 用户选择独立 capability 路由；D-011/A-036 self pass；I-033-023 已 verified；等待 Grok independent 合同审计 | `02-execution/E-021-r3-c4-capability-decision.md` |
+| [E-022-r3-c4-capability-implementation](02-execution/E-022-r3-c4-capability-implementation.md) | 2026-09-05 | R3 C4 capability 实现与非阻断覆盖 | `cae40b3a` + `da9d955e` 已落地；A-038 self response 将 A-037 F-037-1～F-037-4 fixed，Web 构建错误已修复；等待 GPT-5.6-sol independent implementation audit | `02-execution/E-022-r3-c4-capability-implementation.md` |
 
 ## 事实边界
 
-只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；`fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 与 A-025 independent re-audit 已记录；随后补齐 A-025 F-001 recommended，A-026 response、A-027 最终 Grok independent close-out `pass` 与 A-028 response 已记录，C3 已关闭，R3 为 `active · 3/4`；E-017/A-029 已记录 C4 会话列表、成绩单与基础刷新切片，E-018/A-031 已响应 A-030 的双语文案、10 秒/单飞测试和业务占用隐藏/lease 接缝，E-021 已记录用户选择独立 capability 路由及 A-036 self contract pass，等待 Grok independent 合同审计，C4 仍未关门。定向 Web 10/10、全量 92/1205、API Telegram/composition 定向测试通过；`npm run build` 的写集外 form-controls 类型错误仍为已知基线，未修改。
+只记录已发生事实；C2 已发生 v68 数据库迁移、入站 repository、共同 webhook/polling 接线及验证提交 `72486d59`；A-013 后的非阻断修复提交为 `ebf68537`；A-015 对 `104f88a9` 完成 Grok independent re-audit 并通过，A-016 已响应，C2 已关闭。A-020 对 C3 合同修复完成 Grok independent re-audit 并通过，A-021 已响应；`7ddc97e1` 落地 C3 v69/operator 实现及 F-004～F-007 非阻断项，A-022 self、A-023 Grok independent pass 已记录；`fa0caa70` 修复 A-023 F-001/F-002 recommended，A-024 response 与 A-025 independent re-audit 已记录；随后补齐 A-025 F-001 recommended，A-026 response、A-027 最终 Grok independent close-out `pass` 与 A-028 response 已记录，C3 已关闭，R3 为 `active · 3/4`；E-017/A-029 已记录 C4 会话列表、成绩单与基础刷新切片，E-018/A-031 已响应 A-030 的双语文案、10 秒/单飞测试和业务占用隐藏/lease 接缝，E-021 已记录用户选择独立 capability 路由及 A-036 self contract pass；A-037 为 GPT-5.6-sol（medium）independent contract audit `fail`，E-022/`cae40b3a` 已完成 capability 实现及非阻断覆盖，A-038 self response 已将四项 required 响应为 fixed，`da9d955e` 已修复 Web 日期边界类型错误并补回归测试，`npm run build` 已通过，等待 GPT-5.6-sol independent implementation audit，C4 仍未关门。定向 Web 15/15、全量 92/1213、API 全量 `go test ./...` 与 Telegram/handler race 通过；构建生成的 conformance 文件已恢复且未进入 checkpoint。
