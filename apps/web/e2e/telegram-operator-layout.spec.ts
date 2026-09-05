@@ -6,9 +6,9 @@ const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
-function jsonResponse(body: unknown) {
+function jsonResponse(body: unknown, status = 200) {
   return {
-    status: 200,
+    status,
     contentType: "application/json",
     body: JSON.stringify(body),
   };
@@ -64,6 +64,10 @@ async function installTelegramFixtures(page: import("@playwright/test").Page): P
       return;
     }
     if (url.pathname === "/api/channel/telegram/operator/sessions/chat-1/messages") {
+      if (route.request().method() === "POST") {
+        await route.fulfill(jsonResponse({ status: "sent" }, 201));
+        return;
+      }
       const items = operatorMessages();
       await route.fulfill(jsonResponse({ items, total: items.length, page: 1, pageSize: 100 }));
       return;
@@ -142,11 +146,52 @@ test("Telegram operator keeps document/main fixed while sessions and messages sc
   expect(metrics.messagesAtBottom).toBe(true);
   expect(metrics.composerWithinOperator).toBe(true);
 
+  const textarea = page.locator("[data-telegram-composer] textarea");
+  await textarea.fill("browser Ctrl+Enter newline");
+  await textarea.press("Control+Enter");
+  await expect(textarea).toHaveValue("browser Ctrl+Enter newline\n");
+
+  const enterSendRequest = page.waitForRequest((request) =>
+    request.url().endsWith("/api/channel/telegram/operator/sessions/chat-1/messages") && request.method() === "POST");
+  await textarea.fill("browser Enter send");
+  await textarea.press("Enter");
+  const enterRequest = await enterSendRequest;
+  expect(JSON.parse(enterRequest.postData() ?? "{}")).toEqual(expect.objectContaining({ text: "browser Enter send" }));
+  await expect(textarea).toHaveValue("");
+
+  const reverseShortcuts = page.locator("[data-telegram-shortcut-reverse]");
+  await reverseShortcuts.check();
+  await expect(page.locator("[data-telegram-shortcut-hint]")).toContainText("Ctrl+Enter sends");
+  await textarea.fill("browser reversed Enter newline");
+  await textarea.press("Enter");
+  await expect(textarea).toHaveValue("browser reversed Enter newline\n");
+
+  const ctrlEnterSendRequest = page.waitForRequest((request) =>
+    request.url().endsWith("/api/channel/telegram/operator/sessions/chat-1/messages") && request.method() === "POST");
+  await textarea.fill("browser reversed Ctrl+Enter send");
+  await textarea.press("Control+Enter");
+  const ctrlEnterRequest = await ctrlEnterSendRequest;
+  expect(JSON.parse(ctrlEnterRequest.postData() ?? "{}")).toEqual(expect.objectContaining({ text: "browser reversed Ctrl+Enter send" }));
+  await expect(textarea).toHaveValue("");
+
+  const messageList = page.locator("[data-telegram-message-list]");
+  const positionBeforeRefresh = await messageList.evaluate((element) => {
+    element.scrollTop = Math.floor(element.scrollHeight / 2);
+    element.dispatchEvent(new Event("scroll", { bubbles: true }));
+    return element.scrollTop;
+  });
+  await expect.poll(() => messageList.evaluate((element) => element.scrollTop)).toBe(positionBeforeRefresh);
+  const timelineRefreshResponse = page.waitForResponse((response) =>
+    response.request().method() === "GET"
+    && response.url().includes("/api/channel/telegram/operator/sessions/chat-1/messages"));
+  await page.getByRole("button", { name: "Refresh" }).click();
+  await timelineRefreshResponse;
+  await expect.poll(() => messageList.evaluate((element) => element.scrollTop)).toBe(positionBeforeRefresh);
+
   const beforeScroll = await page.evaluate(() => ({
     windowScrollY: window.scrollY,
     documentScrollTop: (document.scrollingElement ?? document.documentElement).scrollTop,
   }));
-  const messageList = page.locator("[data-telegram-message-list]");
   await messageList.evaluate((element) => {
     element.scrollTop = element.scrollHeight;
   });

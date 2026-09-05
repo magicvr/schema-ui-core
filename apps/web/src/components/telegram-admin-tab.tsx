@@ -103,6 +103,23 @@ function telegramTimelineIsNearBottom(element: HTMLElement): boolean {
   return element.scrollHeight - element.scrollTop - element.clientHeight <= telegramTimelineBottomThreshold;
 }
 
+function insertTelegramComposerLineBreak(textarea: HTMLTextAreaElement, setValue: (value: string) => void): void {
+  const selectionStart = textarea.selectionStart;
+  const selectionEnd = textarea.selectionEnd;
+  const nextValue = `${textarea.value.slice(0, selectionStart)}\n${textarea.value.slice(selectionEnd)}`;
+  const nextCaret = selectionStart + 1;
+  setValue(nextValue);
+  const restoreSelection = () => {
+    textarea.selectionStart = nextCaret;
+    textarea.selectionEnd = nextCaret;
+  };
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(restoreSelection);
+  } else {
+    setTimeout(restoreSelection, 0);
+  }
+}
+
 const inputClass =
   "h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20";
 const buttonClass =
@@ -300,6 +317,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     && typeof status.bot_id === "number"
     && status.bot_id > 0
     && (status.receiver !== telegramPollingMode || leaseState === "active");
+  const selectedSession = sessions.find((session) => session.chatId === selectedChatId) ?? null;
 
   useEffect(() => {
     operatorReadyRef.current = operatorReady;
@@ -937,9 +955,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                             : item.status;
                       const senderLabel = isOutbound
                         ? t("schema.telegram.operator.senderBot")
-                        : sessions.find((session) => session.chatId === selectedChatId)?.title
-                          || item.senderUsername
-                          || sessions.find((session) => session.chatId === selectedChatId)?.username
+                        : item.senderUsername
+                          || (selectedSession?.chatType === "private"
+                            ? selectedSession.title || selectedSession.username
+                            : undefined)
                           || t("schema.telegram.operator.senderUser");
                       const metadataClass = isOutbound ? "text-primary-foreground/75" : "text-muted-foreground";
                       return (
@@ -1002,9 +1021,14 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                       const isPlainEnter = !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
                       const isCtrlEnter = event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
                       const shouldSend = reverseComposerShortcuts ? isCtrlEnter : isPlainEnter;
-                      if (!shouldSend) return;
-                      event.preventDefault();
-                      void sendMessage();
+                      const shouldInsertLineBreak = reverseComposerShortcuts ? isPlainEnter : isCtrlEnter;
+                      if (shouldSend) {
+                        event.preventDefault();
+                        void sendMessage();
+                      } else if (shouldInsertLineBreak) {
+                        event.preventDefault();
+                        insertTelegramComposerLineBreak(event.currentTarget, setComposerText);
+                      }
                     }}
                     placeholder={t("schema.telegram.operator.composerPlaceholder")}
                     rows={3}

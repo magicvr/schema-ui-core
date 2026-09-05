@@ -285,7 +285,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
       if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
       if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
         return jsonResponse({
-          items: [{ chatId: "8001", chatType: "private", title: "Alice", username: "alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+          items: [{ chatId: "8001", chatType: "group", title: "Support group", username: "support", lastMessageAt: "2026-09-05T00:00:00Z" }],
           total: 1,
           page: 1,
           pageSize: 100,
@@ -295,7 +295,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
         timelineCalls += 1;
         return jsonResponse({
           items: [
-            { chatId: "8001", direction: "inbound", status: "received", occurredAt: "2026-09-05T00:01:00Z", updateId: "9002", text: "newer from Alice" },
+            { chatId: "8001", direction: "inbound", status: "received", occurredAt: "2026-09-05T00:01:00Z", updateId: "9002", senderUsername: "alice", text: "newer from Alice" },
             { chatId: "8001", direction: "outbound", status: "sent", occurredAt: "2026-09-05T00:00:00Z", requestId: "operator-1", text: "older from Bot" },
           ],
           total: 2,
@@ -318,7 +318,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(messages[0].textContent).toContain("older from Bot");
     expect(messages[1].textContent).toContain("newer from Alice");
     expect(messages[0].querySelector("[data-telegram-sender]")?.textContent).toBe("Bot");
-    expect(messages[1].querySelector("[data-telegram-sender]")?.textContent).toBe("Alice");
+    expect(messages[1].querySelector("[data-telegram-sender]")?.textContent).toBe("alice");
     expect(messages[0].className).toContain("bg-primary");
     expect(messages[1].className).toContain("bg-background");
     expect(container.querySelector("[data-telegram-message-row]")?.className).toContain("justify-end");
@@ -363,8 +363,11 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
 
     await act(async () => setNativeTextAreaValue(textarea, "ctrl Enter inserts a line"));
     const ctrlEnterNewline = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", ctrlKey: true });
-    textarea.dispatchEvent(ctrlEnterNewline);
-    expect(ctrlEnterNewline.defaultPrevented).toBe(false);
+    await act(async () => {
+      textarea.dispatchEvent(ctrlEnterNewline);
+    });
+    expect(ctrlEnterNewline.defaultPrevented).toBe(true);
+    expect(textarea.value).toBe("ctrl Enter inserts a line\n");
     expect(calls.filter((call) => call.url.endsWith("/messages") && call.method === "POST")).toHaveLength(1);
 
     await act(async () => {
@@ -376,8 +379,11 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
 
     await act(async () => setNativeTextAreaValue(textarea, "plain Enter inserts a line"));
     const reversedPlainEnter = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" });
-    textarea.dispatchEvent(reversedPlainEnter);
-    expect(reversedPlainEnter.defaultPrevented).toBe(false);
+    await act(async () => {
+      textarea.dispatchEvent(reversedPlainEnter);
+    });
+    expect(reversedPlainEnter.defaultPrevented).toBe(true);
+    expect(textarea.value).toBe("plain Enter inserts a line\n");
     expect(calls.filter((call) => call.url.endsWith("/messages") && call.method === "POST")).toHaveLength(1);
 
     await act(async () => setNativeTextAreaValue(textarea, "ctrl Enter sends"));
