@@ -1021,6 +1021,7 @@
   "schema.telegram.operator.empty": "No inbound text conversations yet.",
   "schema.telegram.operator.timeline": "Message timeline",
   "schema.telegram.operator.timelineLoading": "Loading messages…",
+  "schema.telegram.operator.timelineRefreshing": "Refreshing…",
   "schema.telegram.operator.timelineFailed": "Could not load this conversation.",
   "schema.telegram.operator.timelineEmpty": "No text messages in this conversation.",
   "schema.telegram.operator.inbound": "Inbound",

@@ -1021,6 +1021,7 @@
   "schema.telegram.operator.empty": "暂无入站文本会话。",
   "schema.telegram.operator.timeline": "消息成绩单",
   "schema.telegram.operator.timelineLoading": "正在加载消息…",
+  "schema.telegram.operator.timelineRefreshing": "正在刷新…",
   "schema.telegram.operator.timelineFailed": "无法加载该会话。",
   "schema.telegram.operator.timelineEmpty": "该会话暂无文本消息。",
   "schema.telegram.operator.inbound": "入站",

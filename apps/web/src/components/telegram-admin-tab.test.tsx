@@ -170,9 +170,25 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("hello");
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("reply");
     expect(container.textContent).toContain("Mock-captured messages: 3");
+    const operator = container.querySelector("[data-telegram-operator]") as HTMLElement;
+    expect(operator.className).toContain("max-h-[calc(100dvh-12rem)]");
+    expect(operator.className).toContain("overflow-hidden");
+    const sessions = container.querySelector("[data-telegram-sessions]") as HTMLElement;
+    expect(sessions.className).toContain("overflow-y-auto");
+    expect(sessions.className).toContain("overflow-x-hidden");
+    expect(sessions.className).toContain("min-h-0");
+    const messageList = container.querySelector("[data-telegram-message-list]") as HTMLElement;
+    expect(messageList).not.toBeNull();
+    expect(messageList.className).toContain("flex-1");
+    expect(messageList.className).toContain("min-h-0");
+    expect(messageList.className).toContain("overflow-y-auto");
+    expect(messageList.className).toContain("overflow-x-hidden");
+    const transcript = container.querySelector("[data-telegram-transcript]") as HTMLElement;
+    expect(transcript.className).toContain("min-h-0");
     const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;
     expect(composer).not.toBeNull();
     expect(composer.disabled).toBe(true);
+    expect(composer.className).toContain("shrink-0");
     expect(container.querySelector("[data-telegram-composer]")?.textContent).toContain("Send");
     expect(container.querySelector("[data-telegram-retry='operator-1']")).toHaveProperty("disabled", true);
   });
@@ -494,6 +510,85 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
       expect(timelineCalls).toBe(1);
     } finally {
       Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps existing messages visible while a background timeline refresh is pending", async () => {
+    vi.useFakeTimers();
+    try {
+      let timelineCalls = 0;
+      let allowPendingRefresh = false;
+      let releaseRefresh!: (response: Response) => void;
+      const pendingRefresh = new Promise<Response>((resolve) => {
+        releaseRefresh = resolve;
+      });
+      const container = renderTab(async (input) => {
+        const url = String(input);
+        if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+        if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+          return jsonResponse({
+            items: [{ chatId: "8001", chatType: "private", title: "Alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+            total: 1,
+            page: 1,
+            pageSize: 100,
+          });
+        }
+        if (url === "/api/channel/telegram/operator/sessions/8001/messages?page=1&pageSize=100") {
+          timelineCalls += 1;
+          if (allowPendingRefresh) return pendingRefresh;
+          return jsonResponse({
+            items: [{ chatId: "8001", direction: "inbound", status: "received", occurredAt: "2026-09-05T00:00:00Z", text: "first message" }],
+            total: 1,
+            page: 1,
+            pageSize: 100,
+          });
+        }
+        if (url === "/api/channel/telegram/operator/sessions/8001/capability?refresh=1") {
+          return jsonResponse({ chatId: "8001", canSend: false });
+        }
+        return jsonResponse({}, 404);
+      });
+
+      await flushPromises();
+      await flushPromises();
+      expect(timelineCalls).toBeGreaterThanOrEqual(1);
+      expect(container.querySelector("[data-telegram-message-list]")).not.toBeNull();
+      expect(container.textContent).toContain("first message");
+
+      const refresh = container.querySelector("[data-telegram-operator-refresh]") as HTMLButtonElement;
+      const timelineCallsBeforeRefresh = timelineCalls;
+      allowPendingRefresh = true;
+      await act(async () => {
+        refresh.click();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(timelineCalls).toBe(timelineCallsBeforeRefresh + 1);
+      expect(container.querySelector("[data-telegram-message-list]")).not.toBeNull();
+      expect(container.querySelector("[data-telegram-message]")).not.toBeNull();
+      expect(container.textContent).toContain("first message");
+      expect(container.querySelector("[data-telegram-timeline-refreshing]")).not.toBeNull();
+      expect(container.textContent).not.toContain("Loading messages…");
+
+      await act(async () => {
+        releaseRefresh(jsonResponse({
+          items: [{ chatId: "8001", direction: "inbound", status: "received", occurredAt: "2026-09-05T00:02:00Z", text: "updated message" }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        }));
+        await pendingRefresh;
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(container.textContent).toContain("updated message");
+      expect(container.textContent).not.toContain("first message");
+      expect(container.querySelector("[data-telegram-timeline-refreshing]")).toBeNull();
+    } finally {
       vi.useRealTimers();
     }
   });

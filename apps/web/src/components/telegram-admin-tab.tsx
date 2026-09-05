@@ -1,10 +1,10 @@
 // Telegram channel admin console (GOAL-006 R5, 判据 #5 补做 Admin UI tab,
 // user-adjudicated 2026-09-03): the channel.telegram settings page is hosted by
-// this custom component — Bot Token / Webhook Secret are edited write-only
+// these custom surfaces — Bot Token / Webhook Secret are edited write-only
 // (GET only reports token_set/secret_set booleans; PATCH accepts new values,
-// empty keeps current — F-002 / R-005), plus the captured-message counter for
-// the mock outbound sink. Secrets never leave the API in plaintext or partial
-// masks.
+// empty keeps current — F-002 / R-005). The operator surface also exposes the
+// captured-message counter for the mock outbound sink. Secrets never leave the
+// API in plaintext or partial masks.
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useTranslate } from "@/i18n/runtime";
@@ -381,11 +381,17 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       const nextChatId = currentChatId !== null && nextSessions.some((session) => session.chatId === currentChatId)
         ? currentChatId
         : nextSessions[0]?.chatId ?? null;
+      const chatChanged = currentChatId !== nextChatId;
       selectedChatRef.current = nextChatId;
       setSelectedChatId(nextChatId);
       if (nextChatId === null) {
         setTimeline([]);
         setTimelineLoadState("ready");
+        setOperatorCapability("unknown");
+      } else if (chatChanged) {
+        setTimeline([]);
+        setTimelineLoadState("loading");
+        setOperatorCapability("unknown");
       }
       setSessionsLoadState("ready");
       return nextSessions;
@@ -798,7 +804,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       ) : null}
 
       {isOperatorSurface && status !== null && status.configured && status.business_occupied === false && typeof status.bot_id === "number" && status.bot_id > 0 ? (
-        <section data-telegram-operator className="space-y-3 rounded-md border border-border/60 bg-muted/10 p-3">
+        <section data-telegram-operator className="flex max-h-[calc(100dvh-12rem)] min-h-0 flex-col gap-3 overflow-hidden rounded-md border border-border/60 bg-muted/10 p-3">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">{t("schema.telegram.operator.title")}</h3>
             <button
@@ -816,16 +822,23 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
               {t("schema.telegram.status.captured")} {status.captured_messages_count}
             </p>
           ) : null}
+          {sessionsLoadState === "error" && sessions.length > 0 ? (
+            <p role="alert" className="shrink-0 text-xs text-destructive">{t("schema.telegram.operator.loadFailed")}</p>
+          ) : null}
 
           {!operatorReady ? (
             <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.unavailable")}</p>
-          ) : sessionsLoadState === "error" ? (
-            <p role="alert" className="text-xs text-destructive">{t("schema.telegram.operator.loadFailed")}</p>
-          ) : sessions.length === 0 && sessionsLoadState === "ready" ? (
-            <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.empty")}</p>
+          ) : sessions.length === 0 ? (
+            sessionsLoadState === "error" ? (
+              <p role="alert" className="shrink-0 text-xs text-destructive">{t("schema.telegram.operator.loadFailed")}</p>
+            ) : sessionsLoadState === "ready" ? (
+              <p className="shrink-0 text-xs text-muted-foreground">{t("schema.telegram.operator.empty")}</p>
+            ) : (
+              <p className="shrink-0 text-xs text-muted-foreground">{t("feedback.loading")}</p>
+            )
           ) : (
-            <div className="grid gap-3 lg:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)]">
-              <nav aria-label={t("schema.telegram.operator.select")} data-telegram-sessions className="space-y-1">
+            <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
+              <nav aria-label={t("schema.telegram.operator.select")} data-telegram-sessions className="max-h-40 min-h-0 space-y-1 overflow-x-hidden overflow-y-auto overscroll-contain pr-1 lg:max-h-none">
                 {sessions.map((session) => {
                   const displayName = session.title || session.username || session.chatId;
                   return (
@@ -835,30 +848,37 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                       data-telegram-session={session.chatId}
                       aria-pressed={selectedChatId === session.chatId}
                       onClick={() => {
+                        const chatChanged = selectedChatRef.current !== session.chatId;
                         selectedChatRef.current = session.chatId;
                         setSelectedChatId(session.chatId);
+                        if (chatChanged) {
+                          setTimeline([]);
+                          setTimelineLoadState("loading");
+                          setOperatorCapability("unknown");
+                        }
                         void loadTimeline(session.chatId);
                         void loadCapability(session.chatId, true);
                       }}
                       className="block w-full rounded-md border border-transparent px-2.5 py-2 text-left text-xs hover:bg-muted aria-pressed:border-border aria-pressed:bg-muted/60"
                     >
                       <span className="block truncate font-medium">{displayName}</span>
-                      <span className="block text-muted-foreground">{session.chatType} · {session.chatId}</span>
+                      <span className="block break-all text-muted-foreground">{session.chatType} · {session.chatId}</span>
                     </button>
                   );
                 })}
               </nav>
 
-              <div data-telegram-transcript className="min-w-0 space-y-3">
-                <h4 className="text-xs font-semibold text-muted-foreground">{t("schema.telegram.operator.timeline")}</h4>
-                {timelineLoadState === "loading" ? (
-                  <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.timelineLoading")}</p>
-                ) : timelineLoadState === "error" ? (
-                  <p role="alert" className="text-xs text-destructive">{t("schema.telegram.operator.timelineFailed")}</p>
-                ) : timeline.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{t("schema.telegram.operator.timelineEmpty")}</p>
-                ) : (
-                  <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+              <div data-telegram-transcript className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
+                <div className="flex shrink-0 items-center justify-between gap-2">
+                  <h4 className="min-w-0 truncate text-xs font-semibold text-muted-foreground">{t("schema.telegram.operator.timeline")}</h4>
+                  {timelineLoadState === "loading" && timeline.length > 0 ? (
+                    <span role="status" data-telegram-timeline-refreshing className="shrink-0 text-xs text-muted-foreground">{t("schema.telegram.operator.timelineRefreshing")}</span>
+                  ) : timelineLoadState === "error" && timeline.length > 0 ? (
+                    <span role="alert" className="shrink-0 text-xs text-destructive">{t("schema.telegram.operator.timelineFailed")}</span>
+                  ) : null}
+                </div>
+                {timeline.length > 0 ? (
+                  <div data-telegram-message-list className="min-h-0 min-w-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain pr-1">
                     {timeline.map((item, index) => {
                       const directionLabel = item.direction === "inbound"
                         ? t("schema.telegram.operator.inbound")
@@ -877,9 +897,9 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                           data-direction={item.direction}
                           className="rounded-md border border-border/50 bg-background/70 px-3 py-2 text-xs"
                         >
-                          <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                            <span>{directionLabel} · {statusLabel}</span>
-                            <time dateTime={item.occurredAt}>{item.occurredAt}</time>
+                          <div className="flex min-w-0 items-center justify-between gap-2 text-muted-foreground">
+                            <span className="min-w-0 truncate">{directionLabel} · {statusLabel}</span>
+                            <time className="max-w-[45%] shrink-0 truncate text-right" dateTime={item.occurredAt} title={item.occurredAt}>{item.occurredAt}</time>
                           </div>
                           <p className="mt-1 whitespace-pre-wrap break-words">{item.text}</p>
                           {item.direction === "outbound" && item.status === "failed" ? (
@@ -899,12 +919,18 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                       );
                     })}
                   </div>
+                ) : timelineLoadState === "loading" ? (
+                  <p className="shrink-0 text-xs text-muted-foreground">{t("schema.telegram.operator.timelineLoading")}</p>
+                ) : timelineLoadState === "error" ? (
+                  <p role="alert" className="shrink-0 text-xs text-destructive">{t("schema.telegram.operator.timelineFailed")}</p>
+                ) : (
+                  <p className="shrink-0 text-xs text-muted-foreground">{t("schema.telegram.operator.timelineEmpty")}</p>
                 )}
 
                 <fieldset
                   data-telegram-composer
                   disabled={operatorCapability !== "allowed" || !operatorReady}
-                  className="space-y-2 rounded-md border border-border/50 p-3 disabled:opacity-60"
+                  className="shrink-0 space-y-2 rounded-md border border-border/50 p-3 disabled:opacity-60"
                 >
                   <legend className="px-1 text-xs font-semibold">{t("schema.telegram.operator.composer")}</legend>
                   <textarea
@@ -913,10 +939,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                     onChange={(event) => setComposerText(event.target.value)}
                     placeholder={t("schema.telegram.operator.composerPlaceholder")}
                     rows={3}
-                    className="min-h-20 w-full resize-y rounded-md border border-input/80 bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+                    className="min-h-20 max-h-40 w-full resize-y rounded-md border border-input/80 bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                   />
-                  <div className="flex items-center justify-between gap-2">
-                    <p role="status" className="text-xs text-muted-foreground">
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <p role="status" className="min-w-0 flex-1 break-words text-xs text-muted-foreground">
                       {operatorCapability === "unknown"
                         ? t("schema.telegram.operator.capabilityPending")
                         : operatorCapability === "allowed"
@@ -929,7 +955,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                       type="button"
                       disabled={sending || operatorCapability !== "allowed" || !operatorReady || composerText.trim() === ""}
                       onClick={() => void sendMessage()}
-                      className={buttonClass}
+                      className={`${buttonClass} shrink-0`}
                     >
                       {sending ? t("feedback.submitting") : t("schema.telegram.operator.send")}
                     </button>
