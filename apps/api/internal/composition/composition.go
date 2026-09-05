@@ -954,7 +954,13 @@ func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store,
 		if err != nil {
 			return nil, fmt.Errorf("composition: telegram runtime: %w", err)
 		}
-		sender := telegraminternal.NewHTTPSender(rt, nil, "")
+		// A-012 F-008: the outbound sender rides the same test seam as the
+		// Bot API / polling clients. Production options are zero-valued, so
+		// NewHTTPSender still defaults to the real Bot API client and URL —
+		// no production semantics change; the Telegram-enabled composition-root
+		// acceptance test can then capture replies through the fake client
+		// instead of touching the real network.
+		sender := telegraminternal.NewHTTPSender(rt, options.HTTPClient, options.APIBaseURL)
 		webhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
 			TokenGetter:  rt.GetToken,
 			SecretGetter: rt.GetSecret,

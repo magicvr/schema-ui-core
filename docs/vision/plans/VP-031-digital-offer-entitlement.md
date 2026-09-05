@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-031-digital-offer-entitlement
 title: 数字 Offer 与权益
-status: closed
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-031-digital-offer-entitlement
 created: 2026-09-02
 updated: 2026-09-05
-version: 0.3.2
+version: 0.3.3
 parent: null
 ---
 
@@ -17,8 +17,8 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-05 · v0.2.0 · 1 区 · VRev-080 self `pass`） |
-| lead_workspace | `workspace-031-digital-offer-entitlement`（唯一 lead delivery；Root `GOAL-001-digital-offer-entitlement` `active · 0/4`） |
+| status | **`active`**（2026-09-05 · v0.3.3 · 第 3 次关门撤回：A-012 independent re-audit `conditional` 2 required——F-007/F-008 证据缺口；D-004 fixed ×2 + A-013 closed ×2；待 focused independent closure 复审后重新关门） |
+| lead_workspace | `workspace-031-digital-offer-entitlement`（唯一 lead delivery；Root `GOAL-001-digital-offer-entitlement` `active · 3/4`，R4 重开） |
 | Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活审视 = [VRev-080](../reviews/VRev-080-vp031-digital-offer-entitlement-activation.md) self `pass`（0 required；业务域 freshness PASS；H-002 同进程书面确认；RT-Q03/Q05 = 本波不需要 Redis） |
 | 组合位置 | **业务域分支** · 本仓库**第一个**业务域 VP。卖的是数字服务/权益，**不是**电商 Catalog/SKU/税/库存/物流订单 |
 
@@ -114,8 +114,8 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | `closed`（第 2 次关门 2026-09-05 · 运行时集成整改经 A-010 independent `pass` 确认） |
-| lead_workspace | `workspace-031-digital-offer-entitlement`（Root `GOAL-001-digital-offer-entitlement` `done · 4/4`；纲领 R1～R4 全部关门） |
+| status | `active`（第 3 次关门撤回 2026-09-05 · A-012 independent re-audit `conditional` 2 required——F-007 迁移失败/reopen 证据、F-008 Telegram-enabled 组合根与结构化 Manifest；D-004 fixed ×2、A-013 closed ×2；待 focused independent closure 复审 `pass` 后重新关门） |
+| lead_workspace | `workspace-031-digital-offer-entitlement`（Root `GOAL-001-digital-offer-entitlement` `active · 3/4`；R1～R3 关门、R4 重开） |
 | 交付证据 | 判据 1～8 证据矩阵：workspace-031 GOAL-005 `02-execution/E-001-evidence-matrix.md`；代码 `apps/api/modules/digitaloffer/`；合同 `GOAL-002 D-002 v1.2.0` |
 | 关门审计 | GOAL-005 `03-audit/A-002`（independent close-out · conditional → F-001/F-002 整改）+ `A-004`（independent closure · **pass · open required 0**）+ `A-005`（关门登记）；子目标审计链：GOAL-002 A-007 / GOAL-003 A-008 / GOAL-004 A-003 |
 | freshness | 激活时 VRev-080（2026-09-05）留痕；本轮交付变更了迁移/Manifest/装配——后续任何新工作应先按 `next_freshness_review_trigger` 复审 |
@@ -132,3 +132,4 @@ parent: null
 | 2026-09-05 | **关门（v0.3.0）**：R1～R4 全部关门（GOAL-002/003/004/005 done）；Root `done · 4/4`；判据 1～8 证据矩阵见 GOAL-005 E-001；关门审计 GOAL-005 A-002→A-004（independent closure `pass` 0 required）。VP-031 `active → closed`。 |
 | 2026-09-05 | **关门撤回（v0.3.1）**：A-006 independent runtime-integration 审计 `fail`（4 required：模块注册表缺失 F-003 / CRUD 语义 F-004 / 迁移策略 F-005 / 组合根验收 F-006）——按 P-003 撤回 Root/GOAL-005/VP-031 关门；裁决与修复见 GOAL-005 D-003，待 closure 复审重新关门。 |
 | 2026-09-05 | **重新关门（v0.3.2）**：F-003（BuiltinModules 注册）/ F-005（compiled-global 裁决）/ F-006（组合根验收测试）修复 + F-004 的 E-001 证据分母收窄；经 A-008/A-010 两轮 independent closure 复审，A-010 `pass` 0 required。VP-031 `active → closed`（第 2 次关门）。 |
+| 2026-09-05 | **关门撤回（v0.3.3）**：A-012 independent runtime closure re-audit `conditional`（2 required：F-007 迁移 Apply 中途失败/reopen 双方言证据、F-008 Telegram-enabled 真实组合根 + 结构化 Manifest 验收）。主方案确认无需更换。GOAL-005 D-004 fixed ×2（迁移失败/reopen 测试 SQLite+PG；Telegram-enabled 组合根测试 + seam 透传 + DELETE 负向），A-013 self 响应 closed ×2。Root/GOAL-005/VP-031 关门撤回，待 focused independent closure 复审 `pass` 后重新关门。 |
