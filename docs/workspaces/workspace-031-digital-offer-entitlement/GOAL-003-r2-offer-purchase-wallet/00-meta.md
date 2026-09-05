@@ -10,16 +10,16 @@ progress: 3/4
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
-serves_summary: 承载 VP-031 R2 实施（分母 = GOAL-002 D-002 v1.0.0）：digitaloffer 模块骨架（迁移/store/provider/manifest/schema）、Offer CRUD 与 Admin 面、C 端上架列表、单事务购买链路（freeze→deduct_frozen→凭证+权益）与 §4.4 并发验收测试。
+serves_summary: 承载 VP-031 R2 实施（分母 = GOAL-002 D-002 v1.2.0（含 v1.1.0/v1.2.0 附录））：digitaloffer 模块骨架（迁移/store/provider/manifest/schema）、Offer CRUD 与 Admin 面、C 端上架列表、单事务购买链路（freeze→deduct_frozen→凭证+权益）与 §4.4 并发验收测试。
 ---
 
 # GOAL-003 · R2 Offer CRUD + 购买 + 钱包扣款
 
 ## 概述
 
-执行 Root 纲领 **R2**：按 GOAL-002 D-002 v1.0.0 合同实施 `biz.digital-offer` 模块的 Offer CRUD、Admin 协议页面与权限键、C 端上架列表、购买单事务链路与并发验收测试。权益核验/消耗与 Telegram 命令归 R3（GOAL-004）。
+执行 Root 纲领 **R2**：按 GOAL-002 D-002 v1.2.0 合同实施 `biz.digital-offer` 模块的 Offer CRUD、Admin 协议页面与权限键、C 端上架列表、购买单事务链路与并发验收测试。权益核验/消耗与 Telegram 命令归 R3（GOAL-004）。
 
-对齐递归：GOAL-003 → Root GOAL-001（R2）→ VP-031（判据 1/2）→ Charter @0.4.0。实施分母 = D-002 v1.0.0；偏离合同需先修合同再实施。
+对齐递归：GOAL-003 → Root GOAL-001（R2）→ VP-031（判据 1/2）→ Charter @0.4.0。实施分母 = D-002 v1.2.0（v1.1.0 错误码附录 + v1.2.0 凭证前置守卫附录）；偏离合同需先修合同再实施。
 
 ## 纲领检查点（P-001）
 
@@ -41,7 +41,7 @@ serves_summary: 承载 VP-031 R2 实施（分母 = GOAL-002 D-002 v1.0.0）：di
 
 ## 信息就绪与未知项
 
-R1 已关闭全部信息项（I-031-001～005 verified）；R2 无新增 required 信息项。实现细节一律以 D-002 v1.0.0 条款为准，无合同外未知。
+R1 已关闭全部信息项（I-031-001～005 verified）；R2 无新增 required 信息项。实现细节一律以 D-002 v1.2.0 条款为准，无合同外未知。
 
 ## 父目标
 
