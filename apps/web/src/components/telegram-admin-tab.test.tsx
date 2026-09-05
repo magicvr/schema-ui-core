@@ -272,6 +272,124 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(retryCall?.body).toEqual(expect.objectContaining({ requestId: expect.stringMatching(/^operator-/) }));
   });
 
+  it("renders an oldest-to-newest chat, labels the user and Bot, follows the bottom, and supports reversed shortcuts", async () => {
+    const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
+    let timelineCalls = 0;
+    const container = renderTab(async (input, init) => {
+      const url = String(input);
+      calls.push({
+        url,
+        method: init?.method,
+        body: init?.body === undefined ? undefined : JSON.parse(String(init.body)),
+      });
+      if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+      if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+        return jsonResponse({
+          items: [{ chatId: "8001", chatType: "private", title: "Alice", username: "alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages?page=1&pageSize=100") {
+        timelineCalls += 1;
+        return jsonResponse({
+          items: [
+            { chatId: "8001", direction: "inbound", status: "received", occurredAt: "2026-09-05T00:01:00Z", updateId: "9002", text: "newer from Alice" },
+            { chatId: "8001", direction: "outbound", status: "sent", occurredAt: "2026-09-05T00:00:00Z", requestId: "operator-1", text: "older from Bot" },
+          ],
+          total: 2,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/capability?refresh=1") {
+        return jsonResponse({ chatId: "8001", canSend: true });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages" && init?.method === "POST") {
+        return jsonResponse({ status: "sent" }, 201);
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    const messages = [...container.querySelectorAll("[data-telegram-message]")];
+    expect(messages).toHaveLength(2);
+    expect(messages[0].textContent).toContain("older from Bot");
+    expect(messages[1].textContent).toContain("newer from Alice");
+    expect(messages[0].querySelector("[data-telegram-sender]")?.textContent).toBe("Bot");
+    expect(messages[1].querySelector("[data-telegram-sender]")?.textContent).toBe("Alice");
+    expect(messages[0].className).toContain("bg-primary");
+    expect(messages[1].className).toContain("bg-background");
+    expect(container.querySelector("[data-telegram-message-row]")?.className).toContain("justify-end");
+    expect(container.querySelectorAll("[data-telegram-message-row]")[1]?.className).toContain("justify-start");
+
+    const messageList = container.querySelector("[data-telegram-message-list]") as HTMLElement;
+    Object.defineProperties(messageList, {
+      clientHeight: { configurable: true, value: 300 },
+      scrollHeight: { configurable: true, value: 1000 },
+      scrollTop: { configurable: true, value: 0, writable: true },
+    });
+    const refreshButton = container.querySelector("[data-telegram-operator-refresh]") as HTMLButtonElement;
+    await act(async () => {
+      refreshButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(timelineCalls).toBeGreaterThanOrEqual(2);
+    expect(messageList.scrollTop).toBe(1000);
+
+    messageList.scrollTop = 120;
+    await act(async () => {
+      messageList.dispatchEvent(new Event("scroll", { bubbles: true }));
+    });
+    await act(async () => {
+      refreshButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(messageList.scrollTop).toBe(120);
+
+    const textarea = container.querySelector("[data-telegram-composer] textarea") as HTMLTextAreaElement;
+    const reverseShortcuts = container.querySelector("[data-telegram-shortcut-reverse]") as HTMLInputElement;
+    expect(container.querySelector("[data-telegram-shortcut-hint]")?.textContent).toContain("Enter sends");
+
+    await act(async () => setNativeTextAreaValue(textarea, "plain Enter sends"));
+    const plainEnter = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" });
+    await act(async () => {
+      textarea.dispatchEvent(plainEnter);
+    });
+    expect(plainEnter.defaultPrevented).toBe(true);
+    await settle();
+    expect(calls.filter((call) => call.url.endsWith("/messages") && call.method === "POST")).toHaveLength(1);
+
+    await act(async () => setNativeTextAreaValue(textarea, "ctrl Enter inserts a line"));
+    const ctrlEnterNewline = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", ctrlKey: true });
+    textarea.dispatchEvent(ctrlEnterNewline);
+    expect(ctrlEnterNewline.defaultPrevented).toBe(false);
+    expect(calls.filter((call) => call.url.endsWith("/messages") && call.method === "POST")).toHaveLength(1);
+
+    await act(async () => {
+      reverseShortcuts.click();
+      await Promise.resolve();
+    });
+    expect(reverseShortcuts.checked).toBe(true);
+    expect(container.querySelector("[data-telegram-shortcut-hint]")?.textContent).toContain("Ctrl+Enter sends");
+
+    await act(async () => setNativeTextAreaValue(textarea, "plain Enter inserts a line"));
+    const reversedPlainEnter = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" });
+    textarea.dispatchEvent(reversedPlainEnter);
+    expect(reversedPlainEnter.defaultPrevented).toBe(false);
+    expect(calls.filter((call) => call.url.endsWith("/messages") && call.method === "POST")).toHaveLength(1);
+
+    await act(async () => setNativeTextAreaValue(textarea, "ctrl Enter sends"));
+    const reversedCtrlEnter = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", ctrlKey: true });
+    await act(async () => {
+      textarea.dispatchEvent(reversedCtrlEnter);
+    });
+    expect(reversedCtrlEnter.defaultPrevented).toBe(true);
+    await settle();
+    expect(calls.filter((call) => call.url.endsWith("/messages") && call.method === "POST")).toHaveLength(2);
+  });
+
   it("keeps the composer disabled for denied or unavailable capability and refreshes with a forced probe", async () => {
     let capabilityAllowed = false;
     let capabilityStatus = 200;

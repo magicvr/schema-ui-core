@@ -5,7 +5,7 @@
 // empty keeps current — F-002 / R-005). The operator surface also exposes the
 // captured-message counter for the mock outbound sink. Secrets never leave the
 // API in plaintext or partial masks.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { useTranslate } from "@/i18n/runtime";
 import { registerCustomComponent, type CustomComponentProps } from "@/renderer/custom-components";
@@ -78,6 +78,7 @@ const telegramLeasePaths: Record<LeaseAction, string> = {
 };
 const telegramOperatorSessionsPath = "/api/channel/telegram/operator/sessions";
 const telegramOperatorPageQuery = "?page=1&pageSize=100";
+const telegramTimelineBottomThreshold = 48;
 
 function telegramCapabilityPath(chatId: string, force = false): string {
   return `${telegramOperatorSessionsPath}/${encodeURIComponent(chatId)}/capability${force ? "?refresh=1" : ""}`;
@@ -85,6 +86,21 @@ function telegramCapabilityPath(chatId: string, force = false): string {
 
 function createTelegramOperatorRequestID(): string {
   return `operator-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function sortTelegramTimeline(items: TelegramTimelineItem[]): TelegramTimelineItem[] {
+  return items
+    .map((item, index) => ({ item, index, timestamp: Date.parse(item.occurredAt) }))
+    .sort((left, right) => {
+      const leftTimestamp = Number.isNaN(left.timestamp) ? Number.POSITIVE_INFINITY : left.timestamp;
+      const rightTimestamp = Number.isNaN(right.timestamp) ? Number.POSITIVE_INFINITY : right.timestamp;
+      return leftTimestamp - rightTimestamp || left.index - right.index;
+    })
+    .map(({ item }) => item);
+}
+
+function telegramTimelineIsNearBottom(element: HTMLElement): boolean {
+  return element.scrollHeight - element.scrollTop - element.clientHeight <= telegramTimelineBottomThreshold;
 }
 
 const inputClass =
@@ -117,6 +133,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const [timeline, setTimeline] = useState<TelegramTimelineItem[]>([]);
   const [operatorCapability, setOperatorCapability] = useState<"unknown" | "allowed" | "denied" | "error">("unknown");
   const [composerText, setComposerText] = useState("");
+  const [reverseComposerShortcuts, setReverseComposerShortcuts] = useState(false);
   const [sending, setSending] = useState(false);
   const [retryingRequestID, setRetryingRequestID] = useState<string | null>(null);
   const selectedChatRef = useRef<string | null>(null);
@@ -124,6 +141,8 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const operatorRefreshRef = useRef<Promise<void> | null>(null);
   const timelineFlightsRef = useRef(new Map<string, Promise<void>>());
   const capabilityFlightsRef = useRef(new Map<string, Promise<void>>());
+  const timelineListRef = useRef<HTMLDivElement | null>(null);
+  const timelineStickToBottomRef = useRef(true);
 
   useEffect(() => {
     selectedChatRef.current = selectedChatId;
@@ -306,7 +325,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         }
         const body = (await response.json()) as TelegramPagedResponse<TelegramTimelineItem>;
         if (selectedChatRef.current === chatId) {
-          setTimeline(Array.isArray(body.items) ? body.items : []);
+          setTimeline(sortTelegramTimeline(Array.isArray(body.items) ? body.items : []));
           setTimelineLoadState("ready");
         }
       } catch {
@@ -385,10 +404,12 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       selectedChatRef.current = nextChatId;
       setSelectedChatId(nextChatId);
       if (nextChatId === null) {
+        timelineStickToBottomRef.current = true;
         setTimeline([]);
         setTimelineLoadState("ready");
         setOperatorCapability("unknown");
       } else if (chatChanged) {
+        timelineStickToBottomRef.current = true;
         setTimeline([]);
         setTimelineLoadState("loading");
         setOperatorCapability("unknown");
@@ -447,6 +468,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
 
   useEffect(() => {
     if (!isOperatorSurface || !operatorReady || selectedChatId === null) {
+      timelineStickToBottomRef.current = true;
       setOperatorCapability("unknown");
       setTimeline([]);
       setTimelineLoadState(isOperatorSurface && operatorReady ? "ready" : "idle");
@@ -455,6 +477,16 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     void loadTimeline(selectedChatId);
     void loadCapability(selectedChatId, true);
   }, [isOperatorSurface, loadCapability, loadTimeline, operatorReady, selectedChatId]);
+
+  useLayoutEffect(() => {
+    if (!isOperatorSurface || selectedChatId === null || timeline.length === 0 || !timelineStickToBottomRef.current) {
+      return;
+    }
+    const element = timelineListRef.current;
+    if (element !== null) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, [isOperatorSurface, selectedChatId, timeline]);
 
   async function extractError(response: Response, fallbackKey = "schema.telegram.feedback.saveFailed"): Promise<string> {
     try {
@@ -856,6 +888,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                         selectedChatRef.current = session.chatId;
                         setSelectedChatId(session.chatId);
                         if (chatChanged) {
+                          timelineStickToBottomRef.current = true;
                           setTimeline([]);
                           setTimelineLoadState("loading");
                           setOperatorCapability("unknown");
@@ -882,8 +915,16 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                   ) : null}
                 </div>
                 {timeline.length > 0 ? (
-                  <div data-telegram-message-list className="min-h-0 min-w-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain pr-1">
+                  <div
+                    ref={timelineListRef}
+                    data-telegram-message-list
+                    onScroll={(event) => {
+                      timelineStickToBottomRef.current = telegramTimelineIsNearBottom(event.currentTarget);
+                    }}
+                    className="min-h-0 min-w-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain pr-1"
+                  >
                     {timeline.map((item, index) => {
+                      const isOutbound = item.direction === "outbound";
                       const directionLabel = item.direction === "inbound"
                         ? t("schema.telegram.operator.inbound")
                         : t("schema.telegram.operator.outbound");
@@ -894,32 +935,47 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                           : item.status === "failed"
                             ? t("schema.telegram.operator.failed")
                             : item.status;
+                      const senderLabel = isOutbound
+                        ? t("schema.telegram.operator.senderBot")
+                        : sessions.find((session) => session.chatId === selectedChatId)?.title
+                          || item.senderUsername
+                          || sessions.find((session) => session.chatId === selectedChatId)?.username
+                          || t("schema.telegram.operator.senderUser");
+                      const metadataClass = isOutbound ? "text-primary-foreground/75" : "text-muted-foreground";
                       return (
-                        <article
-                          key={`${item.direction}-${item.requestId ?? item.updateId ?? item.occurredAt}-${index}`}
-                          data-telegram-message
-                          data-direction={item.direction}
-                          className="rounded-md border border-border/50 bg-background/70 px-3 py-2 text-xs"
+                        <div
+                          key={`${item.direction}-${item.requestId ?? item.updateId ?? item.messageId ?? item.occurredAt}-${index}`}
+                          className={isOutbound ? "flex justify-end" : "flex justify-start"}
+                          data-telegram-message-row
                         >
-                          <div className="flex min-w-0 items-center justify-between gap-2 text-muted-foreground">
-                            <span className="min-w-0 truncate">{directionLabel} · {statusLabel}</span>
-                            <time className="max-w-[45%] shrink-0 truncate text-right" dateTime={item.occurredAt} title={item.occurredAt}>{item.occurredAt}</time>
-                          </div>
-                          <p className="mt-1 whitespace-pre-wrap break-words">{item.text}</p>
-                          {item.direction === "outbound" && item.status === "failed" ? (
-                            <button
-                              type="button"
-                              data-telegram-retry={item.requestId}
-                              disabled={operatorCapability !== "allowed" || !operatorReady || retryingRequestID !== null}
-                              onClick={() => {
-                                if (item.requestId !== undefined) void retryMessage(item.requestId);
-                              }}
-                              className="mt-2 rounded-md border border-input/80 px-2 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {retryingRequestID === item.requestId ? t("feedback.submitting") : t("schema.telegram.operator.retry")}
-                            </button>
-                          ) : null}
-                        </article>
+                          <article
+                            data-telegram-message
+                            data-direction={item.direction}
+                            className={isOutbound
+                              ? "max-w-[85%] rounded-2xl rounded-br-md border border-primary/30 bg-primary px-3 py-2 text-xs text-primary-foreground shadow-sm"
+                              : "max-w-[85%] rounded-2xl rounded-bl-md border border-border/60 bg-background px-3 py-2 text-xs shadow-sm"}
+                          >
+                            <div className={`flex min-w-0 items-center justify-between gap-2 ${metadataClass}`}>
+                              <span data-telegram-sender className="min-w-0 truncate font-medium">{senderLabel}</span>
+                              <span className="min-w-0 truncate">{directionLabel} · {statusLabel}</span>
+                              <time className="max-w-[45%] shrink-0 truncate text-right" dateTime={item.occurredAt} title={item.occurredAt}>{item.occurredAt}</time>
+                            </div>
+                            <p className="mt-1 whitespace-pre-wrap break-words">{item.text}</p>
+                            {isOutbound && item.status === "failed" ? (
+                              <button
+                                type="button"
+                                data-telegram-retry={item.requestId}
+                                disabled={operatorCapability !== "allowed" || !operatorReady || retryingRequestID !== null}
+                                onClick={() => {
+                                  if (item.requestId !== undefined) void retryMessage(item.requestId);
+                                }}
+                                className="mt-2 rounded-md border border-primary-foreground/40 px-2 py-1 text-xs text-primary-foreground hover:bg-primary-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {retryingRequestID === item.requestId ? t("feedback.submitting") : t("schema.telegram.operator.retry")}
+                              </button>
+                            ) : null}
+                          </article>
+                        </div>
                       );
                     })}
                   </div>
@@ -941,10 +997,24 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                     aria-label={t("schema.telegram.operator.composerText")}
                     value={composerText}
                     onChange={(event) => setComposerText(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      const isPlainEnter = !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
+                      const isCtrlEnter = event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey;
+                      const shouldSend = reverseComposerShortcuts ? isCtrlEnter : isPlainEnter;
+                      if (!shouldSend) return;
+                      event.preventDefault();
+                      void sendMessage();
+                    }}
                     placeholder={t("schema.telegram.operator.composerPlaceholder")}
                     rows={3}
                     className="min-h-20 max-h-40 w-full resize-y rounded-md border border-input/80 bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                   />
+                  <p id="telegram-composer-shortcut-hint" data-telegram-shortcut-hint className="text-xs text-muted-foreground">
+                    {reverseComposerShortcuts
+                      ? t("schema.telegram.operator.shortcutsReversed")
+                      : t("schema.telegram.operator.shortcutsDefault")}
+                  </p>
                   <div className="flex min-w-0 items-center justify-between gap-2">
                     <p role="status" className="min-w-0 flex-1 break-words text-xs text-muted-foreground">
                       {operatorCapability === "unknown"
@@ -955,6 +1025,18 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                             ? t("schema.telegram.operator.capabilityDenied")
                             : t("schema.telegram.operator.capabilityUnavailable")}
                     </p>
+                    <label htmlFor="telegram-reverse-composer-shortcuts" className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      <input
+                        id="telegram-reverse-composer-shortcuts"
+                        data-telegram-shortcut-reverse
+                        type="checkbox"
+                        checked={reverseComposerShortcuts}
+                        onChange={(event) => setReverseComposerShortcuts(event.target.checked)}
+                        aria-describedby="telegram-composer-shortcut-hint"
+                        className="size-4 cursor-pointer rounded border-input text-primary accent-primary transition-colors focus:ring-2 focus:ring-ring/20"
+                      />
+                      <span>{t("schema.telegram.operator.reverseShortcuts")}</span>
+                    </label>
                     <button
                       type="button"
                       disabled={sending || operatorCapability !== "allowed" || !operatorReady || composerText.trim() === ""}

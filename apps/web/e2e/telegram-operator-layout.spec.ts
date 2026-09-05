@@ -45,10 +45,10 @@ function operatorMessages() {
     chatId: "chat-1",
     direction: index % 3 === 0 ? "outbound" : "inbound",
     status: index % 3 === 0 ? "sent" : "received",
-    occurredAt: `2026-09-05T01:${String(index % 60).padStart(2, "0")}:00Z`,
+    occurredAt: new Date(Date.parse("2026-09-05T01:00:00Z") + index * 60_000).toISOString(),
     ...(index % 3 === 0 ? { requestId: `operator-${index + 1}` } : { updateId: String(index + 1) }),
     text: `Message ${index + 1} ${"with enough content to wrap inside the transcript without widening the page. ".repeat(3)}`,
-  }));
+  })).reverse();
 }
 
 async function installTelegramFixtures(page: import("@playwright/test").Page): Promise<void> {
@@ -91,6 +91,12 @@ test("Telegram operator keeps document/main fixed while sessions and messages sc
   await expect(page.locator('[data-telegram-operator-page="true"]')).toBeVisible();
   await expect(page.locator("[data-telegram-session='chat-1']")).toBeVisible();
   await expect(page.locator("[data-telegram-message]")).toHaveCount(120);
+  await expect(page.locator("[data-telegram-message]").first()).toContainText("Message 1");
+  await expect(page.locator("[data-telegram-message]").last()).toContainText("Message 120");
+  await expect(page.locator("[data-telegram-sender]").first()).toHaveText("Bot");
+  await expect(page.locator("[data-telegram-sender]").last()).toHaveText("Contact 1");
+  await expect(page.locator("[data-telegram-shortcut-reverse]")).toBeVisible();
+  await expect(page.locator("[data-telegram-shortcut-hint]")).toContainText("Enter sends");
 
   const metrics = await page.evaluate(() => {
     const required = (selector: string): HTMLElement => {
@@ -118,6 +124,7 @@ test("Telegram operator keeps document/main fixed while sessions and messages sc
       page: { clientHeight: pageRegion.clientHeight, scrollHeight: pageRegion.scrollHeight },
       sessions: { clientHeight: sessions.clientHeight, scrollHeight: sessions.scrollHeight, overflowY: getComputedStyle(sessions).overflowY },
       messages: { clientHeight: messages.clientHeight, scrollHeight: messages.scrollHeight, overflowY: getComputedStyle(messages).overflowY },
+      messagesAtBottom: messages.scrollHeight - messages.scrollTop - messages.clientHeight <= 1,
       composerWithinOperator: composerRect.bottom <= operatorRect.bottom + 1,
       windowScrollY: window.scrollY,
     };
@@ -132,6 +139,7 @@ test("Telegram operator keeps document/main fixed while sessions and messages sc
   expect(metrics.sessions.overflowY).toBe("auto");
   expect(metrics.messages.scrollHeight).toBeGreaterThan(metrics.messages.clientHeight);
   expect(metrics.messages.overflowY).toBe("auto");
+  expect(metrics.messagesAtBottom).toBe(true);
   expect(metrics.composerWithinOperator).toBe(true);
 
   const beforeScroll = await page.evaluate(() => ({
