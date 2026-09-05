@@ -140,7 +140,7 @@ func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("telegram: sendMessage failed with status %d: %s", resp.StatusCode, string(respBody))
+		return newTelegramAPIError("sendMessage", resp.StatusCode, respBody)
 	}
 
 	// 6. Check Telegram Bot API response payload "ok": true (R-004 / A-008).
@@ -151,7 +151,12 @@ func (s *HTTPSender) Send(ctx context.Context, msg kernel.TelegramMessage) error
 		return fmt.Errorf("telegram: sendMessage returned non-JSON 200 body: %w: %s", err, strings.TrimSpace(string(respBody)))
 	}
 	if !apiResp.OK {
-		return fmt.Errorf("telegram: sendMessage returned ok=false: %s (code %d)", apiResp.Description, apiResp.ErrorCode)
+		return &TelegramAPIError{
+			Method:      "sendMessage",
+			HTTPStatus:  resp.StatusCode,
+			ErrorCode:   apiResp.ErrorCode,
+			Description: apiResp.Description,
+		}
 	}
 
 	return nil

@@ -152,6 +152,25 @@ func TestHTTPSender_Status200_ButOKFalse(t *testing.T) {
 	}
 }
 
+func TestHTTPSender_HTTPForbiddenIsStructured(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"ok":false,"description":"forbidden"}`))
+	}))
+	defer server.Close()
+
+	rm := newTestRuntimeManager(t, "my-bot-token", "", nil)
+	sender := NewHTTPSender(rm, server.Client(), server.URL)
+	err := sender.Send(context.Background(), kernel.TelegramMessage{ChatID: "123456", Text: "Test message"})
+	if err == nil || !IsTelegramForbidden(err) {
+		t.Fatalf("HTTP 403 sender error = %v, want structured forbidden", err)
+	}
+	var apiErr *TelegramAPIError
+	if !errors.As(err, &apiErr) || apiErr.HTTPStatus != http.StatusForbidden {
+		t.Fatalf("HTTP 403 structured error = %#v, want status 403", apiErr)
+	}
+}
+
 // TestHTTPSender_Status200_NonJSONBodyFailsClosed (R-004 / A-008): a 200 with a
 // body that is not valid Bot API JSON must be treated as a failure, not success.
 func TestHTTPSender_Status200_NonJSONBodyFailsClosed(t *testing.T) {

@@ -68,6 +68,7 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/channel/telegram/lease/release",
 				"POST /api/channel/telegram/webhook",
 				"GET /api/channel/telegram/operator/sessions",
+				"GET /api/channel/telegram/operator/sessions/{chat_id}/capability",
 				"GET /api/channel/telegram/operator/sessions/{chat_id}/messages",
 				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages",
 				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry",
@@ -142,6 +143,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		pattern string
 	}{
 		{http.MethodGet, "/api/channel/telegram/operator/sessions"},
+		{http.MethodGet, "/api/channel/telegram/operator/sessions/{chat_id}/capability"},
 		{http.MethodGet, "/api/channel/telegram/operator/sessions/{chat_id}/messages"},
 		{http.MethodPost, "/api/channel/telegram/operator/sessions/{chat_id}/messages"},
 		{http.MethodPost, "/api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry"},

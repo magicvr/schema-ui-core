@@ -81,6 +81,35 @@ func TestBotAPIClient_ManagementMethodsAndPayloads(t *testing.T) {
 	}
 }
 
+func TestBotAPIClient_GetChatMemberPayloadAndStructuredForbidden(t *testing.T) {
+	rm := newTestRuntimeManager(t, "bot-token", "", nil)
+	var payload getChatMemberPayload
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/botbot-token/getChatMember" {
+			t.Fatalf("getChatMember path = %q", r.URL.Path)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(body, &payload); err != nil {
+			t.Fatalf("decode getChatMember payload: %v", err)
+		}
+		_, _ = w.Write([]byte(`{"ok":false,"error_code":403,"description":"bot was blocked"}`))
+	}))
+	defer server.Close()
+
+	client := NewBotAPIClient(rm, server.Client(), server.URL)
+	_, err := client.GetChatMember(context.Background(), -1008001, 42)
+	if err == nil || !IsTelegramForbidden(err) {
+		t.Fatalf("GetChatMember error = %v, want structured forbidden", err)
+	}
+	var apiErr *TelegramAPIError
+	if !errors.As(err, &apiErr) || apiErr.ErrorCode != 403 || apiErr.HTTPStatus != http.StatusOK {
+		t.Fatalf("GetChatMember structured error = %#v, want code 403/http 200", apiErr)
+	}
+	if payload.ChatID != -1008001 || payload.UserID != 42 {
+		t.Fatalf("getChatMember payload = %+v, want chat -1008001/user 42", payload)
+	}
+}
+
 func TestPollingBotAPIClient_RequestAndClientTimeouts(t *testing.T) {
 	rm := newTestRuntimeManager(t, "bot-token", "", nil)
 	var payload getUpdatesPayload

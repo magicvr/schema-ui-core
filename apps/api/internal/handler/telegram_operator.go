@@ -47,6 +47,13 @@ type TelegramRuntimeProbe func() (botID int64, state, receiver, token string)
 // occupied the dispatcher and therefore make the operator surface unavailable.
 type TelegramBusinessHandlerProbe func() bool
 
+// TelegramOperatorCapability is implemented by the channel.telegram adapter
+// and kept as an interface here to avoid importing the adapter back into the
+// shared handler package (the webhook adapter already depends on handler).
+type TelegramOperatorCapability interface {
+	Check(context.Context, int64, int64, bool) (bool, error)
+}
+
 // TelegramOperatorHandler serves the authenticated C3 operator surface. The
 // composition root wraps it in auth.Middleware before the Provider receives it;
 // the handler still performs a permission check so direct mounts fail closed.
@@ -55,15 +62,21 @@ type TelegramOperatorHandler struct {
 	businessProbe TelegramBusinessHandlerProbe
 	repository    TelegramOperatorRepository
 	sender        kernel.TelegramSender
+	capability    TelegramOperatorCapability
 }
 
 // NewTelegramOperatorHandler constructs the C3 session/transcript/send handler.
-func NewTelegramOperatorHandler(runtimeProbe TelegramRuntimeProbe, businessProbe TelegramBusinessHandlerProbe, repository TelegramOperatorRepository, sender kernel.TelegramSender) *TelegramOperatorHandler {
+func NewTelegramOperatorHandler(runtimeProbe TelegramRuntimeProbe, businessProbe TelegramBusinessHandlerProbe, repository TelegramOperatorRepository, sender kernel.TelegramSender, capabilities ...TelegramOperatorCapability) *TelegramOperatorHandler {
+	var capability TelegramOperatorCapability
+	if len(capabilities) > 0 {
+		capability = capabilities[0]
+	}
 	return &TelegramOperatorHandler{
 		runtimeProbe:  runtimeProbe,
 		businessProbe: businessProbe,
 		repository:    repository,
 		sender:        sender,
+		capability:    capability,
 	}
 }
 
@@ -82,6 +95,7 @@ const (
 	telegramOperatorMessages
 	telegramOperatorSend
 	telegramOperatorRetry
+	telegramOperatorCapability
 )
 
 func (h *TelegramOperatorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +119,8 @@ func (h *TelegramOperatorHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	switch route.kind {
 	case telegramOperatorSessions:
 		h.listSessions(w, r)
+	case telegramOperatorCapability:
+		h.getCapability(w, r, route.chatID)
 	case telegramOperatorMessages:
 		h.listMessages(w, r, route.chatID)
 	case telegramOperatorSend:
@@ -144,6 +160,14 @@ func classifyTelegramOperatorRoute(path, method string) (telegramOperatorRoute, 
 			permission: telegramOperatorReadPermission,
 			chatID:     parts[6],
 			kind:       telegramOperatorMessages,
+		}, true
+	}
+	if len(parts) == 8 && parts[7] == "capability" {
+		return telegramOperatorRoute{
+			method:     http.MethodGet,
+			permission: telegramOperatorReadPermission,
+			chatID:     parts[6],
+			kind:       telegramOperatorCapability,
 		}, true
 	}
 	if len(parts) == 10 && parts[7] == "messages" && parts[9] == "retry" {
@@ -217,6 +241,52 @@ func (h *TelegramOperatorHandler) listSessions(w http.ResponseWriter, r *http.Re
 		})
 	}
 	writeJSON(w, http.StatusOK, telegramSessionListResponse{Items: items, Total: total, Page: page, PageSize: pageSize})
+}
+
+type telegramCapabilityResponse struct {
+	ChatID  string `json:"chatId"`
+	CanSend bool   `json:"canSend"`
+}
+
+func (h *TelegramOperatorHandler) getCapability(w http.ResponseWriter, r *http.Request, rawChatID string) {
+	chatID, ok := parseTelegramChatID(w, r, rawChatID)
+	if !ok {
+		return
+	}
+	force, ok := parseTelegramCapabilityRefresh(w, r)
+	if !ok {
+		return
+	}
+	if h.capability == nil || h.runtimeProbe == nil {
+		writeLocalizedError(w, r, http.StatusBadGateway, "TELEGRAM_CAPABILITY_UNAVAILABLE", "telegram capability is unavailable")
+		return
+	}
+	botID, _, _, _ := h.runtimeProbe()
+	canSend, err := h.capability.Check(r.Context(), botID, chatID, force)
+	if err != nil {
+		writeLocalizedError(w, r, http.StatusBadGateway, "TELEGRAM_CAPABILITY_UNAVAILABLE", "telegram capability is unavailable")
+		return
+	}
+	writeJSON(w, http.StatusOK, telegramCapabilityResponse{ChatID: strconv.FormatInt(chatID, 10), CanSend: canSend})
+}
+
+func parseTelegramCapabilityRefresh(w http.ResponseWriter, r *http.Request) (bool, bool) {
+	values, present := r.URL.Query()["refresh"]
+	if !present {
+		return false, true
+	}
+	force := false
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		if value != "1" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "refresh must be 1 when provided")
+			return false, false
+		}
+		force = true
+	}
+	return force, true
 }
 
 type telegramTimelineResponse struct {

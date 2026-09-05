@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -44,6 +45,51 @@ type BotUser struct {
 	Username  string `json:"username,omitempty"`
 }
 
+// ChatMember is the small getChatMember result needed by the operator
+// capability check. Pointer booleans preserve the difference between an
+// explicitly denied permission and a field omitted for member types where it
+// is not part of the Telegram response.
+type ChatMember struct {
+	Status          string `json:"status"`
+	CanSendMessages *bool  `json:"can_send_messages,omitempty"`
+	CanPostMessages *bool  `json:"can_post_messages,omitempty"`
+}
+
+// TelegramAPIError retains only safe, structured Bot API failure metadata so
+// callers can make fail-closed decisions without parsing diagnostic strings or
+// exposing the bot token.
+type TelegramAPIError struct {
+	Method      string
+	HTTPStatus  int
+	ErrorCode   int
+	Description string
+}
+
+func (e *TelegramAPIError) Error() string {
+	if e == nil {
+		return "telegram: unknown API error"
+	}
+	message := fmt.Sprintf("telegram: %s failed with HTTP status %d", e.Method, e.HTTPStatus)
+	if e.ErrorCode != 0 {
+		message += fmt.Sprintf(" (code %d)", e.ErrorCode)
+	}
+	if strings.TrimSpace(e.Description) != "" {
+		message += ": " + strings.TrimSpace(e.Description)
+	}
+	return message
+}
+
+// IsTelegramForbidden reports an HTTP-level or Bot-API-level 403. It follows
+// wrapped errors so handlers and sender adapters can preserve the original
+// failure while taking the capability-cache invalidation action.
+func IsTelegramForbidden(err error) bool {
+	var apiErr *TelegramAPIError
+	if !errors.As(err, &apiErr) || apiErr == nil {
+		return false
+	}
+	return apiErr.HTTPStatus == http.StatusForbidden || apiErr.ErrorCode == http.StatusForbidden
+}
+
 type botAPIEnvelope struct {
 	OK          bool            `json:"ok"`
 	Result      json.RawMessage `json:"result"`
@@ -59,6 +105,11 @@ type setWebhookPayload struct {
 type getUpdatesPayload struct {
 	Offset  int64 `json:"offset,omitempty"`
 	Timeout int   `json:"timeout"`
+}
+
+type getChatMemberPayload struct {
+	ChatID int64 `json:"chat_id"`
+	UserID int64 `json:"user_id"`
 }
 
 // NewBotAPIClient constructs the short-budget management client used for
@@ -101,6 +152,17 @@ func (c *BotAPIClient) GetMe(ctx context.Context) (BotUser, error) {
 		return BotUser{}, err
 	}
 	return user, nil
+}
+
+// GetChatMember returns the current bot member record for one chat. The
+// caller supplies the bot identity as userID; the adapter never accepts a
+// client-controlled user id through the operator HTTP surface.
+func (c *BotAPIClient) GetChatMember(ctx context.Context, chatID, userID int64) (ChatMember, error) {
+	var member ChatMember
+	if err := c.call(ctx, "getChatMember", getChatMemberPayload{ChatID: chatID, UserID: userID}, &member); err != nil {
+		return ChatMember{}, err
+	}
+	return member, nil
 }
 
 // SetWebhook configures Telegram's webhook target and its secret token.
@@ -189,7 +251,7 @@ func (c *BotAPIClient) call(ctx context.Context, method string, payload any, res
 		return fmt.Errorf("telegram: %s: read response: %w", method, readErr)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("telegram: %s failed with HTTP status %d", method, resp.StatusCode)
+		return newTelegramAPIError(method, resp.StatusCode, responseBody)
 	}
 
 	var envelope botAPIEnvelope
@@ -197,7 +259,12 @@ func (c *BotAPIClient) call(ctx context.Context, method string, payload any, res
 		return fmt.Errorf("telegram: %s: non-JSON response: %w", method, err)
 	}
 	if !envelope.OK {
-		return fmt.Errorf("telegram: %s returned ok=false: %s (code %d)", method, envelope.Description, envelope.ErrorCode)
+		return &TelegramAPIError{
+			Method:      method,
+			HTTPStatus:  resp.StatusCode,
+			ErrorCode:   envelope.ErrorCode,
+			Description: envelope.Description,
+		}
 	}
 	if result == nil {
 		return nil
@@ -209,4 +276,15 @@ func (c *BotAPIClient) call(ctx context.Context, method string, payload any, res
 		return fmt.Errorf("telegram: %s: decode result: %w", method, err)
 	}
 	return nil
+}
+
+func newTelegramAPIError(method string, httpStatus int, responseBody []byte) *TelegramAPIError {
+	var envelope botAPIEnvelope
+	_ = json.Unmarshal(responseBody, &envelope)
+	return &TelegramAPIError{
+		Method:      method,
+		HTTPStatus:  httpStatus,
+		ErrorCode:   envelope.ErrorCode,
+		Description: envelope.Description,
+	}
 }

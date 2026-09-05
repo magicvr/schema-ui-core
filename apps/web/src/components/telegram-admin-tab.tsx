@@ -64,6 +64,11 @@ interface TelegramPagedResponse<T> {
   pageSize?: number;
 }
 
+interface TelegramCapabilityResponse {
+  chatId: string;
+  canSend: boolean;
+}
+
 const telegramPollingMode = "polling";
 const telegramLeaseIntervalMs = 10_000;
 const telegramLeasePaths: Record<LeaseAction, string> = {
@@ -73,6 +78,14 @@ const telegramLeasePaths: Record<LeaseAction, string> = {
 };
 const telegramOperatorSessionsPath = "/api/channel/telegram/operator/sessions";
 const telegramOperatorPageQuery = "?page=1&pageSize=100";
+
+function telegramCapabilityPath(chatId: string, force = false): string {
+  return `${telegramOperatorSessionsPath}/${encodeURIComponent(chatId)}/capability${force ? "?refresh=1" : ""}`;
+}
+
+function createTelegramOperatorRequestID(): string {
+  return `operator-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
 
 const inputClass =
   "h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all duration-150 hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20";
@@ -103,9 +116,13 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
   const [timeline, setTimeline] = useState<TelegramTimelineItem[]>([]);
   const [operatorCapability, setOperatorCapability] = useState<"unknown" | "allowed" | "denied" | "error">("unknown");
   const [composerText, setComposerText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [retryingRequestID, setRetryingRequestID] = useState<string | null>(null);
   const selectedChatRef = useRef<string | null>(null);
+  const operatorReadyRef = useRef(false);
   const operatorRefreshRef = useRef<Promise<void> | null>(null);
   const timelineFlightsRef = useRef(new Map<string, Promise<void>>());
+  const capabilityFlightsRef = useRef(new Map<string, Promise<void>>());
 
   useEffect(() => {
     selectedChatRef.current = selectedChatId;
@@ -263,6 +280,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     && status.bot_id > 0
     && (status.receiver !== telegramPollingMode || leaseState === "active");
 
+  useEffect(() => {
+    operatorReadyRef.current = operatorReady;
+  }, [operatorReady]);
+
   const loadTimeline = useCallback(async (chatId: string): Promise<void> => {
     const existing = timelineFlightsRef.current.get(chatId);
     if (existing !== undefined) {
@@ -300,6 +321,46 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     }
   }, [fetcher]);
 
+  const loadCapability = useCallback(async (chatId: string, force = false): Promise<void> => {
+    const existing = capabilityFlightsRef.current.get(chatId);
+    if (existing !== undefined) {
+      await existing;
+      return;
+    }
+
+    const request = (async () => {
+      if (selectedChatRef.current === chatId && operatorReadyRef.current) {
+        setOperatorCapability("unknown");
+      }
+      try {
+        const response = await fetcher(telegramCapabilityPath(chatId, force), {
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) {
+          if (selectedChatRef.current === chatId && operatorReadyRef.current) setOperatorCapability("error");
+          return;
+        }
+        const body = (await response.json()) as Partial<TelegramCapabilityResponse>;
+        if (body.chatId !== chatId || typeof body.canSend !== "boolean") {
+          throw new Error("invalid Telegram capability response");
+        }
+        if (selectedChatRef.current === chatId && operatorReadyRef.current) {
+          setOperatorCapability(body.canSend ? "allowed" : "denied");
+        }
+      } catch {
+        if (selectedChatRef.current === chatId && operatorReadyRef.current) setOperatorCapability("error");
+      }
+    })();
+    capabilityFlightsRef.current.set(chatId, request);
+    try {
+      await request;
+    } finally {
+      if (capabilityFlightsRef.current.get(chatId) === request) {
+        capabilityFlightsRef.current.delete(chatId);
+      }
+    }
+  }, [fetcher]);
+
   const loadSessions = useCallback(async (): Promise<TelegramSession[] | null> => {
     setSessionsLoadState("loading");
     try {
@@ -332,7 +393,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     }
   }, [fetcher]);
 
-  const refreshOperatorSurface = useCallback(async () => {
+  const refreshOperatorSurface = useCallback(async (forceCapability = false) => {
     const existing = operatorRefreshRef.current;
     if (existing !== null) {
       await existing;
@@ -342,7 +403,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       const nextSessions = await loadSessions();
       if (nextSessions === null) return;
       const nextChatId = selectedChatRef.current;
-      if (nextChatId !== null) await loadTimeline(nextChatId);
+      if (nextChatId !== null) {
+        await loadTimeline(nextChatId);
+        if (forceCapability) await loadCapability(nextChatId, true);
+      }
     })();
     operatorRefreshRef.current = request;
     try {
@@ -350,7 +414,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     } finally {
       if (operatorRefreshRef.current === request) operatorRefreshRef.current = null;
     }
-  }, [loadSessions, loadTimeline]);
+  }, [loadCapability, loadSessions, loadTimeline]);
 
   useEffect(() => {
     if (!operatorReady || !pageVisible) return;
@@ -381,9 +445,10 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       return;
     }
     void loadTimeline(selectedChatId);
-  }, [loadTimeline, operatorReady, selectedChatId]);
+    void loadCapability(selectedChatId, true);
+  }, [loadCapability, loadTimeline, operatorReady, selectedChatId]);
 
-  async function extractError(response: Response): Promise<string> {
+  async function extractError(response: Response, fallbackKey = "schema.telegram.feedback.saveFailed"): Promise<string> {
     try {
       const body = (await response.json()) as { detail?: string; message?: string };
       const text = typeof body.detail === "string" && body.detail !== "" ? body.detail : body.message;
@@ -393,7 +458,86 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     } catch {
       // fall through to generic message
     }
-    return t("schema.telegram.feedback.saveFailed");
+    return t(fallbackKey);
+  }
+
+  async function sendMessage() {
+    const chatId = selectedChatRef.current;
+    const text = composerText.trim();
+    if (chatId === null || text === "" || !operatorReadyRef.current || operatorCapability !== "allowed" || sending) {
+      return;
+    }
+    const requestID = createTelegramOperatorRequestID();
+    setSending(true);
+    setFeedback(null);
+    setOperatorCapability("unknown");
+    try {
+      const response = await fetcher(`${telegramOperatorSessionsPath}/${encodeURIComponent(chatId)}/messages`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: requestID, text }),
+      });
+      if (!response.ok) {
+        if (selectedChatRef.current === chatId) {
+          setFeedback({ kind: "error", message: await extractError(response, "schema.telegram.feedback.sendFailed") });
+          setOperatorCapability("unknown");
+        }
+        await loadTimeline(chatId);
+        return;
+      }
+      if (selectedChatRef.current === chatId && operatorReadyRef.current) {
+        setComposerText("");
+        setOperatorCapability("allowed");
+      }
+      await loadTimeline(chatId);
+    } catch {
+      if (selectedChatRef.current === chatId) {
+        setFeedback({ kind: "error", message: t("schema.telegram.feedback.sendFailed") });
+        setOperatorCapability("unknown");
+      }
+      await loadTimeline(chatId);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function retryMessage(sourceRequestID: string) {
+    const chatId = selectedChatRef.current;
+    if (chatId === null || !operatorReadyRef.current || operatorCapability !== "allowed" || retryingRequestID !== null) {
+      return;
+    }
+    const requestID = createTelegramOperatorRequestID();
+    setRetryingRequestID(sourceRequestID);
+    setFeedback(null);
+    setOperatorCapability("unknown");
+    try {
+      const response = await fetcher(
+        `${telegramOperatorSessionsPath}/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(sourceRequestID)}/retry`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ requestId: requestID }),
+        },
+      );
+      if (!response.ok) {
+        if (selectedChatRef.current === chatId) {
+          setFeedback({ kind: "error", message: await extractError(response, "schema.telegram.feedback.retryFailed") });
+          setOperatorCapability("unknown");
+        }
+        await loadTimeline(chatId);
+        return;
+      }
+      if (selectedChatRef.current === chatId && operatorReadyRef.current) setOperatorCapability("allowed");
+      await loadTimeline(chatId);
+    } catch {
+      if (selectedChatRef.current === chatId) {
+        setFeedback({ kind: "error", message: t("schema.telegram.feedback.retryFailed") });
+        setOperatorCapability("unknown");
+      }
+      await loadTimeline(chatId);
+    } finally {
+      setRetryingRequestID(null);
+    }
   }
 
   async function save() {
@@ -643,7 +787,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
               type="button"
               data-telegram-operator-refresh
               disabled={!operatorReady || sessionsLoadState === "loading"}
-              onClick={() => void refreshOperatorSurface()}
+              onClick={() => void refreshOperatorSurface(true)}
               className="rounded-md border border-input/80 px-2.5 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
               {sessionsLoadState === "loading" ? t("feedback.loading") : t("schema.telegram.operator.refresh")}
@@ -671,6 +815,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                         selectedChatRef.current = session.chatId;
                         setSelectedChatId(session.chatId);
                         void loadTimeline(session.chatId);
+                        void loadCapability(session.chatId, true);
                       }}
                       className="block w-full rounded-md border border-transparent px-2.5 py-2 text-left text-xs hover:bg-muted aria-pressed:border-border aria-pressed:bg-muted/60"
                     >
@@ -718,10 +863,13 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                             <button
                               type="button"
                               data-telegram-retry={item.requestId}
-                              disabled={operatorCapability !== "allowed"}
+                              disabled={operatorCapability !== "allowed" || !operatorReady || retryingRequestID !== null}
+                              onClick={() => {
+                                if (item.requestId !== undefined) void retryMessage(item.requestId);
+                              }}
                               className="mt-2 rounded-md border border-input/80 px-2 py-1 text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {t("schema.telegram.operator.retry")}
+                              {retryingRequestID === item.requestId ? t("feedback.submitting") : t("schema.telegram.operator.retry")}
                             </button>
                           ) : null}
                         </article>
@@ -748,9 +896,20 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
                     <p role="status" className="text-xs text-muted-foreground">
                       {operatorCapability === "unknown"
                         ? t("schema.telegram.operator.capabilityPending")
-                        : t("schema.telegram.operator.capabilityUnavailable")}
+                        : operatorCapability === "allowed"
+                          ? t("schema.telegram.operator.capabilityAllowed")
+                          : operatorCapability === "denied"
+                            ? t("schema.telegram.operator.capabilityDenied")
+                            : t("schema.telegram.operator.capabilityUnavailable")}
                     </p>
-                    <button type="button" disabled className={buttonClass}>{t("schema.telegram.operator.send")}</button>
+                    <button
+                      type="button"
+                      disabled={sending || operatorCapability !== "allowed" || !operatorReady || composerText.trim() === ""}
+                      onClick={() => void sendMessage()}
+                      className={buttonClass}
+                    >
+                      {sending ? t("feedback.submitting") : t("schema.telegram.operator.send")}
+                    </button>
                   </div>
                 </fieldset>
               </div>

@@ -439,8 +439,8 @@ func newMuxWithExtraProviders(
 	// consumer (a future business-domain module or an explicit caching need)
 	// requests it here. No probe: an in-process store has no external
 	// dependency (Redis stays trigger-gated; the seam declaration lives in
-	// docs/architecture/cache-redis-seam-and-track.md).
-	_ = cachePort // accepted, not yet consumed (intentional until a consumer lands)
+	// docs/architecture/cache-redis-seam-and-track.md). The Telegram capability
+	// service below is the first consumer of this shared port.
 	logger.Info("kernel cache port ready", "provider", "memory", "max_entries", cfg.CacheMaxEntries)
 	// VP-028 / workspace-028 GOAL-003 D-001 (R2): the kernel.EventBus single
 	// instance arrives via dependency injection — the Fx container owns it for
@@ -626,6 +626,17 @@ func newMuxWithExtraProviders(
 	// injected `tr` is THE process instance provided by newTelegramRuntime in the
 	// Fx graph — never reconstructed here (F-001 / A-006: variadic removed).
 	if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil {
+		capabilityService := telegraminternal.NewCapabilityService(tr.BotAPI, cachePort)
+		operatorSender := telegraminternal.NewCapabilityInvalidatingSender(
+			tr.Sender,
+			capabilityService,
+			func() int64 {
+				if tr.Manager == nil {
+					return 0
+				}
+				return tr.Manager.ConnectionStatus().BotID
+			},
+		)
 		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(
 			tr.Manager,
 			func() bool {
@@ -645,7 +656,8 @@ func newMuxWithExtraProviders(
 				return tr.DispatcherState != nil && tr.DispatcherState.HasBusinessHandlers()
 			},
 			telegramstore.NewRepository(st),
-			tr.Sender,
+			operatorSender,
+			capabilityService,
 		))
 		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings, tgLease, tgOperator))
 	}
@@ -854,6 +866,7 @@ type TelegramRuntime struct {
 	// TelegramDispatcher contract.
 	DispatcherState *telegraminternal.Dispatcher
 	Sender          kernel.TelegramSender
+	BotAPI          *telegraminternal.BotAPIClient
 	Manager         *telegraminternal.RuntimeManager
 	Connection      *telegraminternal.ConnectionManager
 	Webhook         *telegraminternal.WebhookHandler
@@ -935,6 +948,7 @@ func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store,
 			Dispatcher:      disp,
 			DispatcherState: disp,
 			Sender:          sender,
+			BotAPI:          botAPI,
 			Manager:         rt,
 			Connection:      connection,
 			Webhook:         webhook,

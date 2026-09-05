@@ -57,8 +57,8 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if desc.ID != moduletg.ModuleID {
 		t.Fatalf("expected module ID %q, got %q", moduletg.ModuleID, desc.ID)
 	}
-	if len(desc.Contributions.Routes) != 10 {
-		t.Fatalf("expected 10 route contributions, got %+v", desc.Contributions.Routes)
+	if len(desc.Contributions.Routes) != 11 {
+		t.Fatalf("expected 11 route contributions, got %+v", desc.Contributions.Routes)
 	}
 	if len(desc.Contributions.Permissions) != 2 || desc.Contributions.Permissions[0] != "telegram.operator.read" || desc.Contributions.Permissions[1] != "telegram.operator.write" {
 		t.Fatalf("unexpected operator permissions: %+v", desc.Contributions.Permissions)
@@ -82,8 +82,8 @@ func TestTelegramModuleProvider(t *testing.T) {
 	if err := p.Register(context.Background(), reg); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if len(reg.routes) != 10 {
-		t.Fatalf("expected 10 routes registered, got %d", len(reg.routes))
+	if len(reg.routes) != 11 {
+		t.Fatalf("expected 11 routes registered, got %d", len(reg.routes))
 	}
 	if len(reg.permissions) != 2 || reg.permissions[0].Permission != "telegram.operator.read" || reg.permissions[1].Permission != "telegram.operator.write" {
 		t.Fatalf("unexpected registered permissions: %+v", reg.permissions)
@@ -167,8 +167,8 @@ func TestTelegramModule_RegisterContributionsIntegration(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 10 {
-		t.Fatalf("expected 10 routes in ContributionSet, got %d", len(set.Routes))
+	if len(set.Routes) != 11 {
+		t.Fatalf("expected 11 routes in ContributionSet, got %d", len(set.Routes))
 	}
 	operatorPermissions := map[string]bool{}
 	for _, permission := range set.Permissions {

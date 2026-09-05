@@ -92,6 +92,11 @@ const setNativeValue = (el: HTMLInputElement, value: string) => {
   el.dispatchEvent(new Event("input", { bubbles: true }));
 };
 
+const setNativeTextAreaValue = (el: HTMLTextAreaElement, value: string) => {
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(el, value);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
 describe("TelegramAdminTab (GOAL-006 R5)", () => {
   it("loads status and shows write-only token/secret inputs with keep-current placeholder", async () => {
     const container = renderTab(async (input) => {
@@ -147,6 +152,190 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(composer.disabled).toBe(true);
     expect(container.querySelector("[data-telegram-composer]")?.textContent).toContain("Send");
     expect(container.querySelector("[data-telegram-retry='operator-1']")).toHaveProperty("disabled", true);
+  });
+
+  it("probes capability with refresh, sends an operator message, and retries a failed message", async () => {
+    const calls: Array<{ url: string; method?: string; body?: unknown }> = [];
+    let timelineCalls = 0;
+    const container = renderTab(async (input, init) => {
+      const url = String(input);
+      calls.push({
+        url,
+        method: init?.method,
+        body: init?.body === undefined ? undefined : JSON.parse(String(init.body)),
+      });
+      if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+      if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+        return jsonResponse({
+          items: [{ chatId: "8001", chatType: "private", title: "Alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages?page=1&pageSize=100") {
+        timelineCalls += 1;
+        return jsonResponse({
+          items: [{
+            chatId: "8001",
+            direction: "outbound",
+            status: "failed",
+            occurredAt: "2026-09-05T00:01:00Z",
+            requestId: "operator-1",
+            text: "reply",
+          }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/capability?refresh=1") {
+        return jsonResponse({ chatId: "8001", canSend: true });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages" && init?.method === "POST") {
+        return jsonResponse({ status: "sent" }, 201);
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages/operator-1/retry" && init?.method === "POST") {
+        return jsonResponse({ status: "sent", retryOf: "operator-1" }, 201);
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;
+    const textarea = composer.querySelector("textarea") as HTMLTextAreaElement;
+    const sendButton = [...composer.querySelectorAll("button")][0] as HTMLButtonElement;
+    expect(composer.disabled).toBe(false);
+    expect(sendButton.disabled).toBe(true);
+    expect(calls.filter((call) => call.url.endsWith("/capability?refresh=1"))).toHaveLength(1);
+
+    await act(async () => setNativeTextAreaValue(textarea, "  operator reply  "));
+    expect(sendButton.disabled).toBe(false);
+    await act(async () => {
+      sendButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+
+    const sendCall = calls.find((call) => call.url === "/api/channel/telegram/operator/sessions/8001/messages" && call.method === "POST");
+    expect(sendCall?.body).toEqual(expect.objectContaining({ text: "operator reply" }));
+    expect((sendCall?.body as { requestId?: string })?.requestId).toMatch(/^operator-/);
+    expect(textarea.value).toBe("");
+    expect(timelineCalls).toBeGreaterThanOrEqual(2);
+
+    const retryButton = container.querySelector("[data-telegram-retry='operator-1']") as HTMLButtonElement;
+    expect(retryButton.disabled).toBe(false);
+    await act(async () => {
+      retryButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    const retryCall = calls.find((call) => call.url.endsWith("/messages/operator-1/retry") && call.method === "POST");
+    expect(retryCall?.body).toEqual(expect.objectContaining({ requestId: expect.stringMatching(/^operator-/) }));
+  });
+
+  it("keeps the composer disabled for denied or unavailable capability and refreshes with a forced probe", async () => {
+    let capabilityAllowed = false;
+    let capabilityStatus = 200;
+    const capabilityCalls: string[] = [];
+    const container = renderTab(async (input) => {
+      const url = String(input);
+      if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+      if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+        return jsonResponse({
+          items: [{ chatId: "8001", chatType: "private", title: "Alice", lastMessageAt: "2026-09-05T00:00:00Z" }],
+          total: 1,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url === "/api/channel/telegram/operator/sessions/8001/messages?page=1&pageSize=100") {
+        return jsonResponse({ items: [], total: 0, page: 1, pageSize: 100 });
+      }
+      if (url.startsWith("/api/channel/telegram/operator/sessions/8001/capability")) {
+        capabilityCalls.push(url);
+        if (capabilityStatus !== 200) return jsonResponse({ error: "unavailable" }, capabilityStatus);
+        return jsonResponse({ chatId: "8001", canSend: capabilityAllowed });
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;
+    expect(composer.disabled).toBe(true);
+    expect(container.textContent).toContain("This bot cannot send to this chat");
+
+    const refresh = container.querySelector("[data-telegram-operator-refresh]") as HTMLButtonElement;
+    capabilityAllowed = true;
+    await act(async () => {
+      refresh.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(capabilityCalls).toEqual([
+      "/api/channel/telegram/operator/sessions/8001/capability?refresh=1",
+      "/api/channel/telegram/operator/sessions/8001/capability?refresh=1",
+    ]);
+    expect(composer.disabled).toBe(false);
+
+    capabilityStatus = 503;
+    await act(async () => {
+      refresh.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    expect(composer.disabled).toBe(true);
+    expect(container.textContent).toContain("Chat send permission is unavailable");
+  });
+
+  it("ignores a stale capability response after switching to another chat", async () => {
+    let releaseFirstCapability!: (response: Response) => void;
+    const firstCapability = new Promise<Response>((resolve) => {
+      releaseFirstCapability = resolve;
+    });
+    const capabilityCalls: string[] = [];
+    const container = renderTab(async (input) => {
+      const url = String(input);
+      if (url === "/api/channel/telegram/settings") return jsonResponse(OPERATOR_STATUS);
+      if (url === "/api/channel/telegram/operator/sessions?page=1&pageSize=100") {
+        return jsonResponse({
+          items: [
+            { chatId: "8001", chatType: "private", title: "Alice", lastMessageAt: "2026-09-05T00:00:00Z" },
+            { chatId: "8002", chatType: "group", title: "Operators", lastMessageAt: "2026-09-05T00:00:00Z" },
+          ],
+          total: 2,
+          page: 1,
+          pageSize: 100,
+        });
+      }
+      if (url.endsWith("/messages?page=1&pageSize=100")) {
+        return jsonResponse({ items: [], total: 0, page: 1, pageSize: 100 });
+      }
+      if (url.includes("/8001/capability")) {
+        capabilityCalls.push(url);
+        return firstCapability;
+      }
+      if (url.includes("/8002/capability")) {
+        capabilityCalls.push(url);
+        return jsonResponse({ chatId: "8002", canSend: true });
+      }
+      return jsonResponse({}, 404);
+    });
+    await settle();
+
+    const secondSession = container.querySelector("[data-telegram-session='8002']") as HTMLButtonElement;
+    expect(secondSession).not.toBeNull();
+    await act(async () => {
+      secondSession.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    });
+    const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;
+    expect(capabilityCalls).toContain("/api/channel/telegram/operator/sessions/8002/capability?refresh=1");
+    expect(composer.disabled).toBe(false);
+
+    await act(async () => {
+      releaseFirstCapability(jsonResponse({ chatId: "8001", canSend: false }));
+      await firstCapability;
+      await Promise.resolve();
+    });
+    expect(composer.disabled).toBe(false);
+    expect(container.textContent).toContain("Chat send permission confirmed.");
   });
 
   it("pauses the ten-second operator refresh while hidden and refreshes immediately on visibility restore", async () => {

@@ -215,13 +215,14 @@ var Catalog = map[string]Entry{
 	"INVITE_ROLE_GONE":    {"error.inviteRoleGone", "invited roles changed; ask for a new invitation", "邀请中的角色已变更，请索取新邀请"},
 
 	// VP-033 R3 C3: Telegram operator console runtime and outbound state codes.
-	"TELEGRAM_OPERATOR_UNAVAILABLE": {"error.telegramOperatorUnavailable", "Telegram operator is temporarily unavailable", "Telegram 人工台暂不可用"},
-	"TELEGRAM_CHAT_NOT_FOUND":       {"error.telegramChatNotFound", "no Telegram session for that chat", "没有该聊天对应的 Telegram 会话"},
-	"TELEGRAM_REQUEST_NOT_FOUND":    {"error.telegramRequestNotFound", "no Telegram request with that id", "没有该 id 对应的 Telegram 请求"},
-	"TELEGRAM_REQUEST_IN_PROGRESS":  {"error.telegramRequestInProgress", "another Telegram attempt is still pending", "另一个 Telegram 尝试仍在处理中"},
-	"TELEGRAM_REQUEST_CONFLICT":     {"error.telegramRequestConflict", "request id is already bound to a different payload", "请求 id 已绑定不同载荷"},
-	"TELEGRAM_RETRY_NOT_ALLOWED":    {"error.telegramRetryNotAllowed", "this Telegram attempt cannot be retried", "该 Telegram 尝试不可重试"},
-	"TELEGRAM_SEND_FAILED":          {"error.telegramSendFailed", "Telegram message could not be sent", "Telegram 消息发送失败"},
+	"TELEGRAM_OPERATOR_UNAVAILABLE":   {"error.telegramOperatorUnavailable", "Telegram operator is temporarily unavailable", "Telegram 人工台暂不可用"},
+	"TELEGRAM_CAPABILITY_UNAVAILABLE": {"error.telegramCapabilityUnavailable", "Telegram send capability is temporarily unavailable", "Telegram 发言能力暂不可用"},
+	"TELEGRAM_CHAT_NOT_FOUND":         {"error.telegramChatNotFound", "no Telegram session for that chat", "没有该聊天对应的 Telegram 会话"},
+	"TELEGRAM_REQUEST_NOT_FOUND":      {"error.telegramRequestNotFound", "no Telegram request with that id", "没有该 id 对应的 Telegram 请求"},
+	"TELEGRAM_REQUEST_IN_PROGRESS":    {"error.telegramRequestInProgress", "another Telegram attempt is still pending", "另一个 Telegram 尝试仍在处理中"},
+	"TELEGRAM_REQUEST_CONFLICT":       {"error.telegramRequestConflict", "request id is already bound to a different payload", "请求 id 已绑定不同载荷"},
+	"TELEGRAM_RETRY_NOT_ALLOWED":      {"error.telegramRetryNotAllowed", "this Telegram attempt cannot be retried", "该 Telegram 尝试不可重试"},
+	"TELEGRAM_SEND_FAILED":            {"error.telegramSendFailed", "Telegram message could not be sent", "Telegram 消息发送失败"},
 
 	// VP-029 R3 (GOAL-003): prepaid voucher codes.
 	// E-008/E-009: batchId optional (server auto-generates VB-… ids); amount is

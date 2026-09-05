@@ -26,6 +26,25 @@ type telegramOperatorTestSender struct {
 	before func(context.Context, kernel.TelegramMessage) error
 }
 
+type telegramOperatorCapabilityStub struct {
+	allowed bool
+	err     error
+	calls   []struct {
+		botID  int64
+		chatID int64
+		force  bool
+	}
+}
+
+func (s *telegramOperatorCapabilityStub) Check(_ context.Context, botID, chatID int64, force bool) (bool, error) {
+	s.calls = append(s.calls, struct {
+		botID  int64
+		chatID int64
+		force  bool
+	}{botID: botID, chatID: chatID, force: force})
+	return s.allowed, s.err
+}
+
 func (s *telegramOperatorTestSender) Send(ctx context.Context, message kernel.TelegramMessage) error {
 	s.mu.Lock()
 	s.calls = append(s.calls, message)
@@ -248,6 +267,49 @@ func TestTelegramOperatorHandlerSessionsTimelineSendAndRetry(t *testing.T) {
 	recorder, body = serveTelegramOperator(t, fixture.handler, telegramOperatorTestRequest(t, http.MethodGet, "/api/channel/telegram/operator/sessions", "", read))
 	if recorder.Code != http.StatusConflict || body["error"] != "TELEGRAM_OPERATOR_UNAVAILABLE" {
 		t.Fatalf("business-handler runtime gate = %d %v, want 409 unavailable", recorder.Code, body)
+	}
+}
+
+func TestTelegramOperatorCapabilityRouteUsesReadPermissionRefreshAndFailClosed(t *testing.T) {
+	fixture := newTelegramOperatorTestFixture(t)
+	capability := &telegramOperatorCapabilityStub{allowed: true}
+	handler := NewTelegramOperatorHandler(
+		func() (int64, string, string, string) { return 101, *fixture.state, "polling", "bot-token" },
+		func() bool { return *fixture.business },
+		fixture.repository,
+		fixture.sender,
+		capability,
+	)
+	path := "/api/channel/telegram/operator/sessions/8001/capability"
+
+	if recorder, body := serveTelegramOperator(t, handler, httptest.NewRequest(http.MethodGet, path, nil)); recorder.Code != http.StatusUnauthorized || body["error"] != "UNAUTHENTICATED" {
+		t.Fatalf("anonymous capability response = %d %v, want 401", recorder.Code, body)
+	}
+	if recorder, body := serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, path, "")); recorder.Code != http.StatusForbidden || body["error"] != "FORBIDDEN" {
+		t.Fatalf("unpermissioned capability response = %d %v, want 403", recorder.Code, body)
+	}
+	recorder, body := serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, path, "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusOK || body["chatId"] != "8001" || body["canSend"] != true {
+		t.Fatalf("capability response = %d %v, want allowed 8001", recorder.Code, body)
+	}
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, path+"?refresh=1", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusOK || body["canSend"] != true || len(capability.calls) != 2 || !capability.calls[1].force {
+		t.Fatalf("forced capability response = %d %v calls=%v, want force=true", recorder.Code, body, capability.calls)
+	}
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, path+"?refresh=0", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusBadRequest || body["error"] != "INVALID_BODY" || len(capability.calls) != 2 {
+		t.Fatalf("invalid refresh response = %d %v calls=%v, want 400 and no capability call", recorder.Code, body, capability.calls)
+	}
+
+	capability.allowed = false
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, path, "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusOK || body["canSend"] != false {
+		t.Fatalf("denied capability response = %d %v, want 200 false", recorder.Code, body)
+	}
+	capability.err = errors.New("probe failed")
+	recorder, body = serveTelegramOperator(t, handler, telegramOperatorTestRequest(t, http.MethodGet, path+"?refresh=1", "", telegramOperatorReadPermission))
+	if recorder.Code != http.StatusBadGateway || body["error"] != "TELEGRAM_CAPABILITY_UNAVAILABLE" {
+		t.Fatalf("capability error response = %d %v, want 502 cataloged unavailable", recorder.Code, body)
 	}
 }
 

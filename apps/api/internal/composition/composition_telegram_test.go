@@ -88,6 +88,7 @@ func TestTelegramChannelComposition(t *testing.T) {
 				"POST /api/channel/telegram/lease/release",
 				"POST /api/channel/telegram/webhook",
 				"GET /api/channel/telegram/operator/sessions",
+				"GET /api/channel/telegram/operator/sessions/{chat_id}/capability",
 				"GET /api/channel/telegram/operator/sessions/{chat_id}/messages",
 				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages",
 				"POST /api/channel/telegram/operator/sessions/{chat_id}/messages/{request_id}/retry",
@@ -109,7 +110,7 @@ func TestTelegramChannelComposition(t *testing.T) {
 		t.Fatalf("RegisterContributions failed: %v", err)
 	}
 
-	if len(set.Routes) != 10 {
+	if len(set.Routes) != 11 {
 		t.Fatalf("unexpected route contributions: %+v", set.Routes)
 	}
 
@@ -157,6 +158,8 @@ func (d *dummyTelegramProvider) Register(ctx context.Context, reg kernel.Registr
 			method, pattern = "POST", "/api/channel/telegram/webhook"
 		} else if r == "GET /api/channel/telegram/operator/sessions" {
 			method, pattern = "GET", "/api/channel/telegram/operator/sessions"
+		} else if r == "GET /api/channel/telegram/operator/sessions/{chat_id}/capability" {
+			method, pattern = "GET", "/api/channel/telegram/operator/sessions/{chat_id}/capability"
 		} else if r == "GET /api/channel/telegram/operator/sessions/{chat_id}/messages" {
 			method, pattern = "GET", "/api/channel/telegram/operator/sessions/{chat_id}/messages"
 		} else if r == "POST /api/channel/telegram/operator/sessions/{chat_id}/messages" {
@@ -617,6 +620,7 @@ func TestTelegramChannelComposition_RealWebhookMount(t *testing.T) {
 		path   string
 	}{
 		{method: http.MethodGet, path: "/api/channel/telegram/operator/sessions"},
+		{method: http.MethodGet, path: "/api/channel/telegram/operator/sessions/12345/capability"},
 		{method: http.MethodGet, path: "/api/channel/telegram/operator/sessions/12345/messages"},
 		{method: http.MethodPost, path: "/api/channel/telegram/operator/sessions/12345/messages"},
 		{method: http.MethodPost, path: "/api/channel/telegram/operator/sessions/12345/messages/request-1/retry"},
