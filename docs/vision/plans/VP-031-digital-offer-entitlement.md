@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-031-digital-offer-entitlement
 title: 数字 Offer 与权益
-status: closed
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-031-digital-offer-entitlement
 created: 2026-09-02
 updated: 2026-09-05
-version: 0.3.0
+version: 0.3.1
 parent: null
 ---
 
@@ -114,7 +114,7 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | `closed`（2026-09-05） |
+| status | `active`（2026-09-05 关门撤回：A-006 runtime-integration `fail` 4 required；修复后待重新关门） |
 | lead_workspace | `workspace-031-digital-offer-entitlement`（Root `GOAL-001-digital-offer-entitlement` `done · 4/4`；纲领 R1～R4 全部关门） |
 | 交付证据 | 判据 1～8 证据矩阵：workspace-031 GOAL-005 `02-execution/E-001-evidence-matrix.md`；代码 `apps/api/modules/digitaloffer/`；合同 `GOAL-002 D-002 v1.2.0` |
 | 关门审计 | GOAL-005 `03-audit/A-002`（independent close-out · conditional → F-001/F-002 整改）+ `A-004`（independent closure · **pass · open required 0**）+ `A-005`（关门登记）；子目标审计链：GOAL-002 A-007 / GOAL-003 A-008 / GOAL-004 A-003 |
@@ -130,3 +130,4 @@ parent: null
 | 2026-09-05 | 用户书面确认 H-002 采用同进程模块；VRev-080 self `pass`（0 required），业务域 freshness PASS；RT-Q03/Q05 评估均结论“本波不需要 Redis”；VP-031 `planned → active` v0.2.0，绑定 `workspace-031-digital-offer-entitlement` 并交 `/govern` 建立 Root。 |
 | 2026-09-05 | R1 信息裁决回写（v0.2.1，镜像同步）：I-031-001～003 用户书面裁决（二者并存 / 同步 fulfilled / 只读+作废），I-031-004/005 默认冻结；证据 = workspace-031 GOAL-002 D-001，合同正文 = GOAL-002 D-002。 |
 | 2026-09-05 | **关门（v0.3.0）**：R1～R4 全部关门（GOAL-002/003/004/005 done）；Root `done · 4/4`；判据 1～8 证据矩阵见 GOAL-005 E-001；关门审计 GOAL-005 A-002→A-004（independent closure `pass` 0 required）。VP-031 `active → closed`。 |
+| 2026-09-05 | **关门撤回（v0.3.1）**：A-006 independent runtime-integration 审计 `fail`（4 required：模块注册表缺失 F-003 / CRUD 语义 F-004 / 迁移策略 F-005 / 组合根验收 F-006）——按 P-003 撤回 Root/GOAL-005/VP-031 关门；裁决与修复见 GOAL-005 D-003，待 closure 复审重新关门。 |
