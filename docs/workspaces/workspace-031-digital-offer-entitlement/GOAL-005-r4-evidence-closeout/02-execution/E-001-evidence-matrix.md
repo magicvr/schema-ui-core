@@ -23,7 +23,7 @@ version: 1.0.0
 
 | 判据 | 证据（代码 / 测试 / 审计） |
 |------|----------------------------|
-| 1 · Offer CRUD + Admin 协议页面 + 权限键 + 审计 + C 端上架列表 | 代码：`apps/api/modules/digitaloffer/provider.go`（路由/权限键 digitaloffer.read、offer.manage、entitlement.void/页面/manifest/导航）、`apps/api/internal/handler/digitaloffer.go`、`modules/digitaloffer/schema/*.json`；测试：`internal/handler/digitaloffer_test.go`（401 门控、创建/状态变更乐观锁、形态不可变 409、公开目录仅 on_sale 且无内部字段、审计失败回滚、公开目录限流 429）；审计：GOAL-003 A-002/A-008 |
+| 1 · Offer 生命周期管理（Create/Read/Update/Status，**无删除**——D-002 §2 冻结；即 VP-031 判据 1 的「Offer CRUD」收窄口径）+ Admin 协议页面 + 权限键 + 审计 + C 端上架列表 | 代码：`apps/api/modules/digitaloffer/provider.go`（路由/权限键 digitaloffer.read、offer.manage、entitlement.void/页面/manifest/导航）、`apps/api/internal/handler/digitaloffer.go`、`modules/digitaloffer/schema/*.json`；测试：`internal/handler/digitaloffer_test.go`（401 门控、创建/状态变更乐观锁、形态不可变 409、公开目录仅 on_sale 且无内部字段、审计失败回滚、公开目录限流 429）；审计：GOAL-003 A-002/A-008 |
 | 2 · 余额不足拒绝、freeze→deduct_frozen、凭证与权益同事务或等价 fail-closed、失败 unfreeze 语义、并发测试 | 代码：`modules/digitaloffer/service/service.go`（§4.2/§4.4 单事务购买、互异幂等键、ref 反链、有界重试）；测试：`modules/digitaloffer/service/purchase_test.go`（余额不足零残留、并发双发恰一凭证/一次扣款/一份权益、余额恰够一次恰一成功无冻结残留、重试耗尽零残留、幂等重放、SQLite + 真 PostgreSQL 双库）；审计：GOAL-002 A-002/A-006、GOAL-003 A-002/A-004/A-008。失败 unfreeze 说明：单事务回滚使冻结从未对外可见（D-002 §4.2 更强 fail-closed 形态）；unfreeze 保留为 wallet Admin 纠错入口 |
 | 3 · 权益有效/过期/耗尽可测，服务提供前统一核验 | 代码：`service.go` Check/Consume（§5.1 聚合、§5.2 算法）；测试：`check_consume_test.go`（聚合四态、duration 过期、耗尽、多行最旧优先、并发 void 线性化、SQLite/PG） |
 | 4 · 购买与权益只挂 VP-029 subject_id，不创建 admin.users | 代码：store 仅引用 subjects；购买 tx 内 `SubjectExistsInTx` 门控；账户经 `GetOrCreateSubjectAccountInTx`；核账：store 无 users 关联 |
