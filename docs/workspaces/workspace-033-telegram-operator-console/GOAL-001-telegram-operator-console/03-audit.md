@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-05
-version: 0.6.0
+version: 0.7.0
 ---
 
 # GOAL-001-telegram-operator-console · 03-audit 索引
@@ -22,6 +22,8 @@ version: 0.6.0
 | [A-008-post-close-operator-inner-page-response-self](03-audit/A-008-post-close-operator-inner-page-response-self.md) | 2026-09-05 | self | 汇总 A-005/A-006/A-007；关门后修正最终响应 | **pass** | **0** | F-001 合法 fixed、无 residual/overrule；Root/Workspace 保持 done，VP-033 保持 active | [A-008-post-close-operator-inner-page-response-self.md](03-audit/A-008-post-close-operator-inner-page-response-self.md) |
 | [A-009-post-close-operator-refresh-scroll-independent-gpt-sol](03-audit/A-009-post-close-operator-refresh-scroll-independent-gpt-sol.md) | 2026-09-05 | independent (`subagent (gpt-5.6-sol · reasoning medium)`) | 代码 checkpoint `dc7ac5e5` 的轮询刷新稳定性与滚动布局 | **pass** | **0** | 独立核对后台消息保留、会话切换竞态、sessions/message 滚动约束与 composer 固定；无 required finding；仅记录未做浏览器像素级测量的 recommended 边界 | [A-009-post-close-operator-refresh-scroll-independent-gpt-sol.md](03-audit/A-009-post-close-operator-refresh-scroll-independent-gpt-sol.md) |
 | [A-010-post-close-operator-refresh-scroll-response-self](03-audit/A-010-post-close-operator-refresh-scroll-response-self.md) | 2026-09-05 | self | 汇总 A-009；轮询刷新与滚动布局修正最终响应 | **pass** | **0** | 无冲突、无 required finding、无 residual/overrule；Root/Workspace 保持 done，VP-033 保持 active | [A-010-post-close-operator-refresh-scroll-response-self.md](03-audit/A-010-post-close-operator-refresh-scroll-response-self.md) |
+| [A-011-post-close-operator-page-scroll-containment-independent-gpt-sol](03-audit/A-011-post-close-operator-page-scroll-containment-independent-gpt-sol.md) | 2026-09-05 | independent (`subagent (gpt-5.6-sol · reasoning medium)`) | 代码 checkpoint `9e9102cb` 的 Telegram operator 页面级滚动隔离与前次推荐项复核 | **pass** | **0** | 独立核对 shell 高度链、内层滚动、刷新稳定性、schema 直挂、普通页面回归与真实 Chromium E2E；无新增 finding | [A-011-post-close-operator-page-scroll-containment-independent-gpt-sol.md](03-audit/A-011-post-close-operator-page-scroll-containment-independent-gpt-sol.md) |
+| [A-012-post-close-operator-page-scroll-containment-response-self](03-audit/A-012-post-close-operator-page-scroll-containment-response-self.md) | 2026-09-05 | self | 汇总 A-009～A-011；页面级滚动隔离修正最终响应 | **pass** | **0** | A-011 无开放 required/recommended finding；A-009 R-001 的浏览器测量边界已由真实 E2E 覆盖；Root/Workspace 保持 done，VP-033 保持 active | [A-012-post-close-operator-page-scroll-containment-response-self.md](03-audit/A-012-post-close-operator-page-scroll-containment-response-self.md) |
 
 ## 信息就绪核对（按 scope）
 
@@ -36,4 +38,4 @@ version: 0.6.0
 
 ## 审计记录（ledger）
 
-`03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。A-001～A-004 的 Root 关门意见保持不变；关门后 A-005 的 independent `conditional` 原始意见保留，A-006 以 `fixed` 响应，A-007 independent final `pass`、A-008 完成汇总；本轮 A-009 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`、A-010 完成最终响应。当前无开放 required finding；未调用 Grok。
+`03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。A-001～A-004 的 Root 关门意见保持不变；关门后 A-005 的 independent `conditional` 原始意见保留，A-006 以 `fixed` 响应，A-007 independent final `pass`、A-008 完成汇总；A-009/A-010 记录刷新与内层滚动修正；本轮 A-011 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`、A-012 完成页面级滚动隔离最终响应。当前无开放 required/recommended finding；未调用 Grok。
