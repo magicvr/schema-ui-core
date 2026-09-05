@@ -6,7 +6,7 @@ parent: null
 created: 2026-09-05
 updated: 2026-09-05
 version: 0.1.0
-progress: 2/4
+progress: 3/4
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -38,7 +38,8 @@ serves_summary: 业务域分支 · 数字 Offer + 薄购买凭证 + 本域权益
 |------|------|---------------|
 | R1 | 合同：Offer 字段、购买状态机、权益形态、命令清单、事务与限流边界 | **已关门**（2026-09-05 · GOAL-002：D-001 裁决 + D-002 v1.0.0 accepted；审计 A-001～A-007 闭合，A-006 independent `pass` open required 0） |
 | R2 | Offer + 购买 + 钱包扣款 | **已关门**（2026-09-05 · GOAL-003 done 4/4；A-008 independent `pass` open required 0） |
-| R3 | 权益校验 + 可选 Telegram 注册 | 进行中（GOAL-004 承载） |
+| R3 | 权益校验 + 可选 Telegram 注册 | **已关门**（2026-09-05 · GOAL-004 done 3/3；A-002 independent `pass` 0 required） |
+| R4 | 证据与关门 | 进行中（GOAL-005 承载） |
 | R3 | 权益校验 + 可选 Telegram 注册 | 待开始；依赖 R2 |
 | R4 | 证据与关门 | 待开始；依赖 R1～R3 |
 

@@ -12,6 +12,7 @@ version: 0.1.0
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| A-002 | 2026-09-05 | independent | R3 execution-facts · 判据 3/5 门禁 | **pass** | **0** | Check/Consume 与双库、Telegram Register/Disabled、purchase/query 桶均符合 D-002 v1.2.0；A-001 F-001 修复确认；2 项 recommended | [A-002-independent-implementation-audit.md](03-audit/A-002-independent-implementation-audit.md) |
 | （C3 关门审计：self + codex independent；判据 3/5 门禁） | | | | | | | |
 
 ## 信息就绪核对（按 scope）

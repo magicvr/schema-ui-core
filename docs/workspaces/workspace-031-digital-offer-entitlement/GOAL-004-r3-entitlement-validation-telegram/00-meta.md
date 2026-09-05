@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-entitlement-validation-telegram
 title: R3 权益核验/消耗 + 可选 Telegram 注册
-status: active
+status: done
 parent: GOAL-001-digital-offer-entitlement
 created: 2026-09-05
 updated: 2026-09-05
 version: 0.1.0
-progress: 2/3
+progress: 3/3
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -27,7 +27,7 @@ serves_summary: 承载 VP-031 R3 实施（分母 = GOAL-002 D-002 v1.2.0）：�
 |--------|------|------|
 | C1 | **核验/消耗落地**：Check（§5.1 聚合）+ Consume（§5.2 算法）+ 错误码登记 + 双库测试（含 RowsAffected 竞争、并发 void） | **已关门**（2026-09-05 · E-001） |
 | C2 | **Telegram Register + 查询桶**：price/buy/entitlements 命令、`tg:` request_id 派生、price/entitlements 查询桶、未启用通道零依赖测试 | **已关门**（2026-09-05 · E-001） |
-| C3 | **审视与关门**：self 审计 + codex independent 审计（判据 3/5 门禁）；意见响应；Root/goal-tree 回写 | 待开始 |
+| C3 | **审视与关门**：self 审计 + codex independent 审计（判据 3/5 门禁）；意见响应；Root/goal-tree 回写 | **已关门**（A-002 independent `pass` 0 required；A-003 处置 2 项 recommended） |
 
 `progress` = 已关门检查点数 / 3。当前 **2/3**。
 
