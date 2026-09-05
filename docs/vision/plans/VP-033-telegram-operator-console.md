@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-033-telegram-operator-console
 title: Telegram Bot 人工控制台
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-033-telegram-operator-console
 created: 2026-09-03
 updated: 2026-09-05
-version: 0.2.12
+version: 0.3.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-04 · v0.2.0 · 用户书面确认激活） |
+| status | **`closed`**（2026-09-05 · v0.3.0 · 用户指令授权关门） |
 | lead_workspace | `workspace-033-telegram-operator-console`（唯一 lead delivery） |
-| Vision required | 计划阶段 [VRev-072](../reviews/VRev-072-vp033-telegram-operator-console-planned.md) self `pass`；激活就绪 [VRev-075](../reviews/VRev-075-vp033-telegram-operator-console-activation.md) self `pass`（open required = 0；I-033-007/008 已冻结；Admin freshness `42036a3c`→`dd1edade` PASS）。V-F116 仅 recommended；用户确认本次不夹带关闭 VP-030。 |
+| Vision required | 计划阶段 [VRev-072](../reviews/VRev-072-vp033-telegram-operator-console-planned.md) self `pass`；激活就绪 [VRev-075](../reviews/VRev-075-vp033-telegram-operator-console-activation.md) self `pass`；关门就绪 = [VRev-077](../reviews/VRev-077-vp033-telegram-operator-console-close-out.md) self `pass`；状态同步复核 = [VRev-079](../reviews/VRev-079-vp030-vp033-closeout-status-sync-response-self.md) self `pass`（响应 [VRev-078](../reviews/VRev-078-vp030-vp033-closeout-status-sync-independent-gpt-sol.md) independent fail，2 个聚合 required 已 fixed；当前 0 required）。V-F116/V-F118 的历史排序建议已由 VP-030 本轮关门解决。 |
 | 组合位置 | **Admin 功能分支** · 通道运营台（连接状态 / 入站模式 / 占用位 / 人工 IM）。消费已交付的 `channel.telegram` runtime。**不是**业务域、**不是**付费命令、**不重开** VP-030 |
 
 ## 意图
@@ -121,11 +121,15 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root done 4/4；R1～R4 已完成；A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent pass + A-004 response；F-001 fixed，open required = 0；VP-033 仍 active，待另轮 `/vision` 处理愿景层关门 |
+| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root done 4/4；R1～R4 已完成；A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent pass + A-004 response；A-015 IM 最终响应 pass；open required/recommended = 0；VRev-077 关门 self pass |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
+- 2026-09-05 · **`active → closed` v0.3.0**（用户当前指令授权；[VRev-077](../reviews/VRev-077-vp033-telegram-operator-console-close-out.md) self `pass`；open required = 0）。
+- 八条方向级退出判据 #1～#8 全部 verified；workspace-033 [Root GOAL-001](../../workspaces/workspace-033-telegram-operator-console/GOAL-001-telegram-operator-console/00-meta.md) 为 done 4/4，R1～R4 均已结项。
+- Root [A-003](../../workspaces/workspace-033-telegram-operator-console/GOAL-001-telegram-operator-console/03-audit/A-003-r4-root-close-independent-gpt-sol.md) 为 gpt-5.6-sol、reasoning medium 子代理独立 close-out pass；[A-004](../../workspaces/workspace-033-telegram-operator-console/GOAL-001-telegram-operator-console/03-audit/A-004-r4-root-close-response-self.md) 响应闭合；关门后的 A-013/A-014 原始 independent conditional 由 [A-015](../../workspaces/workspace-033-telegram-operator-console/GOAL-001-telegram-operator-console/03-audit/A-015-post-close-operator-im-chat-response-self.md) 完成 fixed 响应，当前 open required/recommended = 0。
+- I-033-001～I-033-010 全部 verified；VP-030 已由 [VRev-076](../reviews/VRev-076-vp030-telegram-channel-runtime-close-out.md) 同轮完成 VP 层关门，VP-033 不改变其 runtime 分母。
+- VRev-078 independent 状态同步 fail 发现的 VP-033 Root 00-meta 陈旧 active 投影已由 VRev-079 fixed；历史 Root 关门前文字保留为历史事实，当前投影已为 closed v0.3.0。
 
 ## 规划修订短史
 
@@ -135,3 +139,4 @@ parent: null
 | 2026-09-04 | 用户接受 `/vision` 建议：I-033-007 冻结为“不要求关闭 Privacy Mode，只收录 bot 实际可见更新”；I-033-008 冻结为“显式公网 base URL + 本地 Fake Bot API 验收”。VRev-075 self `pass`，Admin freshness `42036a3c`→`dd1edade` PASS，open required = 0；`planned → active` v0.2.0，lead `workspace-033-telegram-operator-console`。VP-030 保持 active，本次不夹带关门。 |
 | 2026-09-04 | workspace-033 R3 C1 用户裁决已落盘：I-033-009/010 的决策状态同步为 `verified`；实现与测试仍由 workspace-033 R3 核验，不改变 VP-033 边界或激活状态。 |
 | 2026-09-05 | workspace-033 Root R4 已完成：A-001 self 发现的 polling 单实例 UI finding F-001 由 E-028/A-002 fixed；A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent pass、A-004 response；Root `done · 4/4`。VP-033 保持 `active`，不在实现层 Root 关门中越级关闭。 |
+| 2026-09-05 | 用户指令授权 VP-033 关门：VRev-077 self `pass`（八条判据全 verified、open required = 0）；workspace-033 Root done 4/4；A-003 independent/A-004 response 与 A-015 后续 IM 响应均可核对；`active → closed` v0.3.0。 |

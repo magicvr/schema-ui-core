@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-09-04
+updated: 2026-09-05
 parent: null
-version: 0.73.0
+version: 0.74.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -147,7 +147,7 @@ version: 0.73.0
 | RT-Q02 | 外部消息队列 / Job broker | 无 | **trigger-gated** | 触发：多实例、跨机长任务、或领域事件要 fan-out。优先评估 PG `SKIP LOCKED`。**运输端口前置 = [VP-028](plans/VP-028-event-bus-port.md) `closed`**（2026-09-01 关门 · v0.3.0 · lead `workspace-028-event-bus-port` Root done 4/4；进程内 EventBus 运输端口 + outbox/MQ 接缝声明已交付；broker 运输仍 gated；不解除 Admin typed domain event gated——应用契约归 Admin 功能分支；不消耗 RT-Q02 trigger） |
 | RT-Q03 | 缓存（Redis 等） | 无 | **trigger-gated** | 用途须先钉死：共享限流 / 分布式锁 / 热配置 / 查询缓存。禁止「先上 Redis 再找场景」。**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块正式接入同进程。业务域 VP 激活即视为触发条件成立，架构分支须在该 VP 开区前完成评估并在路线图中登记位置（可选「不需要」结论，但评估本身不可跳过）。**承接 = [VP-026-cache-port](plans/VP-026-cache-port.md) `closed`**（端口 + 内存默认 + 双策略 + Redis 接缝声明已交付；Redis 实现仍 gated——VP-026 不消耗 trigger） |
 | RT-Q04 | 分布式锁 / leader election | 无 | **trigger-gated** | 定时任务、单飞 Job；PG advisory lock 可推迟 Redis |
-| RT-Q05 | 登录/API 限流跨实例 | 进程内滑动窗口 | **trigger-gated** | 单实例够用；**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块接入且 C 端限流需求不可共用进程内 limiter。业务域 VP 激活即视为触发条件成立，须评估进程内 limiter 是否满足 C 端场景并登记路线图位置。**承接 = [VP-027-rate-limiter-port](plans/VP-027-rate-limiter-port.md) `closed`**（2026-09-01 关门 · v0.3.0 · lead `workspace-027-rate-limiter-port` Root done 4/4；端口 + 内存默认 + 7 处使用点迁移 + 接缝声明已交付；Redis 实现仍 gated）。**C 端 ingress 评估（VP-030 激活 · 2026-09-03 · VRev-070 §6）**：webhook/`chat_id`/`telegram_user_id` 桶可被进程内 limiter 覆盖；**结论 = 不需要 Redis**；不消耗本行 trigger。R1 仍须冻桶分母（I-030-003）与请求计数映射（I-030-006）。**端口原子化（VP-032 `closed` v0.3.0 · 2026-09-04 · VRev-074 self `pass`）**：进程内 Allow/Record TOCTOU 由 `AllowRecord` + 令牌化 `Reserve`/`Cancel` 收口；**仍不消耗**本行 Redis trigger。[VP-031](plans/VP-031-digital-offer-entitlement.md) 激活时复核本评估是否仍覆盖业务域流量 |
+| RT-Q05 | 登录/API 限流跨实例 | 进程内滑动窗口 | **trigger-gated** | 单实例够用；**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块接入且 C 端限流需求不可共用进程内 limiter。业务域 VP 激活即视为触发条件成立，须评估进程内 limiter 是否满足 C 端场景并登记路线图位置。**承接 = [VP-027-rate-limiter-port](plans/VP-027-rate-limiter-port.md) `closed`**（2026-09-01 关门 · v0.3.0 · lead `workspace-027-rate-limiter-port` Root done 4/4；端口 + 内存默认 + 7 处使用点迁移 + 接缝声明已交付；Redis 实现仍 gated）。**C 端 ingress 评估（VP-030 · VRev-070 §6，2026-09-03）**：webhook/`chat_id`/`telegram_user_id` 桶可被进程内 limiter 覆盖，结论 = 不需要 Redis；VP-030 已于 2026-09-05 经 VRev-076 `pass` 关门，不消耗本行 trigger。**端口原子化（VP-032 `closed` v0.3.0 · 2026-09-04 · VRev-074 self `pass`）**：进程内 Allow/Record TOCTOU 由 `AllowRecord` + 令牌化 `Reserve`/`Cancel` 收口；仍不消耗本行 Redis trigger。[VP-031](plans/VP-031-digital-offer-entitlement.md) 激活时复核本评估是否仍覆盖业务域流量 |
 | RT-Q06 | 事务 outbox / inbox | 无 | **trigger-gated** | Admin 功能「领域事件」契约的运输前置；先 DB outbox，后可选 broker |
 | RT-Q07 | 分布式 cron | 定时任务模块，单进程 | **trigger-gated** | 与 RT-Q04 绑定 |
 
@@ -255,7 +255,7 @@ version: 0.73.0
 |----|----|------|------|------|
 | RT-M01 | 出站邮件发送端口 + 可切换渠道 | VP-017 v0.5.0 按现行分母 closed：mock 站内记录 + Resend（live PASS）+ 设置热切换/试发 | **delivered** | 2026-08-24 再关门放行（A-003/A-004 pass）；R1～R4 实施史保留 |
 | RT-M02 | SMS / 其它推送运输 | 无 | **trigger-gated** | 用户 2026-08-22：审核麻烦，有真实需求再做 |
-| RT-M03 | C 端聊天通道（Telegram Bot 运行时） | 无 | **active** | 承接 = [VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `active` v0.2.0（2026-09-03 激活 · lead `workspace-030-telegram-channel-runtime` Root `done`）；入站 webhook + 出站 SendMessage + 分发端口；**不是**业务域。Mini App / Stars 仍 gated。**多实例 / HA 长轮询仍 gated**。单实例 `getUpdates`（开发默认、有启停策略）+ 人工控制台 = [VP-033](plans/VP-033-telegram-operator-console.md) `active` v0.2.0（2026-09-04 · lead workspace-033；不重开 VP-030） |
+| RT-M03 | C 端聊天通道（Telegram Bot 运行时） | VP-030 + VP-033 | **delivered** | [VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `closed` v0.3.0（2026-09-05 · VRev-076 · workspace-030 Root done）；[VP-033](plans/VP-033-telegram-operator-console.md) `closed` v0.3.0（2026-09-05 · VRev-077 · workspace-033 Root done）。入站 webhook + 出站 SendMessage + 分发端口 + 单实例有界 `getUpdates` 与人工控制台均已交付；**不是**业务域。Mini App / Stars、多实例 / HA 长轮询仍 gated |
 
 ### 现行：出站邮件 A6 退出分母（VP-017 · 2026-08-24 重开）
 
@@ -303,7 +303,7 @@ A7  优雅停机 / 连接排空合同（RT-D02 → VP-021 **closed** v0.3.0，20
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s、SMS。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支当前拍：**[VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `active` v0.2.0**（2026-09-03 激活 · VRev-070 self `pass` · 架构类 freshness PASS · 限流评估 = 进程内够用、不需要 Redis；lead Root 已 `done`；RT-M03 active）。人工控制台 / 入站模式开关 **不**并入本拍，见 Admin 功能 [VP-033](plans/VP-033-telegram-operator-console.md) `active` v0.2.0（VRev-075；lead workspace-033）。**此前**：[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `closed`（2026-08-24 按现行渠道分母再关门 · v0.5.0；RT-M01 delivered）。**[VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md)（RT-D02）`closed` v0.3.0**（2026-08-27 关门 · 优雅停机 / 连接排空合同，单进程基线，不与 A3 绑定；VRev-047 self `pass` + 关闭双审闭合；RT-D02 → **delivered**；lead workspace-021 结项）。A3 余项仍 trigger-gated（多实例才评估就绪探针扩依赖 / PG 锁 vs Redis vs 队列）。
+架构分支最近一拍：**[VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `closed` v0.3.0**（2026-09-05 · VRev-076 self `pass` · 八条判据 verified · workspace-030 Root done · R-009 按 A-009 保留 bounded accepted-residual）；人工控制台 / 入站模式开关由 Admin 功能 [VP-033](plans/VP-033-telegram-operator-console.md) **`closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root done）。两条 VP 合并交付 RT-M03，**不**把人工控制台倒灌进 VP-030 分母。**此前**：[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `closed`（2026-08-24 按现行渠道分母再关门 · v0.5.0；RT-M01 delivered）。**[VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md)（RT-D02）`closed` v0.3.0**（2026-08-27 关门 · 优雅停机 / 连接排空合同，单进程基线，不与 A3 绑定；VRev-047 self `pass` + 关闭双审闭合；RT-D02 → **delivered**；lead workspace-021 结项）。A3 余项仍 trigger-gated（多实例才评估就绪探针扩依赖 / PG 锁 vs Redis vs 队列）。
 
 ---
 
@@ -348,7 +348,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3 · **已由 [VP-025](plans/VP-025-config-export-diff-dryrun-import.md) 交付并 `closed`**）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
 
-Admin 功能当前拍：**[VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) `active` v0.2.0**（2026-09-04 · VRev-075 self `pass` · Admin freshness PASS · lead `workspace-033-telegram-operator-console` · Root `done` 4/4，R1～R4 已完成；VP 层关门留后续 `/vision`）。硬前置 [VP-030](plans/VP-030-telegram-channel-runtime.md) runtime 已交付，其 VP 文件仍 `active`、另轮关门；本拍不重开 030。上一拍 [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) 已 `closed` v0.5.0。VP-031 仍 `planned`。体验增强（全局搜索 / Command Palette）仍登记、不插队。
+Admin 功能最近一拍：**[VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) `closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root `done` 4/4 · 八条判据 verified；后续 IM 修正由 A-015 收口）。硬前置 [VP-030](plans/VP-030-telegram-channel-runtime.md) 已于同日 `closed` v0.3.0（VRev-076），不重开 030。上一拍 [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) 已 `closed` v0.5.0。VP-031 仍 `planned`，体验增强（全局搜索 / Command Palette）仍登记、不插队。
 
 ---
 
@@ -387,7 +387,7 @@ Admin 功能当前拍：**[VP-033-telegram-operator-console](plans/VP-033-telegr
 
 ---
 
-**当前组合焦点**：**active 交付 VP = [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md)**（Admin 功能 · Telegram Bot 人工控制台 · v0.2.0 · 2026-09-04 激活 · VRev-075 self `pass` · I-033-007/008 冻结 · Admin freshness `42036a3c`→`dd1edade` PASS · lead `workspace-033-telegram-operator-console` · Root `done` 4/4，R1～R4 已完成；VP 层关门留后续 `/vision`）。[VP-032](plans/VP-032-rate-limiter-atomic-port.md) 已 `closed` v0.3.0；[VP-030](plans/VP-030-telegram-channel-runtime.md) 实现层 Root 已 `done`（4/4+R5）但 VP 文件仍 `active`，V-F118 recommended 要求后续另轮 `/vision` 关门、不阻断 033；[VP-031](plans/VP-031-digital-offer-entitlement.md) 仍 `planned`。持续程序 VP-009/010 照常；体验增强不插队。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
+**当前组合焦点**：**无 active 交付 VP**。Telegram 运行时与人工控制台已分别由 [VP-030](plans/VP-030-telegram-channel-runtime.md) 与 [VP-033](plans/VP-033-telegram-operator-console.md) 于 2026-09-05 关门为 `closed` v0.3.0（VRev-076/VRev-077；各自 workspace Root done；open required = 0）；RT-M03 已同步为 `delivered`。[VP-032](plans/VP-032-rate-limiter-atomic-port.md) 已 `closed` v0.3.0；[VP-031](plans/VP-031-digital-offer-entitlement.md) 仍 `planned`，尚未进入 active 交付。持续程序 VP-009/010 照常；体验增强不插队。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
 
 ## 单主线模块化策略
 

@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-030-telegram-channel-runtime
 title: Telegram Bot 通道运行时
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-030-telegram-channel-runtime
 created: 2026-09-02
-updated: 2026-09-03
-version: 0.2.2
+updated: 2026-09-05
+version: 0.3.0
 parent: null
 ---
 
@@ -17,9 +17,9 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-03 · v0.2.0 · 用户指令激活 · lead `workspace-030-telegram-channel-runtime`） |
+| status | **`closed`**（2026-09-05 · v0.3.0 · 用户指令授权关门 · lead `workspace-030-telegram-channel-runtime`） |
 | lead_workspace | `workspace-030-telegram-channel-runtime`（2026-09-03 开区） |
-| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活就绪 = [VRev-070](../reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass`（0 required · 架构类 freshness PASS · 限流评估落盘） |
+| Vision required | 计划阶段 self = [VRev-065](../reviews/VRev-065-c-end-paid-services-planned-self.md)；激活就绪 = [VRev-070](../reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass`；关门就绪 = [VRev-076](../reviews/VRev-076-vp030-telegram-channel-runtime-close-out.md) self `pass`；状态同步复核 = [VRev-079](../reviews/VRev-079-vp030-vp033-closeout-status-sync-response-self.md) self `pass`（响应 [VRev-078](../reviews/VRev-078-vp030-vp033-closeout-status-sync-independent-gpt-sol.md) independent fail，2 个聚合 required 已 fixed；当前 0 required） |
 | 组合位置 | **架构分支 · C 端通道**（对标 VP-017 出站邮件：内核端口 + 一方模块 + Admin 设置）。**不是**业务域，**不是**付费产品 |
 
 ## 意图
@@ -113,11 +113,15 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-030-telegram-channel-runtime | GOAL-001-telegram-channel-runtime | lead | 2026-09-03 | 唯一 delivery；VRev-070 self `pass`；架构类 freshness `b5c39dfb`→`42036a3c` |
+| workspace-030-telegram-channel-runtime | GOAL-001-telegram-channel-runtime | lead | 2026-09-03 | 唯一 delivery；Root done；VRev-070 激活 self `pass`；VRev-076 关门 self `pass`；open required = 0；R-009 仅保留 workspace-030 A-009 已接受的 bounded residual |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
+- 2026-09-05 · **`active → closed` v0.3.0**（用户当前指令授权；[VRev-076](../reviews/VRev-076-vp030-telegram-channel-runtime-close-out.md) self `pass`；open required = 0）。
+- 八条方向级退出判据 #1～#8 全部 verified；workspace-030 [Root GOAL-001](../../workspaces/workspace-030-telegram-channel-runtime/GOAL-001-telegram-channel-runtime/00-meta.md) 为 done，R1～R4 与 R5 均已结项，证据路径已在 VRev-076 逐条登记。
+- Root 审计链 [A-008 independent](../../workspaces/workspace-030-telegram-channel-runtime/GOAL-001-telegram-channel-runtime/03-audit/A-008-independent-closure-reaudit.md) pass + [A-009 response](../../workspaces/workspace-030-telegram-channel-runtime/GOAL-001-telegram-channel-runtime/03-audit/A-009-a008-response.md) pass；I-030-001～I-030-007 全部 verified；无开放 required。
+- R-009 默认 master key 文件与 DB 同目录仍按 A-009 的用户书面 accepted-residual 保留，复审触发为 KMS/HSM 或密钥管理波次；本次不扩大 residual 范围。
+- VRev-078 independent 状态同步 fail 发现的 2 个聚合 required 已由 VRev-079 self response fixed；workspace-030 workspace.md 与 Root 00-meta.md 的现行 VP 投影均已同步为 closed v0.3.0，历史 active 记录不改写。
 
 ## 规划修订短史
 
@@ -127,3 +131,4 @@ parent: null
 | 2026-09-03 | 用户指令激活：`planned → active` v0.2.0。VRev-070 self `pass`（0 required）。架构类 freshness PASS（`b5c39dfb`→`42036a3c`，不暂挂 `go`）。限流评估落盘：进程内够用、不需要 Redis。I-030-006/007 增补（V-F114/115 → fixed）。lead `workspace-030-telegram-channel-runtime` 交 `/govern` 开区。 |
 | 2026-09-03 | R1 信息裁决（`/govern`）：I-030-001/002/003/004/006 **verified**（用户书面全部采纳建议项）。合同正文 = workspace-030 GOAL-002 D-002 v0.1.0。入站限流使用点随 R2 webhook。I-030-005/007 仍 open。 |
 | 2026-09-03 | 边界指针：人工控制台 / 入站模式开关登记为 [VP-033](VP-033-telegram-operator-console.md) `planned`（结构选型 A）；**不**把该意图并入本 VP 分母，**不**重开本 VP。 |
+| 2026-09-05 | 用户指令授权 VP-030 关门：VRev-076 self `pass`（八条判据全 verified、open required = 0）；workspace-030 Root done；R-009 继续沿用 A-009 已接受的 bounded residual；`active → closed` v0.3.0。此前 VRev-072 V-F116 与 VRev-075 V-F118 的排序建议由本次关门事实解决。 |

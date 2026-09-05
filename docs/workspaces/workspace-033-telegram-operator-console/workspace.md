@@ -11,13 +11,13 @@ plan_refs:
 primary_plan: VP-033-telegram-operator-console
 created: 2026-09-04
 updated: 2026-09-05
-version: 0.5.0
+version: 0.6.0
 parent: null
 ---
 
 # 工作区上下文 · Telegram Bot 人工控制台（已结项）
 
-本工作区是 [VP-033-telegram-operator-console](../../vision/plans/VP-033-telegram-operator-console.md)（`active` v0.2.0）的唯一 lead delivery workspace，消费 VP-030 已交付的 Telegram runtime，在 Admin 功能分支交付连接状态、互斥 webhook/polling、业务占用位与未绑定人工文本控制台。2026-09-05 Root R4 已完成，工作区同步结项；VP-033 愿景计划仍保持 `active`。
+本工作区是 [VP-033-telegram-operator-console](../../vision/plans/VP-033-telegram-operator-console.md)（`closed` v0.3.0 · 2026-09-05 经 VRev-077/VRev-079 关门）的唯一 lead delivery workspace，消费 VP-030 已交付的 Telegram runtime，在 Admin 功能分支交付连接状态、互斥 webhook/polling、业务占用位与未绑定人工文本控制台。2026-09-05 Root R4 已完成，工作区同步结项；VP-033 愿景计划已关闭。
 
 - **Root**：`GOAL-001-telegram-operator-console`，**`done · 4/4`**；R1、R2、R3 已完成，R3 `GOAL-004-r3-session-operator-console` 由 A-039 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass` 与 A-040 response 关闭为 `done · 4/4`；R4 由 A-001/A-002/A-003/A-004 完成，F-001 已 fixed，open required = 0。
 - **激活依据**：[VRev-075](../../vision/reviews/VRev-075-vp033-telegram-operator-console-activation.md) self `pass`，open required = 0；Admin freshness `42036a3c` → `dd1edade` PASS。

@@ -49,4 +49,4 @@ version: 2.2.0
 
 ## 执行记录（ledger）
 
-`02-execution/` 平铺；编号递增；时间线只记事实。E-001～E-033 已登记本 Root 的开区、R1～R3 投影、R4 关门以及关门后的 Telegram 人工会话入口、刷新稳定性、滚动布局、页面级滚动隔离与 IM 聊天交互增强修正。Root 仍为 `done · 4/4`；本次只追加实现事实与审计响应，不重新打开 Root 或 workspace，VP-033 仍为 `active`。
+`02-execution/` 平铺；编号递增；时间线只记事实。E-001～E-033 已登记本 Root 的开区、R1～R3 投影、R4 关门以及关门后的 Telegram 人工会话入口、刷新稳定性、滚动布局、页面级滚动隔离与 IM 聊天交互增强修正。Root 仍为 `done · 4/4`；本次只追加实现事实与审计响应，不重新打开 Root 或 workspace；VP-033 已由 /vision 依据 VRev-077/VRev-079 关闭为 `closed · v0.3.0`。

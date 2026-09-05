@@ -4,8 +4,8 @@ title: Telegram Bot 通道运行时
 status: done
 parent: null
 created: 2026-09-03
-updated: 2026-09-03
-version: 1.2.0
+updated: 2026-09-05
+version: 1.3.0
 progress: 4/4
 plan_refs:
   - VP-030-telegram-channel-runtime
@@ -17,7 +17,7 @@ serves_summary: 同进程 Telegram Bot 通道运行时（架构分支 · C 端 i
 
 ## 概述
 
-承接 [VP-030-telegram-channel-runtime](../../vision/plans/VP-030-telegram-channel-runtime.md)（active v0.2.0 · [VRev-070](../../vision/reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass` · 架构类 freshness PASS `b5c39dfb`→`42036a3c`）：交付同进程 **C 端 Telegram 通道运行时**。**对象面**：HTTPS webhook（secret fail-closed）+ 内核级 Update 分发（命令/callback Register）+ `SendMessage` 文本端口 + `GetOrCreateSubject("telegram", id)` + Admin bot 设置。**红线（激活即生效）**：不进 `mvp`/`admin` 默认集；不做 Mini App / Stars / 对话 FSM / 付费命令；不引入独立 Bot 进程 / 长轮询生产 / 多 bot；不把 Bot 用户写入 `admin.users`；密钥 fail-closed；不消耗 RT-Q05 Redis trigger；不重开 VP-017/026/027/028/029。
+承接 [VP-030-telegram-channel-runtime](../../vision/plans/VP-030-telegram-channel-runtime.md)（closed v0.3.0 · [VRev-076](../../vision/reviews/VRev-076-vp030-telegram-channel-runtime-close-out.md) self `pass` · 八条方向级判据 verified；workspace-030 Root done；R-009 按 A-009 保留 bounded accepted-residual）：交付同进程 **C 端 Telegram 通道运行时**。**对象面**：HTTPS webhook（secret fail-closed）+ 内核级 Update 分发（命令/callback Register）+ `SendMessage` 文本端口 + `GetOrCreateSubject("telegram", id)` + Admin bot 设置。**红线（激活即生效）**：不进 `mvp`/`admin` 默认集；不做 Mini App / Stars / 对话 FSM / 付费命令；不引入独立 Bot 进程 / 长轮询生产 / 多 bot；不把 Bot 用户写入 `admin.users`；密钥 fail-closed；不消耗 RT-Q05 Redis trigger；不重开 VP-017/026/027/028/029。
 
 ## 成功标准（对应 VP-030 八条方向级退出判据）
 

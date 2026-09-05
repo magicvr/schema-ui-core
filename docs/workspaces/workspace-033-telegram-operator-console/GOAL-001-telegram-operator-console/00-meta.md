@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-09-04
 updated: 2026-09-05
-version: 1.0.0
+version: 1.2.0
 progress: 4/4
 plan_refs:
   - VP-033-telegram-operator-console
@@ -17,7 +17,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 
 ## 概述
 
-承接 [VP-033-telegram-operator-console](../../../vision/plans/VP-033-telegram-operator-console.md)（`active` v0.2.0 · [VRev-075](../../../vision/reviews/VRev-075-vp033-telegram-operator-console-activation.md) self `pass`）：消费 VP-030 已交付 Telegram runtime，建立 Admin 运营台的连接状态、互斥入站模式、业务占用位和未绑定人工文本会话。
+承接 [VP-033-telegram-operator-console](../../../vision/plans/VP-033-telegram-operator-console.md)（`closed` v0.3.0 · [VRev-077](../../../vision/reviews/VRev-077-vp033-telegram-operator-console-close-out.md) self `pass`；状态同步由 [VRev-079](../../../vision/reviews/VRev-079-vp030-vp033-closeout-status-sync-response-self.md) 复核通过）：消费 VP-030 已交付 Telegram runtime，建立 Admin 运营台的连接状态、互斥入站模式、业务占用位和未绑定人工文本会话。
 
 ## 成功标准
 
@@ -58,7 +58,7 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 | I-033-012 | required | 新安装/已有配置的 mode 默认及启动行为 | R2 连接建立 | R1 | **verified** | 用户书面裁决：缺省 `polling`、生产显式 `webhook`；D-002 |
 | I-033-013 | required | polling/连接管理器的生命周期 owner 与 shutdown drain 接缝 | R2/R4 生命周期验证 | R1 | **verified** | 用户书面裁决：Telegram connection manager + composition `OnStop` drain；D-002 |
 
-当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1～C5（D-001；I-033-014～016 verified；v67 migration、DB authoritative、settings PATCH、Bot API/manager、Admin UI/lease、Fake Bot API/错误矩阵/Fx lifecycle；A-006/A-012/A-015/A-018 Grok independent pass；A-007/A-013/A-016/A-019 response；A-008 状态纠正），GOAL-003 已关闭为 `done · 5/5`。R3 C1/C2 已分别由 A-005/A-013/A-015 Grok independent `pass` 与 response 关闭；C3 已由 A-027 Grok independent final `pass`、A-028 response 关闭；C4 已由 A-039 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`、A-040 response 关闭：`GOAL-004-r3-session-operator-console` done · 4/4；`da9d955e` 已修复 Web 构建错误。R4 已由 E-029、A-001/A-002/A-003/A-004 完成，Root 现为 `done · 4/4`；VP-033 继续保持 `active`。
+当前 R1 方案冻结的 required 信息 `I-033-011`～`I-033-013` 已由 D-002 记录为 `verified`；A-002 F-001～F-003 已按用户选择的 D-003 修正路径由 A-003 标记为 `fixed`，并经 A-004 Grok independent `pass` 复审；R1 C3 已由 A-005 完成。R2 子目标已完成 C1～C5（D-001；I-033-014～016 verified；v67 migration、DB authoritative、settings PATCH、Bot API/manager、Admin UI/lease、Fake Bot API/错误矩阵/Fx lifecycle；A-006/A-012/A-015/A-018 Grok independent pass；A-007/A-013/A-016/A-019 response；A-008 状态纠正），GOAL-003 已关闭为 `done · 5/5`。R3 C1/C2 已分别由 A-005/A-013/A-015 Grok independent `pass` 与 response 关闭；C3 已由 A-027 Grok independent final `pass`、A-028 response 关闭；C4 已由 A-039 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`、A-040 response 关闭：`GOAL-004-r3-session-operator-console` done · 4/4；`da9d955e` 已修复 Web 构建错误。R4 已由 E-029、A-001/A-002/A-003/A-004 完成，Root 现为 `done · 4/4`；VP-033 已由 /vision 依据 VRev-077、VRev-079 关闭为 `closed · v0.3.0`。
 
 ## 父目标
 
@@ -73,4 +73,4 @@ serves_summary: Admin 功能分支 · 消费 VP-030 Telegram runtime，交付连
 - 2026-09-05：Root R4 证据矩阵、红线核账与审计响应完成；A-003
   `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`，`open_required: 0`。
 - 2026-09-05：Root `GOAL-001-telegram-operator-console` 由 `/govern` 关闭为
-  `done · 4/4`；workspace-033 同步结项。VP-033 仍为 `active`，未在本次 Root 关门中越级关闭。
+  `done · 4/4`；workspace-033 同步结项。随后 `/vision` 依据 VRev-077 self `pass`、并经 VRev-078 independent 状态同步 finding 由 VRev-079 response fixed，将 VP-033 关闭为 `closed · v0.3.0`。

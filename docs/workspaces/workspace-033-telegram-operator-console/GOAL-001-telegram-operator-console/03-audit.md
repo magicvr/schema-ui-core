@@ -41,4 +41,4 @@ version: 0.9.0
 
 ## 审计记录（ledger）
 
-`03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。A-001～A-004 的 Root 关门意见保持不变；关门后 A-005 的 independent `conditional` 原始意见保留，A-006 以 `fixed` 响应，A-007 independent final `pass`、A-008 完成汇总；A-009/A-010 记录刷新与内层滚动修正；A-011/A-012 完成页面级滚动隔离修正；A-013 保留 IM 初始 independent `conditional` 原始意见；A-014 `subagent (gpt-5.6-sol · reasoning medium)` independent final `conditional` 原始意见保留，R-001 由 A-015 以主线程 custom profile Chromium 证据 `fixed` 响应。当前无开放 required/recommended finding；Root/Workspace 保持 done；未调用 Grok。
+`03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。A-001～A-004 的 Root 关门意见保持不变；关门后 A-005 的 independent `conditional` 原始意见保留，A-006 以 `fixed` 响应，A-007 independent final `pass`、A-008 完成汇总；A-009/A-010 记录刷新与内层滚动修正；A-011/A-012 完成页面级滚动隔离修正；A-013 保留 IM 初始 independent `conditional` 原始意见；A-014 `subagent (gpt-5.6-sol · reasoning medium)` independent final `conditional` 原始意见保留，R-001 由 A-015 以主线程 custom profile Chromium 证据 `fixed` 响应。当前无开放 required/recommended finding；Root/Workspace 保持 done；VP-033 已由 VRev-077/VRev-079 关闭为 `closed v0.3.0`。上述 A-001～A-015 条目保留其各自审计时点的 active 历史表述；未调用 Grok。

@@ -10,14 +10,14 @@ plan_refs:
   - VP-030-telegram-channel-runtime
 primary_plan: VP-030-telegram-channel-runtime
 created: 2026-09-03
-updated: 2026-09-03
-version: 1.0.0
+updated: 2026-09-05
+version: 1.1.0
 parent: null
 ---
 
 # 工作区上下文 · Telegram Bot 通道运行时
 
-本工作区是 [VP-030-telegram-channel-runtime](../../vision/plans/VP-030-telegram-channel-runtime.md)（**`active`** v0.2.0 · 2026-09-03 用户指令激活）的唯一 lead delivery workspace。**架构分支 · C 端通道**（对标 VP-017：内核端口 + 一方模块 + Admin 设置）：交付 Telegram Bot 通道运行时——HTTPS webhook（secret fail-closed）+ Update 分发端口（命令/callback Register）+ `SendMessage` 文本端口 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域，**不是**付费命令实现。**工作区已顺利结项关门。**
+本工作区是 [VP-030-telegram-channel-runtime](../../vision/plans/VP-030-telegram-channel-runtime.md)（**`closed`** v0.3.0 · 2026-09-05 用户指令授权关门 · [VRev-076](../../vision/reviews/VRev-076-vp030-telegram-channel-runtime-close-out.md) self `pass`）的唯一 lead delivery workspace。**架构分支 · C 端通道**（对标 VP-017：内核端口 + 一方模块 + Admin 设置）：交付 Telegram Bot 通道运行时——HTTPS webhook（secret fail-closed）+ Update 分发端口（命令/callback Register）+ `SendMessage` 文本端口 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域，**不是**付费命令实现。**工作区已顺利结项关门。**
 
 - **Root** `GOAL-001-telegram-channel-runtime`：**`done`** · **4/4 + R5**（R1 合同冻结 GOAL-002 3/3 → R2 webhook+分发+身份 GOAL-003 3/3 → R3 出站+设置+限流核账 GOAL-004 3/3 → R4 证据与关门 GOAL-005 3/3 全量达成关门；A-006/A-008 审计闭环后，判据 #5 补做 Admin UI tab 由 GOAL-006 3/3 完成，Root 回归 done），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-03）：[VRev-070](../../vision/reviews/VRev-070-vp030-telegram-channel-runtime-activation.md) self `pass`（0 required；V-F114/115 → 开区事务内 fixed）；**架构类轻量 freshness PASS**（`b5c39dfb` → `42036a3c`：协议 pin / 依赖锁 / Profile 默认集 / provenance 零变更；区间代码 = VP-029 已审结目）不暂挂 `go`；**限流评估落盘**：进程内够用、不需要 Redis，不消耗 RT-Q05 trigger。
@@ -33,8 +33,8 @@ parent: null
 | Root Goal | `GOAL-001-telegram-channel-runtime` | `parent: null`；**done** · 4/4（R1～R4 全部关门） |
 | canonical 范围 | `docs/workspaces/workspace-030-telegram-channel-runtime/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
-| 愿景角色 | `delivery` | VP-030 lead（active）；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-030-telegram-channel-runtime`（`active` v0.2.0） | 2026-09-03 激活/开区（VRev-070 self `pass`；arch 类 freshness PASS `b5c39dfb`→`42036a3c`） |
+| 愿景角色 | `delivery` | VP-030 lead（closed v0.3.0）；不改变 Charter primary workspace |
+| 规划对齐 | `primary_plan` = `VP-030-telegram-channel-runtime`（`closed` v0.3.0） | 2026-09-05 关门（VRev-076 self `pass`；八条判据 verified；Root done；R-009 按 A-009 保留 bounded accepted-residual） |
 
 ## 愿景对齐
 
