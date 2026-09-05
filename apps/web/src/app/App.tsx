@@ -695,9 +695,18 @@ function PageSurface({
         entry.route !== "" &&
         entry.pageId !== manifest.app.homePageRef,
     )?.route;
+  const isTelegramOperatorPage = route.page.pageId === "telegram-operator";
   return (
-    <section className="w-full min-w-0 space-y-8" aria-labelledby="page-title">
-      <div className="flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6">
+    <section
+      data-page-surface={route.page.pageId}
+      className={isTelegramOperatorPage
+        ? "flex h-full min-h-0 w-full min-w-0 flex-col space-y-8 overflow-hidden"
+        : "w-full min-w-0 space-y-8"}
+      aria-labelledby="page-title"
+    >
+      <div className={isTelegramOperatorPage
+        ? "flex w-full min-w-0 shrink-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6"
+        : "flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6"}>
         <div className="min-w-0 flex-1">
           <Breadcrumbs
             entries={trail}
@@ -715,7 +724,9 @@ function PageSurface({
           </h1>
         </div>
       </div>
-      <div className="w-full min-w-0">
+      <div className={isTelegramOperatorPage
+        ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+        : "w-full min-w-0"}>
         <SchemaPageSurface
           page={route.page}
           params={route.params}
@@ -869,6 +880,11 @@ export function App({
     () => projectNavigation(manifest, path, navigationContext, t),
     [manifest, navigationContext, path, t],
   );
+  const activePageId = useMemo(
+    () => matchRoute(manifest.pages, path)?.page.pageId,
+    [manifest, path],
+  );
+  const isTelegramOperatorPage = activePageId === "telegram-operator";
   const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
   // W13 T-02: shared brand-link handler for the mobile brand bar and the
   // desktop single-row header (home navigation when homePageRef is declared).
@@ -884,7 +900,7 @@ export function App({
     <div
       data-shell="admin"
       data-shell-layout="topbar-sidenav"
-      className="min-h-screen bg-background text-foreground"
+      className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background text-foreground"
     >
       {accountError !== undefined ? (
         <div
@@ -1017,13 +1033,13 @@ export function App({
       <div
         data-shell-region="body"
         data-shell-width="fluid"
-        className="flex w-full min-h-[calc(100vh-3.5rem)]"
+        className="flex min-h-0 w-full flex-1 overflow-hidden"
       >
         {/* D-004 §3: desktop permanent left nav ~256px (w-64) */}
         <aside
           data-shell-region="sidenav"
           data-shell-sidenav-width="256"
-          className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 px-3 py-5 lg:block"
+          className="sticky top-14 hidden h-full w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 px-3 py-5 lg:block"
         >
           <div className="mb-3 flex items-center gap-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <PanelLeft aria-hidden="true" className="size-3.5" />
@@ -1037,9 +1053,16 @@ export function App({
         <main
           id="main"
           data-shell-region="main"
-          className="min-w-0 w-full flex-1 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+          data-shell-scroll-mode={isTelegramOperatorPage ? "contained" : "page"}
+          className={`min-h-0 min-w-0 w-full flex-1 overflow-x-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${isTelegramOperatorPage ? "overflow-y-hidden" : "overflow-y-auto"}`}
         >
-          <div data-shell-region="page" className="w-full min-w-0 max-w-none">
+          <div
+            data-shell-region="page"
+            data-shell-page-id={activePageId}
+            className={isTelegramOperatorPage
+              ? "h-full min-h-0 w-full min-w-0 max-w-none"
+              : "w-full min-w-0 max-w-none"}
+          >
             <PageSurface
               manifest={manifest}
               path={path}

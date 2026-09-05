@@ -255,6 +255,13 @@ describe("App shell integration", () => {
     expect(window.location.pathname).toBe("/telegram-settings/operator");
     expect(container.querySelector("h1")?.textContent).toBe("Operator conversations");
     expect(container.textContent).toContain("Operator chat body");
+    const shellPage = container.querySelector('[data-shell-region="page"]') as HTMLElement;
+    expect(shellPage.dataset.shellPageId).toBe("telegram-operator");
+    expect(shellPage.className).toContain("h-full");
+    const shellMain = container.querySelector('[data-shell-region="main"]') as HTMLElement;
+    expect(shellMain.dataset.shellScrollMode).toBe("contained");
+    expect(shellMain.className).toContain("overflow-y-hidden");
+    expect(container.querySelector('[data-shell-region="body"]')?.className).toContain("min-h-0");
     const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
     expect(breadcrumb?.textContent).toContain("Telegram channel");
     expect(breadcrumb?.textContent).toContain("Operator conversations");

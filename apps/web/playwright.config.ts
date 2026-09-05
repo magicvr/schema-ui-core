@@ -16,16 +16,50 @@ import { defineConfig } from "@playwright/test";
 // mvp/admin are the production profiles; demo (W2, GOAL-003 / workspace-010)
 // is the non-production demonstration profile (mvp capability + dev.examples).
 const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
-if (appProfile !== "mvp" && appProfile !== "admin" && appProfile !== "demo") {
-  throw new Error(`APP_PROFILE must be mvp, admin or demo for browser E2E (got ${appProfile || "empty"})`);
+if (appProfile !== "mvp" && appProfile !== "admin" && appProfile !== "demo" && appProfile !== "custom") {
+  throw new Error(`APP_PROFILE must be mvp, admin, demo or custom for browser E2E (got ${appProfile || "empty"})`);
 }
 const e2eConfigPath = join(mkdtempSync(join(tmpdir(), "schema-ui-e2e-cfg-")), "config.yaml");
+const customE2EModules = [
+  "core.server-registration",
+  "core.auth-session",
+  "core.manifest-route",
+  "core.navigation-capability",
+  "core.schema-render",
+  "core.operationlog",
+  "admin.users",
+  "admin.roles",
+  "admin.settings",
+  "admin.activity",
+  "admin.account",
+  "admin.data-transfer",
+  "admin.dashboard",
+  "admin.notifications",
+  "admin.file-library",
+  "admin.data-dictionary",
+  "admin.system-monitoring",
+  "admin.scheduled-tasks",
+  "admin.login-captcha",
+  "admin.recycle-bin",
+  "admin.data-permission",
+  "admin.mfa",
+  "admin.wallet",
+  "channel.telegram",
+];
+const appConfig = appProfile === "custom"
+  ? [
+      "app:",
+      "  env: development",
+      "  profile: custom",
+      "  modules:",
+      "    list:",
+      ...customE2EModules.map((moduleId) => `      - ${moduleId}`),
+      "",
+    ].join("\n")
+  : `app:\n  env: development\n  profile: ${appProfile}\n`;
 writeFileSync(
   e2eConfigPath,
-  `app:
-  env: development
-  profile: ${appProfile}
-`,
+  appConfig,
   "utf8",
 );
 

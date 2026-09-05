@@ -44,18 +44,17 @@ func TestPageDocumentsExposeSeparateSettingsAndOperatorSurfaces(t *testing.T) {
 
 	var operator struct {
 		Body struct {
-			Children []struct {
-				Component string `json:"component"`
-				Props     struct {
-					Surface string `json:"surface"`
-				} `json:"props"`
-			} `json:"children"`
+			Type      string `json:"type"`
+			Component string `json:"component"`
+			Props     struct {
+				Surface string `json:"surface"`
+			} `json:"props"`
 		} `json:"body"`
 	}
 	if err := json.Unmarshal(documents["telegram-operator"], &operator); err != nil {
 		t.Fatalf("unmarshal operator page: %v", err)
 	}
-	if len(operator.Body.Children) != 1 || operator.Body.Children[0].Component != "telegram-admin-tab" || operator.Body.Children[0].Props.Surface != "operator" {
-		t.Fatalf("operator page must mount the operator surface: %+v", operator.Body.Children)
+	if operator.Body.Type != "custom" || operator.Body.Component != "telegram-admin-tab" || operator.Body.Props.Surface != "operator" {
+		t.Fatalf("operator page must mount the operator surface directly: %+v", operator.Body)
 	}
 }

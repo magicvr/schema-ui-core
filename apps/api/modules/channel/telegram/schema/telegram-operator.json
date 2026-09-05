@@ -9,17 +9,11 @@
     ]
   },
   "body": {
-    "type": "section",
-    "id": "telegram-operator",
-    "children": [
-      {
-        "type": "custom",
-        "id": "telegram-operator-console",
-        "component": "telegram-admin-tab",
-        "props": {
-          "surface": "operator"
-        }
-      }
-    ]
+    "type": "custom",
+    "id": "telegram-operator-console",
+    "component": "telegram-admin-tab",
+    "props": {
+      "surface": "operator"
+    }
   }
 }

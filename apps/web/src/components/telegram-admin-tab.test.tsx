@@ -171,7 +171,8 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("reply");
     expect(container.textContent).toContain("Mock-captured messages: 3");
     const operator = container.querySelector("[data-telegram-operator]") as HTMLElement;
-    expect(operator.className).toContain("max-h-[calc(100dvh-12rem)]");
+    expect(operator.className).toContain("flex-1");
+    expect(operator.className).toContain("min-w-0");
     expect(operator.className).toContain("overflow-hidden");
     const sessions = container.querySelector("[data-telegram-sessions]") as HTMLElement;
     expect(sessions.className).toContain("overflow-y-auto");

@@ -627,7 +627,9 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       <section
         data-telegram-admin-tab
         data-telegram-operator-page={isOperatorSurface ? "true" : undefined}
-        className="space-y-3 rounded-xl border border-border/70 bg-card/85 p-4"
+        className={isOperatorSurface
+          ? "flex h-full min-h-0 min-w-0 flex-1 flex-col space-y-3 overflow-hidden rounded-xl border border-border/70 bg-card/85 p-4"
+          : "space-y-3 rounded-xl border border-border/70 bg-card/85 p-4"}
       >
         <h2 className="text-sm font-semibold">{t(surfaceTitleKey)}</h2>
         <p role="alert" className="text-sm text-destructive">{t("schema.telegram.feedback.loadFailed")}</p>
@@ -678,9 +680,11 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
     <section
       data-telegram-admin-tab
       data-telegram-operator-page={isOperatorSurface ? "true" : undefined}
-      className="space-y-4 rounded-xl border border-border/70 bg-card/85 p-4"
+      className={isOperatorSurface
+        ? "flex h-full min-h-0 min-w-0 flex-1 flex-col space-y-4 overflow-hidden rounded-xl border border-border/70 bg-card/85 p-4"
+        : "space-y-4 rounded-xl border border-border/70 bg-card/85 p-4"}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">{t(surfaceTitleKey)}</h2>
         {status !== null ? (
           <span className="text-xs text-muted-foreground">
@@ -692,7 +696,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       </div>
 
       {status !== null ? (
-        <div data-telegram-connection className="space-y-1 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+        <div data-telegram-connection className="shrink-0 space-y-1 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
           <p>
             {t("schema.telegram.status.connection")} {connectionStateLabel} · {receiverLabel}
           </p>
@@ -709,7 +713,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
         </div>
       ) : null}
 
-      {loadState === "loading" ? <p className="text-sm text-muted-foreground">{t("feedback.loading")}</p> : null}
+      {loadState === "loading" ? <p className="shrink-0 text-sm text-muted-foreground">{t("feedback.loading")}</p> : null}
 
       {!isOperatorSurface ? (
         <>
@@ -804,7 +808,7 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
       ) : null}
 
       {isOperatorSurface && status !== null && status.configured && status.business_occupied === false && typeof status.bot_id === "number" && status.bot_id > 0 ? (
-        <section data-telegram-operator className="flex max-h-[calc(100dvh-12rem)] min-h-0 flex-col gap-3 overflow-hidden rounded-md border border-border/60 bg-muted/10 p-3">
+        <section data-telegram-operator className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden rounded-md border border-border/60 bg-muted/10 p-3">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">{t("schema.telegram.operator.title")}</h3>
             <button
