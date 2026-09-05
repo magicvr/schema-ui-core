@@ -676,6 +676,11 @@ export function TelegramAdminTab(_props: CustomComponentProps) {
           <p>
             {t("schema.telegram.status.connection")} {connectionStateLabel} · {receiverLabel}
           </p>
+          {status.mode === telegramPollingMode ? (
+            <p role="alert" data-telegram-polling-warning>
+              {t("schema.telegram.status.pollingSingleInstanceWarning")}
+            </p>
+          ) : null}
           {status.bot_username ? <p>{t("schema.telegram.status.bot")} @{status.bot_username}</p> : null}
           {status.last_error ? <p role="alert" className="text-destructive">{status.last_error}</p> : null}
           {leaseLabel !== null && status.mode === telegramPollingMode ? (

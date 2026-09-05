@@ -115,6 +115,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     // Values are never pre-filled from the server (write-only).
     expect(token.value).toBe("");
     expect(secret.value).toBe("");
+    expect(container.querySelector("[data-telegram-polling-warning]")?.textContent).toContain("multiple replicas");
   });
 
   it("loads operator sessions and transcript while fail-closing the composer before capability proof", async () => {
@@ -145,6 +146,7 @@ describe("TelegramAdminTab (GOAL-006 R5)", () => {
     await settle();
 
     expect(container.querySelector("[data-telegram-session='8001']")).not.toBeNull();
+    expect(container.querySelector("[data-telegram-polling-warning]")).toBeNull();
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("hello");
     expect(container.querySelector("[data-telegram-transcript]")?.textContent).toContain("reply");
     const composer = container.querySelector("[data-telegram-composer]") as HTMLFieldSetElement;

@@ -996,6 +996,7 @@
   "schema.telegram.status.notConfigured": "未配置",
   "schema.telegram.status.captured": "Mock 捕获消息：",
   "schema.telegram.status.connection": "连接状态：",
+  "schema.telegram.status.pollingSingleInstanceWarning": "Polling 仅支持单实例；多副本运行可能丢失 Update，不是高可用生产路径。",
   "schema.telegram.status.bot": "Bot：",
   "schema.telegram.status.consoleLease": "控制台租约：",
   "schema.telegram.connection.unconfigured": "未配置",

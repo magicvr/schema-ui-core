@@ -996,6 +996,7 @@
   "schema.telegram.status.notConfigured": "Not configured",
   "schema.telegram.status.captured": "Mock-captured messages:",
   "schema.telegram.status.connection": "Connection:",
+  "schema.telegram.status.pollingSingleInstanceWarning": "Polling is single-instance only; multiple replicas can lose updates. It is not an HA production path.",
   "schema.telegram.status.bot": "Bot:",
   "schema.telegram.status.consoleLease": "Console lease:",
   "schema.telegram.connection.unconfigured": "Unconfigured",
