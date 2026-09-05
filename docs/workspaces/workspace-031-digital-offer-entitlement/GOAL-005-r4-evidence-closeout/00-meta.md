@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-evidence-closeout
 title: R4 证据矩阵/边界核账/关门审计
-status: active
+status: done
 parent: GOAL-001-digital-offer-entitlement
 created: 2026-09-05
 updated: 2026-09-05
 version: 0.1.0
-progress: 1/2
+progress: 2/2
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -26,7 +26,7 @@ serves_summary: 承载 VP-031 R4（分母 = GOAL-002 D-002 v1.2.0）：VP-031 �
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | **证据矩阵 + 边界核账**：判据 1～8 逐条映射证据路径；红线/Profile/subject-only/ Charter 未改核对 | **已关门**（2026-09-05 · E-001） |
-| C2 | **关门审计与 Root 关门**：self + codex independent 关门审计；意见响应；Root/goal-tree/VP-031 投影同步 | **重开**（2026-09-05：A-006 independent runtime-integration `fail` 4 required——Root 关门状态按 P-003 撤回；D-003 裁决 + 修复后待 closure 复审重新关门） |
+| C2 | **关门审计与 Root 关门**：self + codex independent 关门审计；意见响应；Root/goal-tree/VP-031 投影同步 | **已关门**（第 2 次关门：A-006 fail 4 required → A-009 补齐 → A-010 independent `pass` 0 required） |
 
 `progress` = 已关门检查点数 / 2。当前 **0/2**。
 
