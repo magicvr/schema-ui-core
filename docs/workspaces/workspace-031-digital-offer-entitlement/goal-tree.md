@@ -5,7 +5,7 @@
 ## 目标树
 
 ```text
-GOAL-001-digital-offer-entitlement (数字 Offer 与权益 · active · 1/4)
+GOAL-001-digital-offer-entitlement (数字 Offer 与权益 · active · 3/4)
 ├── GOAL-002-r1-contract-freeze (R1 合同冻结 · done · 3/3)
 ├── GOAL-003-r2-offer-purchase-wallet (R2 Offer CRUD + 购买 + 钱包扣款 · done · 4/4)
 ├── GOAL-004-r3-entitlement-validation-telegram (R3 权益核验/消耗 + 可选 Telegram 注册 · done · 3/3)

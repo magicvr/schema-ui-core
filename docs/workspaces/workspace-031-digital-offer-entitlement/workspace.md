@@ -38,8 +38,6 @@ parent: null
 | R2 | Offer CRUD、购买凭证、钱包 `freeze → deduct_frozen` / 失败 `unfreeze` | **关门**（2026-09-05 · GOAL-003 done 4/4；A-001～A-009 审计循环，A-008 independent `pass` open required 0） |
 | R3 | 权益校验、过期/耗尽语义、可选 Telegram Register | **关门**（2026-09-05 · GOAL-004 done 3/3；A-002 independent `pass` 0 required） |
 | R4 | 证据矩阵、边界核账、审计闭合与关门 | **进行中**（GOAL-005 承载） |
-| R3 | 权益校验、过期/耗尽语义、可选 Telegram Register | 待开始；依赖 R2 |
-| R4 | 证据矩阵、边界核账、审计闭合与关门 | 待开始；依赖 R1～R3 |
 
 ## 激活边界
 

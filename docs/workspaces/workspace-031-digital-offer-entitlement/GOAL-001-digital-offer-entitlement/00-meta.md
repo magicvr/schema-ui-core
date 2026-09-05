@@ -40,8 +40,6 @@ serves_summary: 业务域分支 · 数字 Offer + 薄购买凭证 + 本域权益
 | R2 | Offer + 购买 + 钱包扣款 | **已关门**（2026-09-05 · GOAL-003 done 4/4；A-008 independent `pass` open required 0） |
 | R3 | 权益校验 + 可选 Telegram 注册 | **已关门**（2026-09-05 · GOAL-004 done 3/3；A-002 independent `pass` 0 required） |
 | R4 | 证据与关门 | 进行中（GOAL-005 承载） |
-| R3 | 权益校验 + 可选 Telegram 注册 | 待开始；依赖 R2 |
-| R4 | 证据与关门 | 待开始；依赖 R1～R3 |
 
 ## 信息就绪与未知项（P-005）
 

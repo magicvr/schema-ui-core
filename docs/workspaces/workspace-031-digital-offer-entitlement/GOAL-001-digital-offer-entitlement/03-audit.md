@@ -17,10 +17,9 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-031-001～003 | open | R1 required 信息尚未冻结；未到 R2/R3 放行 |
-| I-031-004～005 | open | R1 non-blocking 信息尚未冻结 |
-| V-F119 | recommended | R1 冻结业务限流桶语义；不阻断建区 |
-| 到期 required | 否 | Root 建立态，尚未进入 R1 关门或 R2 放行 |
+| I-031-001～005 | verified | R1 已关闭（用户书面裁决 + 默认冻结；证据 GOAL-002 D-001） |
+| V-F119 | 已纳入合同 | §8 冻结业务限流桶语义（D-002 v1.2.0）；请求计数禁 key-wide Clear |
+| 到期 required | 无 | R1～R3 已关门（GOAL-002/003/004 done）；R4 关门审计进行中 |
 | 资料引用 | 无 | `shared_materials_catalog: none` |
 
 ## 审计记录（ledger）
