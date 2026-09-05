@@ -3,15 +3,15 @@ doc_type: goal-decision
 id: D-002-digital-offer-contract
 parent: GOAL-002-r1-contract-freeze
 date: 2026-09-05
-status: draft
-version: 0.1.0
+status: accepted
+version: 1.0.0
 ---
 
-# D-002 · 数字 Offer 业务域合同 v0.1.0
+# D-002 · 数字 Offer 业务域合同 v1.0.0
 
 > R1 合同正文。R2/R3/R4 的实施、验收与关门以本文为分母；偏离本文需先以 02 决策修订合同再实施。
 > 框架性裁决（权益形态 / 购买状态机 / 人工发放边界 / 模块 id / 命令清单）见 D-001，本文不得与之冲突。
-> 落盘状态：`draft`（C2 待 C3 审计闭合后置 `accepted` 并升 1.0.0）。
+> 落盘状态：`accepted`（2026-09-05 · A-006 independent closure `pass` 后冻结；v1.0.0 · C2/C3 关门）。
 
 ## 0. 对齐与判据映射
 
@@ -209,7 +209,8 @@ for attempt in 1..3:
   )
   if outcome == committed-OK: return nil
   if outcome == deterministic-insufficient:
-    // 本次事务内候选总量确实不足（读时已锁行语义下成立）→ 终态错误
+    // 本次事务内候选行扣尽仍不足 → 终态错误；有效性依据最终条件 UPDATE 的
+    // 谓词重检与失败 attempt 回滚（SELECT 未加锁，不依赖锁行读或 serializable）
     return ErrEntitlementInsufficient
   // 其余 outcome（竞争失败）→ 下一个 attempt 全新事务重读候选
 return ErrEntitlementInsufficient（重试耗尽）

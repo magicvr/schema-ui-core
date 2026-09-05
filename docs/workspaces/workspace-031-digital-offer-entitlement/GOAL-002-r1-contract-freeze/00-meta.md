@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-contract-freeze
 title: R1 合同冻结（Offer 字段 / 购买状态机 / 权益形态 / 命令清单 / 事务与限流边界）
-status: active
+status: done
 parent: GOAL-001-digital-offer-entitlement
 created: 2026-09-05
 updated: 2026-09-05
 version: 0.1.0
-progress: 1/3
+progress: 3/3
 plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
@@ -26,10 +26,10 @@ serves_summary: 承载 VP-031 R1：冻结数字 Offer 字段与状态机、购�
 | 检查点 | 内容 | 状态 |
 |--------|------|------|
 | C1 | **信息裁决**：I-031-001～003 required（P-004 用户书面裁决）+ I-031-004/005 non-blocking 默认冻结 | **已关门**（2026-09-05 用户书面全部采纳建议项——D-001） |
-| C2 | **合同正文冻结**：D-002 冻结 Offer 字段/状态机、购买单事务边界、权益核验/消耗、命令清单、限流桶、错误码、迁移与装配面 | 进行中（D-002 草案已落盘，待审计） |
-| C3 | **审视与关门**：self 审计（A-001）+ codex 独立审计（A-002，gpt 5.6 sol · medium）；意见响应整改；Root 信息台账回写 | 待开始 |
+| C2 | **合同正文冻结**：D-002 冻结 Offer 字段/状态机、购买单事务边界、权益核验/消耗、命令清单、限流桶、错误码、迁移与装配面 | **已关门**（D-002 v1.0.0 `accepted`，2026-09-05 经 A-006 independent closure 复审通过） |
+| C3 | **审视与关门**：self 审计（A-001）+ codex 独立审计（A-002，gpt 5.6 sol · medium）；意见响应整改；Root 信息台账回写 | **已关门**（A-001→A-007 循环；A-006 `pass` open required 0；A-007 登记闭合与关门判定） |
 
-`progress` = 已关门检查点数 / 3。当前 **1/3**。
+`progress` = 已关门检查点数 / 3。当前 **3/3**。
 
 ## 成功标准（方向级）
 
