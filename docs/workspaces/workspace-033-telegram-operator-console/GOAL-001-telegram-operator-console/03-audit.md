@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-04
 updated: 2026-09-05
-version: 0.3.0
+version: 0.4.0
 ---
 
 # GOAL-001-telegram-operator-console · 03-audit 索引
@@ -15,6 +15,7 @@ version: 0.3.0
 | [A-001-r4-root-close-self-audit](03-audit/A-001-r4-root-close-self-audit.md) | 2026-09-05 | self | GOAL-001 Root R4 全退出判据与当前 API/Web 验证 | **fail** | **1** | R1～R3 证据可核对、回归/build 通过；发现 F-001：polling 多副本会丢 Update 的 UI 警示缺失，需修复后独立复审 | [A-001-r4-root-close-self-audit.md](03-audit/A-001-r4-root-close-self-audit.md) |
 | [A-002-r4-f001-response-self](03-audit/A-002-r4-f001-response-self.md) | 2026-09-05 | self | 响应 A-001 F-001；polling 单实例 UI 警示修复复核 | **pass** | **0** | F-001 已以双语 UI、polling/webhook 回归断言和 Web full/build 验证 `fixed`；Root 仍等待 independent close-out | [A-002-r4-f001-response-self.md](03-audit/A-002-r4-f001-response-self.md) |
 | [A-003-r4-root-close-independent-gpt-sol](03-audit/A-003-r4-root-close-independent-gpt-sol.md) | 2026-09-05 | independent (`subagent (gpt-5.6-sol · reasoning medium)`) | GOAL-001 Root R4 全退出判据 1～8；当前 HEAD d64b6be8 | **pass** | **0** | 独立核对当前源码、API/Web 全量测试、build、A-001/A-002 与边界；F-001 fixed，无新增 finding | [A-003-r4-root-close-independent-gpt-sol.md](03-audit/A-003-r4-root-close-independent-gpt-sol.md) |
+| [A-004-r4-root-close-response-self](03-audit/A-004-r4-root-close-response-self.md) | 2026-09-05 | self | 响应 A-001/A-002/A-003，关闭 GOAL-001 Root R4 与 workspace-033 | **pass** | **0** | 无冲突、无 residual/overrule；Root 六项成功标准与 R1～R4 已核对，Root done · 4/4；VP-033 保持 active | [A-004-r4-root-close-response-self.md](03-audit/A-004-r4-root-close-response-self.md) |
 
 ## 信息就绪核对（按 scope）
 
@@ -30,6 +31,5 @@ version: 0.3.0
 ## 审计记录（ledger）
 
 `03-audit/` 平铺；编号递增；正式意见必须落盘（self / independent 共用序列）。A-001
-已记录 Root R4 self finding F-001；A-002 已确认其 `fixed`、`open_required: 0`；仍需
-指定 provider 的 Root independent close-out 已由 A-003 完成，`verdict: pass`、
-`open_required: 0`；待 `/govern` 记录最终 Root 关门响应。
+原始 self finding F-001 保留；A-002 已确认其 `fixed`，A-003 指定 provider independent
+`pass`、`open_required: 0`，A-004 已完成最终 `/govern` 关门响应；Root done · 4/4。

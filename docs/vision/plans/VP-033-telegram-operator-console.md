@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-033-telegram-operator-console
 created: 2026-09-03
 updated: 2026-09-05
-version: 0.2.11
+version: 0.2.12
 parent: null
 ---
 
@@ -121,7 +121,7 @@ parent: null
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root active 3/4；R3 C1/C2/C3 已由对应 independent close-out 与 response 关闭；C4 由 D-011 独立 capability 路由、A-039 `subagent (gpt-5.6-sol · reasoning medium)` independent pass + A-040 response 关闭；A-001 Root self audit F-001 已由 E-028/A-002 fixed；Root R4 independent close-out 待进行 |
+| `workspace-033-telegram-operator-console` | `GOAL-001-telegram-operator-console` | lead delivery | 2026-09-04 | `/govern` scaffold；Root done 4/4；R1～R4 已完成；A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent pass + A-004 response；F-001 fixed，open required = 0；VP-033 仍 active，待另轮 `/vision` 处理愿景层关门 |
 
 ## 关门记录
 
@@ -134,3 +134,4 @@ parent: null
 | 2026-09-03 | 用户确认结构选型 A：新建 VP（不塞 workspace-030、不修订 VP-030 分母）。登记 `planned` v0.1.0（0 区）。入站模式开关 + 轮询启停策略 + 占用位 + 人工 IM 写入退出分母。I-033-001～006 会话内 verified；I-033-007/008 激活前裁决。 |
 | 2026-09-04 | 用户接受 `/vision` 建议：I-033-007 冻结为“不要求关闭 Privacy Mode，只收录 bot 实际可见更新”；I-033-008 冻结为“显式公网 base URL + 本地 Fake Bot API 验收”。VRev-075 self `pass`，Admin freshness `42036a3c`→`dd1edade` PASS，open required = 0；`planned → active` v0.2.0，lead `workspace-033-telegram-operator-console`。VP-030 保持 active，本次不夹带关门。 |
 | 2026-09-04 | workspace-033 R3 C1 用户裁决已落盘：I-033-009/010 的决策状态同步为 `verified`；实现与测试仍由 workspace-033 R3 核验，不改变 VP-033 边界或激活状态。 |
+| 2026-09-05 | workspace-033 Root R4 已完成：A-001 self 发现的 polling 单实例 UI finding F-001 由 E-028/A-002 fixed；A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent pass、A-004 response；Root `done · 4/4`。VP-033 保持 `active`，不在实现层 Root 关门中越级关闭。 |
