@@ -45,6 +45,9 @@ import (
 	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
 	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/modules/datatransfer"
 	devexamplesmodule "github.com/magicvr/schema-ui-core/apps/api/modules/dev/examples"
+	digitaloffermodule "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer"
+	digitalofferservice "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/service"
+	digitalofferstore "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/store"
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/filelibrary"
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/store"
@@ -612,6 +615,21 @@ func newMuxWithExtraProviders(
 			return err == nil
 		})
 		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists, rateLimiters))
+	}
+	// VP-031 (workspace-031 GOAL-003 · GOAL-002 D-002 v1.0.0): biz.digital-offer —
+	// digital offers + thin purchases over the wallet money primitives +
+	// per-subject entitlements. NOT in any default profile; assembled only when
+	// the plan enables biz.digital-offer. Offer store and wallet store share the
+	// platform runner so each purchase attempt spans both domains in ONE
+	// kernel.Tx (D-002 §4.2); subject existence is gated in-tx (§4.4).
+	if plan.HasModule("biz.digital-offer") {
+		digitalOfferService := digitalofferservice.NewService(
+			digitalofferstore.NewRepository(st),
+			walletstore.NewRepository(st),
+			subject.NewStore(st),
+			operations,
+		)
+		providers = append(providers, digitaloffermodule.New(a, digitalOfferService, rateLimiters))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))

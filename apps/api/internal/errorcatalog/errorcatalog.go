@@ -181,6 +181,21 @@ var Catalog = map[string]Entry{
 	// W14 F-06 (GOAL-019): operations detail not found (previously uncataloged).
 	"OPERATION_NOT_FOUND": {"error.operationNotFound", "no operation with that id", "没有该 id 对应的操作日志"},
 
+	// VP-031 R2 (workspace-031 GOAL-002 D-002 v1.0.0 §9 + GOAL-003 D-001
+	// addendum): biz.digital-offer codes.
+	"BIZOFFER_NOT_FOUND":          {"error.bizOfferNotFound", "digital offer not found", "数字 Offer 不存在"},
+	"BIZOFFER_NOT_ON_SALE":        {"error.bizOfferNotOnSale", "digital offer is not on sale", "数字 Offer 未上架"},
+	"BIZOFFER_CURRENCY_MISMATCH":  {"error.bizOfferCurrencyMismatch", "offer currency does not match the wallet account", "Offer 币种与钱包账户不一致"},
+	"BIZOFFER_INSUFFICIENT_FUNDS": {"error.bizOfferInsufficientFunds", "insufficient balance for this purchase", "余额不足，无法完成购买"},
+	"BIZOFFER_SUBJECT_NOT_FOUND":  {"error.bizOfferSubjectNotFound", "subject not found", "主体不存在"},
+	// BIZOFFER_ENTITLEMENT_INVALID registers with the R3 Check/Consume surface
+	// (GOAL-004) — the catalog pins emitted codes only.
+	"BIZOFFER_ENTITLEMENT_INSUFFICIENT": {"error.bizOfferEntitlementInsufficient", "insufficient entitlement count", "权益剩余次数不足"},
+	"BIZOFFER_REQUEST_CONFLICT":         {"error.bizOfferRequestConflict", "request id was already used with a different offer", "请求标识已被其他 Offer 使用"},
+	"BIZOFFER_FORM_CONFLICT":            {"error.bizOfferFormConflict", "entitlement form fields are immutable", "权益形态字段不可修改"},
+	"BIZOFFER_VERSION_CONFLICT":         {"error.bizOfferVersionConflict", "the offer changed concurrently; reload and retry", "Offer 已被并发修改，请刷新后重试"},
+	"INVALID_BIZOFFER_REQUEST":          {"error.invalidBizOfferRequest", "invalid digital offer request", "数字 Offer 请求无效"},
+
 	// S-12 (GOAL-012 D-002 §5): recycle-bin codes.
 	"RECYCLE_ITEM_NOT_FOUND":        {"error.recycleItemNotFound", "no recycle item with that id", "没有该 id 对应的回收站记录"},
 	"RECYCLE_RESTORE_CONFLICT":      {"error.recycleRestoreConflict", "a row with that key already exists; resolve the conflict and retry", "存在相同键的行，解决冲突后重试"},

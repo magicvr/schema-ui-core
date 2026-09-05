@@ -1,0 +1,50 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "digitaloffer-offers",
+      "title": "Digital offers",
+      "schemaUrl": "/api/schema/digitaloffer-offers",
+      "route": "/digitaloffer-offers",
+      "titleKey": "manifest.title.digitalofferOffers"
+    },
+    {
+      "pageId": "digitaloffer-entitlements",
+      "title": "Digital entitlements",
+      "schemaUrl": "/api/schema/digitaloffer-entitlements",
+      "route": "/digitaloffer-entitlements",
+      "titleKey": "manifest.title.digitalofferEntitlements"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "digitaloffer-offers",
+        "label": "Digital offers",
+        "icon": "card",
+        "visibleWhen": {
+          "when": "$context.features.menu_digitaloffer_offers == true"
+        },
+        "labelKey": "manifest.nav.digitalofferOffers"
+      },
+      {
+        "pageRef": "digitaloffer-entitlements",
+        "label": "Digital entitlements",
+        "icon": "check-badge",
+        "visibleWhen": {
+          "when": "$context.features.menu_digitaloffer_entitlements == true"
+        },
+        "labelKey": "manifest.nav.digitalofferEntitlements"
+      }
+    ]
+  }
+}

@@ -7,11 +7,12 @@ status: accepted
 version: 1.0.0
 ---
 
-# D-002 · 数字 Offer 业务域合同 v1.0.0
+# D-002 · 数字 Offer 业务域合同 v1.1.0
 
 > R1 合同正文。R2/R3/R4 的实施、验收与关门以本文为分母；偏离本文需先以 02 决策修订合同再实施。
 > 框架性裁决（权益形态 / 购买状态机 / 人工发放边界 / 模块 id / 命令清单）见 D-001，本文不得与之冲突。
 > 落盘状态：`accepted`（2026-09-05 · A-006 independent closure `pass` 后冻结；v1.0.0 · C2/C3 关门）。
+> **v1.1.0（2026-09-05 · GOAL-003 D-001 附录）**：§9 增补 `BIZOFFER_VERSION_CONFLICT` 与 `INVALID_BIZOFFER_REQUEST`（实施期被 error-contract 钉死测试要求显式化；均为加法修订，不改变既有条款语义）。`BIZOFFER_ENTITLEMENT_INVALID` 的目录登记随 R3 Check/Consume 面落地。
 
 ## 0. 对齐与判据映射
 
@@ -294,6 +295,8 @@ return ErrEntitlementInsufficient（重试耗尽）
 | `BIZOFFER_ENTITLEMENT_INSUFFICIENT` | error.bizOfferEntitlementInsufficient | `Consume` 可用次数不足（`ErrEntitlementInsufficient`；HTTP 409） |
 | `BIZOFFER_REQUEST_CONFLICT` | error.bizOfferRequestConflict | 同 request_id 但 offer 不同（对齐 wallet 幂等冲突语义） |
 | `BIZOFFER_FORM_CONFLICT` | error.bizOfferFormConflict | offer 形态不可变字段被修改 |
+| `BIZOFFER_VERSION_CONFLICT` | error.bizOfferVersionConflict | offer 被并发修改（乐观锁冲突） |
+| `INVALID_BIZOFFER_REQUEST` | error.invalidBizOfferRequest | 请求体/参数无效（handler 输入校验） |
 
 - 域 sentinel（`store` 包）由 handler 映射到上述冻结码，先例：`writeWalletError`。
 - reason/sentinel → 码映射（冻结）：`Check` 聚合 reason（§5.1）→ `BIZOFFER_ENTITLEMENT_INVALID` + reason detail；`ErrEntitlementInsufficient` → `BIZOFFER_ENTITLEMENT_INSUFFICIENT`；钱包 `ErrInsufficient` → `BIZOFFER_INSUFFICIENT_FUNDS`；HTTP 与 Telegram 入口对同一状态返回一致 reason/文案（表驱动测试覆盖 active/voided/expired/exhausted 组合）。

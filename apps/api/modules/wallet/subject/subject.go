@@ -151,6 +151,22 @@ func (s *Store) SubjectExists(ctx context.Context, id string) (bool, error) {
 	return sub != nil, nil
 }
 
+// SubjectExistsInTx checks subject existence inside a caller-owned transaction
+// (VP-031 digital-offer purchase: the existence gate must observe the same
+// snapshot as the domain write). Read-only; never creates subjects.
+func (s *Store) SubjectExistsInTx(ctx context.Context, tx kernel.Tx, id string) (bool, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return false, nil
+	}
+	row := tx.QueryRow(ctx, `SELECT COUNT(1) FROM subjects WHERE id = ?`, id)
+	var count int64
+	if err := row.Scan(&count); err != nil {
+		return false, fmt.Errorf("query subject existence: %w", err)
+	}
+	return count > 0, nil
+}
+
 // GetSubjectByExternalID retrieves a subject by (issuer, external_id).
 func (s *Store) GetSubjectByExternalID(ctx context.Context, issuer, externalID string) (*Subject, error) {
 	issuer = strings.TrimSpace(issuer)
