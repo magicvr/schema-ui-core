@@ -29,6 +29,7 @@ version: 1.0.0
    - 仓库根 `AGENTS.md`：新增「本地开发环境与 admin 凭据约定」小节——AI 助手与自动化测试连现有库时从 `.env` / 环境变量读取 `ADMIN_PASSWD` 并以 admin 登录；秘密不得输出/提交。这是 AI 助手可发现性的权威落点。
 4. **smoke 回退**：`scripts/smoke.sh` `SMOKE_PASSWORD` 缺省时回退 `ADMIN_PASSWD`（环境变量）；头部输入说明同步。`pre-release-smoke.sh` 显式传 `SMOKE_PASSWORD`（disposable 新库路径），不受回退影响。
 5. **canonical 模板守卫**：`apps/api/internal/config/env_example_test.go` `TestCanonicalEnvExample` 新增 `declarationOnlyKeys` 白名单（`ADMIN_PASSWD`）——该键是 API 刻意不读取的约定键，属合法例外并注释说明。
+6. **Git checkpoint**：`c9e56988`（2026-09-06 · 只暂存本波 owned paths，无 `git add -A`；commit 后经 E-002 真实栈验证 + 用户确认关门）。
 
 ### 证据
 
