@@ -4,8 +4,8 @@ title: 设计意图与实现符合性（持续对齐程序）
 status: active
 parent: null
 created: 2026-08-11
-updated: 2026-08-26
-version: 0.7.1
+updated: 2026-09-06
+version: 0.8.0
 plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
@@ -28,7 +28,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 
 | 字段 | 值 |
 |------|-----|
-| Charter | `schema-ui-core-admin-foundation@0.2.0` |
+| Charter | `schema-ui-core-admin-foundation@0.4.0` |
 | `plan_refs` / `primary_plan` | `VP-010-design-implementation-conformance`（`active` 长期程序） |
 | 工作区 | `workspace-010-design-implementation-conformance` (`vision_role: delivery`, VP lead) |
 | 对照权威 | [module-architecture.md](../../../architecture/module-architecture.md)、[module-contribution-playbook.md](../../../architecture/module-contribution-playbook.md)、VP-008 模块/Profile 分母语义 |
@@ -63,6 +63,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | W21 | GOAL-032-w21-startup-db-identity | **done**（5/5 · 2026-08-22 关门） | 启动时数据库身份判定与迁移计划（`schema_migrations` 当 EF 式历史表；外库 refuse） |
 | W14-批A | GOAL-016-w14-rectification-batch-a（**GOAL-015 下级**） | **active**（0/4 · 2026-08-17 立项） | 整改批 A：F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey；由 W14 用户裁决（D-003）+ GOAL-015 路线图立项；批 C/D/B 渐进添加 |
 | W26 | GOAL-038-w26-email-display-and-mail-pages | **active**（0/4 · 2026-08-26 立项） | 邮箱身份展示与邮件面页面化对齐：用户邮箱绑定列表/详情读面补全 / 邮件控制台+出站记录独立页并注册左侧导航（出站记录覆盖全部渠道、权限沿用 settings.read 不新设）/ 邀请撤销 requestMapping.path.id 修复；用户点名 |
+| W29 | GOAL-041-w29-api-web-protocol-conformance | **active**（0/6 · 2026-09-06 立项） | 对照 `schema-ui-docs@v2.9.0` 审视 API/Web 页面与控件；分流实现偏差、上游协议缺口、合法 custom/Host 边界与排除项；协议缺口先上游增补并固定正式身份后再改本仓 |
 
 ## 整改路线图（由 W14 用户裁决 D-003 派生 · 子目标挂 GOAL-015 下）
 

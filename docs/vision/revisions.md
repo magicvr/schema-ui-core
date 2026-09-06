@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-05
+updated: 2026-09-06
 parent: null
-version: 0.4.44
+version: 0.4.45
 ---
 
 # Charter 修订台账
@@ -85,3 +85,4 @@ version: 0.4.44
 | VR-068 | 2026-09-05 | editorial | VP-033 关门投影 | 同一用户指令授权；workspace-033 Root `GOAL-001-telegram-operator-console` `done` 4/4，A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass` + A-004 response，A-015 IM 后续响应 open required/recommended = 0；**VRev-077 self `pass`**（八条方向级判据全 verified，open required = 0）。VP-033 `active → closed` v0.3.0；RT-M03 `active → delivered`。VP-030 已由 VRev-076 同轮关闭；不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-069 | 2026-09-05 | editorial | VP-030/VP-033 关门投影状态同步响应 | VRev-078 independent fail 发现 2 个聚合 required（具体 3 个陈旧文本位置）：workspace-030 workspace.md 与 Root 00-meta.md 仍写 VP-030 active v0.2.0，workspace-033 Root 00-meta.md 仍写 VP-033 active。self 响应复核同一 Root meta 后发现第 4 个同类位置并归入 F-002；VRev-079 已将 4 个现行投影位置 fixed 为 VP-030/VP-033 closed v0.3.0，历史 active 文字保留；当前 open required = 0。无 Charter vision_id@version、目的/边界或 primary workspace 变化，无 strategic、无 re-align。 |
 | VR-070 | 2026-09-05 | editorial | VP-031 激活 + 开区 | 用户书面确认 H-002 采用同进程模块。VRev-080 self `pass`（open required = 0）：业务域 freshness PASS（写入前 clean HEAD `bd9ed5e`，消费 VP-008 `go`）；VP-029 硬前置满足；RT-Q03/RT-Q05 均完成评估并判定本波不需要 Redis。VP-031 `planned → active` v0.2.0；lead `workspace-031-digital-offer-entitlement` / Root `GOAL-001-digital-offer-entitlement` 由 `/govern` 建立为 `active · 0/4`。I-031-001～003 保持 R1 required，未关闭前不得进入 R2；V-F119 recommended 不阻断。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
+| VR-071 | 2026-09-06 | editorial | VP-010 / workspace-010 / Root Charter 0.4.0 re-align | `/govern` 扫描发现 VR-052 strategic 后的现行投影漂移：VP-010 仍引用 `@0.3.0`，workspace-010 与 Root 仍声明 `@0.2.0`。用户书面选择“对齐后建目标”：本轮将 VP-010 `vision_ref`、workspace-010 与 Root 的 Charter 声明同步到 `schema-ui-core-admin-foundation@0.4.0`，不改变 VP-010 意图、边界、status、lead 或工作区绑定；VRev-081 self `pass`（open required = 0）后解除 **workspace-010 scope** 的 strategic 宽阻断，并交 `/govern` 建立 W29 / GOAL-041。VP-009 的旧 `vision_ref` 作为独立跨 scope 对齐债务保留，不在本记录静默修正；其工作区再次推进前须单独 re-align。Charter `vision_id@version` 不变，无新 strategic。 |
