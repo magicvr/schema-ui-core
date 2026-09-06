@@ -69,6 +69,11 @@ app:
       - admin.mfa
       - admin.wallet
       - channel.telegram
+      # VP-031 (workspace-031): biz.digital-offer — digital offers + thin
+      # purchases + entitlements. Deliberately NOT in any default profile
+      # (D-002 §6 red line); enumerated here so the dev operator config
+      # surfaces its admin pages (digitaloffer-offers / -entitlements).
+      - biz.digital-offer
 
 http:
   addr: ":25080"
