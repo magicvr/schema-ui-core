@@ -10,8 +10,8 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-08-26
-version: 0.51.0
+updated: 2026-09-06
+version: 0.53.0
 parent: null
 ---
 
@@ -76,6 +76,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W19 | GOAL-030-w19-my-wallet-lazy-open-empty-state | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 | W20 | GOAL-031-w20-notification-settings-in-account | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 | W21 | GOAL-032-w21-startup-db-identity | **done**（5/5 · 2026-08-22 关门：Identify/Plan；A-003 F-001～F-003 fixed；A-004 self pass；go 不暂挂） |
+| W28 | [GOAL-040-w28-admin-passwd-convention](GOAL-040-w28-admin-passwd-convention/00-meta.md) | **done**（4/4 · 2026-09-06 立项并当日关门：ADMIN_PASSWD 现有库 admin 凭据声明约定 + AI 可发现性 + TEST_ADMIN 机制退役；真实栈验证 SM-001~005 PASS；A-001 self pass 0 required；用户确认关门；Root 保持 active） |
 
 
 ## 固定共享资料引用

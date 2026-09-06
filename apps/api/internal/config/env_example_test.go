@@ -30,6 +30,14 @@ var pgtestKeys = map[string]struct{}{
 	"PG_TEST_SSLMODE":  {},
 }
 
+// declarationOnlyKeys are documented convention keys that the API deliberately
+// does NOT read (W28 / GOAL-040). ADMIN_PASSWD declares the CURRENT admin
+// password of the connected DB for automated tests / AI assistants / smoke to
+// consume; the API must never read it (no reset/backdoor path).
+var declarationOnlyKeys = map[string]struct{}{
+	"ADMIN_PASSWD": {},
+}
+
 func TestCanonicalEnvExample(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -60,6 +68,9 @@ func TestCanonicalEnvExample(t *testing.T) {
 			continue
 		}
 		if _, ok := pgtestKeys[k]; ok {
+			continue
+		}
+		if _, ok := declarationOnlyKeys[k]; ok {
 			continue
 		}
 		t.Errorf("configs/.env.example documents unused/obsolete %s", k)
