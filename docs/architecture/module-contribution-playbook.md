@@ -184,6 +184,12 @@ apps/api/modules/compiled/            # 全局迁移收集（全候选）
 - 新 schema 的渲染层自定义组件**必须**在 web 端 `registerCustomComponent` 注册；CI 存在注册校验测试（`apps/web/src/renderer/custom-components.schema.test.ts`），校验失败即阻断。
 - 编写冲突行为（挂载即写、整页重拉）应补行为回归测试（参考 `apps/web/src/components/wallet-ensure.test.tsx` 的探活契约用例）。
 
+### 6.4 schema 遍历约定（A-002 F-001 · GOAL-042）
+
+- 多个 Web 守卫/分母测试（`all-module-schemas-dval.test.ts`、`capability-declaration.guard.test.ts`、`custom-components.schema.test.ts`、`denominator-render.test.tsx`、`behavior-pages.test.tsx`、`s5-denominator-render.test.tsx`）按**约定**跨 monorepo 目录读取 `apps/api/modules/**/schema/*.json`（递归），以模块 schema 为事实源。这是本仓库的有意布局约定，不是包边界违规。
+- **约束**：walker 必须**跨平台路径规范化**（`abs.replace(/\\/g, "/").includes("/schema/")`），否则 Linux CI 收集 0 页；修改目录布局/模块嵌套时须同步这些 walker 与守卫，并保持「结构守卫（35/35）+ 渲染分母（35/35）+ 行为单测」三层覆盖。
+- 新增能力类 schema 声明时，`capability-declaration.guard.test.ts` 的 MARKERS/INTENT_OVERRIDES 与 `apps/web/src/host/host-support.json` 单源须同步（后者同时驱动 claim 生成）。
+
 ---
 
 ## 7. 修订

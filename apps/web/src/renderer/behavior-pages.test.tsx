@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider } from "@/account/AuthContext";
 import { I18nProvider } from "@/i18n/runtime";
@@ -104,7 +104,10 @@ afterEach(async () => {
   }
 });
 
-async function renderPage(pageId: string): Promise<HTMLDivElement> {
+async function renderPage(
+  pageId: string,
+  fetcherOverride?: typeof fetch,
+): Promise<HTMLDivElement> {
   const file = pageDocuments.get(pageId);
   if (file === undefined) {
     throw new Error(`schema file not found for ${pageId}`);
@@ -123,7 +126,7 @@ async function renderPage(pageId: string): Promise<HTMLDivElement> {
   document.body.appendChild(container);
   const root = createRoot(container);
   activeRoots.push({ root, container });
-  const fetcher = fixtureFetcher(pageId);
+  const fetcher = fetcherOverride ?? fixtureFetcher(pageId);
   await act(async () => {
     root.render(
       <AuthProvider>
@@ -153,11 +156,19 @@ describe("F3 · behavior-level tests for the 10 denominator-only pages", () => {
   }
 
   it("mail renders the outbound-mail console surface (mail-admin-tab)", async () => {
-    const container = await renderPage("mail");
+    // A-002 F-002 (independent · GOAL-042): assert the custom surface really
+    // issues its data request (fetch spy) — text assertions alone could pass
+    // if the custom component short-circuited.
+    const fetcher = vi.fn(fixtureFetcher("mail"));
+    const container = await renderPage("mail", fetcher);
     const text = container.textContent ?? "";
     // Either the config form loaded or the fail-closed alert shows — the
     // console heading itself must be present either way.
     expect(text).toMatch(/Outbound mail|Could not load the outbound-mail configuration/);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/mail/config"));
   });
 
   it("mail-outbox renders the outbox table headers", async () => {
