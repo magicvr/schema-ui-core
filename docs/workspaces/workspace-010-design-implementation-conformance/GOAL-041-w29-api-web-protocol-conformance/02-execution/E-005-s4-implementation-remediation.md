@@ -28,7 +28,7 @@ version: 0.1.0
 ## 验证
 
 - 定向批次：13 files / **604 tests PASS**（stage3 / load-page / render / dval 35/35 / custom guard / capability-declaration / dogfood / claim-artifact / app-manifest / upstream-fixtures / upstream-host-fixtures / representative / boot·bootstrap）。
-- 全量回归：`npm test`（vitest 全量）、`npm run build`（tsc + vite build，prebuild 重生成 claim）、`go test ./...`（api 全量）——结果见下方补录。
+- 全量回归（2026-09-06）：**Web vitest 94 files / 1271 tests PASS**；`npm run build`（tsc -b + vite build，prebuild 重生成 claim）**0 errors**；**Go `go test ./...` 全量 0 FAIL**。
 - Go 定向：`go test ./internal/manifest ./internal/composition ./modules/digitaloffer/...` PASS（digitaloffer schema JSON 改动不影响 Go 行为）。
 
 ## 产物
