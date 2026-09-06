@@ -4,8 +4,8 @@ doc: audit
 status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-01
-updated: 2026-09-01
-closed: 2026-09-01
+updated: 2026-09-06
+closed: 2026-09-06
 version: 1.0.0
 ---
 
@@ -105,8 +105,8 @@ version: 1.0.0
 **关门条件核对**:
 1. ✅ 无开放 required findings（A-001/A-002 均为 PASS）
 2. ✅ Independent 审计完成（A-002 PASS）
-3. ⏸ 用户书面关门授权
+3. ✅ 用户书面关门授权（2026-09-06 用户书面确认 · D-002）
 
-**下一步**: 等待用户关门授权，或根据 A-002 建议进行生产部署前的手工验证（可选）。
+**关门状态**: `status: done`（2026-09-06 关闭）。关门授权与条件核对见 [D-002](01-decision/D-002-w17-closeout.md)。
 
 独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。

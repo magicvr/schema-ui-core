@@ -4,8 +4,8 @@ title: W17 · Refresh Token httpOnly Cookie 双模式架构
 status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-01
-updated: 2026-09-01
-closed: 2026-09-01
+updated: 2026-09-06
+closed: 2026-09-06
 version: 1.0.0
 ---
 
@@ -84,21 +84,22 @@ version: 1.0.0
 - [x] `/api/auth/logout`: 清除 cookie
 - [x] Go 单元测试通过（cookie 设置/读取/优先级逻辑）
 
-### S3 · Web 端实施
-- [ ] SPA 客户端逻辑改造（cookie 模式优先）
-- [ ] localStorage 回退逻辑保留
-- [ ] 前端单元测试更新
+### S3 · Web 端实施（跳过 · N/A）
+> 2026-09-01 决策：浏览器自动发送 httpOnly cookie，API 端已生效；响应 JSON 仍含 `refreshToken` 字段保证向后兼容（D-002 关门口径确认）。localStorage 清理与 cookie 可用性检测为可选项，延期到后续波次。
+- [x] SPA 客户端逻辑改造（N/A · 浏览器自动携带 cookie，无需改造）
+- [x] localStorage 回退逻辑保留（N/A · 现有 `tokens.ts` 代码路径保留）
+- [x] 前端单元测试更新（N/A · 本波无前端代码变更）
 
 ### S4 · 集成验证
-- [ ] login → refresh → logout 完整流程（cookie 模式）
-- [ ] header 回退模式验证（无 cookie 环境）
-- [ ] 回归测试：go test、vitest、tsc、build 全绿
+- [x] login → refresh → logout 完整流程（cookie 模式）
+- [x] header 回退模式验证（无 cookie 环境）
+- [x] 回归测试：go test、vitest、tsc、build 全绿
 
 ### S5 · 审计与关门
 - [x] Self 审计：F-003 genuine fixed + 变异测试（A-001 PASS）
 - [x] Independent 审计（A-002 PASS，无开放 required findings）
 - [x] 无开放 required findings
-- [x] 用户书面关门授权（自动执行：交叉审计通过后静默关门）
+- [x] 用户书面关门授权（2026-09-06 用户书面确认 · D-002）
 
 ## 信息就绪与未知项
 
@@ -131,17 +132,19 @@ version: 1.0.0
 
 - 本目标 S1 方案冻结完成，S2 API 端实施完成（Commit 59da02a1）
 - Self 审计通过（A-001 PASS），F-003 genuine fixed 已验证
-- Independent 审计进行中，等待交叉验证结果
+- Independent 审计已完成（A-002 PASS，无开放 required findings）
 - 双模式设计旨在平衡安全性与兼容性
 - 不破坏现有客户端集成（通过 header 回退保证）
 
 ## 当前状态
 
-**阶段**: S2 完成 + Self & Independent 审计 PASS，等待关门授权
+**阶段**: ✅ **已关门**（2026-09-06 · 用户书面授权 · D-002）
 
 **已完成**:
 - ✅ S1 方案冻结（D-001）
 - ✅ S2 API 端实施（E-001, Commit 59da02a1）
+- ✅ S3 Web 端跳过（N/A · 浏览器自动携带 cookie）
+- ✅ S4 集成验证（完整流程 + header 回退 + 回归全绿）
 - ✅ Self 审计（A-001 PASS, 7 项检查全通过）
 - ✅ Independent 审计（A-002 PASS, 9 项检查全通过）
 - ✅ F-003 残余解决登记（GOAL-017 → GOAL-018 溯源链）
@@ -154,8 +157,8 @@ version: 1.0.0
 **关门条件核对**:
 1. ✅ 无开放 required findings（A-001/A-002 均为 PASS）
 2. ✅ Independent 审计完成
-3. ⏸ 用户书面关门授权
+3. ✅ 用户书面关门授权（2026-09-06 · D-002）
 
-**待决策**:
-- S3 Web 端改造（可选：浏览器自动发送 Cookie，API 端已生效）
-- 关门流程（所有 required 条件满足，等待用户授权）
+**关门后残余（无交付义务）**:
+- S3 可选项：localStorage 清理 + cookie 可用性检测（延期到后续波次）
+- A-002 生产部署前建议（可选）：浏览器手工验证 / CORS 配置验证 / 开发环境测试

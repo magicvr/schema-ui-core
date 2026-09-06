@@ -4,8 +4,8 @@ doc: decision
 status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-01
-updated: 2026-09-01
-closed: 2026-09-01
+updated: 2026-09-06
+closed: 2026-09-06
 version: 1.0.0
 ---
 
@@ -27,7 +27,8 @@ version: 1.0.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-09-01 | S1 方案冻结 · httpOnly Cookie 双模式架构 | frozen | [D-001-s1-design-freeze.md](01-decision/D-001-s1-design-freeze.md) |
+| D-002 | 2026-09-06 | W17 关门 · 用户书面授权 | accepted | [D-002-w17-closeout.md](01-decision/D-002-w17-closeout.md) |
 
 ## 信息就绪状态（更新）
 
-所有 required 信息项（I-001/I-002/I-003）已在 D-001 中 verified，方案冻结完成。等待用户授权进入 S2 实施。
+所有 required 信息项（I-001/I-002/I-003）已在 D-001 中 verified，方案冻结完成；S2 已实施（E-001，Commit 59da02a1）。等待用户书面关门授权。

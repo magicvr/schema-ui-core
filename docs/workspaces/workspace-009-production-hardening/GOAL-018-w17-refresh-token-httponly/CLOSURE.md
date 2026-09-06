@@ -2,9 +2,10 @@
 id: GOAL-018-closure
 goal_id: GOAL-018-w17-refresh-token-httponly
 title: GOAL-018 关门报告
-status: ready-for-closure
+status: closed
 date: 2026-09-01
-version: 1.0.0
+authorized: 2026-09-06
+version: 1.1.0
 ---
 
 # GOAL-018 关门报告
@@ -223,6 +224,6 @@ version: 1.0.0
 
 **报告生成**: 2026-09-01
 
-**等待授权**: 用户书面关门授权
+**关门授权**: ✅ 2026-09-06 用户书面授权（「工作区018可以关门」），落盘 `01-decision/D-002-w17-closeout.md`；GOAL-018 已 `status: done`（closed 2026-09-06）。
 
-**关门流程**: 授权后执行 `/govern` 更新 00-meta.md status=done，更新 01-decision/02-execution/03-audit 索引 frontmatter status=done
+**关门流程**: 授权后由 `/govern` 更新 00-meta.md status=done，更新 01-decision/02-execution/03-audit 索引 frontmatter status=done —— **已于 2026-09-06 执行完成**。
