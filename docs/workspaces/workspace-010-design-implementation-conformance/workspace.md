@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-09-06
-version: 0.54.0
+version: 0.55.0
 parent: null
 ---
 
@@ -77,7 +77,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W20 | GOAL-031-w20-notification-settings-in-account | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 | W21 | GOAL-032-w21-startup-db-identity | **done**（5/5 · 2026-08-22 关门：Identify/Plan；A-003 F-001～F-003 fixed；A-004 self pass；go 不暂挂） |
 | W28 | [GOAL-040-w28-admin-passwd-convention](GOAL-040-w28-admin-passwd-convention/00-meta.md) | **done**（4/4 · 2026-09-06 立项并当日关门：ADMIN_PASSWD 现有库 admin 凭据声明约定 + AI 可发现性 + TEST_ADMIN 机制退役；真实栈验证 SM-001~005 PASS；A-001 self pass 0 required；用户确认关门；Root 保持 active） |
-| W29 | [GOAL-041-w29-api-web-protocol-conformance](GOAL-041-w29-api-web-protocol-conformance/00-meta.md) | **active**（0/6 · 2026-09-06 立项：`schema-ui-docs@v2.9.0` API/Web 页面控件分母、实现偏差/协议缺口/custom 边界分类、上游协议增补报告与协议先行整改门禁） |
+| W29 | [GOAL-041-w29-api-web-protocol-conformance](GOAL-041-w29-api-web-protocol-conformance/00-meta.md) | **active**（1/6 · S1 完成：v2.9 identity 与 11/24/19/20 协议分母、17 fragments / 35 页面 schema / 15 custom registrations、C-001～C-014 候选已落盘；待 S2 分类与 cross 方案审视） |
 
 
 ## 固定共享资料引用

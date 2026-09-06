@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-09-06
 updated: 2026-09-06
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-041
@@ -16,9 +16,9 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-001 | required | `schema-ui-docs@v2.9.0` / `81aa1d8` 与本仓 provenance、schemas、registry、fixtures、claim/test 入口是否同源一致 | S1 分母冻结、S2 分类 | S1 | 对照上游正式工件、digest 与本仓 pinned 副本；区分 v2.7/v2.8 兼容基线与 v2.9 生产消费入口 | open | — | 待 S1 证据 |
-| I-002 | required | API/Web 页面与控件完整分母是什么 | S1、S5 | S1 | 从 runtime Manifest `pages[]`、`schemaUrl`、API providers/fragments、Web route/renderer/custom registry 与测试入口生成目录 | open | — | 待目录附件 |
-| I-003 | required | 每个候选究竟是 implementation-gap、upstream-protocol-gap、custom-extension-candidate、explicitly-out 或 excluded | S2 方案冻结 | S2 | 逐项给出上游 schema/registry/ADR/fixture 与本仓 code/test/file:line 证据 | open | — | 待分类矩阵 |
+| I-001 | required | `schema-ui-docs@v2.9.0` / `81aa1d8` 与本仓 provenance、schemas、registry、fixtures、claim/test 入口是否同源一致 | S1 分母冻结、S2 分类 | S1 | 对照上游正式工件、digest 与本仓 pinned 副本；区分 v2.7/v2.8 兼容基线与 v2.9 生产消费入口 | **verified**（答案已取得；canonical bytes 对应一致，冲突已登记但尚未分类） | — | E-002；`attachments/S1-protocol-denominator-v2.9.*`；canonical bytes 对应一致，C-001～C-004 待 S2 定性 |
+| I-002 | required | API/Web 页面与控件完整分母是什么 | S1、S5 | S1 | 从 runtime Manifest `pages[]`、`schemaUrl`、API providers/fragments、Web route/renderer/custom registry 与测试入口生成目录 | **verified** | — | E-002；`attachments/S1-api-web-page-control-catalog.md` / `S1-api-web-page-control-inventory.json` |
+| I-003 | required | 每个候选究竟是 implementation-gap、upstream-protocol-gap、custom-extension-candidate、explicitly-out 或 excluded | S2 方案冻结 | S2 | 逐项给出上游 schema/registry/ADR/fixture 与本仓 code/test/file:line 证据 | **collecting** | — | `attachments/S1-candidate-matrix.md`：C-001～C-014 均 pending-S2 |
 | I-004 | required | 若存在 upstream-protocol-gap，上游是否已 accepted/merged，并有正式版本、commit、schema、registry、fixtures 与迁移/兼容说明 | 受影响项 S3→S4 实施 | S3 | 形成 `attachments/upstream-protocol-augmentation-report.md`；跟踪上游落地并固定本仓 provenance | open | 仅在确认无 upstream gap 时以证据标记不适用 | D-001 协议先行门禁 |
 | I-005 | required | custom 候选是否确属上游允许/不负责范围，并具备 namespace、capability、schema/validator、failure、compatibility、fixtures 与退出/迁移条件 | 受影响项 S3→S4 实施 | S3 | 提交逐项方案与取舍，按 P-004 取得用户书面裁决 | open | — | D-001 custom 门禁 |
 | I-006 | required | 页面/控件是否真实经过 Manifest→Schema→Renderer/API 契约链并在失败路径 fail-closed | S5 验收 | S5 | 运行 validator、正反 fixtures、代表性页面/E2E 和 API/Web 定向回归 | open | — | 待执行证据 |

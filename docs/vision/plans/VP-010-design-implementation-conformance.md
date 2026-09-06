@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-09-06
-version: 0.2.1
+version: 0.2.2
 parent: null
 ---
 
@@ -89,7 +89,7 @@ parent: null
 | W2 | 2026-08-11 | GOAL-003 | 新增**非生产向演示 Profile `demo`** = mvp 集 + `dev.examples`；`APP_PROFILE=demo` 同一 Web build 展示范例面 + mvp 能力，home=overview。**done（6/6 · 2026-08-11 关门，cross 审计闭环）**；VP-008 `go` 判定：无影响、不触发暂挂（mvp/admin 生产默认未变） |
 | W3 | 2026-08-13 | GOAL-004 | 先补 Host/App 协议缺口再消费：上游 v2.8.0 正式发布（tag `521cff8`，上游审计 0080 V379 权威）并固定；95/95 处置与上游 ADR-0034 D10 机械比对 0 差异；S2 冻结 + S4 整改 + S5 验证 + S6 cross 关门（A-007/A-008，BLOCKING 清零）。**done（6/6 · 2026-08-13 关门）**；go 判定：无影响、不暂挂 |
 | W4 | 2026-08-13 | GOAL-005 | 用户点名：长内容列（以 roles 权限/菜单为代表）列表不显示全文（截断 + title 全文 affordance）、详情自动换行；共享呈现层整改。**done（6/6 · 2026-08-13 关门，S6 cross 审计 A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004 浏览器点验）**；go 判定：无影响、不触发暂挂（未改 Profile 默认集/模块矩阵/Manifest 装配语义/共同门禁解释） |
-| W29 | 2026-09-06 | GOAL-041 | `schema-ui-docs@v2.9.0` API/Web 页面与控件符合性审视：先建立完整分母并区分 implementation gap、upstream protocol gap、合法 custom/Host 边界与明确排除；协议缺口先形成上游增补报告并等待正式协议身份固定，再实施对应本仓修改。**active（0/6）** |
+| W29 | 2026-09-06 | GOAL-041 | `schema-ui-docs@v2.9.0` API/Web 页面与控件符合性审视。S1 已冻结 11/24/19/20 协议分母、17 fragments / 35 页面 schema / 15 custom registrations，并登记 C-001～C-014；S2 将逐项区分 implementation gap、upstream protocol gap、合法 custom/Host 边界。**active（1/6）** |
 
 ## 关门记录
 
@@ -105,3 +105,4 @@ parent: null
 | 2026-08-13 | W3 关门；W4（GOAL-005）立项：长内容列列表截断与详情换行（用户点名） |
 | 2026-08-13 | W4（GOAL-005）关门（6/6）：长内容列截断 + 详情换行；go 无影响不暂挂 |
 | 2026-09-06 | Charter `@0.4.0` re-align：VP-010 `vision_ref`、workspace-010 与 Root 声明同步；VRev-081 self `pass`（0 required）；随后由 `/govern` 立项 W29 / GOAL-041（active · 0/6） |
+| 2026-09-06 | W29 / GOAL-041 S1 完成：固定 v2.9 协议机器分母与 35 页/控件/custom 完整目录，C-001～C-014 保持 collecting；进入 S2 分类与 cross 方案审视（active · 1/6） |

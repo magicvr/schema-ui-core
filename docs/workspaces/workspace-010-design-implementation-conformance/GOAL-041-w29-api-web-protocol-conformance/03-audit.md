@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-09-06
 updated: 2026-09-06
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计 · GOAL-041
@@ -16,7 +16,9 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-001～I-008 required | open | 尚处 S1 前；只允许只读扫描、证据收集和分类准备 |
+| I-001 / I-002 | verified | S1 identity、机器分母、页面控件目录已由 E-002 与 `attachments/S1-*` 固定；冲突转入候选矩阵，不伪装为符合性通过 |
+| I-003 | collecting | C-001～C-014 已登记，待 S2 逐项分类与 cross 方案审视 |
+| I-004～I-008 required | open | 上游增补/custom/运行时/go 影响/cross 审计门禁均未满足 |
 | I-009 non-blocking | open | S6 或生产 Manifest 新增页面/控件时复核 |
 | 上游协议增补停止线 | 生效 | 若确认 protocol gap，上游正式身份与本仓消费证据固定前阻断对应 S4 实施 |
 | custom 用户裁决 | 未到期 | 仅在出现 custom 候选并完成证据分类后触发 P-004 |
@@ -29,4 +31,4 @@ version: 0.1.0
 
 ## 结论状态
 
-尚未到达 S2 方案审视节点。当前没有正式 Goal Audit 意见；`progress: 0/6`，目标保持 `active`。
+S1 已完成，尚未到达 S2 方案审视门禁。当前没有正式 Goal Audit 意见；`progress: 1/6`，目标保持 `active`。
