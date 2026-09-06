@@ -19,6 +19,7 @@ version: 0.2.0
 | E-003 | 2026-09-06 | S2 证据分类与方案冻结（C-001～C-014 + cross 审视） | recorded | `02-execution/E-003-s2-classification-and-cross-review.md` |
 | E-004 | 2026-09-06 | S3 custom 边界固定（C-009 用户 P-004 裁决 + 边界规范） | recorded | `02-execution/E-004-s3-custom-boundary-fix.md` |
 | E-005 | 2026-09-06 | S4 API/Web 实现整改（C-001/002/003/004含F-001/006/010 + C-005 子项） | recorded | `02-execution/E-005-s4-implementation-remediation.md` |
+| E-006 | 2026-09-06 | S5 运行时符合性验证（35/35 分母 + HTTP Manifest 快照矩阵 + I-006/I-007） | recorded | `02-execution/E-006-s5-runtime-conformance-verification.md` |
 
 ## 事实边界
 
