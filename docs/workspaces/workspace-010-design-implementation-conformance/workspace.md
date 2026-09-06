@@ -77,7 +77,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W20 | GOAL-031-w20-notification-settings-in-account | **done**（4/4 · 2026-08-18：S1～S4；A-001 self pass；go 不暂挂） |
 | W21 | GOAL-032-w21-startup-db-identity | **done**（5/5 · 2026-08-22 关门：Identify/Plan；A-003 F-001～F-003 fixed；A-004 self pass；go 不暂挂） |
 | W28 | [GOAL-040-w28-admin-passwd-convention](GOAL-040-w28-admin-passwd-convention/00-meta.md) | **done**（4/4 · 2026-09-06 立项并当日关门：ADMIN_PASSWD 现有库 admin 凭据声明约定 + AI 可发现性 + TEST_ADMIN 机制退役；真实栈验证 SM-001~005 PASS；A-001 self pass 0 required；用户确认关门；Root 保持 active） |
-| W29 | [GOAL-041-w29-api-web-protocol-conformance](GOAL-041-w29-api-web-protocol-conformance/00-meta.md) | **active**（2/6 · S2 完成：C-001～C-014 证据分类（implementation-gap ×6 / custom ×1 / out ×1 / excluded ×2 / no-gap ×3；upstream gap 0）+ D-002 方案冻结；cross 审视 A-001 self + A-002 grok-build independent → A-003 合并（F-002～F-005 fixed，D-VAL 35/35；F-001 accepted-residual 承接 S4）；待 S3 custom 裁决与 S4 整改） |
+| W29 | [GOAL-041-w29-api-web-protocol-conformance](GOAL-041-w29-api-web-protocol-conformance/00-meta.md) | **active**（3/6 · S1 分母 + S2 分类/cross 闭合 + S3 custom 边界固定（C-009 用户 P-004 裁决：本仓 custom + 保留 15 键 + 新键规范；C-005 删未使用声明）；upstream gap 0；待 S4 整改） |
 
 
 ## 固定共享资料引用

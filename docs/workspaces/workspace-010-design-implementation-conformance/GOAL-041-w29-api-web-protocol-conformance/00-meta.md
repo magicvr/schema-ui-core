@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-design-implementation-conformance
 created: 2026-09-06
 updated: 2026-09-06
-version: 0.4.0
-progress: 2/6
+version: 0.5.0
+progress: 3/6
 ---
 
 # GOAL-041 · W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环
@@ -44,20 +44,20 @@ progress: 2/6
 
 - [x] **S1 · v2.9 分母与候选目录**：已固定 v2.9 tag/commit 与 11/24/19/20 协议分母，建立 17 fragments / 35 页面 schema / 11 renderer nodes / 14 controls / 15 custom registrations 目录，并登记 C-001～C-014；证据见 E-002 与 `attachments/S1-*`。
 - [x] **S2 · 差异分类与方案冻结**：C-001～C-014 全部给出带证据的唯一处置类别（implementation-gap ×6 / custom-extension-candidate ×1 / explicitly-out ×1 / excluded ×2 / no-gap ×3；upstream-protocol-gap = 0）；self（A-001）+ independent（A-002 grok-build）cross 审视完成，A-003 合并响应后 required findings 全闭合（F-002～F-005 fixed；**F-001 accepted-residual 用户书面裁决**，S4 承接）；证据见 E-003、D-002 与 `attachments/S2-candidate-classification.md`。
-- [ ] **S3 · 上游协议或 custom 边界固定**：协议缺口取得 accepted/merged 的上游契约、正式版本/commit 与可消费机器工件；custom 候选取得用户书面裁决及 namespace/capability/schema/validator/failure/compatibility/fixture 边界。
+- [x] **S3 · 上游协议或 custom 边界固定**：协议缺口取得 accepted/merged 的上游契约、正式版本/commit 与可消费机器工件；custom 候选取得用户书面裁决及 namespace/capability/schema/validator/failure/compatibility/fixture 边界。（upstream-protocol-gap = 0，上游分支不适用；**C-009 用户 P-004 书面裁决 = 本仓合法 custom + 保留现有键 + 新键规范；C-005 子项 = 删除未使用声明**；边界规范见 `attachments/custom-extension-boundary.md`，D-003。）
 - [ ] **S4 · API/Web 实现整改**：只按已固定的上游协议或合法 custom 契约修改实现；已有协议偏差全部有修复与防复发证据。
 - [ ] **S5 · 运行时符合性验证**：validator、正反 fixtures、代表性页面与失败路径、API/Web 定向与全量回归可复跑；记录 VP-008 `go` 消费影响与暂挂/恢复结论。
 - [ ] **S6 · 关门审计**：全部到期 required 信息项与 required findings 合法闭合；上游报告、custom 裁决、回归和 cross 关门意见完整；用户确认后才可 `done`。
 
-`progress` 按上述六个等权检查点确定性派生；部分完成不计入。S1、S2 已完成，故为 `2/6`。
+`progress` 按上述六个等权检查点确定性派生；部分完成不计入。S1、S2、S3 已完成，故为 `3/6`。
 
 ## 信息就绪
 
-完整信息台账见 [01-decision.md](01-decision.md)。S1 已以 E-002 和 `attachments/S1-*` 回答 I-001/I-002；S2 已以 `attachments/S2-candidate-classification.md` 与 D-002 回答 I-003（verified）并证据收口 I-004（不适用，upstream gap = 0）。I-005 为 C-009 触发 S3，I-006/I-007 属 S5。**I-008（cross 审计）S2 腿已完成**：A-001 self + A-002 grok build independent 均为 `conditional`，A-003 合并响应闭合 F-002～F-005；**F-001（生产页面级能力门禁 + claim/HOST_SUPPORT 覆盖）为唯一开放 required，按 P-004.3 待用户书面裁决**，裁决前不把 S2 标完成、不进入 S3/S4 实施。
+完整信息台账见 [01-decision.md](01-decision.md)。S1 已以 E-002 和 `attachments/S1-*` 回答 I-001/I-002；S2 已以 `attachments/S2-candidate-classification.md` 与 D-002 回答 I-003（verified）并证据收口 I-004（不适用，upstream gap = 0）；**S3 已以 D-003 与 `attachments/custom-extension-boundary.md` 回答 I-005（verified，用户 P-004 书面裁决）**。I-006/I-007 属 S5。I-008：S2 腿完成（A-001 + A-002 + A-003，required 全闭合；F-001 已按用户书面 accepted-residual 承接 S4），S6 腿待关门。
 
 ## 审计模式
 
 - 模式：`cross`。
 - 最低要求：S2 方案冻结前形成 self 意见 + 项目默认 independent provider 的 `/audit` 意见；S6 关门前对运行时符合性、上游门禁、custom 边界与失败路径复审。
 - provider：按项目级 `docs/architecture/independent-audit-execution.md` 使用本地 `grok build`（grok 4.6，思考强度 high）。若 provider 不可用或没有可核对输出，不得冒充 independent，相关门禁保持未满足。
-- 当前状态：S2 cross 已完成（A-001/A-002/A-003），F-001 待用户 P-004 裁决。
+- 当前状态：S2 cross 已完成（A-001/A-002/A-003）；S3 self 审计 A-004 pass；S6 关门腿（含 custom 边界 independent 复审）待执行。
