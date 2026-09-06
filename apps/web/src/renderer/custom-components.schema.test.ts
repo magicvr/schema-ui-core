@@ -51,7 +51,7 @@ function walkSchemaFiles(dir: string, out: string[]): void {
       walkSchemaFiles(abs, out);
     } else if (
       entry.isFile() &&
-      /\\schema\\/.test(abs) &&
+      abs.replace(/\\/g, "/").includes("/schema/") &&
       entry.name.endsWith(".json")
     ) {
       out.push(abs);

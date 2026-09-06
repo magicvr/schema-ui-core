@@ -70,7 +70,7 @@ version: 0.1.0
 
 **判定**：v2.7 兼容回归与 v2.9 current pin 并存本身合法（兼容基线与现行证据是不同概念），但命名/标注/文档未把边界讲清：`provenance.json` 标签 2.7.0 却含 2.9 线条目、`provenance-v2.8.json` 死数据、README 过时。属台账卫生 implementation-gap。修正 = `provenance.json` 顶部标注「R3 v2.7.0 兼容基线（含后续重 pin 条目，仅回归用；现行 pin 见 provenance-v2.9.json）」；删除或归档 `provenance-v2.8.json`；更新 README 描述 production 版本协商（2.7/2.8/2.9）。S4 整改。
 
-### C-004 · Manifest 协议版本（2.7 envelope + 2.9 页面）— no-gap
+### C-004 · Manifest 协议版本（2.7 envelope + 2.9 页面）— implementation-gap（主类；模型层 no-gap 为上下文）
 
 **上游事实**：`08-renderer-spec.md`/version-negotiation fixtures 提供**解耦协商**语义（manifest 版本与页面版本分开判定；fixture `decoupledVersions`）；`page.schema.json` 的 `meta.protocolVersion` 是页面文档自身的版本锚点；`app-manifest.schema.json` 不要求页面与 envelope 同版本。
 
@@ -80,7 +80,7 @@ version: 0.1.0
 
 **S2 新发现（回流，P-005）**：① **生产页面级能力协商缺位**——上游 `08-renderer-spec.md` 定义页面级 `MISSING_REQUIRED_CAPABILITY`（页面 requiredCapabilities ⊆ host 支持集），`version-negotiation.cases.json` 亦含页面级协商用例；本仓 `version-negotiate.ts` 实现了该逻辑且 fixtures 全绿，但 **`RenderPage` 生产路径未调用**（`render.tsx:3026` 起按节点走特性级门禁：form-controls.types.ts / permissions.ts / `gateDataRouteBinding`，无页面级能力集校验）。② **claim/HOST_SUPPORT 能力覆盖不足**——claim `support.capabilities` 与 `boot.ts HOST_SUPPORT` 仅 7 项（app.manifest / app.navigation / host.bootstrap / host.failure-recovery / host.conformance-claim / data.route-binding / form.controls.readonly），而服务页面 `meta.requiredCapabilities` 还要求 permissions.inheritance / actions.row.request / actions.page.trigger / actions.row.navigate / table.sort / form.controls.extended / form.controls.advanced / form.record.load / actions.upload 等；这些能力本仓**均已实现**（排序/权限/扩展控件/recordView/上传等），vendored 对应 suite 亦全绿，但 claim 未声明 → 符合性证据与服务内容不一致。
 
-**处置**：C-004 = no-gap（版本协商模型）+ **implementation-gap 残余项**：①生产页面加载/渲染路径接线页面级版本+能力协商（fail-closed `UNSUPPORTED_PROTOCOL_VERSION` / `MISSING_REQUIRED_CAPABILITY`）；②claim `support.capabilities` 与 `HOST_SUPPORT` 扩展至实际实现能力全集（逐能力 mandatorySuites 已全绿），并加一致性守卫。README 过时表述并入 C-003。S4 整改。
+**处置**：C-004 主类 = **implementation-gap**（版本协商模型 no-gap 仅作上下文）：①生产页面加载/渲染路径接线页面级版本+能力协商（fail-closed `UNSUPPORTED_PROTOCOL_VERSION` / `MISSING_REQUIRED_CAPABILITY`）；②claim `support.capabilities` 与 `HOST_SUPPORT` 扩展至实际实现能力全集（逐能力 mandatorySuites 已全绿），并加一致性守卫。README 过时表述并入 C-003。**已于 S4 实施并验证（E-005/A-005；load-page 门禁 + host-support 19 能力 + claim 重生成，F-001 fixed）**。
 
 ### C-005 · capability 声明与实际使用 — no-gap
 
@@ -172,4 +172,4 @@ version: 0.1.0
 ## S2 结论边界
 
 - 已完成：14 候选全部给出带证据的唯一处置类别；upstream-protocol-gap = 0（I-004 以「不适用」证据收口，不建空报告）；custom 候选 = C-009（S3 触发 P-004）；S5 验收契约（C-007/C-008）与历史边界规则（C-014）在 D-002 固化；**A-002 independent 意见已合并**（F-001 保持 S4 必做，F-002/F-003 walker 守卫已修复并实测绿，F-004/F-005 台账已纠正，见 A-003 响应）。
-- 未完成：F-001 生产页面级能力门禁 + claim/HOST_SUPPORT 覆盖（S4 必做，需 P-004 裁决 S2 关门口径）；S4 其余整改（C-001/002/003/006/010）；S3 custom 裁决（C-009）；S5 运行时验证（I-006）与 go 影响判定（I-007）；S6 cross 关门。
+- 未完成（截至 S6）：F-001 已于 S4 fixed 闭合（页面级门禁 + 19 能力 claim）；S4 其余整改（C-001/002/003/006/010）已实施并验证；S3 custom 裁决（C-009）已完成；S5 运行时验证（I-006 verified）与 go 影响判定（I-007 无影响不暂挂）已完成；S6 cross 关门审计（A-007 self + A-008 grok independent）进行中，A-008 F-001（walker 跨平台）修复后待用户确认关门。

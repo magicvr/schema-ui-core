@@ -38,7 +38,7 @@ function walkSchemaFiles(dir: string): Array<{ basename: string; abs: string }> 
 		const abs = resolve(dir, entry.name);
 		if (entry.isDirectory()) {
 			out.push(...walkSchemaFiles(abs));
-		} else if (entry.isFile() && /\\schema\\/.test(abs) && entry.name.endsWith(".json")) {
+		} else if (entry.isFile() && abs.replace(/\\/g, "/").includes("/schema/") && entry.name.endsWith(".json")) {
 			out.push({ basename: entry.name, abs });
 		}
 	}

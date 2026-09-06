@@ -23,7 +23,7 @@ version: 0.2.0
 | I-005 | required | custom 候选是否确属上游允许/不负责范围，并具备 namespace、capability、schema/validator、failure、compatibility、fixtures 与退出/迁移条件 | 受影响项 S3→S4 实施 | S3 | 提交逐项方案与取舍，按 P-004 取得用户书面裁决 | **verified**（用户 P-004 书面裁决：本仓合法 custom + 保留现有键 + 新键规范；边界规范齐备） | — | D-003；`attachments/custom-extension-boundary.md` |
 | I-006 | required | 页面/控件是否真实经过 Manifest→Schema→Renderer/API 契约链并在失败路径 fail-closed | S5 验收 | S5 | 运行 validator、正反 fixtures、代表性页面/E2E 和 API/Web 定向回归 | **verified**（35/35 D-VAL+Load+Render、5 组合 HTTP Manifest 快照、失败路径、全量回归绿） | — | E-006；`attachments/S5-coverage-matrix.md` + `S5-manifest-snapshots/` |
 | I-007 | required | 变更是否影响 Profile 默认集、模块矩阵、Manifest 装配语义或共同门禁解释，从而影响 VP-008 `go` 消费有效性 | S5、S6 | S5 | 对照现行 `go` 候选身份与消费有效性规则，记录暂挂/恢复或无影响结论 | **verified（无影响，不暂挂）** | — | E-006（变更面核对） |
-| I-008 | required | `cross` 审计的 self 与 independent provider 是否均有可核对输出，且 required findings 已合法闭合 | S2、S6 | S2 / S6 | 按阶段写入本目标 `03-audit/A-NNN-*.md`；provider 失败不得降级冒充 | open（S2 腿：A-001 self `conditional`；grok build independent 待合并） | provider 按项目级决策固定 | 03-audit 台账 |
+| I-008 | required | `cross` 审计的 self 与 independent provider 是否均有可核对输出，且 required findings 已合法闭合 | S2、S6 | S2 / S6 | 按阶段写入本目标 `03-audit/A-NNN-*.md`；provider 失败不得降级冒充 | open（S2 腿已完成：A-001 self + A-002 grok independent + A-003 合并，required 全闭合；**S6 腿 = A-007 self + A-008 grok independent，A-008 F-001 修复后闭合即 verified**） | provider 按项目级决策固定 | 03-audit 台账 |
 | I-009 | non-blocking | 非核心页面、实验控件与未来业务域候选的后续覆盖顺序 | 后续波次 | S6 | 在分类目录中标记 deferred/excluded 与复核触发 | open | 责任人=维护者；复核=本波 S6 或新页面/控件进入生产 Manifest 时 | 待目录 |
 
 ## 决策索引
