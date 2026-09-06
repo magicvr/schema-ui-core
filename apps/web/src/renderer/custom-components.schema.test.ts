@@ -31,11 +31,45 @@ import "@/components/email-identity";
 import "@/components/password-policy-tab";
 import "@/components/invite-issue-card";
 import "@/components/invite-resend-dialog";
+// A-002 F-003 (GOAL-041 S2): telegram-admin-tab lives in a nested module
+// (channel/telegram/schema) that the historical one-level walker never saw;
+// the recursive walk now scans it, so the component must be imported here.
+import "@/components/telegram-admin-tab";
 
 const MODULES_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../api/modules",
 );
+
+// Recursive schema walk (A-002 F-003, GOAL-041 S2): nested modules
+// (channel/telegram/schema, dev/examples/schema) were invisible to the
+// historical one-level walk, so telegram-admin-tab etc. escaped this guard.
+function walkSchemaFiles(dir: string, out: string[]): void {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const abs = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walkSchemaFiles(abs, out);
+    } else if (
+      entry.isFile() &&
+      /\\schema\\/.test(abs) &&
+      entry.name.endsWith(".json")
+    ) {
+      out.push(abs);
+    }
+  }
+}
+
+function collectSchemaFiles(): string[] {
+  const out: string[] = [];
+  for (const moduleName of readdirSync(MODULES_DIR)) {
+    const moduleRoot = join(MODULES_DIR, moduleName);
+    if (!existsSync(moduleRoot)) {
+      continue;
+    }
+    walkSchemaFiles(moduleRoot, out);
+  }
+  return out;
+}
 
 interface ComponentRef {
   pageId: string;
@@ -63,18 +97,12 @@ function collectComponentRefs(value: unknown, pageId: string, out: ComponentRef[
 describe("module schema custom components (W25 防复发)", () => {
   it("every schema-declared renderer custom component is registered", () => {
     const refs: ComponentRef[] = [];
-    for (const moduleName of readdirSync(MODULES_DIR)) {
-      const schemaDir = join(MODULES_DIR, moduleName, "schema");
-      if (!existsSync(schemaDir)) {
-        continue;
-      }
-      for (const file of readdirSync(schemaDir).filter((name) => name.endsWith(".json"))) {
-        const raw = readFileSync(join(schemaDir, file), "utf8");
-        const document = JSON.parse(raw) as { meta?: { pageId?: unknown } };
-        const pageId =
-          typeof document?.meta?.pageId === "string" ? document.meta.pageId : file;
-        collectComponentRefs(document, pageId, refs);
-      }
+    for (const file of collectSchemaFiles()) {
+      const raw = readFileSync(file, "utf8");
+      const document = JSON.parse(raw) as { meta?: { pageId?: unknown } };
+      const pageId =
+        typeof document?.meta?.pageId === "string" ? document.meta.pageId : file;
+      collectComponentRefs(document, pageId, refs);
     }
     expect(refs.length).toBeGreaterThan(0);
     const missing = refs

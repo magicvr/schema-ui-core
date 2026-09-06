@@ -9,6 +9,8 @@ version: 0.1.0
 
 # S1 · API/Web 协议符合性候选矩阵
 
+> **2026-09-06 更新**：本矩阵的 S2 分类结论见 [S2-candidate-classification.md](S2-candidate-classification.md)（C-001～C-014 已逐项给出唯一处置类别与证据）。本文件保留为 S1 登记快照，不再作为现行分类。
+>
 > 所有条目在 S1 仅为 `collecting / pending-S2`。本表不能作为 `implementation-gap`、`upstream-protocol-gap`、`custom-extension-candidate`、`explicitly-out` 或 `excluded` 的最终 verdict；S2 必须补齐上游契约、当前实现和运行时证据，并完成 cross 方案审视。
 
 | ID | 范围 | 当前事实 | S2 待回答 | 状态 |

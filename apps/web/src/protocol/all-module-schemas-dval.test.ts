@@ -18,17 +18,28 @@ const MODULES = resolve(__dirname, "../../../api/modules");
 
 function collectSchemaFiles(): Array<{ module: string; file: string; abs: string }> {
 	const out: Array<{ module: string; file: string; abs: string }> = [];
+	// Recursive walk: modules may nest (e.g. channel/telegram/schema,
+	// dev/examples/schema). The historical one-level walk missed 10 of 35
+	// documents (A-002 F-002, GOAL-041 S2) — this guard must see every
+	// *\schema\*.json under a module root, not only <top>/schema/*.json.
 	for (const entry of readdirSync(MODULES, { withFileTypes: true })) {
 		if (!entry.isDirectory()) continue;
-		const schemaDir = resolve(MODULES, entry.name, "schema");
-		let files: string[];
-		try {
-			files = readdirSync(schemaDir).filter((f) => f.endsWith(".json"));
-		} catch {
-			continue; // no schema dir
+		const moduleRoot = resolve(MODULES, entry.name);
+		for (const file of walkSchemaFiles(moduleRoot)) {
+			out.push({ module: entry.name, file: file.basename, abs: file.abs });
 		}
-		for (const f of files) {
-			out.push({ module: entry.name, file: f, abs: resolve(schemaDir, f) });
+	}
+	return out;
+}
+
+function walkSchemaFiles(dir: string): Array<{ basename: string; abs: string }> {
+	const out: Array<{ basename: string; abs: string }> = [];
+	for (const entry of readdirSync(dir, { withFileTypes: true })) {
+		const abs = resolve(dir, entry.name);
+		if (entry.isDirectory()) {
+			out.push(...walkSchemaFiles(abs));
+		} else if (entry.isFile() && /\\schema\\/.test(abs) && entry.name.endsWith(".json")) {
+			out.push({ basename: entry.name, abs });
 		}
 	}
 	return out;

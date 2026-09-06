@@ -16,6 +16,7 @@ version: 0.2.0
 |------|------|------|------|------|
 | E-001 | 2026-09-06 | Charter 0.4.0 re-align 后建立 W29 目标与协议先行门禁 | recorded | `02-execution/E-001-goal-establishment-after-realign.md` |
 | E-002 | 2026-09-06 | S1 协议分母、API/Web 页面控件目录与候选矩阵 | recorded | `02-execution/E-002-s1-denominator-and-candidate-catalog.md` |
+| E-003 | 2026-09-06 | S2 证据分类与方案冻结（C-001～C-014 + cross 审视） | recorded | `02-execution/E-003-s2-classification-and-cross-review.md` |
 
 ## 事实边界
 
