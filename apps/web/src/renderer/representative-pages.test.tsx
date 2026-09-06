@@ -22,6 +22,18 @@ import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 
+// C-010 (GOAL-041 S4): representative pages embed schema custom nodes
+// (activity-export, data-permission-scopes, import-template-download,
+// invite-issue-card, invite-resend-dialog, password-policy-tab). Side-effect
+// imports register them exactly like main.tsx so the rendered pages are truly
+// representative instead of falling back to the unknown-custom placeholder.
+import "@/components/activity-export";
+import "@/components/data-permission-scopes";
+import "@/components/import-template-download";
+import "@/components/invite-issue-card";
+import "@/components/invite-resend-dialog";
+import "@/components/password-policy-tab";
+
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../../api/modules/dev/examples/schema",

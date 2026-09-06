@@ -2913,14 +2913,24 @@ function dispatchParsedNode({
     case "text":
       return <TextView node={node} />;
     case "custom": {
-      // GOAL-018: custom nodes dispatch to the module-level registry; an
-      // unregistered component renders a safe fallback (never crashes).
+      // GOAL-018: custom nodes dispatch to the module-level registry.
+      // C-010 (GOAL-041 S2): an unregistered component renders an obvious
+      // placeholder (01-node-protocol §3.x "明显占位") and logs console.error
+      // with the component key and node id — never a silent blank, never a
+      // subtle inline fallback.
       const Custom = getCustomComponent(node.component);
       if (Custom === null) {
+        console.error(
+          `[schema-ui] unknown custom component "${node.component}"` +
+            (node.id === undefined ? "" : ` (node id: ${node.id})`),
+        );
         return (
-          <p className="text-sm text-muted-foreground">
-            unknown custom component: {node.component}
-          </p>
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/60 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+          >
+            unknown custom component: <code>{node.component}</code>
+          </div>
         );
       }
       return <Custom node={node} context={context} children={node.children} />;

@@ -3,7 +3,7 @@
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0",
-    "buildId": "git:f8c2c69f7053f1f13dc55ad8611bcdef93f17278"
+    "buildId": "git:13670154b58264daba4f38203f57df30f91c26db"
   },
   "protocolArtifact": {
     "artifactVersion": "2.9.0",
@@ -12,6 +12,7 @@
   "support": {
     "pageVersions": [
       "2.7",
+      "2.8",
       "2.9"
     ],
     "manifestVersions": [
@@ -25,8 +26,20 @@
       "host.bootstrap",
       "host.failure-recovery",
       "host.conformance-claim",
-      "data.route-binding",
-      "form.controls.readonly"
+      "actions.upload",
+      "actions.row.request",
+      "actions.page.trigger",
+      "actions.row.navigate",
+      "actions.batch.request",
+      "form.record.load",
+      "form.controls.extended",
+      "form.controls.advanced",
+      "form.controls.readonly",
+      "table.selection",
+      "table.sort",
+      "record.view.load",
+      "permissions.inheritance",
+      "data.route-binding"
     ]
   },
   "conformance": {
@@ -67,15 +80,40 @@
         "suiteId": "component-format",
         "suiteVersion": "1.0",
         "result": "pass"
+      },
+      {
+        "suiteId": "response-mapping",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "search-table",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "permissions-inheritance",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "table-sort",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "uploads",
+        "suiteVersion": "1.0",
+        "result": "pass"
       }
     ]
   },
   "evidence": [
     {
       "kind": "local-report",
-      "subjectBuildId": "git:f8c2c69f7053f1f13dc55ad8611bcdef93f17278",
+      "subjectBuildId": "git:13670154b58264daba4f38203f57df30f91c26db",
       "uri": "/protocol/conformance-local-report.json",
-      "sha256": "b519141d3220cd812b8b4f9ef662ffeeeaf8457a13ba4cbf46b60c43227ba6a3"
+      "sha256": "d369f44534208b4f3f8607c11feff7e1eb830fc11d07c60c4b16d101d137d7a9"
     }
   ]
 }

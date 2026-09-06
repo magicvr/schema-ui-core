@@ -32,7 +32,8 @@ version: 0.3.0
 | A-002 | 2026-09-06 | independent（grok-build · grok-4.6 · high · `/audit`） | S2 证据分类与方案冻结（C-001～C-014 / D-002 / I-003·I-004·I-008） | conditional | 2 required（F-001 加强 / F-002）+ 3 recommended | [03-audit/A-002-s2-classification-independent.md](03-audit/A-002-s2-classification-independent.md) |
 | A-003 | 2026-09-06 | self（合并响应） | 响应 A-001/A-002；F-001～F-005 闭合 | pass（S2 范围 required 全闭合；F-001 accepted-residual 用户书面裁决） | **0** | [03-audit/A-003-s2-a002-response.md](03-audit/A-003-s2-a002-response.md) |
 | A-004 | 2026-09-06 | self | S3 custom 边界固定（C-009 + C-005 子项 + I-005） | pass | 0 | [03-audit/A-004-s3-custom-boundary-self.md](03-audit/A-004-s3-custom-boundary-self.md) |
+| A-005 | 2026-09-06 | self | S4 实现整改（C-001/002/003/004含F-001/006/010 + C-005 子项） | pass | 0（F-001 已按 S4 完成证据 fixed 闭合） | [03-audit/A-005-s4-implementation-self.md](03-audit/A-005-s4-implementation-self.md) |
 
 ## 结论状态
 
-**S2 已完成（progress 2/6）**；**S3 已完成（progress 3/6）**：S2 cross 全闭合（F-001 accepted-residual 用户书面裁决，S4 承接）；S3 C-009 custom 边界按用户 P-004 裁决固定（D-003 + `attachments/custom-extension-boundary.md`），I-005 verified，A-004 self pass（0 required）；上游分支不适用（I-004）。目标保持 `active`，S4 实施清单就绪（C-001/002/003/004 含 F-001/006/010 + C-005 子项 + custom 呈现对齐）。custom 边界 independent 复审按 meta 在 S6 关门腿执行。
+**S2/S3 完成（progress 3/6）**；**S4 完成（progress 4/6）**：S4 实现整改全部落地并验证（Web vitest 1271/1271、tsc+build 0、Go 全量 0 FAIL；A-005 self pass）。**F-001 accepted-residual 复审触发已满足 → 按 `fixed` 闭合**（页面级门禁接线 + claim/HOST_SUPPORT 19 能力扩展 + 一致性守卫）。目标保持 `active`，S5（运行时符合性验证：HTTP Manifest 快照 × profile 矩阵、覆盖矩阵、I-006/I-007）与 S6（cross 关门审计）待推进；S6 将对 custom 边界与运行时符合性做 independent 复审。

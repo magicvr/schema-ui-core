@@ -21,6 +21,7 @@ import {
 } from "@/host/bootstrap";
 import { mapBootstrapResult, nextFailureId, type HostFailure } from "@/host/failure";
 import { captureReturnIntent } from "@/host/return-intent";
+import { HOST_SUPPORTED_CAPABILITIES } from "@/host/host-support";
 
 /** Session adapter state (ADR-0035 D4): normalized by AuthContext. */
 export type SessionAdapterState = "loading" | "authenticated" | "unauthenticated" | "reauth-required" | "locked";
@@ -65,16 +66,9 @@ export interface HostBootInput {
 
 const HOST_SUPPORT: HostSupport = {
   supportedBootstrapVersions: [BOOTSTRAP_VERSION],
-  supportedCapabilities: [
-    "app.manifest",
-    "app.navigation",
-    "host.bootstrap",
-    "host.failure-recovery",
-    "host.conformance-claim",
-    // v2.9 (ADR-0039/ADR-0040): dataSource route binding + form readOnly.
-    "data.route-binding",
-    "form.controls.readonly",
-  ],
+  // F-001 (GOAL-041 S2): the full implemented capability set — see
+  // host-support.ts (single source of truth, kept in sync with the claim).
+  supportedCapabilities: [...HOST_SUPPORTED_CAPABILITIES],
 };
 
 /** Builds the terminal HostFailure for a bootstrap evaluation result. */

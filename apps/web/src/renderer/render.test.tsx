@@ -1449,3 +1449,32 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
     });
   });
 });
+
+// C-010 (GOAL-041 S2): an unregistered custom component renders an obvious
+// placeholder (role=alert, shows the component key) and logs console.error —
+// it never crashes and never degrades silently.
+describe("RenderPage unknown custom component (C-010)", () => {
+  it("renders an obvious placeholder and logs console.error for an unregistered key", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const pageDoc: RenderPageDocument = {
+        meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+        body: {
+          type: "section",
+          children: [
+            { type: "custom", id: "widget-1", component: "never-registered-widget" },
+          ],
+        },
+      };
+      const container = await renderDocument(pageDoc, {});
+      const alert = container.querySelector('[role="alert"]');
+      expect(alert).not.toBeNull();
+      expect(alert?.textContent ?? "").toContain("never-registered-widget");
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("never-registered-widget"),
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+});

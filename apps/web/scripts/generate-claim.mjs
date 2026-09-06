@@ -37,17 +37,25 @@ const UPSTREAM_PROTOCOL_CONTENT_SHA256 =
   "c87c22ad2ab4f4f19b93253312d6906b085ae6cd273168cc435d9863809d1c22";
 
 // Suites this repository runs green in CI (zero exclusions) at claim time.
+// Full mandatorySuites union over every claimed capability (capability-registry):
+// app-manifest / app-navigation / host-bootstrap / host-failure /
+// host-conformance-claim / request-construction / component-format /
+// response-mapping / search-table / permissions-inheritance / table-sort /
+// uploads. F-001 (GOAL-041 S2): claim must cover capabilities the served
+// pages actually require, not only the v2.9 deltas.
 const SUITES = [
   { suiteId: "app-manifest", fixtures: 41 },
   { suiteId: "app-navigation", fixtures: 16 },
   { suiteId: "host-bootstrap", fixtures: 23 },
   { suiteId: "host-failure", fixtures: 43 },
   { suiteId: "host-conformance-claim", fixtures: 30 },
-  // v2.9 claimed capabilities' mandatorySuites (capability-registry):
-  // data.route-binding → request-construction; form.controls.readonly →
-  // component-format + request-construction (both run green in CI).
   { suiteId: "request-construction", fixtures: 81 },
   { suiteId: "component-format", fixtures: 5 },
+  { suiteId: "response-mapping", fixtures: 23 },
+  { suiteId: "search-table", fixtures: 11 },
+  { suiteId: "permissions-inheritance", fixtures: 17 },
+  { suiteId: "table-sort", fixtures: 14 },
+  { suiteId: "uploads", fixtures: 13 },
 ];
 
 const packageJson = JSON.parse(readFileSync(join(WEB_ROOT, "package.json"), "utf8"));
@@ -96,7 +104,7 @@ const report = {
   pinnedUpstream: {
     sourceRepo: "https://github.com/magicvr/schema-ui-docs",
     sourceCommit: UPSTREAM_SOURCE_COMMIT,
-    artifactVersion: "2.8.0",
+    artifactVersion: ARTIFACT_VERSION,
     fixtureSha256: UPSTREAM_FIXTURE_SHA256,
     protocolContentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
@@ -116,17 +124,34 @@ const claim = {
     contentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
   support: {
-    pageVersions: ["2.7", "2.9"],
+    pageVersions: ["2.7", "2.8", "2.9"],
     manifestVersions: ["2.7", "2.8", "2.9"],
+    // F-001 (GOAL-041 S2): the claim must cover the capabilities the served
+    // pages require and this host implements — the full 19-capability set
+    // (host.bootstrap / host.failure-recovery / host.conformance-claim /
+    // permissions.inheritance / actions.* / form.* / table.* / record.view.load /
+    // data.route-binding), not only the v2.9 deltas. Keep in sync with
+    // apps/web/src/host/host-support.ts HOST_SUPPORTED_CAPABILITIES.
     capabilities: [
       "app.manifest",
       "app.navigation",
       "host.bootstrap",
       "host.failure-recovery",
       "host.conformance-claim",
-      // v2.9 (ADR-0039/ADR-0040): dataSource route binding + form readOnly.
-      "data.route-binding",
+      "actions.upload",
+      "actions.row.request",
+      "actions.page.trigger",
+      "actions.row.navigate",
+      "actions.batch.request",
+      "form.record.load",
+      "form.controls.extended",
+      "form.controls.advanced",
       "form.controls.readonly",
+      "table.selection",
+      "table.sort",
+      "record.view.load",
+      "permissions.inheritance",
+      "data.route-binding",
     ],
   },
   conformance: {

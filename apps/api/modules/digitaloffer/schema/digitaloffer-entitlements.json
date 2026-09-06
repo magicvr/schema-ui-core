@@ -8,8 +8,7 @@
       "app.navigation",
       "permissions.inheritance",
       "actions.row.request",
-      "table.sort",
-      "data.route-binding"
+      "table.sort"
     ]
   },
   "actions": {

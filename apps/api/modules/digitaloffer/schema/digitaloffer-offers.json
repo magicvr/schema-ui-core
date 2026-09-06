@@ -11,8 +11,7 @@
       "actions.page.trigger",
       "table.sort",
       "form.controls.extended",
-      "form.controls.advanced",
-      "form.controls.readonly"
+      "form.controls.advanced"
     ]
   },
   "actions": {

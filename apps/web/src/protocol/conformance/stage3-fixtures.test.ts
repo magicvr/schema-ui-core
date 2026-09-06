@@ -6,7 +6,7 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
@@ -117,16 +117,32 @@ describe("stage 3 · pinned vendor artifacts (I-PROTO-004)", () => {
     expect(provenance.value.sourceCommit).toBe(SOURCE_COMMIT);
     expect(provenance.value.artifactVersion).toBe("2.9.0");
 
+    // C-001 guard (GOAL-041 S2): fixture-suite.schema.json must be registered
+    // under its canonical upstream path (conformance/schemas/…), not a
+    // docs/schemas/ alias — the vendored copy still lives in docs/schemas/.
+    const fixtureSuiteEntries = provenance.value.artifacts.filter((artifact) =>
+      artifact.path.endsWith("fixture-suite.schema.json"),
+    );
+    expect(fixtureSuiteEntries.map((entry) => entry.path)).toEqual([
+      "conformance/schemas/fixture-suite.schema.json",
+    ]);
+
     for (const artifact of provenance.value.artifacts) {
-      const isSchema = artifact.path.startsWith("docs/schemas/");
-      const localPath = isSchema
-        ? join(SCHEMAS, artifact.path.replace("docs/schemas/", ""))
-        : join(
-            UPSTREAM,
-            artifact.path
-              .replace("conformance/fixtures/", "")
-              .replace("/cases.json", ".cases.json"),
-          );
+      let localPath: string;
+      if (artifact.path.startsWith("docs/schemas/")) {
+        localPath = join(SCHEMAS, artifact.path.replace("docs/schemas/", ""));
+      } else if (artifact.path.startsWith("conformance/schemas/")) {
+        // Vendored schema whose upstream path lives under conformance/schemas/
+        // (C-001): fixture-suite.schema.json is vendored into docs/schemas/.
+        localPath = join(SCHEMAS, basename(artifact.path));
+      } else {
+        localPath = join(
+          UPSTREAM,
+          artifact.path
+            .replace("conformance/fixtures/", "")
+            .replace("/cases.json", ".cases.json"),
+        );
+      }
       const bytes = readBytes(localPath);
       expect(sha256(bytes), artifact.path).toBe(artifact.sha256);
     }

@@ -58,7 +58,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 └── GOAL-038-w26-email-display-and-mail-pages [done] · W26 · 邮箱身份展示与邮件面页面化对齐（用户邮箱绑定显示 / 邮件控制台与出站记录独立页 / 邀请撤销修复）（4/4）
 └── GOAL-039-w27-invite-outbox-filter-sort [done] · W27 · 邀请管理与邮件出站记录页面的筛选与排序对齐（q 搜索 + 状态/渠道/投递状态筛选 + 列排序）（4/4）
 └── GOAL-040-w28-admin-passwd-convention [done] (4/4) · W28 · 现有库 admin 凭据约定（ADMIN_PASSWD 声明）与 TEST_ADMIN 测试账户机制退役
-└── GOAL-041-w29-api-web-protocol-conformance [active] (3/6) · W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环
+└── GOAL-041-w29-api-web-protocol-conformance [active] (4/6) · W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环
 ```
 
 **W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
@@ -156,7 +156,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-038-w26-email-display-and-mail-pages | W26 · 邮箱身份展示与邮件面页面化对齐（用户邮箱绑定显示 / 邮件控制台与出站记录独立页 / 邀请撤销修复） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-26 |
 | GOAL-039-w27-invite-outbox-filter-sort | W27 · 邀请管理与邮件出站记录页面的筛选与排序对齐（q 搜索 + 状态/渠道/投递状态筛选 + 列排序） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-08-26 |
 | GOAL-040-w28-admin-passwd-convention | W28 · 现有库 admin 凭据约定（ADMIN_PASSWD 声明）与 TEST_ADMIN 测试账户机制退役 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-09-06 |
-| GOAL-041-w29-api-web-protocol-conformance | W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环 | GOAL-001-design-implementation-conformance | active | 3/6 | 2026-09-06 |
+| GOAL-041-w29-api-web-protocol-conformance | W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环 | GOAL-001-design-implementation-conformance | active | 4/6 | 2026-09-06 |
 
 
 ## 维护说明
@@ -168,4 +168,4 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 - **W26（2026-08-26 关门）**：GOAL-038 done 4/4（A-001 self pass，required 0）；Root 保持 active 程序容器。
 - **W27（2026-08-26 立项并当日关门）**：GOAL-039 done 4/4（A-001 self pass，0 开放 required）——邀请页 q 搜索 + createdAt/expiresAt 排序；出站记录页 q/channel/delivery_status 筛选 + created_at 排序 + page/pageSize 分页；回归 Go 全量 0 FAIL + vitest 1116 + tsc 0 + build ok；go 判定无影响不暂挂；Root 保持 active。
 - **W28（2026-09-06 立项并当日关门）**：GOAL-040 done 4/4——现有库 admin 凭据墙治理：`ADMIN_PASSWD` 声明约定（维护者在 gitignored `apps/api/configs/.env` 声明当前 admin 现密码，供自动化测试/AI 助手/smoke 连现有库登录；API 不读取不重置）+ AI 助手可发现性（AGENTS.md「本地开发环境与 admin 凭据约定」+ QUICKSTART + README）+ TEST_ADMIN 测试账户机制退役（config.go / bootstrap.go `EnsureTestAdmin` / composition.go / reconcile_test.go / .env.example）+ smoke.sh `SMOKE_PASSWORD` 回退 `ADMIN_PASSWD`。回归：`go build/vet` 干净、`go test ./...` 全绿 0 FAIL；canonical 模板守卫 `env_example_test.go` 增 `declarationOnlyKeys` 白名单。**真实验证（E-002）**：API 连现有 postgres 库启动，`ADMIN_PASSWD` 登录 admin 200 + token + mustChangePassword=False；`SMOKE_PASSWORD` 未设 + `ADMIN_PASSWD` 导出 → smoke SM-001~005 全 PASS。A-001 self 关门审计 pass（0 required）+ 用户确认关门。Root 保持 active 程序容器。
-- **W29（2026-09-06，S2/S3 完成）**：GOAL-041 active 3/6——S1 固定 `schema-ui-docs@v2.9.0` identity 与协议分母/目录、C-001～C-014 登记。**S2**：C-001～C-014 逐项证据分类（implementation-gap ×6 / custom ×1 / out ×1 / excluded ×2 / no-gap ×3；**upstream gap 0**）+ D-002 冻结；cross A-001 self + A-002 grok-build independent → A-003 合并（F-002～F-005 fixed，D-VAL walker 递归化实测 35/35；**F-001 accepted-residual 承接 S4**）。**S3**：C-009 custom 边界用户 P-004 书面裁决（本仓合法 custom + 保留现有 15 键 + 新键规范；C-005 子项=删除 digitaloffer 未使用能力声明）→ D-003 + `attachments/custom-extension-boundary.md`，I-005 verified，A-004 self pass；上游分支不适用（I-004）。progress 2/6 → 3/6。Root 保持 active 程序容器。
+- **W29（2026-09-06，S2/S3/S4 完成）**：GOAL-041 active 4/6——S1 分母/目录；S2 分类（upstream gap 0）+ cross 闭合；S3 C-009 custom 边界用户裁决；**S4（本轮）**：C-001 provenance 路径/note + stage3 守卫、C-002 claim artifactVersion 2.9.0 + 重生成、C-003 台账卫生/README、**C-004/F-001 页面级版本+能力门禁接线 + claim/HOST_SUPPORT 扩至 19 能力**、C-005 digitaloffer 未使用声明删除 + 声明-使用守卫（v2.9 能力对）、C-006 dogfood 守卫（捕获并修正 dictionary-entries 路由漂移 + sha 重算）、C-010 未知 custom 明显占位 + console.error；回归 Web vitest 1271/1271 + tsc/build 0 + Go 全量 0 FAIL；F-001 按 S4 完成证据 fixed 闭合；A-005 self pass；progress 3/6 → 4/6。Root 保持 active 程序容器。

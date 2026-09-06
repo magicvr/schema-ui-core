@@ -1,4 +1,4 @@
-﻿import { createHash } from "node:crypto";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
@@ -70,8 +70,10 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // and the wallet nav (user 2026-08-16: wallet sits below Roles, above Activity).
 // GOAL-022: admin fixture extended with the my-wallet page + navigation.user
 // entry (user slot: account → my-wallet → settings).
+// C-006 (GOAL-041 S4): dictionary-entries route corrected to the parametric
+// /dictionary-entries/{dictKey} (module union guard caught the stale copy).
 const STATIC_MANIFEST_SHA256 =
-  "0efb4054d0473ce0649277e9b755b2109e473e89fef6507df0badd5d403868a0";
+  "ec00f6f1cab7bd0e2e54bc2e68370dee19c3354dfe36fcadac20331bfdeb0a5f";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

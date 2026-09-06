@@ -12,6 +12,10 @@
 import type { PageEntry } from "@/protocol/app-manifest";
 import { resolveSchemaUrl } from "@/protocol/app-manifest";
 import { validatePageDocument } from "@/protocol/conformance/runtime-schema-validate";
+import {
+  HOST_SUPPORTED_CAPABILITIES,
+  HOST_SUPPORTED_PAGE_VERSIONS,
+} from "@/host/host-support";
 import { withTimeout } from "@/lib/fetch-timeout";
 
 export type PageSchemaErrorCode =
@@ -19,7 +23,9 @@ export type PageSchemaErrorCode =
   | "PAGE_NOT_FOUND"
   | "PAGE_PARSE_FAILED"
   | "PAGE_SCHEMA_INVALID"
-  | "PAGE_ID_MISMATCH";
+  | "PAGE_ID_MISMATCH"
+  | "UNSUPPORTED_PROTOCOL_VERSION"
+  | "MISSING_REQUIRED_CAPABILITY";
 
 export interface PageSchemaValidationIssue {
   path: string;
@@ -133,7 +139,49 @@ export async function loadPageDocument(
     );
   }
 
-  const meta = (document as { meta?: { pageId?: unknown } } | null)?.meta;
+  const meta = (document as {
+    meta?: {
+      pageId?: unknown;
+      protocolVersion?: unknown;
+      requiredCapabilities?: unknown;
+    };
+  } | null)?.meta;
+
+  // F-001 (GOAL-041 S2): page-level version + capability negotiation, fail-closed
+  // (08-renderer-spec §3.4 / version-negotiation). D-VAL already guarantees
+  // meta.protocolVersion exists; a page whose version or capabilities exceed
+  // the host support set must never render.
+  if (typeof meta?.protocolVersion === "string") {
+    if (!(HOST_SUPPORTED_PAGE_VERSIONS as readonly string[]).includes(meta.protocolVersion)) {
+      throw new PageSchemaError(
+        "UNSUPPORTED_PROTOCOL_VERSION",
+        url,
+        `Page protocolVersion "${meta.protocolVersion}" is not supported by this host.`,
+      );
+    }
+    const required = Array.isArray(meta.requiredCapabilities)
+      ? (meta.requiredCapabilities as unknown[]).filter(
+          (capability): capability is string => typeof capability === "string",
+        )
+      : [];
+    const missing = required.filter(
+      (capability) =>
+        !(HOST_SUPPORTED_CAPABILITIES as readonly string[]).includes(capability),
+    );
+    if (missing.length > 0) {
+      throw new PageSchemaError(
+        "MISSING_REQUIRED_CAPABILITY",
+        url,
+        `Page requires capabilities not supported by this host: ${missing.join(", ")}.`,
+        missing.map((capability) => ({
+          path: "meta.requiredCapabilities",
+          message: capability,
+          keyword: "missing-capability",
+        })),
+      );
+    }
+  }
+
   if (typeof meta?.pageId === "string" && meta.pageId !== page.pageId) {
     throw new PageSchemaError(
       "PAGE_ID_MISMATCH",

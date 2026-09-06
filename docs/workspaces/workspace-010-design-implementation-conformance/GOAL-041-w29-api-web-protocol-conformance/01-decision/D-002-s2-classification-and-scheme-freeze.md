@@ -63,13 +63,13 @@ D-001 §2 的五个处置类别用于**存在偏差**的候选。S2 证据显示
 
 | Finding | source | 处置 | 证据 |
 |---------|--------|------|------|
-| F-001 生产页面级能力协商缺位 + claim/HOST_SUPPORT 覆盖不足（required · med） | A-001 + A-002（同向无冲突） | **closed（accepted-residual · 用户 P-004 书面裁决 2026-09-06）**：S4 必做（接线页面级版本+能力门禁 与 扩展 claim/HOST_SUPPORT 至能力全集，两项同步实施）；复审触发 = 进入 S4 实施该清单项时以完成证据闭合，最迟 S6 关门前 | D-002 §2 C-004 行（11 项能力并集缺口）；A-003 |
+| F-001 生产页面级能力协商缺位 + claim/HOST_SUPPORT 覆盖不足（required · med） | A-001 + A-002（同向无冲突） | **closed（fixed · 2026-09-06 S4 完成）**：`load-page.ts` 页面级版本+能力门禁接线（UNSUPPORTED_PROTOCOL_VERSION / MISSING_REQUIRED_CAPABILITY fail-closed）；`host-support.ts` HOST_SUPPORT 扩至 19 能力 + claim 19 能力/12 suites 重生成；35 页全部过门禁；accepted-residual 的 S4 复审触发已满足 | E-005；A-005；`host/host-support.ts`；`protocol/load-page.ts` |
 | F-002 D-VAL「35/35」名不副实（required · med） | A-002 | **fixed**：walker 递归化（`all-module-schemas-dval.test.ts`），实测 35/35 绿（38 tests）；D-002 §3 基线同步纠正 | 本决定 §3；`02-execution/E-003` |
 | F-003 C-009 W25 守卫未覆盖嵌套模块（recommended · low） | A-002 | **fixed**：`custom-components.schema.test.ts` walker 递归化 + 补 `telegram-admin-tab` import，实测绿 | `E-003` |
 | F-004 C-004 双类别 vs 唯一处置（recommended · low） | A-002 | **fixed**：C-004 主类改标 implementation-gap，模型层 no-gap 降为上下文说明 | §2 C-004 行 / 分类矩阵 |
 | F-005 台账计数/去向不一致（recommended · low） | A-002 | **fixed**：E-003 计数改 ×6；C-005 卫生项去向统一为 S3（随 C-009） | `E-003` / 分类矩阵 C-005 行 |
 
-- 无 P-004 冲突项（A-001/A-002 同向）。F-001 按用户书面 accepted-residual 闭合（S4 承接 + 复审触发）；F-002～F-005 已 fixed。**S2 required findings 全闭合，S2 可标记完成（progress 2/6）**。
+- 无 P-004 冲突项（A-001/A-002 同向）。F-002～F-005 已 fixed；F-001 先以用户书面 accepted-residual 闭合 S2 门禁（2026-09-06），其 S4 复审触发已于 S4 完成证据（页面级门禁 + 19 能力支持集）满足，**最终按 `fixed` 闭合（2026-09-06，E-005/A-005）**。
 
 ### 5. 方法论规则（承接 C-014）
 
