@@ -17,7 +17,7 @@ serves_summary: 架构分支 · 承接 VP-027 residual R-007：kernel.RateLimite
 
 ## 概述
 
-承接 [VP-032-rate-limiter-atomic-port](../../vision/plans/VP-032-rate-limiter-atomic-port.md)（active v0.2.0 · [VRev-073](../../vision/reviews/VRev-073-vp032-rate-limiter-atomic-port-activation.md) self `pass` · 架构类 freshness PASS `42036a3c`→`b1c03acd`）：消除 `kernel.RateLimiter` Allow/Record 两调用之间的 TOCTOU。**对象面**：端口新增 `AllowRecord(key, now) bool` + 内存供应商单锁实现 + 冻结 14 处生产使用点迁移 + 并发穿透回归。**红线（激活即生效）**：不重开 VP-027；不实现 Redis / **不消耗 RT-Q05 trigger**；不改 Profile 默认集 / Manifest（VP-008 `go`）；`Allow`/`Record` 保留兼容。
+承接 [VP-032-rate-limiter-atomic-port](../../../vision/plans/VP-032-rate-limiter-atomic-port.md)（active v0.2.0 · [VRev-073](../../../vision/reviews/VRev-073-vp032-rate-limiter-atomic-port-activation.md) self `pass` · 架构类 freshness PASS `42036a3c`→`b1c03acd`）：消除 `kernel.RateLimiter` Allow/Record 两调用之间的 TOCTOU。**对象面**：端口新增 `AllowRecord(key, now) bool` + 内存供应商单锁实现 + 冻结 14 处生产使用点迁移 + 并发穿透回归。**红线（激活即生效）**：不重开 VP-027；不实现 Redis / **不消耗 RT-Q05 trigger**；不改 Profile 默认集 / Manifest（VP-008 `go`）；`Allow`/`Record` 保留兼容。
 
 ## 成功标准（对应 VP-032 五条方向级退出判据）
 

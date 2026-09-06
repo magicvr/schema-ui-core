@@ -13,7 +13,7 @@ version: 1.0.0
 
 ## 触发
 
-1. **上游登记项（跨区引用 · Q2）**：[workspace-019 GOAL-001 E-009 §F-002](../../../../workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-009-a001-finding-fixes.md)——`loginRateLimiter` 进程内内存桶在多实例部署时限流预算按节点各自计算；上游审计 [A-001 F-002](../../../../workspace-019-iam-recovery/GOAL-001-iam-recovery/03-audit/A-001-closeout-independent.md)（independent · recommended/info）明确「不在 workspace-019 边界内，登记为部署拓扑注意项，供后续生产化波次评估」，并指认生产化波次为评估责任位。
+1. **上游登记项（跨区引用 · Q2）**：[workspace-019 GOAL-001 E-009 §F-002](../../../workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-009-a001-finding-fixes.md)——`loginRateLimiter` 进程内内存桶在多实例部署时限流预算按节点各自计算；上游审计 [A-001 F-002](../../../workspace-019-iam-recovery/GOAL-001-iam-recovery/03-audit/A-001-closeout-independent.md)（independent · recommended/info）明确「不在 workspace-019 边界内，登记为部署拓扑注意项，供后续生产化波次评估」，并指认生产化波次为评估责任位。
 2. **用户指令（2026-08-26）**：「推进 VP-009 生产化波次评估限流登记项（把 E-009 §F-002 的注意项正式立项到 workspace-009 波次规划）」。
 3. 程序语义允许：Root 为长期容器、波次=子目标（P3 检查点）；无开放 required 阻断（W1–W11 全部 done 且关门复核通过；VRev open required = 0）。
 

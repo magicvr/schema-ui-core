@@ -1,7 +1,7 @@
 ---
 id: workspace-031-digital-offer-entitlement
 title: 数字 Offer 与权益工作区
-status: active
+status: done
 root_goal: GOAL-001-digital-offer-entitlement
 canonical_scope: docs/workspaces/workspace-031-digital-offer-entitlement/
 shared_materials_catalog: none
@@ -10,8 +10,8 @@ plan_refs:
   - VP-031-digital-offer-entitlement
 primary_plan: VP-031-digital-offer-entitlement
 created: 2026-09-05
-updated: 2026-09-05
-version: 0.1.0
+updated: 2026-09-06
+version: 0.2.0
 parent: null
 ---
 

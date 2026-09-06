@@ -59,6 +59,6 @@ version: 0.4.1
 | date | change |
 |------|--------|
 | 2026-08-29 | 初创 v0.1.0（用户 2026-08-29 选择「试点先行」；组合层平台波，与三分支正交、与 VP-009/010 正交；对标 dotnet new + NuGet / Spring Boot starters） |
-| 2026-08-29 | v0.2.0 · 响应 [VRev-048](reviews/VRev-048-vp022-distribution-package-pilot-intent.md) V-F084/085/086 同批**fixed**：激活前置「freshness 类型 = 平台/架构类轻量复核」+「go/no-go 触发框架」+ `lead_workspace: —` 占位符 |
-| 2026-08-29 | v0.3.0 · **激活**（用户指令）：[VRev-049](reviews/VRev-049-vp022-activation.md) self `pass`（0 required；架构类轻量 freshness PASS `fddaf638`→`5c168070` 不暂挂 `go`）；`planned → active`；lead `workspace-022-distribution-package-pilot` 开区（Root 纲领路线图 R1～R5） |
+| 2026-08-29 | v0.2.0 · 响应 [VRev-048](../reviews/VRev-048-vp022-distribution-package-pilot-intent.md) V-F084/085/086 同批**fixed**：激活前置「freshness 类型 = 平台/架构类轻量复核」+「go/no-go 触发框架」+ `lead_workspace: —` 占位符 |
+| 2026-08-29 | v0.3.0 · **激活**（用户指令）：[VRev-049](../reviews/VRev-049-vp022-activation.md) self `pass`（0 required；架构类轻量 freshness PASS `fddaf638`→`5c168070` 不暂挂 `go`）；`planned → active`；lead `workspace-022-distribution-package-pilot` 开区（Root 纲领路线图 R1～R5） |
 | 2026-08-29 | v0.4.0 · **关闭**（用户 P-004 裁决后）：Root `GOAL-001-distribution-package-pilot` `done 5/5`；独立关门审计（grok A-002 + Root A-001）required 全闭合；Charter 0.3.0 strategic 已随 GO 裁决定稿；go 后清单落款 |

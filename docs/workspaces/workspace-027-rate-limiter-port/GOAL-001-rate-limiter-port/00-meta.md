@@ -17,7 +17,7 @@ serves_summary: 通用限流器端口（架构分支 · H-002 同进程基座早
 
 ## 概述
 
-承接 [VP-027-rate-limiter-port](../../vision/plans/VP-027-rate-limiter-port.md)（active v0.2.0 · [VRev-062](../../vision/reviews/VRev-062-vp027-rate-limiter-port-activation.md) self `pass` · 架构类 freshness PASS `54fb57e7`→`5744868d`）：交付通用限流器端口。**对象面**：内核级限流端口（与 Cache / Store / ObjectStore / Mail 同级）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 接缝声明。**红线（激活即生效）**：不预制 Redis（不引入客户端依赖 / **不消耗 RT-Q05 trigger**）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；Redis 轨道共享约定继承 owner 文档 `cache-redis-seam-and-track.md`（单一所有者，不跨区绑 Goal D-001）；W12 D-002 窗口常量（15min/20/`IP|identifier`/`Retry-After`）保持；GOAL-014 账号分层锁定（DB 行锁）显式排除；停机语义继承 VP-021。
+承接 [VP-027-rate-limiter-port](../../../vision/plans/VP-027-rate-limiter-port.md)（active v0.2.0 · [VRev-062](../../../vision/reviews/VRev-062-vp027-rate-limiter-port-activation.md) self `pass` · 架构类 freshness PASS `54fb57e7`→`5744868d`）：交付通用限流器端口。**对象面**：内核级限流端口（与 Cache / Store / ObjectStore / Mail 同级）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 接缝声明。**红线（激活即生效）**：不预制 Redis（不引入客户端依赖 / **不消耗 RT-Q05 trigger**）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；Redis 轨道共享约定继承 owner 文档 `cache-redis-seam-and-track.md`（单一所有者，不跨区绑 Goal D-001）；W12 D-002 窗口常量（15min/20/`IP|identifier`/`Retry-After`）保持；GOAL-014 账号分层锁定（DB 行锁）显式排除；停机语义继承 VP-021。
 
 ## 成功标准（对应 VP-027 七条方向级退出判据）
 

@@ -18,7 +18,7 @@ version: 1.0.0
    - `apps/api/internal/handler/rate_limit.go` L12–39：`loginRateLimiter` = 进程内互斥锁保护的内存滑动窗口桶（window/max/capacity 参数化；capacity 缺省 `1<<16`）；类型注释明示 "It is process-local and best-effort — it does not protect against distributed attacks"。
    - `apps/api/internal/handler/recovery.go` L58：恢复面接线 `newLoginRateLimiter(15*time.Minute, 20, 1<<16)`；登录面同型复用（W4 P0-1 / D-001 P1 既有实现）。
    - 键空间 = `loginClientIP(r) + "|" + lower(account)`（recovery.go L74–76）；X-Real-IP 仅信任显式配置的反代 CIDR。
-   - 上游登记：[workspace-019 GOAL-001 E-009 §F-002](../../../../workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-009-a001-finding-fixes.md)（Q2 引用）于 2026-08-26 落盘，含语义要点四条与本波归属指认。
+   - 上游登记：[workspace-019 GOAL-001 E-009 §F-002](../../../workspace-019-iam-recovery/GOAL-001-iam-recovery/02-execution/E-009-a001-finding-fixes.md)（Q2 引用）于 2026-08-26 落盘，含语义要点四条与本波归属指认。
 3. 阻断检查：W1–W11 全部 `done`（GOAL-011 关门后独立复核 A-005 pass / A-006 正式确认，开放 required = 0）；`docs/vision/reviews.md` VRev open required = 0 → 开波无阻断。
 
 ## 待办（非事实，仅指针）

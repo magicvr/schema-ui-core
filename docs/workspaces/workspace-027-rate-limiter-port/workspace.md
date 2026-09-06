@@ -1,7 +1,7 @@
 ---
 id: workspace-027-rate-limiter-port
 title: 通用限流器端口工作区（架构分支 · 三端口第二个）
-status: active
+status: done
 root_goal: GOAL-001-rate-limiter-port
 canonical_scope: docs/workspaces/workspace-027-rate-limiter-port/
 shared_materials_catalog: none
@@ -10,14 +10,14 @@ plan_refs:
   - VP-027-rate-limiter-port
 primary_plan: VP-027-rate-limiter-port
 created: 2026-09-01
-updated: 2026-09-01
-version: 0.1.0
+updated: 2026-09-06
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · 通用限流器端口
 
-本工作区是 [VP-027-rate-limiter-port](../../vision/plans/VP-027-rate-limiter-port.md)（**`active`** v0.2.0 · 2026-09-01 用户指令激活）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）：交付通用限流器端口——RateLimiter 端口（Allow/Record/Clear/RetryAfterSeconds + key 寻址 + 供应商无关）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 供应商接缝声明（不实现）。
+本工作区是 [VP-027-rate-limiter-port](../../vision/plans/VP-027-rate-limiter-port.md)（**`closed`** v0.3.0 · 2026-09-01 用户指令激活并书面确认关门）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q05）：交付通用限流器端口——RateLimiter 端口（Allow/Record/Clear/RetryAfterSeconds + key 寻址 + 供应商无关）+ 滑动窗口内存供应商（演进既有 `loginRateLimiter`）+ 7 处使用点完整迁移 + Redis 供应商接缝声明（不实现）。
 
 - **Root** `GOAL-001-rate-limiter-port`：**`done`** · **4/4**（R1 ✅ 合同冻结 → R2 ✅ 供应商+迁移 → R3 ✅ 接缝与登记 → R4 ✅ 证据与关门 · **2026-09-01 用户书面确认关门** · VP-027 `closed` v0.3.0），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-09-01）：[VRev-062](../../vision/reviews/VRev-062-vp027-rate-limiter-port-activation.md) self `pass`（0 required；VRev-058/059 全部 findings 已闭合）；**架构类轻量 freshness PASS**（`54fb57e7` → `5744868d`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码全部为 VP-026 已审结目交付）不暂挂 `go`。
@@ -34,7 +34,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-027-rate-limiter-port/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-027 lead（active）；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-027-rate-limiter-port`（`active` v0.2.0） | 2026-09-01 激活/开区（VRev-062 self `pass`；arch 类 freshness PASS `54fb57e7`→`5744868d`） |
+| 规划对齐 | `primary_plan` = `VP-027-rate-limiter-port`（`closed` v0.3.0） | 2026-09-01 激活/开区（VRev-062 self `pass`；arch 类 freshness PASS `54fb57e7`→`5744868d`）；2026-09-01 用户书面确认关门 |
 
 ## 愿景对齐
 

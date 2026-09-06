@@ -17,7 +17,7 @@ serves_summary: 通用缓存端口（架构分支 · H-002 同进程基座早期
 
 ## 概述
 
-承接 [VP-026-cache-port](../../vision/plans/VP-026-cache-port.md)（active v0.2.0 · [VRev-060](../../vision/reviews/VRev-060-vp026-cache-port-activation.md) self `pass` · 架构类 freshness PASS `055da2fd`→`54fb57e7`）：交付通用缓存端口。**对象面**：内核级缓存端口（与 Store / ObjectStore / Mail 同级）+ 双过期策略 + 可插拔策略接口 + 内存供应商 + Redis 接缝声明。**红线（激活即生效）**：不预制 Redis（不引入客户端依赖 / **不消耗 RT-Q03 trigger**）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；Redis 轨道共享约定（VP-026/027）单一所有者登记；停机语义继承 VP-021。
+承接 [VP-026-cache-port](../../../vision/plans/VP-026-cache-port.md)（active v0.2.0 · [VRev-060](../../../vision/reviews/VRev-060-vp026-cache-port-activation.md) self `pass` · 架构类 freshness PASS `055da2fd`→`54fb57e7`）：交付通用缓存端口。**对象面**：内核级缓存端口（与 Store / ObjectStore / Mail 同级）+ 双过期策略 + 可插拔策略接口 + 内存供应商 + Redis 接缝声明。**红线（激活即生效）**：不预制 Redis（不引入客户端依赖 / **不消耗 RT-Q03 trigger**）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；Redis 轨道共享约定（VP-026/027）单一所有者登记；停机语义继承 VP-021。
 
 ## 成功标准（对应 VP-026 八条方向级退出判据）
 

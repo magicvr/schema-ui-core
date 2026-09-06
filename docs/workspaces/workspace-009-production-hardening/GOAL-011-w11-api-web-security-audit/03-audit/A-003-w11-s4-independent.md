@@ -17,7 +17,7 @@ version: 0.1.0
 
 # A-003 · W11 S4 关门前 independent 复核（2026-08-22）
 
-> 本文件为 grok-build 独立的审计意见（`source: independent`），原始输出见 [attachments/audit-A-003-w11-grok-output.txt](attachments/audit-A-003-w11-grok-output.txt)；意见内容按原样收录。不改 status/progress/goal-tree（P-003）。
+> 本文件为 grok-build 独立的审计意见（`source: independent`），原始输出见 [attachments/audit-A-003-w11-grok-output.txt](../attachments/audit-A-003-w11-grok-output.txt)；意见内容按原样收录。不改 status/progress/goal-tree（P-003）。
 
 ## 条目头
 

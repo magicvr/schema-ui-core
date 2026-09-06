@@ -101,7 +101,7 @@ parent: null
 ## 关门记录
 
 - **`active → closed` v0.3.0 · 2026-09-04 · 用户书面确认**（VRev-074 self `pass` · 0 required）。
-- 五条方向级退出判据全部 verified（证据矩阵：workspace-032 Root [E-004](../workspaces/workspace-032-rate-limiter-atomic-port/GOAL-001-rate-limiter-atomic-port/02-execution/E-004-r3-evidence-matrix-and-close.md)）：
+- 五条方向级退出判据全部 verified（证据矩阵：workspace-032 Root [E-004](../../workspaces/workspace-032-rate-limiter-atomic-port/GOAL-001-rate-limiter-atomic-port/02-execution/E-004-r3-evidence-matrix-and-close.md)）：
   1. 原子性：`AllowRecord`/`Reserve` 单锁原子 + 并发预算/无穿透回归 + `-race`；
   2. 行为等价：14/14 全迁（4 处立即消费 `AllowRecord` + 10 处失败预算 `Reserve`/`Cancel`，逐路径语义冻结于 GOAL-003 D-002 §3）；
   3. 兼容：`Allow`/`Record`/`AllowRecord`/`Reserve`/`Cancel`/`RetryAfterSeconds`/`Clear` 保留，`Allow` 无副作用；
@@ -117,4 +117,4 @@ parent: null
 |------|--------|
 | 2026-09-03 | 用户书面裁决（GOAL-001 A-008 R-007 处置）：新建 VP 下一波做端口原子化，承接 `kernel.RateLimiter` Allow/Record TOCTOU residual。登记 `planned` v0.1.0（0 区），退出分母草案待 `/vision` 正式冻结。 |
 | 2026-09-03 | 用户指令激活：VRev-073 self `pass`（0 required · 架构类 freshness PASS `42036a3c`→`b1c03acd`）· I-032-001/002 冻结 · 使用点分母 14 处 · `planned → active` v0.2.0 · lead `workspace-032-rate-limiter-atomic-port` 交 `/govern` 开区。V-F117 recommended（VP-030 仍 active）不阻断。 |
-| 2026-09-04 | **口径承接登记（GOAL-003 A-002 证伪 · 用户裁决方案 A）**：§首波冻结「失败预算：入口乐观占槽；`Clear` 保持（无需原子变体）」与判据 #2「失败预算路径在 `Clear` 后净状态等价」的**表述**由 [GOAL-003 D-002](../workspaces/workspace-032-rate-limiter-atomic-port/GOAL-003-r2-handler-migration/01-decision/D-002-tokenized-reservation-failure-budget.md)（令牌化 `Reserve`/`Cancel` + 10 处逐路径语义冻结）取代——键级 `Clear` 无法只回滚当次占槽（A-002 证伪）；判据 #2 意图（14 处全迁 / 立即消费等价 / 失败预算净状态等价 / 并发下更保守）仍达成。I-032-002 → `revised`；新增 I-032-003 `verified`。实施与双审证据见 workspace-032（Root `done` 3/3 · A-001 self + A-002 grok independent 双 `pass`）。**关门就绪审视 = VRev-074 self `pass`**（0 required）。 |
+| 2026-09-04 | **口径承接登记（GOAL-003 A-002 证伪 · 用户裁决方案 A）**：§首波冻结「失败预算：入口乐观占槽；`Clear` 保持（无需原子变体）」与判据 #2「失败预算路径在 `Clear` 后净状态等价」的**表述**由 [GOAL-003 D-002](../../workspaces/workspace-032-rate-limiter-atomic-port/GOAL-003-r2-handler-migration/01-decision/D-002-tokenized-reservation-failure-budget.md)（令牌化 `Reserve`/`Cancel` + 10 处逐路径语义冻结）取代——键级 `Clear` 无法只回滚当次占槽（A-002 证伪）；判据 #2 意图（14 处全迁 / 立即消费等价 / 失败预算净状态等价 / 并发下更保守）仍达成。I-032-002 → `revised`；新增 I-032-003 `verified`。实施与双审证据见 workspace-032（Root `done` 3/3 · A-001 self + A-002 grok independent 双 `pass`）。**关门就绪审视 = VRev-074 self `pass`**（0 required）。 |

@@ -22,7 +22,7 @@ version: 1.0.0
 
 | 主张 | 路径 |
 |------|------|
-| R8 实施记录 | [GOAL-009 E-002](../GOAL-009-r8-evidence-readyz/02-execution/E-002-r8-probes-evidence.md) |
+| R8 实施记录 | [GOAL-009 E-002](../../GOAL-009-r8-evidence-readyz/02-execution/E-002-r8-probes-evidence.md) |
 | 关门审计 | GOAL-009 `03-audit/A-001-self-r8-evidence.md`（pass） |
 | 分母证据包 | GOAL-009 `attachments/exit-denominator-evidence.md` |
 

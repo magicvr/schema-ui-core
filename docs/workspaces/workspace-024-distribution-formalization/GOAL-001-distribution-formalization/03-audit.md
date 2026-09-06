@@ -22,7 +22,7 @@ version: 0.2.0
 
 | id | date | source | scope | verdict | open required | file |
 |----|------|--------|-------|---------|---------------|------|
-| A-002-r7 (GOAL-008) | 2026-08-29 | independent | Root 关门（R1–R7 · 判据 #1–#8 · 残余四项 · 抽核活制品） | **pass**（0 required；F-001~F-006 → fixed） | 0 | [GOAL-008 03-audit](../../GOAL-008-r7-topline-and-closeout/03-audit/A-002-r7-root-closeout-independent.md) |
+| A-002-r7 (GOAL-008) | 2026-08-29 | independent | Root 关门（R1–R7 · 判据 #1–#8 · 残余四项 · 抽核活制品） | **pass**（0 required；F-001~F-006 → fixed） | 0 | [GOAL-008 03-audit](../GOAL-008-r7-topline-and-closeout/03-audit/A-002-r7-root-closeout-independent.md) |
 
 ## 结论
 

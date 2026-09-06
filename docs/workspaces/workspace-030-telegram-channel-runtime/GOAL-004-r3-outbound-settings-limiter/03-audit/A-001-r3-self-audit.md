@@ -40,4 +40,4 @@ open_required: 0
 ## 4. 关门判定
 
 GOAL-004 检查点 C1、C2、C3 全部完成，所有退出判据满足，无开放必改项，可顺利关门（`status: done`，3/3）。
-放行 Root 纲领 R4 证据与关门阶段（[GOAL-005](../GOAL-005-r4-evidence-closeout/00-meta.md)）。
+放行 Root 纲领 R4 证据与关门阶段（[GOAL-005](../../GOAL-005-r4-evidence-closeout/00-meta.md)）。

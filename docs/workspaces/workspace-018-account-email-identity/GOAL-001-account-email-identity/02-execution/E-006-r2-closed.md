@@ -13,7 +13,7 @@ version: 1.0.0
 
 ## 已发生事实
 
-- 子目标 [GOAL-003-dual-dialect-email-schema](../GOAL-003-dual-dialect-email-schema/00-meta.md) 关门：**done · 4/4**。
+- 子目标 [GOAL-003-dual-dialect-email-schema](../../GOAL-003-dual-dialect-email-schema/00-meta.md) 关门：**done · 4/4**。
 - 迁移 **0054 account_email_identity** 落地（commit `0cbe3242`）：`users.email` 可空列 + `email_status` CHECK 列 + `lower(email)` 唯一表达式索引；可移植 DDL；既有 checksum 零改动。
 - 验证：SQLite store 全量 + composition 全绿；PostgreSQL 17 集成 15/15 PASS（含全 catalog bootstrap 实跑）。
 - independent 审计 A-001（grok build · grok-4.6 · high）：**pass**，开放 required = 0；审计方独立复算 checksum 一致并复跑双方言测试。响应记录见 GOAL-003 `03-audit.md` / E-003。

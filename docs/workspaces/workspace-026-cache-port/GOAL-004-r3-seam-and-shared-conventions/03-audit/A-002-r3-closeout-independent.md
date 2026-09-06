@@ -11,7 +11,7 @@ version: 0.1.0
 
 # A-002 · R3 接缝与共享约定关门独立交叉审计（grok build · independent）
 
-> 誊入说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（2026-09-01；grok 按指令只出报告文本、未落盘）。grok 当场独立复跑：`go vet` 0、composition/cache/config 三包测试 ok、`git status`/`git diff` 越界核账、`apps/api/go.mod`+`go.sum` redis 0 命中、`internal/mail/` git 空 diff。原始输出见 [attachments/audit-A-002-grok-output.md](attachments/audit-A-002-grok-output.md)。
+> 誊入说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（2026-09-01；grok 按指令只出报告文本、未落盘）。grok 当场独立复跑：`go vet` 0、composition/cache/config 三包测试 ok、`git status`/`git diff` 越界核账、`apps/api/go.mod`+`go.sum` redis 0 命中、`internal/mail/` git 空 diff。原始输出见 [attachments/audit-A-002-grok-output.md](../attachments/audit-A-002-grok-output.md)。
 
 - **source**：independent
 - **auditor**：grok-build（grok-4.6 · reasoning high · headless 单轮）
@@ -46,6 +46,6 @@ version: 0.1.0
 
 ## 链接
 
-- 原始输出全文：[attachments/audit-A-002-grok-output.md](attachments/audit-A-002-grok-output.md)
+- 原始输出全文：[attachments/audit-A-002-grok-output.md](../attachments/audit-A-002-grok-output.md)
 - 编排器合并响应：[A-003-response-to-a002.md](A-003-response-to-a002.md)
 - 对照 self：[A-001-r3-closeout-self.md](A-001-r3-closeout-self.md)

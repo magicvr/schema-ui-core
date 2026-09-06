@@ -13,7 +13,7 @@ version: 1.0.0
 
 ## A-002 · Root 关门独立审计（R1～R4 全阶段 + 方向级退出判据）
 
-> 代贴说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（原始输出：[attachments/audit-independent-raw.md](../attachments/audit-independent-raw.md)）；意见只出，不改 status。
+> 代贴说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（原始输出：[attachments/audit-independent-raw.md](../../attachments/audit-independent-raw.md)）；意见只出，不改 status。
 
 - **source**: independent
 - **auditor**: grok-build (grok-4.6 · reasoning high)

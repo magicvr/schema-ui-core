@@ -17,7 +17,7 @@ serves_summary: 进程内事件总线运输端口（架构分支 · H-002 同进
 
 ## 概述
 
-承接 [VP-028-event-bus-port](../../vision/plans/VP-028-event-bus-port.md)（active v0.2.0 · [VRev-064](../../vision/reviews/VRev-064-vp028-event-bus-port-activation.md) self `pass` · 架构类 freshness PASS `5744868d`→`29727510`）：交付进程内事件总线**运输端口**。**对象面**：内核级 EventBus 端口（与 Cache / RateLimiter / Store / ObjectStore / Mail 同级）+ 进程内 channel 实现 + outbox/MQ 接缝声明。**红线（激活即生效）**：不预制 outbox / 外部 broker（不引入客户端依赖 / 不预裁 RT-Q06 表结构 / **不消耗 RT-Q02 trigger**）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；**不解除** Admin 功能分支 typed domain event 扩展接缝的 trigger-gated；EventBus **不是** Job 端口替代；不属 Redis 轨道；停机语义继承 VP-021（异步投递须声明 SIGTERM 取消订阅/排空，否则选同步投递）。
+承接 [VP-028-event-bus-port](../../../vision/plans/VP-028-event-bus-port.md)（active v0.2.0 · [VRev-064](../../../vision/reviews/VRev-064-vp028-event-bus-port-activation.md) self `pass` · 架构类 freshness PASS `5744868d`→`29727510`）：交付进程内事件总线**运输端口**。**对象面**：内核级 EventBus 端口（与 Cache / RateLimiter / Store / ObjectStore / Mail 同级）+ 进程内 channel 实现 + outbox/MQ 接缝声明。**红线（激活即生效）**：不预制 outbox / 外部 broker（不引入客户端依赖 / 不预裁 RT-Q06 表结构 / **不消耗 RT-Q02 trigger**）；不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；**不解除** Admin 功能分支 typed domain event 扩展接缝的 trigger-gated；EventBus **不是** Job 端口替代；不属 Redis 轨道；停机语义继承 VP-021（异步投递须声明 SIGTERM 取消订阅/排空，否则选同步投递）。
 
 ## 成功标准（对应 VP-028 八条方向级退出判据）
 

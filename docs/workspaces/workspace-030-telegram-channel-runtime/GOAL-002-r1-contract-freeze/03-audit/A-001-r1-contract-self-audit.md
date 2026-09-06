@@ -36,4 +36,4 @@ open_required: 0
 ## 4. 关门判定
 
 GOAL-002 检查点 C1、C2、C3 全部完成，所有合同项均已冻结，内核端口及测试已落地，无开放必改项，可顺利关门（`status: done`，progress: 3/3）。
-纲领阶段 R1 已顺利达成，可放行 Root 纲领 R2 阶段（[GOAL-003](../GOAL-003-r2-webhook-dispatch-identity/00-meta.md)）。
+纲领阶段 R1 已顺利达成，可放行 Root 纲领 R2 阶段（[GOAL-003](../../GOAL-003-r2-webhook-dispatch-identity/00-meta.md)）。

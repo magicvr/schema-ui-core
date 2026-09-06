@@ -9,7 +9,7 @@ version: 1.0.0
 
 # E-002 · 生产装配回归锁实施与全量回归
 
-按 [D-001](../../01-decision/D-001-w14-scope-and-freeze.md) 措施 B 实施（2026-08-26）。
+按 [D-001](../01-decision/D-001-w14-scope-and-freeze.md) 措施 B 实施（2026-08-26）。
 
 ## 变更清单
 
@@ -33,7 +33,7 @@ version: 1.0.0
 | 新锁 | `npx vitest run src/app/auth-gate.wiring.test.tsx` | 2 passed |
 | 全量 web 回归 | `npm test`（vitest run） | **1130/1130 passed（84 文件）**，exit 0（基线 1128 + 本波 2） |
 | 类型检查 | `npx tsc -b --pretty false` | exit 0 |
-| 变异验证（锁有效性） | 临时移除 `schemaFetcher={authFetch}` 后复跑新锁 | **1 failed**，精确失败于 `expect(props.schemaFetcher).toBe(authFetch)`；恢复后 2 passed（详见 [A-001](../../03-audit/A-001-w14-self-closeout.md) §3） |
+| 变异验证（锁有效性） | 临时移除 `schemaFetcher={authFetch}` 后复跑新锁 | **1 failed**，精确失败于 `expect(props.schemaFetcher).toBe(authFetch)`；恢复后 2 passed（详见 [A-001](../03-audit/A-001-w14-self-closeout.md) §3） |
 
 ## 备注
 

@@ -48,4 +48,4 @@ progress: 4/4
 
 ## 备注
 
-历史记录：TEST_ADMIN 机制由 [workspace-030 E-011](../../../workspace-030-telegram-channel-runtime/GOAL-001-telegram-channel-runtime/02-execution/E-011-operator-config-and-test-admin.md)（2026-09-03）引入；本波次将其退役，历史五件套不改写。
+历史记录：TEST_ADMIN 机制由 [workspace-030 E-011](../../workspace-030-telegram-channel-runtime/GOAL-001-telegram-channel-runtime/02-execution/E-011-operator-config-and-test-admin.md)（2026-09-03）引入；本波次将其退役，历史五件套不改写。

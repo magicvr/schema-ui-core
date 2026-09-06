@@ -17,7 +17,7 @@ serves_summary: 收口 VP-022/023 go 后残余：serve 壳 / npmjs 公开发布 
 
 ## 概述
 
-承接 [VP-024-distribution-formalization](../../vision/plans/VP-024-distribution-formalization.md)（active v0.2.0 · VRev-052 pass）：把「cli+包 分发路径」从机制已验证升级为对外正式化——8 条方向级退出判据（= go 后合并残余 7 项 + 方法 B 置顶与收口报告）逐条落地；不改 Charter（fork 与包消费并存维持）；npmjs 正式 scope/凭据属外部动作（R2 前置门禁 I-024-001，用户授权为界）。实验下游仓 = `github.com/magicvr/golden-field`（registry 语义消费）。
+承接 [VP-024-distribution-formalization](../../../vision/plans/VP-024-distribution-formalization.md)（active v0.2.0 · VRev-052 pass）：把「cli+包 分发路径」从机制已验证升级为对外正式化——8 条方向级退出判据（= go 后合并残余 7 项 + 方法 B 置顶与收口报告）逐条落地；不改 Charter（fork 与包消费并存维持）；npmjs 正式 scope/凭据属外部动作（R2 前置门禁 I-024-001，用户授权为界）。实验下游仓 = `github.com/magicvr/golden-field`（registry 语义消费）。
 
 ## 成功标准（对应 VP-024 八条退出判据）
 

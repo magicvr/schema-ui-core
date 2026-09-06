@@ -10,7 +10,7 @@ status: recorded
 
 ## 1. 阶段事实
 
-- 子目标 [GOAL-003-r2-webhook-dispatch-identity](../GOAL-003-r2-webhook-dispatch-identity/00-meta.md) 顺利关门（`status: done`，3/3）。
+- 子目标 [GOAL-003-r2-webhook-dispatch-identity](../../GOAL-003-r2-webhook-dispatch-identity/00-meta.md) 顺利关门（`status: done`，3/3）。
 - 关键交付：
   1. Webhook 管道：`POST /api/channel/telegram/webhook`，`X-Telegram-Bot-Api-Secret-Token` 常时校验 fail-closed，未配置 token 返回 503，畸形包 400，合法包 200。
   2. 入站三桶限流：IP（60/m）、Chat（30/m）、User（20/m）独立 limiter，超限 429 + `Retry-After`，IP 洪水在 Secret 失败时仍记账。

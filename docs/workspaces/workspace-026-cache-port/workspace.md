@@ -1,7 +1,7 @@
 ---
 id: workspace-026-cache-port
 title: 通用缓存端口工作区（架构分支 · 三端口第一个）
-status: active
+status: done
 root_goal: GOAL-001-cache-port
 canonical_scope: docs/workspaces/workspace-026-cache-port/
 shared_materials_catalog: none
@@ -10,14 +10,14 @@ plan_refs:
   - VP-026-cache-port
 primary_plan: VP-026-cache-port
 created: 2026-08-31
-updated: 2026-09-01
-version: 0.2.0
+updated: 2026-09-06
+version: 0.3.0
 parent: null
 ---
 
 # 工作区上下文 · 通用缓存端口
 
-本工作区是 [VP-026-cache-port](../../vision/plans/VP-026-cache-port.md)（**`active`** v0.2.0 · 2026-08-31 用户指令激活）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q03）：交付通用缓存端口——Cache 端口（Get/Set/Delete + TTL + 命名空间 + 并发安全）+ 绝对/滑动过期 + 可插拔策略接口 + 内存供应商（默认）+ Redis 供应商接缝声明（不实现）。
+本工作区是 [VP-026-cache-port](../../vision/plans/VP-026-cache-port.md)（**`closed`** v0.3.0 · 2026-08-31 用户指令激活，2026-09-01 用户书面确认关门）的唯一 lead delivery workspace。**架构分支**（H-002 同进程基座基础设施端口早期化 · Charter 0.4.0 成功边界 #6 · 承接 RT-Q03）：交付通用缓存端口——Cache 端口（Get/Set/Delete + TTL + 命名空间 + 并发安全）+ 绝对/滑动过期 + 可插拔策略接口 + 内存供应商（默认）+ Redis 供应商接缝声明（不实现）。
 
 - **Root** `GOAL-001-cache-port`：**`done`** · **4/4**（R1 ✅ → R2 ✅ → R3 ✅ → R4 ✅ · **2026-09-01 用户书面确认关门** · VP-026 `closed` v0.3.0），纲领见 Root `00-meta.md`。
 - 激活门禁已满足（2026-08-31）：[VRev-060](../../vision/reviews/VRev-060-vp026-cache-port-activation.md) self `pass`（0 required；VRev-058/059 全部 findings 已闭合）；**架构类轻量 freshness PASS**（`055da2fd` → `54fb57e7`：协议 pin / 依赖锁 / 迁移台账 / Profile 装配 / provenance 五域零变更；区间代码变更全部可追溯至 VP-025 已审结目）不暂挂 `go`。
@@ -35,7 +35,7 @@ parent: null
 | canonical 范围 | `docs/workspaces/workspace-026-cache-port/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-026 lead（active）；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-026-cache-port`（`active` v0.2.0） | 2026-08-31 激活/开区（VRev-060 self `pass`；arch 类 freshness PASS `055da2fd`→`54fb57e7`） |
+| 规划对齐 | `primary_plan` = `VP-026-cache-port`（`closed` v0.3.0） | 2026-08-31 激活/开区（VRev-060 self `pass`；arch 类 freshness PASS `055da2fd`→`54fb57e7`）；2026-09-01 用户书面确认关门 |
 
 ## 愿景对齐
 

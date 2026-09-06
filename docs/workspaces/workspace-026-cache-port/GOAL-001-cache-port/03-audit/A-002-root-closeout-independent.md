@@ -11,7 +11,7 @@ version: 0.1.0
 
 # A-002 · Root 关门独立交叉审计（grok build · independent · R4 close-out 全量）
 
-> 誊入说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（2026-09-01；grok 按指令只出报告文本、未落盘）。grok 当场独立复跑：`go vet ./...` 0 · 四包 `-race`（cache 含之）exit 0 · 全模块 50 ok（exit 0）· 82 路径核账 · charter/go.mod/go.sum/profile/manifest/migrate/mail/modules 0 命中 · go.mod+go.sum redis 0 命中 · R4 工作树仅 owned 文档。原始输出见 [GOAL-005 attachments/audit-A-002-grok-output.md](../GOAL-005-r4-evidence-closeout/attachments/audit-A-002-grok-output.md)。
+> 誊入说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（2026-09-01；grok 按指令只出报告文本、未落盘）。grok 当场独立复跑：`go vet ./...` 0 · 四包 `-race`（cache 含之）exit 0 · 全模块 50 ok（exit 0）· 82 路径核账 · charter/go.mod/go.sum/profile/manifest/migrate/mail/modules 0 命中 · go.mod+go.sum redis 0 命中 · R4 工作树仅 owned 文档。原始输出见 [GOAL-005 attachments/audit-A-002-grok-output.md](../../GOAL-005-r4-evidence-closeout/attachments/audit-A-002-grok-output.md)。
 
 - **source**：independent
 - **auditor**：grok-build（grok-4.6 · reasoning high · headless 单轮）
@@ -47,6 +47,6 @@ version: 0.1.0
 
 ## 链接
 
-- 原始输出全文：[GOAL-005 attachments/audit-A-002-grok-output.md](../GOAL-005-r4-evidence-closeout/attachments/audit-A-002-grok-output.md)
+- 原始输出全文：[GOAL-005 attachments/audit-A-002-grok-output.md](../../GOAL-005-r4-evidence-closeout/attachments/audit-A-002-grok-output.md)
 - 编排器合并响应：[A-003-root-closeout-response.md](A-003-root-closeout-response.md)
 - 对照 self：[A-001-root-closeout-self.md](A-001-root-closeout-self.md)

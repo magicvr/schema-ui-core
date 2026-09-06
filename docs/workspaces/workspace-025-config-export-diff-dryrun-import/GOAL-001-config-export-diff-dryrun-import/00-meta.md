@@ -17,7 +17,7 @@ serves_summary: 配置包导出 / diff / dry-run / 导入（Admin 功能分支 �
 
 ## 概述
 
-承接 [VP-025-config-export-diff-dryrun-import](../../vision/plans/VP-025-config-export-diff-dryrun-import.md)（active v0.2.0 · [VRev-054](../../vision/reviews/VRev-054-vp025-activation.md) self `pass` · Admin 类 freshness PASS `c9122478`→`055da2fd`）：把「配置包导出 / diff / dry-run / 导入」收成可核对的 Admin 合同。**对象面 = serve 壳配置树**（`apps/api/server/config.default.yaml` 内嵌默认 · env 插值 `$VAR` fail-closed / `$VAR:-default` · 骨架模板 `config.yaml.tmpl`）。红线（激活即生效）：不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；密钥 fail-closed；热加载不进分母。
+承接 [VP-025-config-export-diff-dryrun-import](../../../vision/plans/VP-025-config-export-diff-dryrun-import.md)（active v0.2.0 · [VRev-054](../../../vision/reviews/VRev-054-vp025-activation.md) self `pass` · Admin 类 freshness PASS `c9122478`→`055da2fd`）：把「配置包导出 / diff / dry-run / 导入」收成可核对的 Admin 合同。**对象面 = serve 壳配置树**（`apps/api/server/config.default.yaml` 内嵌默认 · env 插值 `$VAR` fail-closed / `$VAR:-default` · 骨架模板 `config.yaml.tmpl`）。红线（激活即生效）：不改 Profile 默认集 / 模块矩阵 / Manifest 装配（VP-008 `go` 消费有效性）；密钥 fail-closed；热加载不进分母。
 
 ## 成功标准（对应 VP-025 六条方向级退出判据）
 

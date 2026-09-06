@@ -22,7 +22,7 @@ version: 1.0.0
 
 | 主张 | 路径 |
 |------|------|
-| 实施记录 | [GOAL-007 E-002](../GOAL-007-mock-resend-delivery/02-execution/E-002-r6-implementation.md) |
+| 实施记录 | [GOAL-007 E-002](../../GOAL-007-mock-resend-delivery/02-execution/E-002-r6-implementation.md) |
 | 关门审计 | GOAL-007 `03-audit/A-001-self-r6-delivery.md`（pass） |
 | 代码提交 | `feat(api): R6 渠道落地——mail.channel 解析 + mock outbox(0051)+Resend 适配器+管理 API` |
 

@@ -11,7 +11,7 @@ version: 0.1.0
 
 # A-002 · R1 合同冻结关门独立交叉审计（grok build · independent）
 
-> 誊入说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（2026-09-01；grok 按指令只出报告文本、未落盘——落盘与索引由编排器完成，`source: independent` 保持不变）。原始输出见 [attachments/audit-A-002-grok-output.md](attachments/audit-A-002-grok-output.md)。grok 当场独立复跑：`go vet ./kernel/...` 0、`go test ./kernel/... -count=1` PASS、`git status --short` / `git diff --stat` 越界核账。
+> 誊入说明：本条由编排器自本地 grok build（grok-4.6 · reasoning high）headless 会话原样誊入（2026-09-01；grok 按指令只出报告文本、未落盘——落盘与索引由编排器完成，`source: independent` 保持不变）。原始输出见 [attachments/audit-A-002-grok-output.md](../attachments/audit-A-002-grok-output.md)。grok 当场独立复跑：`go vet ./kernel/...` 0、`go test ./kernel/... -count=1` PASS、`git status --short` / `git diff --stat` 越界核账。
 
 - **source**：independent
 - **auditor**：grok-build（grok-4.6 · reasoning high · headless 单轮）
@@ -48,6 +48,6 @@ version: 0.1.0
 
 ## 链接
 
-- 原始输出全文：[attachments/audit-A-002-grok-output.md](attachments/audit-A-002-grok-output.md)
+- 原始输出全文：[attachments/audit-A-002-grok-output.md](../attachments/audit-A-002-grok-output.md)
 - 编排器合并响应：[A-003-response-to-a002.md](A-003-response-to-a002.md)
 - 对照 self：[A-001-contract-freeze-closeout-self.md](A-001-contract-freeze-closeout-self.md)
