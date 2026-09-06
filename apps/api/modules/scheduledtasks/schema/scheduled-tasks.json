@@ -11,8 +11,7 @@
       "actions.page.trigger",
       "table.sort",
       "form.controls.extended",
-      "form.controls.advanced",
-      "actions.row.navigate"
+      "form.controls.advanced"
     ]
   },
   "actions": {

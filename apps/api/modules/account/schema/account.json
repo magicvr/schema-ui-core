@@ -6,7 +6,6 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "permissions.inheritance",
       "actions.page.trigger",
       "actions.row.request",
       "form.controls.extended",

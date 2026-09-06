@@ -3,7 +3,7 @@
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0",
-    "buildId": "git:13670154b58264daba4f38203f57df30f91c26db"
+    "buildId": "git:04de9cb8b124b0e997079d444b98be027b0d5567"
   },
   "protocolArtifact": {
     "artifactVersion": "2.9.0",
@@ -111,9 +111,9 @@
   "evidence": [
     {
       "kind": "local-report",
-      "subjectBuildId": "git:13670154b58264daba4f38203f57df30f91c26db",
+      "subjectBuildId": "git:04de9cb8b124b0e997079d444b98be027b0d5567",
       "uri": "/protocol/conformance-local-report.json",
-      "sha256": "d369f44534208b4f3f8607c11feff7e1eb830fc11d07c60c4b16d101d137d7a9"
+      "sha256": "89cbc5ba1ee0ecf4e329ea6ae6bb5b2c1fcc68e7fd2c1a0048e5a91f8b8d614b"
     }
   ]
 }

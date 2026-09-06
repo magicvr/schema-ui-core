@@ -28,6 +28,15 @@ const FIXTURE_VERSION = "1.0";
 const SUITE_VERSION = "1.0";
 const ARTIFACT_VERSION = "2.9.0";
 
+// F2 (GOAL-042 D-001): the host support set is a single source of truth in
+// apps/web/src/host/host-support.json, shared with the runtime host-support.ts.
+// The claim's support.pageVersions / support.capabilities MUST be the JSON.
+const hostSupport = JSON.parse(
+  readFileSync(join(WEB_ROOT, "src", "host", "host-support.json"), "utf8"),
+);
+const HOST_PAGE_VERSIONS = hostSupport.supportedPageVersions;
+const HOST_CAPABILITIES = hostSupport.supportedCapabilities;
+
 // Formal 2.9.0 release bindings (tag v2.9.0, commit 81aa1d8; upstream audit
 // 0082). fixture 89baddbc…, content c87c22ad… (release manifest.json).
 const UPSTREAM_SOURCE_COMMIT = "81aa1d8";
@@ -124,35 +133,12 @@ const claim = {
     contentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
   support: {
-    pageVersions: ["2.7", "2.8", "2.9"],
+    pageVersions: [...HOST_PAGE_VERSIONS],
     manifestVersions: ["2.7", "2.8", "2.9"],
-    // F-001 (GOAL-041 S2): the claim must cover the capabilities the served
-    // pages require and this host implements — the full 19-capability set
-    // (host.bootstrap / host.failure-recovery / host.conformance-claim /
-    // permissions.inheritance / actions.* / form.* / table.* / record.view.load /
-    // data.route-binding), not only the v2.9 deltas. Keep in sync with
-    // apps/web/src/host/host-support.ts HOST_SUPPORTED_CAPABILITIES.
-    capabilities: [
-      "app.manifest",
-      "app.navigation",
-      "host.bootstrap",
-      "host.failure-recovery",
-      "host.conformance-claim",
-      "actions.upload",
-      "actions.row.request",
-      "actions.page.trigger",
-      "actions.row.navigate",
-      "actions.batch.request",
-      "form.record.load",
-      "form.controls.extended",
-      "form.controls.advanced",
-      "form.controls.readonly",
-      "table.selection",
-      "table.sort",
-      "record.view.load",
-      "permissions.inheritance",
-      "data.route-binding",
-    ],
+    // F2 (GOAL-042 D-001): identical to apps/web/src/host/host-support.json —
+    // the claim attests exactly the host's runtime support set (19 capabilities;
+    // mandatory suites all green, listed below).
+    capabilities: [...HOST_CAPABILITIES],
   },
   conformance: {
     fixtureVersion: FIXTURE_VERSION,

@@ -7,9 +7,7 @@
       "app.manifest",
       "app.navigation",
       "permissions.inheritance",
-      "actions.row.request",
       "actions.page.trigger",
-      "table.sort",
       "form.controls.extended",
       "form.controls.advanced"
     ]

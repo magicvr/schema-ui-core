@@ -23,6 +23,25 @@ import { I18nProvider } from "@/i18n/runtime";
 import { resetMissingTranslationReports } from "@/i18n/catalog";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
+// F3 (GOAL-042): this test drives the real App against real schemas; register
+// the custom components exactly like main.tsx so custom nodes (activity-export
+// etc.) render instead of falling back to the unknown-custom placeholder.
+import "@/components/account-session-toolbar";
+import "@/components/activity-export";
+import "@/components/cron-preview";
+import "@/components/data-permission-scopes";
+import "@/components/email-identity";
+import "@/components/import-template-download";
+import "@/components/invite-issue-card";
+import "@/components/invite-resend-dialog";
+import "@/components/mail-admin-tab";
+import "@/components/mfa-manager";
+import "@/components/monitoring-auto-refresh";
+import "@/components/notification-center";
+import "@/components/password-policy-tab";
+import "@/components/telegram-admin-tab";
+import "@/components/wallet-ensure";
+
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ADMIN_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
 const MVP_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.mvp-dogfood.json");

@@ -1,42 +1,22 @@
 /**
  * Host-supported page protocol versions and capabilities (GOAL-041 S2 · F-001).
  *
- * Single source of truth for the production host's support set:
- *  - `HOST_SUPPORTED_PAGE_VERSIONS` gates page-document negotiation
- *    (load-page.ts UNSUPPORTED_PROTOCOL_VERSION).
- *  - `HOST_SUPPORTED_CAPABILITIES` gates page-document capability negotiation
- *    (load-page.ts MISSING_REQUIRED_CAPABILITY) and backs `boot.ts` HOST_SUPPORT.
- *
- * Keep in sync with `apps/web/scripts/generate-claim.mjs` `support.capabilities`
- * (the build claim must attest the same set), and with the upstream
- * `capability-registry.json` (schema-ui-docs@v2.9.0). All 19 capabilities are
- * implemented by this host; the claim lists their mandatory suites (all green).
+ * SINGLE SOURCE OF TRUTH: `./host-support.json` (see F2 / GOAL-042 D-001).
+ * Both this module (runtime negotiation) and `apps/web/scripts/generate-claim.mjs`
+ * (build-time claim) read the same JSON, so the claim can never drift from the
+ * runtime support set. Keep the JSON in sync with the upstream
+ * `capability-registry.json` (schema-ui-docs@v2.9.0) and the page versions the
+ * renderer accepts.
  */
 
+import hostSupportJson from "./host-support.json";
+
 /** Exact page protocol versions the renderer accepts (strict negotiation). */
-export const HOST_SUPPORTED_PAGE_VERSIONS = ["2.7", "2.8", "2.9"] as const;
+export const HOST_SUPPORTED_PAGE_VERSIONS: readonly string[] =
+  hostSupportJson.supportedPageVersions;
 
 /** Capabilities implemented by this host (superset of served-page requirements). */
-export const HOST_SUPPORTED_CAPABILITIES = [
-  "app.manifest",
-  "app.navigation",
-  "host.bootstrap",
-  "host.failure-recovery",
-  "host.conformance-claim",
-  "actions.upload",
-  "actions.row.request",
-  "actions.page.trigger",
-  "actions.row.navigate",
-  "actions.batch.request",
-  "form.record.load",
-  "form.controls.extended",
-  "form.controls.advanced",
-  "form.controls.readonly",
-  "table.selection",
-  "table.sort",
-  "record.view.load",
-  "permissions.inheritance",
-  "data.route-binding",
-] as const;
+export const HOST_SUPPORTED_CAPABILITIES: readonly string[] =
+  hostSupportJson.supportedCapabilities;
 
 export type HostSupportedCapability = (typeof HOST_SUPPORTED_CAPABILITIES)[number];

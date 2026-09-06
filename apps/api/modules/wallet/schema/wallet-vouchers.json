@@ -8,9 +8,7 @@
       "app.navigation",
       "permissions.inheritance",
       "actions.page.trigger",
-      "actions.row.request",
       "table.sort",
-      "form.controls.extended",
       "form.controls.advanced"
     ]
   },

@@ -8,7 +8,8 @@
       "app.navigation",
       "permissions.inheritance",
       "actions.row.request",
-      "table.sort"
+      "table.sort",
+      "actions.page.trigger"
     ]
   },
   "actions": {
