@@ -17,6 +17,13 @@ func TestDefaultNavigationOrderSnapshot(t *testing.T) {
 		"menu_wallet",
 		// VP-029 R3 (GOAL-003, user 2026-09-02): prepaid vouchers below wallet.
 		"menu_wallet_vouchers",
+		// VP-031 (workspace-031, user 2026-09-06): digital offers + entitlements
+		// after prepaid vouchers, before the activity log.
+		"menu_digitaloffer_offers",
+		"menu_digitaloffer_entitlements",
+		// VP-031 (workspace-031, user 2026-09-06): digital orders (purchases)
+		// read-only log after the entitlements entry.
+		"menu_digitaloffer_purchases",
 		"menu_account",
 		// GOAL-022 (D-002 §2): my-wallet self-service — user slot between
 		// 个人中心 and 设置.

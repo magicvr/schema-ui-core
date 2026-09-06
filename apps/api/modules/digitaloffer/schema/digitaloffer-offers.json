@@ -1,7 +1,7 @@
 {
   "meta": {
     "pageId": "digitaloffer-offers",
-    "title": "Digital offers",
+    "title": "Digital products",
     "protocolVersion": "2.9",
     "requiredCapabilities": [
       "app.manifest",
@@ -90,9 +90,11 @@
             },
             {
               "id": "priceAmount",
-              "label": "Price (min units)",
+              "label": "Price (yuan, up to 2 decimals)",
               "type": "inputNumber",
               "required": true,
+              "step": 0.01,
+              "unit": "yuan",
               "labelKey": "schema.digitaloffer.field.priceAmount"
             },
             {
@@ -141,7 +143,7 @@
             }
           ],
           "submitAction": "createOffer",
-          "submitLabel": "Create offer",
+          "submitLabel": "Create product",
           "submitLabelKey": "schema.digitaloffer.submit.create"
         }
       }
@@ -176,14 +178,16 @@
             },
             {
               "id": "priceAmount",
-              "label": "Price (min units)",
+              "label": "Price (yuan, up to 2 decimals)",
               "type": "inputNumber",
               "required": true,
+              "step": 0.01,
+              "unit": "yuan",
               "labelKey": "schema.digitaloffer.field.priceAmount"
             }
           ],
           "submitAction": "updateOffer",
-          "submitLabel": "Save offer",
+          "submitLabel": "Save product",
           "submitLabelKey": "schema.digitaloffer.submit.update"
         }
       }
@@ -338,7 +342,7 @@
           "toolbar": [
             {
               "key": "create",
-              "label": "New offer",
+              "label": "New product",
               "actionRef": "openCreate",
               "permissionIntent": "edit",
               "labelKey": "schema.digitaloffer.toolbar.create"

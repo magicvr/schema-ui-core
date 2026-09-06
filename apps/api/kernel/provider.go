@@ -410,6 +410,13 @@ var DefaultNavigationOrder = []string{
 	// VP-029 R3 (GOAL-003, user 2026-09-02): prepaid vouchers — directly below
 	// the wallet entry it extends (same wallet surface cluster).
 	"menu_wallet_vouchers",
+	// VP-031 (workspace-031, user 2026-09-06): digital offers + digital
+	// entitlements — directly after prepaid vouchers, before the activity log.
+	"menu_digitaloffer_offers",
+	"menu_digitaloffer_entitlements",
+	// VP-031 (workspace-031, user 2026-09-06): digital orders (purchases) —
+	// the read-only purchase log of the same cluster, after the entitlements.
+	"menu_digitaloffer_purchases",
 	"menu_account",
 	// GOAL-022 (D-002 §2): my-wallet self-service — topbar user slot between
 	// 个人中心 and 设置 (menu_activity/menu_settings).

@@ -1,5 +1,6 @@
 import {
   Activity,
+  BadgeCheck,
   Boxes,
   ChevronDown,
   CircleHelp,
@@ -11,6 +12,7 @@ import {
   Menu,
   PanelLeft,
   Pencil,
+  Receipt,
   Search,
   Send,
   Settings,
@@ -63,6 +65,9 @@ const iconRegistry: Record<string, LucideIcon> = {
   // VP-029 R3 (GOAL-003): prepaid vouchers nav semantic icon (fragment icon
   // name "card" → ticket glyph; see wallet manifest fragment).
   card: Ticket,
+  // VP-031 (workspace-031): digital entitlements nav semantic icon (fragment
+  // icon name "check-badge" → badge-check glyph; see digitaloffer fragment).
+  "check-badge": BadgeCheck,
   dashboard: LayoutDashboard,
   folder: FolderKanban,
   form: FormInput,
@@ -72,6 +77,9 @@ const iconRegistry: Record<string, LucideIcon> = {
   menu: Menu,
   pen: Pencil,
   reaction: Zap,
+  // VP-031 (workspace-031): digital orders (purchases) nav semantic icon
+  // (fragment icon name "receipt" → receipt glyph; see digitaloffer fragment).
+  receipt: Receipt,
   search: Search,
   // Telegram channel nav semantic icon (fragment icon name "send" → paper-plane
   // glyph; see channel/telegram manifest fragment).

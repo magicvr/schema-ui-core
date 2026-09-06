@@ -113,6 +113,14 @@ export interface FormControlField {
   max?: number | string;
   step?: number;
   precision?: number;
+  /**
+   * inputNumber only · Host-local display unit (not a protocol control prop):
+   * `"yuan"` renders/collects the value in yuan with cent granularity (step
+   * 0.01, values rounded to the nearest integer minor unit) while the wire
+   * value stays integer minor units (分). Same convention as the wallet
+   * voucher amount input; keeps storage/API in min units.
+   */
+  unit?: string;
   /** GOAL-014 D-002 §3: field-level validation constraints (optional). */
   required?: boolean;
   /** ADR-0040 (since 2.9): read-only field — user cannot edit, value still

@@ -229,6 +229,7 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 	}{
 		{"digitaloffer-offers", "/digitaloffer-offers", "/api/schema/digitaloffer-offers"},
 		{"digitaloffer-entitlements", "/digitaloffer-entitlements", "/api/schema/digitaloffer-entitlements"},
+		{"digitaloffer-purchases", "/digitaloffer-purchases", "/api/schema/digitaloffer-purchases"},
 	} {
 		got, ok := pages[want.id]
 		if !ok || got.route != want.route || got.schemaURL != want.schemaURL {
@@ -239,7 +240,7 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 	for _, n := range doc.Navigation.Sidebar {
 		navRefs[n.PageRef] = true
 	}
-	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements"} {
+	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
 		if !navRefs[ref] {
 			t.Fatalf("manifest sidebar missing pageRef %s (refs %v)", ref, navRefs)
 		}
@@ -253,7 +254,7 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 		t.Fatalf("unauthenticated schema = %d, want 401", rr.Code)
 	}
 	token := loginCompositionAdmin(t, mux)
-	for _, pageID := range []string{"digitaloffer-offers", "digitaloffer-entitlements"} {
+	for _, pageID := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
 		schemaReq := httptest.NewRequest(http.MethodGet, "/api/schema/"+pageID, nil)
 		schemaReq.Header.Set("Authorization", "Bearer "+token)
 		rr = httptest.NewRecorder()

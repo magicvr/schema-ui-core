@@ -137,6 +137,7 @@ func TestDigitalOfferCompositionRoot(t *testing.T) {
 	}{
 		{"digitaloffer-offers", "/digitaloffer-offers", "/api/schema/digitaloffer-offers"},
 		{"digitaloffer-entitlements", "/digitaloffer-entitlements", "/api/schema/digitaloffer-entitlements"},
+		{"digitaloffer-purchases", "/digitaloffer-purchases", "/api/schema/digitaloffer-purchases"},
 	} {
 		got, ok := manifestPages[want.id]
 		if !ok || got.route != want.route || got.schemaURL != want.schemaURL {
@@ -147,7 +148,7 @@ func TestDigitalOfferCompositionRoot(t *testing.T) {
 	for _, n := range manifestDoc.Navigation.Sidebar {
 		manifestRefs[n.PageRef] = true
 	}
-	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements"} {
+	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
 		if !manifestRefs[ref] {
 			t.Fatalf("manifest sidebar missing pageRef %s (refs %v)", ref, manifestRefs)
 		}
@@ -161,7 +162,7 @@ func TestDigitalOfferCompositionRoot(t *testing.T) {
 		t.Fatalf("unauthenticated schema = %d, want 401", rr.Code)
 	}
 	token := loginCompositionAdmin(t, mux)
-	for _, pageID := range []string{"digitaloffer-offers", "digitaloffer-entitlements"} {
+	for _, pageID := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
 		req := httptest.NewRequest(http.MethodGet, "/api/schema/"+pageID, nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 		rr = httptest.NewRecorder()

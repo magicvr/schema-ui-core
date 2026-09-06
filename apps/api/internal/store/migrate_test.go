@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 70 || applied[67].version != 68 || applied[67].name != "telegram_ingress" || applied[68].version != 69 || applied[68].name != "telegram_outbound" || applied[69].version != 70 || applied[69].name != "digital_offers" {
-		t.Fatalf("applied = %+v, want v70 digital_offers tail", applied)
+	if len(applied) != 71 || applied[67].version != 68 || applied[67].name != "telegram_ingress" || applied[68].version != 69 || applied[68].name != "telegram_outbound" || applied[69].version != 70 || applied[69].name != "digital_offers" || applied[70].version != 71 || applied[70].name != "operation_log_digitaloffer_events" {
+		t.Fatalf("applied = %+v, want v71 operation_log_digitaloffer_events tail", applied)
 	}
 	applied = applied[:66]
 	if len(applied) != 66 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" || applied[43].version != 44 || applied[43].name != "service_credentials" || applied[44].version != 45 || applied[44].name != "operation_log_service_credentials" || applied[45].version != 46 || applied[45].name != "site_operation_log_retention" || applied[46].version != 47 || applied[46].name != "operation_log_archive" || applied[47].version != 48 || applied[47].name != "operation_log_session" || applied[48].version != 49 || applied[48].name != "seed_admin_must_change_password" || applied[49].version != 50 || applied[49].name != "wallet_ledger_order_repair" || applied[50].version != 51 || applied[50].name != "mail_outbox" || applied[51].version != 52 || applied[51].name != "mail_config" || applied[52].version != 53 || applied[52].name != "operation_log_mail_events" || applied[53].version != 54 || applied[53].name != "account_email_identity" || applied[54].version != 55 || applied[54].name != "email_verification_challenges" || applied[55].version != 56 || applied[55].name != "password_recovery_challenges" || applied[56].version != 57 || applied[56].name != "password_policy" || applied[57].version != 58 || applied[57].name != "user_password_history" || applied[58].version != 59 || applied[58].name != "user_invites" || applied[59].version != 60 || applied[59].name != "mail_outbox_channels" || applied[60].version != 61 || applied[60].name != "login_failures" || applied[61].version != 62 || applied[61].name != "site_default_currency" || applied[62].version != 63 || applied[62].name != "site_settings_updated_at_index" || applied[63].version != 64 || applied[63].name != "wallet_voucher_and_subject" || applied[64].version != 65 || applied[64].name != "wallet_voucher_batches" || applied[65].version != 66 || applied[65].name != "telegram_config" {
@@ -154,6 +154,14 @@ func TestMigrateFreshDB(t *testing.T) {
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
 		t.Fatalf("settings.update on fresh operation_log: %v", err)
+	}
+	// The 0071 expansion adds the biz.digital-offer admin audit events (the
+	// workspace-031 create/void transaction pairs them fail-closed).
+	if err := operationRepository.RecordOperation(operationlog.Operation{
+		ID: "op-bizoffer", Event: "bizoffer.offer.create", ActorID: "user-admin", ActorName: "Admin",
+		CreatedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("bizoffer.offer.create on fresh operation_log: %v", err)
 	}
 	// A fresh empty DB has nothing to recover: no snapshot should exist for ANY
 	// version. This globs all pre-vN snapshots, not just pre-v0002 — mid-batch
@@ -189,8 +197,8 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 70 || applied2[67].version != 68 || applied2[67].name != "telegram_ingress" || applied2[68].version != 69 || applied2[68].name != "telegram_outbound" || applied2[69].version != 70 || applied2[69].name != "digital_offers" {
-		t.Fatalf("migrations after reopen = %+v, want v70 digital_offers tail", applied2)
+	if len(applied2) != 71 || applied2[67].version != 68 || applied2[67].name != "telegram_ingress" || applied2[68].version != 69 || applied2[68].name != "telegram_outbound" || applied2[69].version != 70 || applied2[69].name != "digital_offers" || applied2[70].version != 71 || applied2[70].name != "operation_log_digitaloffer_events" {
+		t.Fatalf("migrations after reopen = %+v, want v71 operation_log_digitaloffer_events tail", applied2)
 	}
 	applied2 = applied2[:66]
 	if len(applied2) != 66 {
@@ -745,6 +753,10 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		{"channel.telegram", "telegram_outbound", "76f4fa39c39d796ec8f106ae08d152526216d3781d9db7689fee1273eb2c974d"},
 		// workspace-031 R2 (VP-031): digital-offer domain tables
 		{"biz.digital-offer", "digital_offers", "ae0cb126a4d958941d1f582fc70c15a922ab731b31b14e6cc5f74ef572086d2f"},
+		// workspace-031 post-closure: operation_log event CHECK expansion for
+		// biz.digital-offer admin audit events (offer create/update/status +
+		// entitlement void).
+		{"core.operationlog", "operation_log_digitaloffer_events", "4520ca0c96401e83b33e030a61e9ab038a298b2ecc993bc2aa9ae67fbf8cb246"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

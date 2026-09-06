@@ -20,16 +20,6 @@
       "onSuccess": {
         "behavior": "reload"
       }
-    },
-    "confirmVoid": {
-      "type": "confirm",
-      "title": "Void entitlement",
-      "titleKey": "schema.digitaloffer.void.title",
-      "message": "Voiding is final; the entitlement becomes invalid for the subject.",
-      "messageKey": "schema.digitaloffer.void.message",
-      "confirmActionRef": "voidEntitlement",
-      "confirmLabel": "Void",
-      "confirmLabelKey": "schema.digitaloffer.void.confirm"
     }
   },
   "body": {
@@ -102,6 +92,11 @@
               "labelKey": "schema.digitaloffer.column.offerId"
             },
             {
+              "field": "purchaseId",
+              "label": "Purchase",
+              "labelKey": "schema.digitaloffer.column.purchaseId"
+            },
+            {
               "field": "form",
               "label": "Form",
               "labelKey": "schema.digitaloffer.column.form"
@@ -134,9 +129,16 @@
             {
               "key": "void",
               "label": "Void",
-              "actionRef": "confirmVoid",
+              "actionRef": "voidEntitlement",
               "permissionIntent": "edit",
-              "labelKey": "schema.digitaloffer.action.void"
+              "labelKey": "schema.digitaloffer.action.void",
+              "confirm": "Voiding is final; the entitlement becomes invalid for the subject.",
+              "confirmKey": "schema.digitaloffer.void.message",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              }
             }
           ]
         }

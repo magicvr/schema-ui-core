@@ -53,8 +53,8 @@ func (p *Provider) Descriptor() kernel.Module {
 				// D-002 §5.3: public C-end catalog (unauthenticated read).
 				"GET /api/biz/offers",
 			},
-			Pages:       []string{"digitaloffer-offers", "digitaloffer-entitlements"},
-			Navigation:  []string{"menu_digitaloffer_offers", "menu_digitaloffer_entitlements"},
+			Pages:       []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"},
+			Navigation:  []string{"menu_digitaloffer_offers", "menu_digitaloffer_entitlements", "menu_digitaloffer_purchases"},
 			Permissions: []string{"digitaloffer.read", "digitaloffer.offer.manage", "digitaloffer.entitlement.void"},
 			Fragments:   []string{"digitaloffer"},
 		},
@@ -103,6 +103,17 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "digitaloffer-purchases"},
+		PageID:               "digitaloffer-purchases",
+		Resources:            []string{"digitaloffer"},
+		Actions:              []string{"list"},
+		DataSource:           "/api/digitaloffer/purchases",
+		Owner:                ModuleID,
+		Document:             schema.SchemaDocuments()["digitaloffer-purchases"],
+	}); err != nil {
+		return err
+	}
 	for _, permission := range []kernel.PermissionContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "digitaloffer.read"}, Permission: "digitaloffer.read", Resource: "digitaloffer", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "digitaloffer.offer.manage"}, Permission: "digitaloffer.offer.manage", Resource: "digitaloffer", Action: "offer.manage", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
@@ -117,7 +128,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		NodeID:               "menu_digitaloffer_offers",
 		PageID:               "digitaloffer-offers",
 		Order:                20,
-		Label:                "Digital offers",
+		Label:                "Digital products",
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "digitaloffer.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
@@ -130,6 +141,18 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "digitaloffer-entitlements",
 		Order:                21,
 		Label:                "Digital entitlements",
+		Visibility:           authsessiondata.PolicyAdmin,
+		Permission:           "digitaloffer.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	}); err != nil {
+		return err
+	}
+	if err := reg.Navigation(kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_digitaloffer_purchases"},
+		NodeID:               "menu_digitaloffer_purchases",
+		PageID:               "digitaloffer-purchases",
+		Order:                22,
+		Label:                "Digital orders",
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "digitaloffer.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
