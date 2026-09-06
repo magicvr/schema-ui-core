@@ -48,4 +48,8 @@ version: 0.1.0
 
 ## 阶段结论
 
-S2 分类与方案冻结完成：upstream-protocol-gap = 0（I-004 不适用）；implementation-gap ×6（C-001/002/003/004/006/010，S4 整改清单）；custom-extension-candidate ×1（C-009，S3 P-004）；explicitly-out ×1（C-013）；excluded ×2（C-007/008 S5 契约 + C-014 方法论规则）；no-gap ×3（C-005/011/012）。I-003 → verified。cross 合并后：F-002～F-005 已闭合（fixed），**F-001（生产页面级能力门禁 + claim/HOST_SUPPORT 覆盖）为唯一开放 required**——S2 是否完成取决于用户 P-004 裁决（S4 实施承接 / accepted-residual），裁决前不放行 S3/S4。
+S2 分类与方案冻结完成：upstream-protocol-gap = 0（I-004 不适用）；implementation-gap ×6（C-001/002/003/004/006/010，S4 整改清单）；custom-extension-candidate ×1（C-009，S3 P-004）；explicitly-out ×1（C-013）；excluded ×2（C-007/008 S5 契约 + C-014 方法论规则）；no-gap ×3（C-005/011/012）。I-003 → verified。cross 合并后：F-002～F-005 已闭合（fixed），**F-001 按用户 P-004 书面裁决 accepted-residual（S4 承接 + 复审触发）**——S2 required 全闭合，S2 完成（progress 2/6）。
+
+## Git checkpoint
+
+- **checkpoint `2854b898`**（2026-09-06，S2 方案冻结后）：scope = GOAL-041 五件套 + ledger + attachments + goal-tree/workspace 同步 + 两处守卫测试（`all-module-schemas-dval.test.ts` / `custom-components.schema.test.ts`）；验证 = Web 受影响子集 10 files / 511 tests PASS（含 D-VAL 35/35 与 custom 守卫）+ Go `./internal/manifest` PASS + `TestShutdownDrain*` 隔离 PASS。仅暂存显式 owned paths，无 `git add -A`。
