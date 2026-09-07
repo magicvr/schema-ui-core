@@ -12,6 +12,20 @@ import {
 } from "@/protocol/app-manifest";
 import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
 
+/**
+ * Shell-level page hierarchy used by both breadcrumbs and navigation active
+ * state. It is intentionally outside the protocol: inner/detail pages can
+ * inherit the active state of their registered sidebar parent without adding
+ * a non-standard field to NavGroup.
+ */
+export const NAVIGATION_PAGE_PARENTS: Record<string, string> = {
+  "dictionary-entries": "data-dictionary",
+  "task-runs": "scheduled-tasks",
+  "wallet-entries": "wallet",
+  "users-invites": "users",
+  "telegram-operator": "telegram-settings",
+};
+
 export interface ProjectedLink {
   type: "link";
   href?: string;
@@ -24,9 +38,12 @@ export interface ProjectedLink {
 
 export interface ProjectedGroup {
   type: "group";
+  /** Stable UI key; derived from labelKey/literal because protocol NavGroup has no id. */
+  key: string;
   label: string;
   icon?: string;
   items: ProjectedLink[];
+  active: boolean;
 }
 
 export type ProjectedItem = ProjectedLink | ProjectedGroup;
@@ -88,13 +105,30 @@ function linkTarget(
   return current === undefined ? undefined : resolveRoutePath(page.route, current.params);
 }
 
+function isPageOrAncestorActive(targetPageId: string, currentPageId: string): boolean {
+  const visited = new Set<string>();
+  let candidate: string | undefined = currentPageId;
+  while (candidate !== undefined && !visited.has(candidate)) {
+    if (candidate === targetPageId) {
+      return true;
+    }
+    visited.add(candidate);
+    candidate = NAVIGATION_PAGE_PARENTS[candidate];
+  }
+  return false;
+}
+
 function linkActive(item: NavLink, pages: PageEntry[], currentPath: string): boolean {
   const current = stripPathQuery(currentPath);
   if (item.url !== undefined) {
     return stripPathQuery(item.url) === current;
   }
   const page = pages.find((entry) => entry.pageId === item.pageRef);
-  return page === undefined ? false : matchRoute([page], current) !== undefined;
+  if (page === undefined) {
+    return false;
+  }
+  const currentPage = matchRoute(pages, current)?.page;
+  return currentPage !== undefined && isPageOrAncestorActive(page.pageId, currentPage.pageId);
 }
 
 function projectLink(
@@ -134,11 +168,14 @@ function projectItems(
       if (children.length === 0) {
         continue;
       }
+      const label = groupLabel(item, t);
       projected.push({
         type: "group",
-        label: groupLabel(item, t),
+        key: item.labelKey ?? item.label ?? label,
+        label,
         ...(item.icon === undefined ? {} : { icon: item.icon }),
         items: children,
+        active: children.some((child) => child.active),
       });
       continue;
     }

@@ -18,7 +18,7 @@ workspace_id: workspace-034-nav-group-collapsible
 ## 目标树
 
 ```text
-GOAL-001-nav-group-collapsible [active · 2/5]
+GOAL-001-nav-group-collapsible [active · 3/5]
 └── （R1-R5 纲领阶段尚未拆分细粒度子目标）
 ```
 
@@ -27,7 +27,7 @@ GOAL-001-nav-group-collapsible [active · 2/5]
 ```text
 R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
  → R2 模块注册与跨模块聚合契约 [completed]
- → R3 Shell 折叠展开 / 可访问性 / 直接 URL 自动展开 [pending]
+ → R3 Shell 折叠展开 / 可访问性 / 直接 URL 自动展开 [completed]
  → R4 当前 sidebar 导航全量迁移与 default/optional/custom/demo 回归 [pending]
  → R5 证据矩阵 / 全量回归 / Goal 审计 / 关门准备 [pending]
 ```
@@ -36,7 +36,7 @@ R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **active** | 2/5 | null | R1/R2 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2 实施与 A-005/A-006 双审已记录；R2 Git checkpoint `41e89f47` 已创建，下一阶段为 R3 |
+| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **active** | 2/5 | null | R1/R2 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2 实施与 A-005/A-006 双审已记录；R2 Git checkpoint `41e89f47` 已创建；R3 self `pass` 与 Web 验证已记录，R3 Git checkpoint 待创建，下一阶段为 R4 |
 
 ## 维护说明
 

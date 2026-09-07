@@ -6,7 +6,7 @@
  * (slot → group labels → page) plus consumer-declared parents for
  * inner pages reached by row navigation (e.g. dictionary-entries →
  * data-dictionary, task-runs → scheduled-tasks). No protocol change:
- * the parent map is a web-shell declaration (BREADCRUMB_PAGE_PARENTS).
+ * the parent map is a web-shell declaration (NAVIGATION_PAGE_PARENTS).
  *
  * Trail shape: 首页 => 一级页 => ... => n级内页 — the home page
  * (manifest homePageRef, the domain-root default) always leads, then nav

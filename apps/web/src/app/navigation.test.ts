@@ -1,4 +1,4 @@
-﻿import { readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { projectNavigation } from "@/app/navigation";
@@ -94,6 +94,67 @@ describe("navigation projection", () => {
     });
     expect(urlResult.user[0]).toMatchObject({ active: true });
     expect(urlResult.user[1]).toMatchObject({ active: false });
+  });
+});
+
+describe("R3 navigation deep links", () => {
+  function deepLinkManifest(): AppManifest {
+    return validateAppManifest({
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "app.navigation"],
+      app: { appId: "deep-links", name: "Deep links", homePageRef: "home" },
+      pages: [
+        { pageId: "home", title: "Home", schemaUrl: "/s/home", route: "/home" },
+        { pageId: "users", title: "Users", schemaUrl: "/s/users", route: "/users" },
+        {
+          pageId: "users-invites",
+          title: "Invitations",
+          schemaUrl: "/s/users-invites",
+          route: "/users-invites",
+        },
+        { pageId: "wallet", title: "Wallet", schemaUrl: "/s/wallet", route: "/wallet" },
+        {
+          pageId: "wallet-entries",
+          title: "Wallet entries",
+          schemaUrl: "/s/wallet-entries/{id}",
+          route: "/wallet-entries/{id}",
+        },
+      ],
+      navigation: {
+        sidebar: [
+          {
+            label: "Identity & access",
+            labelKey: "manifest.nav.group.identityAccess",
+            items: [{ pageRef: "users", label: "Users" }],
+          },
+          {
+            label: "Commerce",
+            labelKey: "manifest.nav.group.commerce",
+            items: [{ pageRef: "wallet", label: "Wallet" }],
+          },
+        ],
+      },
+    });
+  }
+
+  it("activates the parent group for a registered inner-page deep link", () => {
+    const result = projectNavigation(deepLinkManifest(), "/users-invites", { features: {} });
+    expect(result.sidebar[0]).toMatchObject({
+      type: "group",
+      key: "manifest.nav.group.identityAccess",
+      active: true,
+      items: [{ pageRef: "users", active: true }],
+    });
+  });
+
+  it("activates the parent link for a dynamic deep link", () => {
+    const result = projectNavigation(deepLinkManifest(), "/wallet-entries/account-1", { features: {} });
+    expect(result.sidebar[1]).toMatchObject({
+      type: "group",
+      key: "manifest.nav.group.commerce",
+      active: true,
+      items: [{ pageRef: "wallet", active: true }],
+    });
   });
 });
 

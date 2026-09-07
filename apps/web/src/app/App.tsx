@@ -35,7 +35,11 @@ import {
   subscribeToBrandingChanges,
   type Branding,
 } from "@/app/branding";
-import { projectNavigation, type ProjectedItem } from "@/app/navigation";
+import {
+  NAVIGATION_PAGE_PARENTS,
+  projectNavigation,
+  type ProjectedItem,
+} from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TimezoneSwitcher } from "@/components/timezone-switcher";
@@ -195,21 +199,9 @@ function BrandLink({
 }
 
 /**
- * GOAL-015 semantic breadcrumbs: inner pages reached by row navigation declare
- * their parent page here (web-shell level, no protocol change). The trail is
- * hierarchy, not visit history (user ruling 2026-08-14): 首页 => 一级页 => ...
- * => n级内页, rooted at the manifest homePageRef.
+ * GOAL-015 semantic breadcrumbs: inner-page parents are shared with navigation
+ * active-state projection through NAVIGATION_PAGE_PARENTS (no protocol change).
  */
-const BREADCRUMB_PAGE_PARENTS: Record<string, string> = {
-  "dictionary-entries": "data-dictionary",
-  "task-runs": "scheduled-tasks",
-  // GOAL-020 (user 2026-08-16): wallet entries is the wallet inner page.
-  "wallet-entries": "wallet",
-  // workspace-019: invitation management is the users inner page.
-  "users-invites": "users",
-  // Telegram operator conversations are opened from the channel settings page.
-  "telegram-operator": "telegram-settings",
-};
 
 // Parses the current URL's query string into a plain record; deep-linked query
 // parameters reach $context.route.query.* bindings through the render context.
@@ -288,6 +280,122 @@ function NavigationLink({
   );
 }
 
+const NAVIGATION_GROUP_STATE_STORAGE_KEY = "schema-ui:nav-groups:v1";
+
+type NavigationGroupState = Record<string, boolean>;
+
+function readNavigationGroupState(): NavigationGroupState {
+  try {
+    const raw = window.sessionStorage.getItem(NAVIGATION_GROUP_STATE_STORAGE_KEY);
+    if (raw === null) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    const state: NavigationGroupState = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === "boolean") {
+        state[key] = value;
+      }
+    }
+    return state;
+  } catch {
+    return {};
+  }
+}
+
+function writeNavigationGroupState(key: string, open: boolean): void {
+  try {
+    const state = readNavigationGroupState();
+    state[key] = open;
+    window.sessionStorage.setItem(
+      NAVIGATION_GROUP_STATE_STORAGE_KEY,
+      JSON.stringify(state),
+    );
+  } catch {
+    // Storage can be disabled or unavailable in embedded/opaque documents;
+    // navigation must remain usable with in-memory state only.
+  }
+}
+
+function navigationGroupDomID(key: string): string {
+  const safe = key.replace(/[^A-Za-z0-9_-]/g, "-");
+  return `navigation-group-${safe}`;
+}
+
+function CollapsibleNavigationGroup({
+  item,
+  onNavigate,
+}: {
+  item: Extract<ProjectedItem, { type: "group" }>;
+  onNavigate: (href: string) => void;
+}) {
+  const [open, setOpen] = useState(() => {
+    if (item.active) {
+      return true;
+    }
+    return readNavigationGroupState()[item.key] ?? true;
+  });
+  const contentID = navigationGroupDomID(item.key);
+
+  // A direct URL into a child or a known inner page always reveals its group.
+  // Do not persist this automatic reveal, so a later manual collapse remains
+  // the user's session preference after leaving the active route.
+  useEffect(() => {
+    if (item.active) {
+      setOpen(true);
+    }
+  }, [item.active]);
+
+  const toggle = () => {
+    setOpen((value) => {
+      const next = !value;
+      writeNavigationGroupState(item.key, next);
+      return next;
+    });
+  };
+
+  return (
+    <section className="pt-3" data-navigation-group={item.key}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentID}
+        className="flex min-h-9 w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
+        onClick={toggle}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggle();
+          }
+        }}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          {iconFor(item.icon)}
+          <span className="truncate">{item.label}</span>
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-3.5 shrink-0 transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open ? (
+        <div id={contentID} className="space-y-1 pl-2">
+          {item.items.map((child, childIndex) => (
+            <NavigationLink
+              key={`${child.href}-${childIndex}`}
+              item={child}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function NavigationItems({
   items,
   onNavigate,
@@ -307,26 +415,29 @@ function NavigationItems({
             onNavigate={onNavigate}
             horizontal={horizontal}
           />
-        ) : (
-          <section
-            key={`${item.label}-${index}`}
-            className={horizontal ? "flex items-center gap-1" : "pt-3"}
-          >
+        ) : horizontal ? (
+          <section key={`${item.key}-${index}`} className="flex items-center gap-1">
             <div className="flex items-center gap-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {iconFor(item.icon)}
               <span>{item.label}</span>
             </div>
-            <div className={horizontal ? "flex items-center gap-1" : "space-y-1 pl-2"}>
+            <div className="flex items-center gap-1">
               {item.items.map((child, childIndex) => (
                 <NavigationLink
                   key={`${child.href}-${childIndex}`}
                   item={child}
                   onNavigate={onNavigate}
-                  horizontal={horizontal}
+                  horizontal
                 />
               ))}
             </div>
           </section>
+        ) : (
+          <CollapsibleNavigationGroup
+            key={`${item.key}-${index}`}
+            item={item}
+            onNavigate={onNavigate}
+          />
         ),
       )}
     </div>
@@ -689,7 +800,7 @@ function PageSurface({
     t,
     {
       navigation: manifest.navigation,
-      parents: BREADCRUMB_PAGE_PARENTS,
+      parents: NAVIGATION_PAGE_PARENTS,
       homePageId: manifest.app.homePageRef,
     },
   );
