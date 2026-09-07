@@ -42,4 +42,4 @@ version: 0.1.0
 
 ## 结论状态
 
-R3 Shell 代码实施与 Web 验证已记录，A-008 self `pass`；R1/R2 检查点为 2/5，R3 checkpoint 待同步与提交。I-034-004 的全量 Profile/route matrix 仍留到 R4；R4/R5 尚未完成，后续回归和关门审计继续通过本目标 `03-audit/A-NNN-*` 落盘。
+R3 Shell 代码实施与 Web 验证已记录，A-008 self `pass`；R1/R2/R3 检查点为 3/5，R3 checkpoint `6e581ca9` 已创建。I-034-004 的全量 Profile/route matrix 仍留到 R4；R4/R5 尚未完成，后续回归和关门审计继续通过本目标 `03-audit/A-NNN-*` 落盘。
