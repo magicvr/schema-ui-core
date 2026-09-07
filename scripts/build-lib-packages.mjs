@@ -29,9 +29,11 @@ const alias = {
 };
 
 // R5：renderer 内部面 → 包子路径重写表（D-001-r5-granularity §1）。
+// 目标为包 + 源子目录形态（与 rewrite-lib-aliases.mjs faces 一致）：
+//   @/protocol/* → @schema-ui/protocol/protocol/*（包 protocol + 源 subdir protocol/）。
 const rendererFaceRewrite = {
   "@/i18n/": "@schema-ui/lib/i18n/",
-  "@/protocol/": "@schema-ui/protocol/",
+  "@/protocol/": "@schema-ui/protocol/protocol/",
   "@/lib/": "@schema-ui/lib/lib/",
   "@/components/ui/": "@schema-ui/ui/components/ui/",
   "@/theme/": "@schema-ui/theme/",
