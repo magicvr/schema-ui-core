@@ -116,6 +116,9 @@ describe("R3 collapsible navigation groups", () => {
       `section[data-navigation-group="${GROUP_KEY}"] button`,
     );
     expect(groupButton).not.toBeNull();
+    expect(groupButton?.className).toContain("bg-muted/30");
+    expect(groupButton?.closest("section")?.className).toContain("border-t");
+    expect(container.querySelector('[id^="navigation-group-"]')?.className).toContain("border-l");
     expect(groupButton?.getAttribute("aria-expanded")).toBe("true");
     expect(container.querySelector('a[href="/users"]')).not.toBeNull();
 
@@ -133,6 +136,15 @@ describe("R3 collapsible navigation groups", () => {
     expect(container.querySelector('a[href="/users"]')).not.toBeNull();
   });
 
+  it("defaults an inactive group to closed", async () => {
+    const container = await renderApp("/dashboard");
+    const groupButton = container.querySelector<HTMLButtonElement>(
+      `section[data-navigation-group="${GROUP_KEY}"] button`,
+    );
+    expect(groupButton?.getAttribute("aria-expanded")).toBe("false");
+    expect(container.querySelector('a[href="/users"]')).toBeNull();
+  });
+
   it("auto-expands a collapsed group for an inner-page deep link", async () => {
     window.sessionStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify({ [GROUP_KEY]: false }));
     const container = await renderApp("/users-invites");
@@ -143,12 +155,12 @@ describe("R3 collapsible navigation groups", () => {
     expect(container.querySelector('a[href="/users"]')?.getAttribute("aria-current")).toBe("page");
   });
 
-  it("falls back to expanded when session storage is malformed", async () => {
+  it("falls back to the default closed state when session storage is malformed", async () => {
     window.sessionStorage.setItem(GROUP_STORAGE_KEY, "not-json");
-    const container = await renderApp("/users");
+    const container = await renderApp("/dashboard");
     const groupButton = container.querySelector<HTMLButtonElement>(
       `section[data-navigation-group="${GROUP_KEY}"] button`,
     );
-    expect(groupButton?.getAttribute("aria-expanded")).toBe("true");
+    expect(groupButton?.getAttribute("aria-expanded")).toBe("false");
   });
 });

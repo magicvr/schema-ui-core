@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · Admin 导航分组折叠体验
 
-本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。workspace-034 Root 已于 R5 关门，`GOAL-001-nav-group-collapsible` 为 `done 5/5`；VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
+本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`），workspace-034 恢复 done；不重开或改写父目标。VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
 
 - 本区不属于 workspace-010；VP-010 继续承担长期设计意图—实现符合性程序，本区是 Admin 功能分支的有界交付。
 - 本区必须覆盖当前已注册 sidebar 导航，不以“既有模块”作为排除理由。
@@ -67,6 +67,11 @@ parent: null
 | R5 | 证据矩阵、全量回归、self/independent 审计与 VP 关门准备 | completed |
 
 纲领阶段按 R1 → R2 → R3 → R4 → R5 串行推进；同一阶段内的细粒度子目标需在 R1 冻结后按证据与并行价值创建。
+
+## 结项后增量
+
+- `GOAL-001-nav-group-collapsible`：原始 Root `done 5/5`，历史事实保持不变。
+- 当前增量：`GOAL-002-navigation-group-polish`（`done 2/2` · `parent: GOAL-001-nav-group-collapsible`），只承载导航分组语义样式优化与默认关闭行为修正。
 
 ## 固定共享资料引用
 

@@ -1,6 +1,6 @@
 ---
 title: 目标树 · workspace-034-nav-group-collapsible
-status: active
+status: done
 created: 2026-09-07
 updated: 2026-09-07
 parent: null
@@ -12,14 +12,14 @@ workspace_id: workspace-034-nav-group-collapsible
 
 > 工作区：`workspace-034-nav-group-collapsible`
 > canonical：`docs/workspaces/workspace-034-nav-group-collapsible/`
-> Root：`GOAL-001-nav-group-collapsible`（有界交付容器 · active）
+> Root：`GOAL-001-nav-group-collapsible`（原始有界交付容器 · done 5/5）
 > primary_plan：`VP-034-nav-group-collapsible`（active · v0.3.0）
 
 ## 目标树
 
 ```text
 GOAL-001-nav-group-collapsible [done · 5/5]
-└── （R1-R5 纲领阶段尚未拆分细粒度子目标）
+└── GOAL-002-navigation-group-polish [done · 2/2]（结项后增量）
 ```
 
 ## 纲领路线图
@@ -36,10 +36,11 @@ R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **done** | 5/5 | null | R1-R5 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2/R5 均有 Grok independent `pass`，R3/R4 self `pass`；checkpoint `41e89f47`/`6e581ca9`/`b25bd777`/`b1d569a1`/`b4efabda` 已创建；VP-034 仍 active，另走 `/vision` |
+| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **done** | 5/5 | null | 原始 R1-R5 交付已完成；后续样式/默认折叠增量由 GOAL-002 承载；VP-034 仍 active，另走 `/vision` |
+| GOAL-002-navigation-group-polish | 导航分组语义样式与默认折叠增量 | **done** | 2/2 | GOAL-001-nav-group-collapsible | P1/P2 完成；A-001 self `pass`；默认关闭、active 深链与语义样式已验证；Git checkpoint 待创建 |
 
 ## 维护说明
 
-- Root `progress: 100%` 由 `00-meta.md` 的 5 个显式检查点派生（R1-R5 completed）。
+- Root `progress: 100%` 由 GOAL-001 `00-meta.md` 的 5 个显式检查点派生；GOAL-002 `progress: 100%` 由其 P1/P2 检查点派生。
 - 新建阶段子目标前，先在 Root 决策/路线图中冻结阶段边界；目标文件夹在本工作区根平铺。
 - status/progress/parent 或新增子目标发生变化时，必须同步本文件树与状态表。

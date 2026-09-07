@@ -336,7 +336,7 @@ function CollapsibleNavigationGroup({
     if (item.active) {
       return true;
     }
-    return readNavigationGroupState()[item.key] ?? true;
+    return readNavigationGroupState()[item.key] ?? false;
   });
   const contentID = navigationGroupDomID(item.key);
 
@@ -358,12 +358,19 @@ function CollapsibleNavigationGroup({
   };
 
   return (
-    <section className="pt-3" data-navigation-group={item.key}>
+    <section
+      className="border-t border-border/60 pt-3 first:border-t-0 first:pt-0"
+      data-navigation-group={item.key}
+      data-navigation-group-active={item.active}
+      data-navigation-group-state={open ? "open" : "closed"}
+    >
       <button
         type="button"
         aria-expanded={open}
         aria-controls={contentID}
-        className="flex min-h-9 w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
+        data-navigation-group-toggle={item.key}
+        data-navigation-group-active={item.active}
+        className="group/nav-header flex min-h-10 w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-sm transition-colors hover:border-border hover:bg-accent/70 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 data-[navigation-group-active=true]:border-primary/30 data-[navigation-group-active=true]:bg-accent/50 data-[navigation-group-active=true]:text-foreground"
         onClick={toggle}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -382,7 +389,7 @@ function CollapsibleNavigationGroup({
         />
       </button>
       {open ? (
-        <div id={contentID} className="space-y-1 pl-2">
+        <div id={contentID} className="ml-2 space-y-1 border-l border-border/70 pl-3 pt-1">
           {item.items.map((child, childIndex) => (
             <NavigationLink
               key={`${child.href}-${childIndex}`}
