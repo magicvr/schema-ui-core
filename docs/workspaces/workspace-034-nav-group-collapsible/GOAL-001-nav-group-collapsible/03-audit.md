@@ -46,4 +46,4 @@ version: 0.1.0
 
 ## 结论状态
 
-R1-R4 检查点、矩阵与 checkpoint 已完成；R3 A-008 self `pass`、R4 A-009 self `pass`，I-034-001～005 已 verified。R5 证据矩阵与最终验证由 A-010 self `pass` 核对，当前 open required = 0；等待本地 grok build independent close-out 审计后再决定 Root 关门。
+R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified，当前 open required/recommended = 0。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 仍 active，愿景层关门另走 `/vision`。

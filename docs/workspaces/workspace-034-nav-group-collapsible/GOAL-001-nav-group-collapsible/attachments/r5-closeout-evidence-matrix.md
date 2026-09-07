@@ -38,7 +38,7 @@ version: 0.1.0
 - R3：A-008 self；R3 checkpoint `6e581ca9`。
 - R4：A-009 self；R4 checkpoint `b25bd777`。
 - R2 checkpoint：`41e89f47`。
-- R5 close-out：A-010 self `pass`、A-011 Grok independent `pass`、A-012 response；最终验证 `go vet`/`go test`/Vitest 99/1339/tsc/vite 均通过；R5 checkpoint 待写入本轮最终 commit。
+- R5 close-out：A-010 self `pass`、A-011 Grok independent `pass`、A-012 response；最终验证 `go vet`/`go test`/Vitest 99/1339/tsc/vite 均通过；最终 checkpoint `b1d569a1`。
 
 ## 残余 / 非目标
 
