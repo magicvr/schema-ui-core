@@ -119,6 +119,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "users",
 		Order:                1,
 		Label:                "Users",
+		Group:                &kernel.NavigationGroup{Key: "identity-access", Order: 10, Label: "Identity & access", LabelKey: "manifest.nav.group.identityAccess"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "users.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

@@ -1043,6 +1043,50 @@ func TestManifestFragmentProtocolFields(t *testing.T) {
 	})
 }
 
+func collectManifestNavigationPageRefs(items []json.RawMessage) map[string]bool {
+	refs := make(map[string]bool)
+	var visit func(json.RawMessage)
+	visit = func(raw json.RawMessage) {
+		var item struct {
+			PageRef string            `json:"pageRef"`
+			Items   []json.RawMessage `json:"items"`
+		}
+		if err := json.Unmarshal(raw, &item); err != nil {
+			return
+		}
+		if item.PageRef != "" {
+			refs[item.PageRef] = true
+		}
+		for _, child := range item.Items {
+			visit(child)
+		}
+	}
+	for _, item := range items {
+		visit(item)
+	}
+	return refs
+}
+
+func manifestGroupPageRefs(items []json.RawMessage, labelKey string) map[string]bool {
+	for _, raw := range items {
+		var item struct {
+			LabelKey string            `json:"labelKey"`
+			PageRef  string            `json:"pageRef"`
+			Items    []json.RawMessage `json:"items"`
+		}
+		if err := json.Unmarshal(raw, &item); err != nil {
+			continue
+		}
+		if item.LabelKey == labelKey {
+			return collectManifestNavigationPageRefs(item.Items)
+		}
+		if nested := manifestGroupPageRefs(item.Items, labelKey); len(nested) > 0 {
+			return nested
+		}
+	}
+	return map[string]bool{}
+}
+
 func setOf(values ...string) map[string]bool {
 	result := make(map[string]bool, len(values))
 	for _, value := range values {
@@ -1056,7 +1100,13 @@ func setOf(values ...string) map[string]bool {
 // reorders them). This locks the product-visible ordering contract that unit
 // tests cover piecemeal.
 func TestPublishedManifestNavigationOrder(t *testing.T) {
-	fetchSidebar := func(t *testing.T, plan kernel.Plan, order []string) []string {
+	type sidebarEntry struct {
+		Label string `json:"label"`
+		Items []struct {
+			Label string `json:"label"`
+		} `json:"items"`
+	}
+	fetchSidebar := func(t *testing.T, plan kernel.Plan, order []string) []sidebarEntry {
 		t.Helper()
 		if len(order) > 0 {
 			plan.NavigationOrder = order
@@ -1078,22 +1128,13 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		}
 		var document struct {
 			Navigation struct {
-				Sidebar []struct {
-					Label string `json:"label"`
-				} `json:"sidebar"`
-				User []struct {
-					Label string `json:"label"`
-				} `json:"user"`
+				Sidebar []sidebarEntry `json:"sidebar"`
 			} `json:"navigation"`
 		}
 		if err := json.Unmarshal(response.Body.Bytes(), &document); err != nil {
 			t.Fatal(err)
 		}
-		labels := make([]string, 0, len(document.Navigation.Sidebar))
-		for _, item := range document.Navigation.Sidebar {
-			labels = append(labels, item.Label)
-		}
-		return labels
+		return document.Navigation.Sidebar
 	}
 
 	t.Run("admin default order matches the frozen list", func(t *testing.T) {
@@ -1101,22 +1142,20 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		labels := fetchSidebar(t, plan, nil)
-		want := []string{
-			"Dashboard", "Users", "Roles", "Wallet",
-			// VP-029 R3 (GOAL-003, user 2026-09-02): prepaid vouchers sits
-			// directly below Wallet (menu_wallet_vouchers in
-			// DefaultNavigationOrder, right after menu_wallet).
-			"Prepaid vouchers",
-			"Activity",
-			// W26 (GOAL-038): standalone mail pages after the settings entry
-			// they split off from (settings itself lives in the user menu).
-			"Mail console", "Outbound email log",
-			"File library", "Data dictionary",
-			"System monitoring", "Scheduled tasks", "Recycle bin", "Data permission",
+		entries := fetchSidebar(t, plan, nil)
+		labels := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			labels = append(labels, entry.Label)
 		}
+		want := []string{"Dashboard", "Identity & access", "Content & data", "Operations", "Communications", "Commerce"}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {
-			t.Fatalf("sidebar = %v, want %v", labels, want)
+			t.Fatalf("sidebar containers = %v, want %v", labels, want)
+		}
+		if got := len(entries[1].Items); got != 3 {
+			t.Fatalf("identity-access items = %d, want 3", got)
+		}
+		if got := len(entries[4].Items); got != 2 {
+			t.Fatalf("communications items = %d, want 2", got)
 		}
 	})
 
@@ -1125,10 +1164,12 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		labels := fetchSidebar(t, plan, []string{"menu_recycle_bin", "menu_dashboard"})
-		want := []string{"Recycle bin", "Dashboard"}
-		if len(labels) < 2 || labels[0] != want[0] || labels[1] != want[1] {
-			t.Fatalf("sidebar = %v, want prefix %v", labels, want)
+		entries := fetchSidebar(t, plan, []string{"menu_recycle_bin", "menu_dashboard"})
+		if len(entries) < 4 || entries[0].Label != "Dashboard" || entries[3].Label != "Operations" {
+			t.Fatalf("sidebar containers = %+v, want Dashboard then explicit group order", entries)
+		}
+		if len(entries[3].Items) == 0 || entries[3].Items[0].Label != "Recycle bin" {
+			t.Fatalf("operations items = %+v, want override to move Recycle bin first", entries[3].Items)
 		}
 	})
 }

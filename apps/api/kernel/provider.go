@@ -263,6 +263,10 @@ func (r *validatingRegistrar) Navigation(c NavigationContribution) error {
 	if err := r.declare(KindNavigation, c.Key); err != nil {
 		return err
 	}
+	if c.Group != nil {
+		group := *c.Group
+		c.Group = &group
+	}
 	r.set.Navigation = append(r.set.Navigation, c)
 	return nil
 }
@@ -352,6 +356,25 @@ func (s *ContributionSet) finalize(plan Plan) error {
 			}
 		}
 	}
+	// Group metadata is a cross-module contract. Every declaration using the
+	// same key must be exactly equal; first-writer wins are intentionally
+	// forbidden so Manifest assembly cannot drift with module ordering.
+	groupOwners := map[string]string{}
+	groupDefs := map[string]NavigationGroup{}
+	for _, n := range s.Navigation {
+		if n.Group == nil {
+			continue
+		}
+		key := n.Group.Key
+		if previous, exists := groupDefs[key]; exists {
+			if !navigationGroupMetadataEqual(previous, *n.Group) {
+				return kernelError(CodeModuleNavigationGroupConflict, n.ModuleID, "navigation group %q metadata conflicts with %s", key, groupOwners[key])
+			}
+			continue
+		}
+		groupDefs[key] = *n.Group
+		groupOwners[key] = n.ModuleID
+	}
 	capabilities := map[Capability]bool{}
 	for _, c := range plan.Capabilities {
 		capabilities[c] = true
@@ -379,6 +402,14 @@ func (s *ContributionSet) finalize(plan Plan) error {
 	sortFragments(s.Fragments)
 	sortConfigurations(s.Configurations)
 	return nil
+}
+
+func navigationGroupMetadataEqual(left, right NavigationGroup) bool {
+	return left.Key == right.Key &&
+		left.Order == right.Order &&
+		left.Label == right.Label &&
+		left.LabelKey == right.LabelKey &&
+		left.Icon == right.Icon
 }
 
 func sortRoutes(routes []RouteContribution) {

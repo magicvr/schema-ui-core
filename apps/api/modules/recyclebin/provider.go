@@ -91,6 +91,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "recycle-bin",
 		Order:                8,
 		Label:                "Recycle bin",
+		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "recycle.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

@@ -120,9 +120,7 @@ func TestDigitalOfferCompositionRoot(t *testing.T) {
 			SchemaURL string `json:"schemaUrl"`
 		} `json:"pages"`
 		Navigation struct {
-			Sidebar []struct {
-				PageRef string `json:"pageRef"`
-			} `json:"sidebar"`
+			Sidebar []json.RawMessage `json:"sidebar"`
 		} `json:"navigation"`
 	}
 	if err := json.Unmarshal(rr.Body.Bytes(), &manifestDoc); err != nil {
@@ -144,13 +142,16 @@ func TestDigitalOfferCompositionRoot(t *testing.T) {
 			t.Fatalf("manifest page %s = %+v, want route %s schemaUrl %s", want.id, got, want.route, want.schemaURL)
 		}
 	}
-	manifestRefs := map[string]bool{}
-	for _, n := range manifestDoc.Navigation.Sidebar {
-		manifestRefs[n.PageRef] = true
-	}
+	manifestRefs := collectManifestNavigationPageRefs(manifestDoc.Navigation.Sidebar)
 	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
 		if !manifestRefs[ref] {
 			t.Fatalf("manifest sidebar missing pageRef %s (refs %v)", ref, manifestRefs)
+		}
+	}
+	commerceRefs := manifestGroupPageRefs(manifestDoc.Navigation.Sidebar, "manifest.nav.group.commerce")
+	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
+		if !commerceRefs[ref] {
+			t.Fatalf("commerce group missing pageRef %s (refs %v)", ref, commerceRefs)
 		}
 	}
 

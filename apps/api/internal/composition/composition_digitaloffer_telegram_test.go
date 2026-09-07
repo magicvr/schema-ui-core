@@ -223,9 +223,7 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 			SchemaURL string `json:"schemaUrl"`
 		} `json:"pages"`
 		Navigation struct {
-			Sidebar []struct {
-				PageRef string `json:"pageRef"`
-			} `json:"sidebar"`
+			Sidebar []json.RawMessage `json:"sidebar"`
 		} `json:"navigation"`
 	}
 	if err := json.Unmarshal(rr.Body.Bytes(), &doc); err != nil {
@@ -247,14 +245,21 @@ func TestDigitalOfferTelegramCompositionRoot(t *testing.T) {
 			t.Fatalf("manifest page %s = %+v, want route %s schemaUrl %s", want.id, got, want.route, want.schemaURL)
 		}
 	}
-	navRefs := map[string]bool{}
-	for _, n := range doc.Navigation.Sidebar {
-		navRefs[n.PageRef] = true
-	}
+	navRefs := collectManifestNavigationPageRefs(doc.Navigation.Sidebar)
 	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
 		if !navRefs[ref] {
 			t.Fatalf("manifest sidebar missing pageRef %s (refs %v)", ref, navRefs)
 		}
+	}
+	commerceRefs := manifestGroupPageRefs(doc.Navigation.Sidebar, "manifest.nav.group.commerce")
+	for _, ref := range []string{"digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"} {
+		if !commerceRefs[ref] {
+			t.Fatalf("commerce group missing pageRef %s (refs %v)", ref, commerceRefs)
+		}
+	}
+	communicationsRefs := manifestGroupPageRefs(doc.Navigation.Sidebar, "manifest.nav.group.communications")
+	if !communicationsRefs["telegram-settings"] {
+		t.Fatalf("communications group missing telegram-settings (refs %v)", communicationsRefs)
 	}
 
 	// 5. Schema / HTTP fail-closed semantics retained with Telegram enabled

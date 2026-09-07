@@ -60,8 +60,8 @@ parent: null
 
 | 阶段 | 目的 | 状态 |
 |------|------|------|
-| R1 | 现有导航清单、Profile/slot 矩阵、分组信息架构与组 key/顺序冻结 | pending |
-| R2 | 模块 NavigationContribution 与 Manifest 聚合契约：可选 `group`、跨模块共组、向后兼容 | planned |
+| R1 | 现有导航清单、Profile/slot 矩阵、分组信息架构与组 key/顺序冻结 | completed |
+| R2 | 模块 NavigationContribution 与 Manifest 聚合契约：可选 `group`、跨模块共组、向后兼容 | completed |
 | R3 | Shell 左侧分组折叠/展开、键盘可访问性、激活态自动展开与状态保持 | planned |
 | R4 | 当前已注册 sidebar 导航全量迁移，覆盖默认/optional/custom/demo 组合并保持 top/user slot | planned |
 | R5 | 证据矩阵、全量回归、self/independent 审计与 VP 关门准备 | planned |

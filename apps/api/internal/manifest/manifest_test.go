@@ -184,7 +184,6 @@ func TestNavigationSingleProjectionWithLabelKey(t *testing.T) {
 	}
 }
 
-
 // GOAL-013 D-002 §4: SortNavigation reorders manifest slots by NodeID list;
 // unlisted items keep their relative order at the end.
 func TestSortNavigationOrdersSlots(t *testing.T) {
@@ -224,8 +223,6 @@ func TestSortNavigationOrdersSlots(t *testing.T) {
 	}
 }
 
-
-
 // GOAL-013 S5 follow-up (dev.cmd regression): sorting must never turn an empty
 // navigation slot into JSON null — the web host validator rejects null with
 // INVALID_MANIFEST "Expected an array". Empty slots stay [].
@@ -255,5 +252,90 @@ func TestSortNavigationPreservesEmptySlotsAsArrays(t *testing.T) {
 	}
 	if decoded.Navigation.Top == nil || decoded.Navigation.Sidebar == nil || decoded.Navigation.User == nil {
 		t.Fatalf("empty slots must unmarshal to non-nil slices: %s", sorted)
+	}
+}
+
+func TestNormalizeSidebarGroupsUsesExplicitGroupOrderAndPreservesAuthoredGroups(t *testing.T) {
+	fragment := []byte(`{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"schema-ui-core","name":"Schema UI Core","description":"The schema-ui-core administration workspace."},"pages":[],"navigation":{"top":[],"sidebar":[
+		{"pageRef":"dashboard","label":"Dashboard","visibleWhen":{"when":"$context.features.menu_dashboard == true"}},
+		{"pageRef":"users","label":"Users","visibleWhen":{"when":"$context.features.menu_users == true"}},
+		{"pageRef":"wallet","label":"Wallet","visibleWhen":{"when":"$context.features.menu_wallet == true"}},
+		{"pageRef":"files","label":"Files","visibleWhen":{"when":"$context.features.menu_files == true"}},
+		{"pageRef":"future","label":"Future","visibleWhen":{"when":"$context.features.menu_future == true"}},
+		{"label":"Examples","items":[{"pageRef":"example","label":"Example"}]}
+	],"user":[]}}`)
+	data, err := ForModulesWithFragmentsAndGroups(
+		[]string{"core.manifest-route", "test"},
+		[]Fragment{{ModuleID: "test", Raw: fragment}},
+		[]string{"menu_dashboard", "menu_users", "menu_wallet", "menu_files", "menu_future"},
+		[]NavigationGrouping{
+			{NodeID: "menu_users", GroupKey: "identity-access", GroupOrder: 10, GroupLabel: "Identity", GroupLabelKey: "group.identity"},
+			{NodeID: "menu_wallet", GroupKey: "commerce", GroupOrder: 50, GroupLabel: "Commerce", GroupLabelKey: "group.commerce"},
+			{NodeID: "menu_files", GroupKey: "content-data", GroupOrder: 20, GroupLabel: "Content", GroupLabelKey: "group.content"},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Navigation struct {
+			Sidebar []json.RawMessage `json:"sidebar"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if len(decoded.Navigation.Sidebar) != 6 {
+		t.Fatalf("sidebar length = %d, want dashboard + 3 groups + future + Examples", len(decoded.Navigation.Sidebar))
+	}
+	var labels []string
+	for _, raw := range decoded.Navigation.Sidebar {
+		var item struct {
+			Label string `json:"label"`
+		}
+		if err := json.Unmarshal(raw, &item); err != nil {
+			t.Fatal(err)
+		}
+		labels = append(labels, item.Label)
+	}
+	want := []string{"Dashboard", "Identity", "Content", "Commerce", "Future", "Examples"}
+	if strings.Join(labels, ",") != strings.Join(want, ",") {
+		t.Fatalf("sidebar container order = %v, want %v", labels, want)
+	}
+	var examples map[string]any
+	if err := json.Unmarshal(decoded.Navigation.Sidebar[5], &examples); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := examples["items"]; !ok {
+		t.Fatalf("authored Examples group should remain after structured groups: %s", data)
+	}
+}
+
+func TestNormalizeSidebarGroupsRejectsMetadataConflictAndNonSidebarNode(t *testing.T) {
+	fragment := []byte(`{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"schema-ui-core","name":"Schema UI Core","description":"The schema-ui-core administration workspace."},"pages":[],"navigation":{"top":[],"sidebar":[
+		{"pageRef":"users","label":"Users","visibleWhen":{"when":"$context.features.menu_users == true"}},
+		{"pageRef":"roles","label":"Roles","visibleWhen":{"when":"$context.features.menu_roles == true"}}
+	],"user":[]}}`)
+	_, err := ForModulesWithFragmentsAndGroups(
+		[]string{"core.manifest-route", "test"},
+		[]Fragment{{ModuleID: "test", Raw: fragment}},
+		nil,
+		[]NavigationGrouping{
+			{NodeID: "menu_users", GroupKey: "identity-access", GroupOrder: 10, GroupLabel: "Identity", GroupLabelKey: "group.identity"},
+			{NodeID: "menu_roles", GroupKey: "identity-access", GroupOrder: 10, GroupLabel: "Different", GroupLabelKey: "group.identity"},
+		},
+	)
+	if err == nil || !strings.Contains(err.Error(), "metadata conflict") {
+		t.Fatalf("expected group metadata conflict, got %v", err)
+	}
+
+	_, err = ForModulesWithFragmentsAndGroups(
+		[]string{"core.manifest-route", "test"},
+		[]Fragment{{ModuleID: "test", Raw: fragment}},
+		nil,
+		[]NavigationGrouping{{NodeID: "menu_settings", GroupKey: "communications", GroupOrder: 40, GroupLabel: "Communications"}},
+	)
+	if err == nil || !strings.Contains(err.Error(), "not a sidebar link") {
+		t.Fatalf("expected sidebar-only grouping failure, got %v", err)
 	}
 }

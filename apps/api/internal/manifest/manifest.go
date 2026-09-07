@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 //go:embed app-manifest.json
@@ -16,6 +18,43 @@ var defaultManifest []byte
 type Fragment struct {
 	ModuleID string
 	Raw      json.RawMessage
+}
+
+// NavigationGrouping is the Manifest-facing projection of a validated kernel
+// NavigationGroup. NodeID is intentionally retained only as an assembly input;
+// the published protocol NavGroup stays compatible with the strict 2.7/2.8/2.9
+// schema and does not gain a non-protocol key/id field.
+type NavigationGrouping struct {
+	NodeID        string
+	GroupKey      string
+	GroupOrder    int
+	GroupLabel    string
+	GroupLabelKey string
+	GroupIcon     string
+}
+
+// GroupingsFromContributions projects presentation-only group metadata out of
+// finalized kernel contributions. It does not include ungrouped or top/user
+// entries and does not alter system-data persistence semantics.
+func GroupingsFromContributions(contributions []kernel.NavigationContribution) []NavigationGrouping {
+	groupings := make([]NavigationGrouping, 0)
+	for _, contribution := range contributions {
+		if contribution.Group == nil {
+			continue
+		}
+		groupings = append(groupings, NavigationGrouping{
+			NodeID:        contribution.NodeID,
+			GroupKey:      contribution.Group.Key,
+			GroupOrder:    contribution.Group.Order,
+			GroupLabel:    contribution.Group.Label,
+			GroupLabelKey: contribution.Group.LabelKey,
+			GroupIcon:     contribution.Group.Icon,
+		})
+	}
+	sort.Slice(groupings, func(i, j int) bool {
+		return groupings[i].NodeID < groupings[j].NodeID
+	})
+	return groupings
 }
 
 type envelope struct {
@@ -87,6 +126,182 @@ func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment, ord
 		}
 	}
 	return data, nil
+}
+
+// ForModulesWithFragmentsAndGroups performs the regular fragment aggregation
+// and NodeID ordering, then applies the structured sidebar grouping contract.
+// Keeping this as a separate entry point preserves existing callers/tests that
+// only need protocol aggregation.
+func ForModulesWithFragmentsAndGroups(moduleIDs []string, moduleFragments []Fragment, order []string, groupings []NavigationGrouping) ([]byte, error) {
+	data, err := ForModulesWithFragments(moduleIDs, moduleFragments, order)
+	if err != nil {
+		return nil, err
+	}
+	return NormalizeSidebarGroups(data, groupings)
+}
+
+var manifestGroupKeyPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+type sidebarSlot struct {
+	raw           json.RawMessage
+	nodeID        string
+	existingGroup bool
+}
+
+type normalizedGroup struct {
+	definition NavigationGrouping
+	items      []json.RawMessage
+}
+
+type protocolNavigationGroup struct {
+	Label    string            `json:"label,omitempty"`
+	LabelKey string            `json:"labelKey,omitempty"`
+	Icon     string            `json:"icon,omitempty"`
+	Items    []json.RawMessage `json:"items"`
+}
+
+// NormalizeSidebarGroups converts flat sidebar links into protocol NavGroup
+// objects. It deliberately publishes no internal group key/id, because the
+// current protocol schema rejects unknown NavGroup fields. Dashboard is kept
+// first, structured groups use explicit GroupOrder, ungrouped links retain
+// their relative order, and authored protocol groups (e.g. Examples) remain
+// separate and follow the structured groups.
+func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte, error) {
+	if len(groupings) == 0 {
+		return data, nil
+	}
+	var document envelope
+	if err := json.Unmarshal(data, &document); err != nil {
+		return nil, fmt.Errorf("manifest: parse aggregated document for sidebar grouping: %w", err)
+	}
+
+	byNode := make(map[string]NavigationGrouping, len(groupings))
+	definitions := make(map[string]NavigationGrouping)
+	for _, grouping := range groupings {
+		if strings.TrimSpace(grouping.NodeID) == "" {
+			return nil, fmt.Errorf("manifest: navigation grouping requires node id")
+		}
+		if strings.TrimSpace(grouping.GroupKey) != grouping.GroupKey || !manifestGroupKeyPattern.MatchString(grouping.GroupKey) {
+			return nil, fmt.Errorf("manifest: navigation grouping %q has invalid group key %q", grouping.NodeID, grouping.GroupKey)
+		}
+		if grouping.GroupOrder < 0 {
+			return nil, fmt.Errorf("manifest: navigation grouping %q has negative group order", grouping.GroupKey)
+		}
+		if strings.TrimSpace(grouping.GroupLabel) == "" && strings.TrimSpace(grouping.GroupLabelKey) == "" {
+			return nil, fmt.Errorf("manifest: navigation grouping %q requires label or labelKey", grouping.GroupKey)
+		}
+		if strings.TrimSpace(grouping.GroupLabel) != grouping.GroupLabel || strings.TrimSpace(grouping.GroupLabelKey) != grouping.GroupLabelKey || strings.TrimSpace(grouping.GroupIcon) != grouping.GroupIcon {
+			return nil, fmt.Errorf("manifest: navigation grouping %q metadata must be trimmed", grouping.GroupKey)
+		}
+		if _, exists := byNode[grouping.NodeID]; exists {
+			return nil, fmt.Errorf("manifest: navigation grouping node %q is declared more than once", grouping.NodeID)
+		}
+		byNode[grouping.NodeID] = grouping
+		if previous, exists := definitions[grouping.GroupKey]; exists && !sameNavigationGroupingMetadata(previous, grouping) {
+			return nil, fmt.Errorf("manifest: navigation group %q metadata conflict", grouping.GroupKey)
+		}
+		definitions[grouping.GroupKey] = grouping
+	}
+
+	slots := make([]sidebarSlot, 0, len(document.Navigation.Sidebar))
+	groups := make(map[string]*normalizedGroup, len(definitions))
+	seenSidebarNodes := make(map[string]bool, len(document.Navigation.Sidebar))
+	for _, raw := range document.Navigation.Sidebar {
+		existingGroup, err := navigationItemHasItems(raw)
+		if err != nil {
+			return nil, fmt.Errorf("manifest: inspect sidebar item for grouping: %w", err)
+		}
+		if existingGroup {
+			slots = append(slots, sidebarSlot{raw: raw, existingGroup: true})
+			continue
+		}
+		nodeID := navigationNodeID(raw)
+		if nodeID == "" {
+			return nil, fmt.Errorf("manifest: sidebar navigation item has no NodeID-compatible identity")
+		}
+		seenSidebarNodes[nodeID] = true
+		grouping, grouped := byNode[nodeID]
+		if !grouped {
+			slots = append(slots, sidebarSlot{raw: raw, nodeID: nodeID})
+			continue
+		}
+		group := groups[grouping.GroupKey]
+		if group == nil {
+			group = &normalizedGroup{definition: grouping, items: make([]json.RawMessage, 0, 1)}
+			groups[grouping.GroupKey] = group
+		}
+		group.items = append(group.items, raw)
+	}
+	for nodeID := range byNode {
+		if !seenSidebarNodes[nodeID] {
+			return nil, fmt.Errorf("manifest: grouped navigation node %q is not a sidebar link", nodeID)
+		}
+	}
+
+	sortedGroups := make([]*normalizedGroup, 0, len(groups))
+	for _, group := range groups {
+		sortedGroups = append(sortedGroups, group)
+	}
+	sort.Slice(sortedGroups, func(i, j int) bool {
+		if sortedGroups[i].definition.GroupOrder != sortedGroups[j].definition.GroupOrder {
+			return sortedGroups[i].definition.GroupOrder < sortedGroups[j].definition.GroupOrder
+		}
+		return sortedGroups[i].definition.GroupKey < sortedGroups[j].definition.GroupKey
+	})
+
+	resultSidebar := make([]json.RawMessage, 0, len(slots)+len(sortedGroups))
+	for _, slot := range slots {
+		if slot.existingGroup || slot.nodeID != "menu_dashboard" {
+			continue
+		}
+		resultSidebar = append(resultSidebar, slot.raw)
+	}
+	for _, group := range sortedGroups {
+		encoded, err := json.Marshal(protocolNavigationGroup{
+			Label:    group.definition.GroupLabel,
+			LabelKey: group.definition.GroupLabelKey,
+			Icon:     group.definition.GroupIcon,
+			Items:    group.items,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("manifest: encode navigation group %q: %w", group.definition.GroupKey, err)
+		}
+		resultSidebar = append(resultSidebar, encoded)
+	}
+	for _, slot := range slots {
+		if slot.existingGroup || slot.nodeID == "menu_dashboard" {
+			continue
+		}
+		resultSidebar = append(resultSidebar, slot.raw)
+	}
+	for _, slot := range slots {
+		if slot.existingGroup {
+			resultSidebar = append(resultSidebar, slot.raw)
+		}
+	}
+	document.Navigation.Sidebar = resultSidebar
+	encoded, err := json.MarshalIndent(document, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("manifest: encode grouped document: %w", err)
+	}
+	return append(encoded, '\n'), nil
+}
+
+func navigationItemHasItems(raw json.RawMessage) (bool, error) {
+	var record map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &record); err != nil {
+		return false, err
+	}
+	_, ok := record["items"]
+	return ok, nil
+}
+
+func sameNavigationGroupingMetadata(left, right NavigationGrouping) bool {
+	return left.GroupKey == right.GroupKey &&
+		left.GroupOrder == right.GroupOrder &&
+		left.GroupLabel == right.GroupLabel &&
+		left.GroupLabelKey == right.GroupLabelKey &&
+		left.GroupIcon == right.GroupIcon
 }
 
 func Aggregate(fragments []Fragment) ([]byte, error) {

@@ -12,8 +12,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/manifest"
-	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/store"
 	datadictionaryschema "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/schema"
+	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
@@ -100,6 +100,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "data-dictionary",
 		Order:                4,
 		Label:                "Data dictionary",
+		Group:                &kernel.NavigationGroup{Key: "content-data", Order: 20, Label: "Content & data", LabelKey: "manifest.nav.group.contentData"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "dictionary.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
