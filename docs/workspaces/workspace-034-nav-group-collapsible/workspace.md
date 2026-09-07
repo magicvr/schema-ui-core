@@ -63,7 +63,7 @@ parent: null
 | R1 | 现有导航清单、Profile/slot 矩阵、分组信息架构与组 key/顺序冻结 | completed |
 | R2 | 模块 NavigationContribution 与 Manifest 聚合契约：可选 `group`、跨模块共组、向后兼容 | completed |
 | R3 | Shell 左侧分组折叠/展开、键盘可访问性、激活态自动展开与状态保持 | completed |
-| R4 | 当前已注册 sidebar 导航全量迁移，覆盖默认/optional/custom/demo 组合并保持 top/user slot | planned |
+| R4 | 当前已注册 sidebar 导航全量迁移，覆盖默认/optional/custom/demo 组合并保持 top/user slot | completed |
 | R5 | 证据矩阵、全量回归、self/independent 审计与 VP 关门准备 | planned |
 
 纲领阶段按 R1 → R2 → R3 → R4 → R5 串行推进；同一阶段内的细粒度子目标需在 R1 冻结后按证据与并行价值创建。

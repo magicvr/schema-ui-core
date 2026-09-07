@@ -21,6 +21,7 @@ version: 0.1.0
 | E-005 | 2026-09-07 | R2 Git checkpoint | recorded | `02-execution/E-005-r2-checkpoint.md` |
 | E-006 | 2026-09-07 | R3 Shell 分组交互实施 | recorded | `02-execution/E-006-r3-shell-interaction.md` |
 | E-007 | 2026-09-07 | R3 Git checkpoint | recorded | `02-execution/E-007-r3-checkpoint.md` |
+| E-008 | 2026-09-07 | R4 当前 sidebar 全量迁移与 Profile/route 矩阵 | recorded | `02-execution/E-008-r4-migration-and-matrix.md` |
 
 ## 事实边界
 
