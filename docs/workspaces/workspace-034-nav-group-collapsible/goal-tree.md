@@ -36,7 +36,7 @@ R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **active** | 2/5 | null | R1/R2 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2 实施与 A-005/A-006 双审已记录；待创建 R2 Git checkpoint，下一阶段为 R3 |
+| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **active** | 2/5 | null | R1/R2 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2 实施与 A-005/A-006 双审已记录；R2 Git checkpoint `41e89f47` 已创建，下一阶段为 R3 |
 
 ## 维护说明
 

@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-09-07 | R1 导航盘点与契约决策 | recorded | `02-execution/E-002-r1-inventory-and-contract-decision.md` |
 | E-003 | 2026-09-07 | A-002 响应与 R2 门禁保留 | recorded | `02-execution/E-003-a002-response.md` |
 | E-004 | 2026-09-07 | R2 分组注册与 Manifest 聚合契约实施 | recorded | `02-execution/E-004-r2-group-contract-implementation.md` |
+| E-005 | 2026-09-07 | R2 Git checkpoint | recorded | `02-execution/E-005-r2-checkpoint.md` |
 
 ## 事实边界
 
