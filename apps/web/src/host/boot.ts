@@ -21,7 +21,7 @@ import {
 } from "@/host/bootstrap";
 import { mapBootstrapResult, nextFailureId, type HostFailure } from "@/host/failure";
 import { captureReturnIntent } from "@/host/return-intent";
-import { HOST_SUPPORTED_CAPABILITIES } from "@/host/host-support";
+import { HOST_SUPPORTED_CAPABILITIES } from "@/protocol/host-support";
 
 /** Session adapter state (ADR-0035 D4): normalized by AuthContext. */
 export type SessionAdapterState = "loading" | "authenticated" | "unauthenticated" | "reauth-required" | "locked";

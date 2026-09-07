@@ -23,6 +23,15 @@ for (const name of schemaImports) {
   mkdirSync(outDir, { recursive: true });
   copyFileSync(src, path.join(outDir, `${name}.schema.json`));
 }
+// F2 (GOAL-042 · host-support 移入 protocol 包)：tsc 不复制 JSON 资产，构建时
+// 把版本/能力协商单源 host-support.json 拷到 host-support.js 同目录
+// （protocol/protocol/ · load-page 运行时依赖 ./host-support.json）。
+const hostSupportJsonSrc = path.join(here, "../apps/web/src/protocol/host-support.json");
+if (existsSync(hostSupportJsonSrc)) {
+  const outDir = path.join(distRoot, "protocol", "protocol");
+  mkdirSync(outDir, { recursive: true });
+  copyFileSync(hostSupportJsonSrc, path.join(outDir, "host-support.json"));
+}
 const protocolDir = path.join(distRoot, "protocol");
 const walkProto = (d) => {
   for (const ent of readdirSync(d, { withFileTypes: true })) {
@@ -30,8 +39,19 @@ const walkProto = (d) => {
     if (ent.isDirectory()) walkProto(full);
     else if (/\.js$/.test(ent.name)) {
       const t = readFileSync(full, "utf8");
-      let out = t.replace(/@schemas\/([a-z-]+)\.schema\.json/g, (m, n) => `./schemas/${n}.schema.json`);
-      out = out.replace(/from\s+(["']\.\/schemas\/[^"']+\.json["'])/g, 'from $1 with { type: "json" }');
+      // @schemas/*.json → 包自子路径 @schema-ui/protocol/schemas/*（generic 段再转
+      // @magicvr/schema-ui-protocol/schemas/*）。0.2.11 实证形态：相对 ./schemas/
+      // 在 protocol/conformance/ 等子目录下解析失败（消费端 ERR_MODULE_NOT_FOUND）。
+      let out = t.replace(
+        /@schemas\/([a-z-]+)\.schema\.json/g,
+        (m, n) => `@schema-ui/protocol/schemas/${n}.schema.json`,
+      );
+      // 包内 JSON import（包自子路径 schemas/*、相对 host-support.json）→ import
+      // attributes；负向断言保证幂等（可复跑不重复追加）。
+      out = out.replace(
+        /from\s+(["'][^"']+\.json["'])(?!\s+with\b)/g,
+        'from $1 with { type: "json" }',
+      );
       if (out !== t) writeFileSync(full, out);
     }
   }
@@ -58,6 +78,12 @@ for (const pkg of readdirSync(distRoot)) {
           if (/\.(js|json|css|svg|png|mjs|cjs|woff2?)$/.test(p)) return m;
           return `from "${p}.js"`;
         });
+        // 2d) 包内相对 JSON import（i18n/messages/*.json 等，lib/ui tsc 产物保留
+        // 裸 JSON import）→ import attributes；负向断言幂等。Node ESM 必须。
+        out = out.replace(
+          /from\s+(["'][^"']+\.json["'])(?!\s+with\b)/g,
+          'from $1 with { type: "json" }',
+        );
         if (out !== t) {
           writeFileSync(full, out);
           files++;
