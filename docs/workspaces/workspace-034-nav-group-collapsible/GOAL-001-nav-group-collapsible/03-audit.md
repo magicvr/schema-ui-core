@@ -17,8 +17,8 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-034-001～005 | I-034-001～005 verified | 详见 `00-meta.md` 与 `01-decision.md`；R4 matrix 证据已落盘，R5 关门前再核对 |
-| 到期 required 是否已 verified / residual | R1/R2/R3/R4 信息与 finding 已处理 | 当前无 open required；R5 仍需最终证据汇总与关门审计 |
+| 影响本 scope 的 I-034-001～005 | I-034-001～005 verified | 详见 `00-meta.md` 与 `01-decision.md`；R5 close-out matrix 与 independent 审计已落盘 |
+| 到期 required 是否已 verified / residual | R1-R5 信息与 finding 已处理 | 当前无 open required/recommended Goal finding；A-002 F-007 仅为 Vision 层历史 recommended |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引

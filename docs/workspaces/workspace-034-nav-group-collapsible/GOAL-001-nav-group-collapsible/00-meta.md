@@ -64,7 +64,7 @@ serves_summary: 在现行 Admin Shell 中交付与模块解耦的导航分组、
 | R4 | 当前已注册 sidebar 全量迁移；默认、optional、custom/demo 组合与 top/user slot 回归 | completed |
 | R5 | 证据矩阵、全量回归、Goal 审计、required finding 闭合与关门准备 | completed |
 
-`progress: 100%` = 4/5 个检查点完成（R1、R2、R3、R4）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+`progress: 100%` = 5/5 个检查点完成（R1、R2、R3、R4、R5）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
 ## 信息就绪与未知项（P-005）
 
