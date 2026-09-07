@@ -28,4 +28,4 @@ version: 0.1.0
 
 ## 结论状态
 
-本目标已完成 P1/P2 实施与 self 审计；当前无 open required/recommended finding。父目标 `GOAL-001-nav-group-collapsible` 的 `done 5/5` 仅为历史基线，不替代本目标审计结论。
+本目标已完成 P1/P2 实施与 self 审计；当前无 open required/recommended finding；GOAL-002 checkpoint `fcd6fe9b` 已创建。父目标 `GOAL-001-nav-group-collapsible` 的 `done 5/5` 仅为历史基线，不替代本目标审计结论。

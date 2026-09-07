@@ -37,7 +37,7 @@ R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
 | GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **done** | 5/5 | null | 原始 R1-R5 交付已完成；后续样式/默认折叠增量由 GOAL-002 承载；VP-034 仍 active，另走 `/vision` |
-| GOAL-002-navigation-group-polish | 导航分组语义样式与默认折叠增量 | **done** | 2/2 | GOAL-001-nav-group-collapsible | P1/P2 完成；A-001 self `pass`；默认关闭、active 深链与语义样式已验证；Git checkpoint 待创建 |
+| GOAL-002-navigation-group-polish | 导航分组语义样式与默认折叠增量 | **done** | 2/2 | GOAL-001-nav-group-collapsible | P1/P2 完成；A-001 self `pass`；默认关闭、active 深链与语义样式已验证；Git checkpoint `fcd6fe9b` 已创建 |
 
 ## 维护说明
 
