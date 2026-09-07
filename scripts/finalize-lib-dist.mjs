@@ -78,6 +78,12 @@ for (const pkg of readdirSync(distRoot)) {
           if (/\.(js|json|css|svg|png|mjs|cjs|woff2?)$/.test(p)) return m;
           return `from "${p}.js"`;
         });
+        // 2d) 包内相对 JSON import（i18n/messages/*.json 等，lib/ui tsc 产物保留
+        // 裸 JSON import）→ import attributes；负向断言幂等。Node ESM 必须。
+        out = out.replace(
+          /from\s+(["'][^"']+\.json["'])(?!\s+with\b)/g,
+          'from $1 with { type: "json" }',
+        );
         if (out !== t) {
           writeFileSync(full, out);
           files++;
