@@ -55,6 +55,17 @@ func (c *digitalOfferTelegramClient) RoundTrip(r *http.Request) (*http.Response,
 		return telegramLifecycleJSONResponse(`{"ok":true,"result":{"id":201,"is_bot":true,"username":"f008_bot"}}`), nil
 	case "/botlive-bot-token/deleteWebhook":
 		return telegramLifecycleJSONResponse(`{"ok":true,"result":true}`), nil
+	case "/botlive-bot-token/getUpdates":
+		// A-012 F-008 regression: polling demand (digital-offer business
+		// handlers registered before Start) starts the receiver during
+		// reconcileStarted. Without a getUpdates seam the fake's default
+		// branch answered ok:false, flipping the connection state to error
+		// before the Fx Ready hook ran — a timing race that failed
+		// TestDigitalOfferTelegramCompositionRoot on loaded runners
+		// (LIFECYCLE_READY_FAILED). Block until the receiver is drained,
+		// matching composition_telegram_lifecycle_test.go.
+		<-r.Context().Done()
+		return nil, r.Context().Err()
 	case "/botlive-bot-token/sendMessage":
 		var payload struct {
 			ChatID string `json:"chat_id"`
