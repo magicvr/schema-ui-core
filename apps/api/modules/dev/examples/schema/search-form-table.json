@@ -6,7 +6,6 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "form.controls.extended",
       "table.sort"
     ]
   },

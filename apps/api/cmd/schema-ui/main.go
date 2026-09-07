@@ -25,14 +25,14 @@ var templateFS embed.FS
 
 const (
 	apiModule  = "github.com/magicvr/schema-ui-core/apps/api"
-	apiVersion = "v0.4.0" // 模板钉 = 含公开 serve 面（server pkg）的下一发布；R2 发布通道核销
+	apiVersion = "v0.5.0" // 模板钉 = 上一发布（apps/api/v0.5.0 tag）；R2 发布通道核销
 	// 六包终值（R5 · A-002 F-002 响应）：create 骨架生成即装终值；upgrade 拉 npm/Go latest 保对齐
-	protocolVer  = "0.2.11"
-	libVersion   = "0.1.10"
-	shellVersion = "0.1.4"
+	protocolVer  = "0.2.12"
+	libVersion   = "0.1.11"
+	shellVersion = "0.1.5"
 	themeVersion = "0.1.4"
 	uiVersion    = "0.1.8"
-	rendererVer  = "0.3.8"
+	rendererVer  = "0.3.9"
 )
 
 type createOpts struct {

@@ -21,7 +21,7 @@ version: 1.0.0
 
 | 主张 | 路径 |
 |------|------|
-| 实施记录 | [GOAL-008 E-002](../GOAL-008-mail-admin-surface/02-execution/E-002-r7-implementation.md) |
+| 实施记录 | [GOAL-008 E-002](../../GOAL-008-mail-admin-surface/02-execution/E-002-r7-implementation.md) |
 | 关门审计 | GOAL-008 `03-audit/A-001-self-r7-admin-surface.md`（pass） |
 | 代码提交 | `feat(api): R7 邮件管理面…` / `feat(web/api): R7 设置「邮件」tab…` |
 

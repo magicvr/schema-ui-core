@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "pageId": "telegram-operator",
+    "title": "Operator conversations",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation"
+    ]
+  },
+  "body": {
+    "type": "custom",
+    "id": "telegram-operator-console",
+    "component": "telegram-admin-tab",
+    "props": {
+      "surface": "operator"
+    }
+  }
+}

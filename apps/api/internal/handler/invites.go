@@ -304,8 +304,8 @@ type InviteAcceptRepository interface {
 // RegisterInviteAccept mounts POST /api/auth/invite/accept on the central mux
 // (same pre-auth layer as login/recovery; GOAL-004 D-001 §3). Success answers
 // 204 WITHOUT tokens — the new user signs in (GOAL-002 D-001 §4 projection).
-func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
-	limiter := newLoginRateLimiter(inviteAcceptWindow, inviteAcceptMax, inviteAcceptCapacity)
+func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository, limiters kernel.RateLimiterProvider) {
+	limiter := limiters.NewRateLimiter(inviteAcceptWindow, inviteAcceptMax, inviteAcceptCapacity)
 	mux.HandleFunc("POST /api/auth/invite/accept", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Token    string `json:"token"`
@@ -324,39 +324,48 @@ func RegisterInviteAccept(mux routeRegistrar, repo InviteAcceptRepository) {
 		}
 		key := loginClientIP(r)
 		now := time.Now().UTC()
-		if !limiter.allow(key, now) {
-			if sec := limiter.retryAfterSeconds(key, now); sec > 0 {
+		var token uint64
+		var ok bool
+		if token, ok = limiter.Reserve(key, now); !ok {
+			if sec := limiter.RetryAfterSeconds(key, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many invite acceptance attempts; try again later")
 			return
 		}
 		// F-001 ordering gate: dead tokens are rejected here, before any
-		// password policy or bcrypt work.
+		// password policy or bcrypt work. Legacy: a dead token recorded one
+		// failure — keep the slot.
 		if err := repo.PeekInviteToken(strings.TrimSpace(body.Token), now); err != nil {
-			limiter.record(key, now)
 			writeInviteDomainError(w, r, err)
 			return
 		}
 		length := len([]byte(body.Password))
 		if length < minPasswordBytes || length > maxPasswordBytes || strings.TrimSpace(body.Password) == "" {
+			// Legacy: password-policy failures never touched the bucket.
+			limiter.Cancel(key, token)
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "password must be a non-whitespace string of 8 to 72 bytes")
 			return
 		}
 		if err := repo.ValidateNewPassword("", body.Password); err != nil {
+			limiter.Cancel(key, token)
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "password violates the active password policy")
 			return
 		}
 		hash, herr := auth.HashPassword(body.Password, passwordHashCost)
 		if herr != nil {
+			limiter.Cancel(key, token)
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not hash password")
 			return
 		}
 		if _, aerr := repo.AcceptInvite(strings.TrimSpace(body.Token), body.Username, body.Name, hash, now); aerr != nil {
-			limiter.record(key, now)
+			// Legacy: an accept failure recorded one failure — keep the slot.
 			writeInviteDomainError(w, r, aerr)
 			return
 		}
+		// Legacy: a successful accept recorded nothing — roll back only this
+		// attempt's slot, preserving prior history (GOAL-003 D-002 #10).
+		limiter.Cancel(key, token)
 		w.WriteHeader(http.StatusNoContent)
 	})
 }

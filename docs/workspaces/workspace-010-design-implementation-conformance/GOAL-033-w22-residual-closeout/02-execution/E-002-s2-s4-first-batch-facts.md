@@ -19,15 +19,15 @@ version: 0.1.0
 ## C14 · H1（W11 GOAL-017 F-004 MFA UI residual 提案）—— 核实为零写入
 
 证据链已完整存在：
-- [W11·GOAL-017 D-005](../../../../workspace-011-admin-functional-modules/GOAL-017-r3-s10-mfa-2fa/01-decision/D-005-a007-response.md) 第 3 条：用户 2026-08-15 书面裁决——不走 residual 接受路径，**新建下级子目标 GOAL-018-mfa-manager-ui 承接交付**；
+- [W11·GOAL-017 D-005](../../../workspace-011-admin-functional-modules/GOAL-017-r3-s10-mfa-2fa/01-decision/D-005-a007-response.md) 第 3 条：用户 2026-08-15 书面裁决——不走 residual 接受路径，**新建下级子目标 GOAL-018-mfa-manager-ui 承接交付**；
 - GOAL-018 `done 5/5`（2026-08-15）、GOAL-017 随后回归关门 `done 5/5`（00-meta status: done）。
 结论：「建议 accepted-residual」的提案从未被采用，实际以 successor-goal 路径兑现且留痕齐全，无需任何补写。
 
 ## C15 · H2（W17 outbound-mail N-001 用词纠偏）—— 核实为零写入
 
 纠偏已在既有关门链完成：
-- [W17·GOAL-005-r4-readyz-evidence A-001](../../../../workspace-017-outbound-mail/GOAL-005-r4-readyz-evidence/03-audit/A-001-self-r4-readyz.md) 行 N-001 已改判「分母外 note，非 residual——独立审计 A-002 复核认可」，closed（note）；
-- [W17·Root 03-audit](../../../../workspace-017-outbound-mail/GOAL-001-outbound-mail/03-audit.md) 明确「N-001 定性按独立意见更正为分母外 note」。
+- [W17·GOAL-005-r4-readyz-evidence A-001](../../../workspace-017-outbound-mail/GOAL-005-r4-readyz-evidence/03-audit/A-001-self-r4-readyz.md) 行 N-001 已改判「分母外 note，非 residual——独立审计 A-002 复核认可」，closed（note）；
+- [W17·Root 03-audit](../../../workspace-017-outbound-mail/GOAL-001-outbound-mail/03-audit.md) 明确「N-001 定性按独立意见更正为分母外 note」。
 结论：本项在扫描时命中的只是历史描述文本，非未处理错标。
 
 ## 信息项状态复核（同日）

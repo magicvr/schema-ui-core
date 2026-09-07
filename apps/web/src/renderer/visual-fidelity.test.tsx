@@ -77,6 +77,55 @@ describe("S2 form-controls design-system consumption", () => {
     expect(notes).not.toBeNull();
     expect(notes?.value).toBe("hi");
   });
+
+  it("renders numeric and date constraints with the registry-compatible types", async () => {
+    const container = await mount(
+      <FormControls
+        fields={[
+          { id: "quantity", label: "Quantity", type: "inputNumber", min: 1, max: 100 },
+          { id: "expiresAt", label: "Expiry", type: "datePicker", min: "2001-09-09", max: "2099-12-31" },
+        ]}
+        values={{ quantity: 5, expiresAt: "2026-09-05" }}
+        onChange={() => undefined}
+      />,
+    );
+    const quantity = container.querySelector<HTMLInputElement>("#field-quantity");
+    expect(quantity?.min).toBe("1");
+    expect(quantity?.max).toBe("100");
+    const expiry = container.querySelector<HTMLInputElement>("#field-expiresAt");
+    expect(expiry?.min).toBe("2001-09-09");
+    expect(expiry?.max).toBe("2099-12-31");
+  });
+
+  // digital-offer price field (workspace-031): inputNumber unit:"yuan" is a
+  // Host-local display unit — wire values stay integer minor units (分), the
+  // input shows/collects yuan with cent granularity (step 0.01).
+  it("renders inputNumber unit=yuan in yuan and commits integer cents", async () => {
+    const calls: Array<[string, unknown]> = [];
+    const container = await mount(
+      <FormControls
+        fields={[
+          { id: "price", label: "Price", type: "inputNumber", unit: "yuan", step: 0.01, required: true },
+        ]}
+        values={{ price: 990 }}
+        onChange={(id, value) => calls.push([id, value])}
+      />,
+    );
+    const price = container.querySelector<HTMLInputElement>("#field-price");
+    expect(price).not.toBeNull();
+    // Wire cents (990) render as yuan (9.9) with cent-granularity step.
+    expect(price?.value).toBe("9.9");
+    expect(price?.step).toBe("0.01");
+    // Editing in yuan commits integer cents back to the wire (12.5 yuan → 1250).
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
+        price,
+        "12.5",
+      );
+      price!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(calls).toEqual([["price", 1250]]);
+  });
 });
 
 describe("S2 recordView Drawer/Sheet presentation", () => {

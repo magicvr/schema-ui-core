@@ -3,11 +3,11 @@ doc_type: vision-charter
 vision_id: schema-ui-core-admin-foundation
 title: Schema UI Core 中型项目 Admin 基架
 status: active
-version: 0.3.0
-effective_date: 2026-08-29
+version: 0.4.0
+effective_date: 2026-08-31
 primary_workspace: workspace-001-mvp-admin-foundation
 created: 2026-07-31
-updated: 2026-08-29
+updated: 2026-08-31
 parent: null
 ---
 
@@ -15,7 +15,7 @@ parent: null
 
 ## 目的陈述
 
-以 `magicvr/schema-ui-docs` 所定义的前后端协议为兼容边界，构建一个面向中型项目、可被后续项目 fork 的基础 Admin 框架：前端采用 React，后端采用 Go，并让协议驱动的页面、数据与交互能力有可运行、可验证的实现路径。基架最终以单一代码主线、薄内核和可组合模块承载不同 fork 起点，避免用长期平行代码线交换短期裁剪便利。
+以 `magicvr/schema-ui-docs` 所定义的前后端协议为兼容边界，构建一个面向中型项目、可被后续项目 fork 的**后端基座与 Admin 管理框架**：前端采用 React，后端采用 Go，并让协议驱动的页面、数据与交互能力有可运行、可验证的实现路径。Admin 管理面是后端基座上的第一层能力；下游 fork 的**主要预期形态**是在同一进程内以业务域模块方式扩展 C 端 API，共用基座的持久化、认证、可观测、Job 等基础设施端口（单独部署 Admin 服务仍是合法的备选形态）。基架最终以单一代码主线、薄内核和可组合模块承载不同 fork 起点，避免用长期平行代码线交换短期裁剪便利。**（strategic 0.4.0 · VR-052 · 2026-08-31）**
 
 ## 协议来源
 
@@ -39,6 +39,7 @@ parent: null
 3. 前端经产品化后可被 fork 项目直接使用，采用 Tailwind CSS 与 shadcn/ui 风格组件，支持浅色和深色模式，并以 Linear 与 Vercel Dashboard 的克制、工作导向体验为参考。
 4. 以单一代码主线、薄内核、框架无关模块契约和启动时 Profile 提供不同 fork 起点；MVP 与完整 Admin 是同一架构的配置形态，不维护长期平行演进代码线。
 5. 后端聚合已启用模块的 Manifest、Schema、导航、权限与数据生命周期贡献；同一前端 build 能随 Profile 组合标准模块，增减模块不要求修改 Renderer 或 Shell 的中央注册路径。
+6. 后端基座提供业务域模块可直接消费的基础设施端口（持久化端口、认证端口、Job 端口、可观测端口、对象存储端口、出站邮件端口），使 C 端 API 模块能在同进程内以标准模块契约接入，而无需另建后端服务；缓存、限流扩展、队列等有状态横切能力在业务域模块触发时由架构分支按需交付，不预制。**（strategic 0.4.0 · VR-052 · 2026-08-31）**
 
 ## 非目标
 
@@ -48,6 +49,7 @@ parent: null
 - 不在本项目内重新定义或替代 `schema-ui-docs` 的协议语义；协议变更应回到上游契约或形成明确的兼容决策。
 - 不建设运行时插件市场、远程模块下载、`.so` 加载或运行中热插拔；Profile 只在已编译候选集中选择模块。澄清（strategic 0.3.0 · VR-050）：**构建期包组装允许**（包在编译时进入组合根与冻结面），禁止的是运行时下载/热插拔。
 - 不承诺 Profile 从二进制中物理移除未启用模块；需要物理裁剪时由 fork 或按需装包承担。**不承诺以 fork 为唯一消费路径**（strategic 0.3.0 · VR-050）。
+- 不预制 C 端 API 的业务逻辑；下游 fork 的 C 端能力由业务域模块承载，基架只提供基础设施端口和标准模块接入契约。**不要求** C 端与 Admin 必须在同一进程——单独部署 Admin 服务仍是合法 fork 形态；选择同进程时，基架的基础设施端口对业务域模块开放。**（strategic 0.4.0 · VR-052 · 2026-08-31）**
 
 ## 原则摘要
 
@@ -62,6 +64,7 @@ parent: null
 | id | 假设 / 未知 | 影响 | 状态 |
 |----|-------------|------|------|
 | H-001 | 必须从固定的 `schema-ui-docs` `v2.8.0` 提取完整协议能力清单、结构 schema 与 conformance 范围，**并据此**冻结 MVP 的协议覆盖边界。 | 历史：VP-001 MVP 计划。现：全量兼容由 VP-006 收口。 | **分列**：① 清单提取 = `verified`（[protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md)）；② MVP 子集冻结 = `verified`（[v0.1.3 覆盖表](../workspaces/workspace-001-mvp-admin-foundation/GOAL-001-mvp-admin-foundation/attachments/I-PROTO-001-coverage-draft.md)）——**仅 MVP**，不主张全量；③ **整份契约可验证兼容** = `verified`（2026-08-08 **VP-006 closed**，用户书面确认；覆盖权威 `I-PROTO-FULL-001` v1.0.1：12/12 域、24/24 registry type、16/16 行为套件 include，320 case = 318 executed + 2 local adapter excluded；**2026-08-14 pin 升至 v2.8.0**，v2.7.0 分母为 additive 子集、已被 v2.8.0 覆盖）。`F-V006` → `fixed`（仅闭合「清单/MVP 冻结」歧义，不闭合全量实现）。 |
+| H-002 | 下游 fork 的 C 端 API 预期主要在同进程内与 Admin 共用后端基座（"同进程基座"形态）。单独部署 Admin 服务仍是合法备选形态，但非主要预期形态。 | 基础设施端口设计须同时满足 Admin 管理面低 QPS 与 C 端可能的高并发需求；缓存、限流扩展、队列等有状态横切能力须在业务域模块触发时有明确的架构分支路线图登记（RT-Q03、RT-Q05 触发条件扩展为包含"C 端业务域模块接入"）。 | **冻结**（2026-08-31 用户书面裁决 · VR-052）。复核触发：如有具名 fork 以单独部署形态为主要形态，H-002 须经 `/vision` 复核并决定是否修订（V-F093 → **fixed**）。**发现机制**：每次业务域 VP 激活前的 freshness review 须顺带确认"该 fork 形态是否仍以同进程为主要形态"；如否则立即触发 H-002 复核，不得推迟到 VP 开区后（V-F095 → **fixed** · VRev-057 independent 响应 · 2026-08-31）。 |
 
 ## 与工作区 / VP 的关系
 
@@ -76,8 +79,8 @@ parent: null
 | 项 | 值 |
 |----|----|
 | `vision_id` | `schema-ui-core-admin-foundation` |
-| 版本 | `0.3.0` |
+| 版本 | `0.4.0` |
 | 状态 | `active` |
-| 引用格式 | `schema-ui-core-admin-foundation@0.3.0` |
+| 引用格式 | `schema-ui-core-admin-foundation@0.4.0` |
 
 修订史见 [revisions.md](revisions.md)，愿景审视台账见 [reviews.md](reviews.md)。

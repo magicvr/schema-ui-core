@@ -6,8 +6,8 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "permissions.inheritance",
-      "table.sort"
+      "table.sort",
+      "record.view.load"
     ]
   },
   "body": {

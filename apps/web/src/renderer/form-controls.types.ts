@@ -108,11 +108,19 @@ export interface FormControlField {
   /** dateRangePicker only: the two bound output fields (registry props). */
   startField?: string;
   endField?: string;
-  /** inputNumber constraints (registry props, since 0.2.1). */
-  min?: number;
-  max?: number;
+  /** inputNumber numeric or datePicker ISO-date constraints (registry props). */
+  min?: number | string;
+  max?: number | string;
   step?: number;
   precision?: number;
+  /**
+   * inputNumber only · Host-local display unit (not a protocol control prop):
+   * `"yuan"` renders/collects the value in yuan with cent granularity (step
+   * 0.01, values rounded to the nearest integer minor unit) while the wire
+   * value stays integer minor units (分). Same convention as the wallet
+   * voucher amount input; keeps storage/API in min units.
+   */
+  unit?: string;
   /** GOAL-014 D-002 §3: field-level validation constraints (optional). */
   required?: boolean;
   /** ADR-0040 (since 2.9): read-only field — user cannot edit, value still
@@ -548,7 +556,9 @@ export function validateFieldValues(
         message: "value is longer than the maximum length",
       });
     }
-    if (field.min !== undefined && kind === "number" && typeof value === "number" && value < field.min) {
+    const numericMin = typeof field.min === "number" ? field.min : undefined;
+    const numericMax = typeof field.max === "number" ? field.max : undefined;
+    if (numericMin !== undefined && kind === "number" && typeof value === "number" && value < numericMin) {
       errors.push({
         field: field.id,
         code: "MIN_VALUE",
@@ -556,7 +566,7 @@ export function validateFieldValues(
         message: "value is below the minimum",
       });
     }
-    if (field.max !== undefined && kind === "number" && typeof value === "number" && value > field.max) {
+    if (numericMax !== undefined && kind === "number" && typeof value === "number" && value > numericMax) {
       errors.push({
         field: field.id,
         code: "MAX_VALUE",

@@ -1,0 +1,117 @@
+---
+doc_type: vision-plan
+id: VP-026-cache-port
+title: 通用缓存端口（内存默认 + Redis 接缝）
+status: closed
+vision_ref: schema-ui-core-admin-foundation@0.4.0
+lead_workspace: workspace-026-cache-port
+created: 2026-08-31
+updated: 2026-09-01
+version: 0.3.0
+parent: null
+---
+
+# VP-026 · 通用缓存端口
+
+## 状态与激活门禁
+
+| 项 | 值 |
+|----|-----|
+| status | **`closed`**（v0.3.0 · 2026-09-01 · **用户书面确认关门**；本字段在激活/关闭时均未同步——激活已于 2026-08-31 发生（见下），机读状态按「已激活后的关闭」补齐，不构成 `planned → closed` 跃迁） |
+| lead_workspace | `workspace-026-cache-port`（Root `GOAL-001-cache-port` · `/govern` 同日开区） |
+| Vision required | VRev-058 self（计划）· VRev-059 grok build independent（复审 conditional → 全部闭合 · 0 required）· VRev-060 self `pass`（激活就绪）· **VRev-061 self `pass`（关门就绪）** |
+| freshness 消费候选 | `055da2fd`（VP-025 关门锚点）→ **`54fb57e7`**（架构类轻量 PASS · 五域零变更 · 不暂挂 `go` · VRev-060） |
+| 组合位置 | **架构分支** · H-002 同进程基座基础设施端口早期化（成功边界 #6）· RT-Q03 承接（**保持 trigger-gated**） |
+
+## 意图
+
+为下游 fork 的 C 端业务域模块提供可直接消费的**通用缓存端口**：默认内存（进程内）供应商开箱即用，Redis 供应商以接缝声明方式预留演化空间（不实现）。
+
+> **解释规则（VRev-059 V-F102 → fixed）**：本波 = 基座可消费面早期化（端口 + 进程内默认 + 接缝声明），**不消耗** RT-Q03 trigger；Redis **实现**仍须等待多实例或 C 端接入评估后才立项。
+
+端口设计采用".NET IMemoryCache 式"轻量分层：
+
+1. **Cache 端口契约**：`Get / Set / Delete` + TTL 语义 + 命名空间隔离 + 并发安全（供应商无关）。
+2. **两种基础过期策略**：**绝对过期（AbsoluteExpiry）** 与 **滑动过期（SlidingExpiry）** 开箱即用；**可插拔策略接口**（策略以接口注入，而非硬编码在端口内）为后期扩展（LRU / 分层 / 标签失效 / 批量）保留空间。
+3. **内存供应商**（默认）：有界 + TTL 清理 + key 驱逐。**Redis 供应商接缝声明**：端口不变、供应商边界、连接管理约定落盘，实现留待触发（RT-Q03 触发条件：多实例或 C 端业务域接入评估）。
+4. **共享供应商约定（VRev-059 V-F100 → fixed）**：Redis 轨道约定 = **VP-026/027**（key 前缀 / 命名空间 / 连接管理 / 测试 harness）登记于架构短文或 owner VP 决策（单一所有者；**不**跨区绑同一份 Goal D-001，**不**把 EventBus/VP-028 纳入 Redis key 约定——其演化轨道是 outbox/MQ）。
+
+本 VP 属 **架构分支**，承接 Charter 0.4.0 成功边界 #6（基础设施端口开放）与 H-002（同进程基座）；**不预制 Redis 实现**；**不重做限流/消息**（各自独立 VP）。**不改 Charter**。
+
+## 首波冻结（退出分母 = 缓存端口操作化）
+
+| 项 | 本 VP 交付 | 不进本 VP |
+|----|-----------|-----------|
+| 端口契约 | Cache 端口（Get/Set/Delete + TTL + 命名空间 + 并发安全），供应商无关、可测试 | Key 值的业务语义；分布式锁（RT-Q04 仍 gated）；JWT 黑名单/会话缓存（业务触发） |
+| 过期策略 | 绝对过期 + 滑动过期 + 可插拔策略接口 | LRU / 分层 / 标签失效 / 批量（策略接口已预留，实现待消费者触发） |
+| 供应商 | 内存供应商（有界 + TTL 清理 + 驱逐） | **Redis 供应商实现**（RT-Q03 触发后另行评估；接缝声明本波落盘）；其它外部缓存 |
+| 接缝 | Redis 供应商接缝声明（端口不变 / 供应商边界 / 连接管理约定） | Redis 客户端依赖引入；连接池 / 重试 / 故障转移（触发后随实现） |
+| 共享约定 | key 前缀 / 命名空间 / 测试 harness 约定 D-001 登记 | 跨端口交付物合并（VP-027/028 独立关门） |
+
+## 非目标
+
+- **Redis 供应商实现**（RT-Q03 触发条件仍为 trigger-gated；本波只落接缝声明）
+- **分布式锁 / leader election**（RT-Q04 仍 gated）
+- **限流语义**（归 VP-027）；**消息/事件语义**（归 VP-028）
+- **JWT 黑名单 / 会话缓存 / 热配置缓存**（无消费者则不预制；出现后经 `/vision` 评估）
+- **业务域特定缓存语义**（商品/catalog 等域缓存归业务域 VP 自己定义策略）
+- 重开 VP-012 / VP-013 等已 closed 记录；替代 VP-009 / VP-010；改变 Charter 边界
+
+## 与相邻 VP 的边界
+
+| VP / 分支 | 关系 |
+|-----------|------|
+| **VP-003 / VP-004** | 遵守薄内核与模块契约。缓存端口是内核级基础设施端口（与 Store / ObjectStore / Mail 同级），模块公共面不得依赖供应商类型 |
+| **VP-008 `go`** | 架构类能力；激活前做架构类 freshness |
+| **VP-009 / VP-010** | 缓存相关安全（key 泄露、注入类 gap）与符合性 gap 归持续程序 |
+| **VP-027** | 同为 key 寻址状态服务、同 Redis 演化轨道，但**端口/交付/关门完全独立**；共享 Redis 供应商基建**约定**（D-001），不共享交付物 |
+| **VP-028** | 无依赖；不共享 Redis key 约定（其演化轨道是 outbox/MQ）；仅共享"端口早期化不消耗 trigger"的解释规则 |
+| **架构 RT-Q03** | 本 VP 为 RT-Q03 的承接 VP（planned）；Redis 实现仍 trigger-gated（本波不消耗 trigger） |
+| **VP-021 停机合同** | 若选后台清理协程须声明 SIGTERM 排空；否则惰性清理（V-F104） |
+| **业务域** | C 端业务域模块激活后即成为缓存端口消费者；届时按成功边界 #6 评估是否需要 Redis 供应商 |
+
+## 方向级退出判据
+
+1. **端口契约冻结**：Cache 端口（Get/Set/Delete + TTL + 命名空间 + 并发安全）冻结并可用；供应商无关，快测可断言。
+2. **双策略 + 可插拔**：绝对过期与滑动过期两种基础策略实现并有测试；策略以接口注入，可扩展（含自定义策略测试样例）。
+3. **内存供应商可用**：有界容量 + TTL 清理 + 驱逐语义实现并有测试（并发、边界、清理）。
+4. **Redis 接缝声明落盘**：供应商边界（端口不变）、连接管理约定、key 前缀/命名空间约定写入；不引入 Redis 客户端依赖。
+5. **共享约定登记**：Redis 轨道约定（VP-026/027）在架构短文或 owner VP 决策登记（单一所有者；不跨区绑同一份 Goal D-001）；VP-028 不属 Redis 轨道。
+6. **停机语义（VRev-059 V-F104 → fixed）**：若 R1 选择**后台清理协程**，须声明 SIGTERM 下停止清理 / 排空（继承 VP-021 停机合同）；否则选惰性清理避开新生命周期。
+7. **边界保持**：未改 Charter；未改 Profile 默认集 / 模块矩阵 / Manifest 装配；未预制 Redis 实现（不消耗 RT-Q03 trigger）；未重开历史 VP。
+8. **审计闭合**：开放 required finding = 0（或已合法闭合）。
+
+详细纲领阶段由 lead Root（P-001）书写：R1 契约冻结（API 形态 / TTL 语义 / 策略接口）→ R2 内存供应商 → R3 接缝与约定 → R4 证据与关门。本 VP 不写 Goal 五件套。
+
+## 信息需求（P-005）
+
+| id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 状态 |
+|----|--------------|------|----------|----------|------|
+| I-026-001 | Cache 端口 API 形态：Go 泛型 vs `[]byte` vs 结构化值；零值/未命中语义。 | required | 方案冻结 + 退出判据 1 | R1 契约冻结 | **verified**（2026-09-01 用户裁决：`[]byte` 负载 + 非泛型端口 + 类型化封装；GOAL-002 D-001） |
+| I-026-002 | TTL 清理语义：惰性（读时清理） vs 后台协程清理；边界与容量来源。 | required | 退出判据 3/6 | R1（语义随合同冻结；容量键 R2 落） | **verified**（2026-09-01 用户裁决：惰性清理 + 配置化容量驱逐；GOAL-002 D-001；F-007 对齐） |
+| I-026-003 | 命名空间 / key 前缀约定：模块 ID 前缀 vs 独立命名空间参数。 | non-blocking | 退出判据 1/4 | R1 | **verified**（2026-09-01 用户确认：显式命名空间 scoped 视图；GOAL-002 D-001） |
+| I-026-004 | 既有 mail runtime `cachedAdapter` 是否迁移到端口（评估，不强制；其版本戳失效语义可能不匹配通用 TTL）。 | non-blocking | 退出判据 2 | R3 | **verified**（2026-09-01 用户确认：不迁移，评估留痕；评估 = GOAL-004 attachments；判据 #4/#5 owner 文档 = `docs/architecture/cache-redis-seam-and-track.md`） |
+
+## 工作区绑定
+
+| workspace_id | root_goal | role | joined | notes |
+|--------------|-----------|------|--------|-------|
+| workspace-026-cache-port | GOAL-001-cache-port | lead | 2026-08-31（激活开区） | 唯一 delivery；激活审视 VRev-060 self `pass` + 架构类 freshness PASS（`055da2fd`→`54fb57e7`）；**Root done 4/4（2026-09-01 用户书面确认关门）** |
+
+## 关门记录
+
+| date | outcome | summary | evidence_links | residuals |
+|------|---------|---------|----------------|-----------|
+| 2026-09-01 | **`closed`** v0.3.0（用户书面确认） | 八条退出判据全部满足：端口契约（kernel/cache.go + D-002 v0.1.1）· 双策略+可插拔 · 内存供应商（进程总预算 FIFO）· Redis 接缝声明（短文 §2，go.mod 无客户端）· 轨道约定 owner（短文 §3）· 停机语义（惰性）· 边界保持（54fb57e7..HEAD 82 路径红线零触碰）· 审计闭合（R1～R4 阶段 self + grok independent 双审，开放 required=0；Root A-002 pass；VRev-061 pass） | Root `GOAL-001-cache-port` done 4/4（E-005）· 证据矩阵（GOAL-005 attachments/r4-evidence-matrix.md）· 审计台账（Root 03-audit A-001/A-002/A-003）· VRev-061 | Redis 供应商实现仍 **RT-Q03 trigger-gated**（多实例或 C 端业务域接入评估）；命名空间登记义务跟踪至首个消费者 / VP-027 激活（短文 §3.3）；mail cachedAdapter 不迁移（评估留痕） |
+
+## 规划修订短史
+
+| date | change |
+|------|--------|
+| 2026-08-31 | 初创 `planned`：用户裁决按 3 个独立 VP 执行（缓存 / 限流 / 事件总线；触发条件独立 × 关门能力独立原则）。本 VP 承接 RT-Q03（缓存端口 · 内存默认 + Redis 接缝声明）；vision_ref @0.4.0；roadmap / revisions 原子同步 |
+| 2026-08-31 | v0.1.1 · **VRev-059 响应修订**（grok build · conditional → 本 VP 无 required）：V-F100 **fixed**——Redis 轨道约定收窄为 VP-026/027（架构短文或 owner VP 单一所有者，不跨区绑 D-001），VP-028 不属 Redis 轨道；V-F102 **fixed**——补"不消耗 RT-Q03 trigger"解释规则；V-F104 **fixed**——补 TTL 清理停机语义（后台协程须声明 SIGTERM 排空，否则惰性清理） |
+| 2026-08-31 | v0.2.0 · **激活**（用户指令）：VRev-060 self `pass`（0 required · 架构类 freshness PASS `055da2fd`→`54fb57e7` 五域零变更不暂挂 `go`）；`planned → active`；lead `workspace-026-cache-port` 开区（Root `GOAL-001-cache-port` active 0/4 · R1～R4 纲领） |
+| 2026-09-01 | I-026-001/002/003 用户裁决（P-004）：`[]byte` 负载+类型化封装 / 惰性清理+配置化容量驱逐 / 显式命名空间 scoped 视图 → 信息台账 verified；R1 合同（GOAL-002 D-002）冻结 + 端口本体落地（kernel/cache.go） |
+| 2026-09-01 | **R2 关门**（GOAL-003 done 3/3）：FIFO 驱逐 + **进程总预算**（A-002 grok independent F-001 · 用户裁决）→ 内存供应商 + 绝对/滑动双策略 + Typed + `cache.max_entries` 键落地；判据 #2/#3 达成；changelog：R2 波证据见 GOAL-003（E-003 / A-002 / A-003） |
+| 2026-09-01 | **R3 关门**（GOAL-004 done 3/3）：判据 #4/#5 落盘 = `docs/architecture/cache-redis-seam-and-track.md` v1.0.0（接缝声明 + VP-026/027 轨道 owner 约定；VP-027 激活继承）；I-026-004 **verified**（用户确认不迁移）；F-002 兑现（fx 容器持有 + newMux 注入点）；A-002 grok independent pass（0 required） |
+| 2026-09-01 | **R4 关门 + VP closed**（v0.3.0）：证据矩阵 8 判据 verified + 红线核账；Root A-001 self + A-002 grok independent 双审 pass（0 required）；VRev-061 pass；**用户书面确认关门** → `active → closed`；YAML 机读字段补齐（激活/关闭均已发生；不构成 planned→closed 跃迁）；roadmap/workspaces/workspace 结项同步 |

@@ -360,6 +360,22 @@ describe("GOAL-014 · constraint passthrough + fieldErrors echo (A-003 F-001/F-0
     expect(field.minLength).toBe(2);
     expect(field.maxLength).toBe(10);
   });
+
+  it("preserves numeric and ISO-date bounds for their registry control types", () => {
+    const result = gateRenderFormFields(
+      { protocolVersion: "2.7", requiredCapabilities: [] },
+      [
+        { id: "quantity", type: "inputNumber", min: 1, max: 100 },
+        { id: "expiresAt", type: "datePicker", min: "2001-09-09", max: "2099-12-31" },
+      ],
+      "fields",
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.fields).toEqual([
+      expect.objectContaining({ id: "quantity", min: 1, max: 100 }),
+      expect.objectContaining({ id: "expiresAt", min: "2001-09-09", max: "2099-12-31" }),
+    ]);
+  });
 });
 
 describe("gateRenderFormFields · afterComponent (W17)", () => {

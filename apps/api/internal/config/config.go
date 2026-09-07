@@ -24,6 +24,24 @@ import (
 //go:embed config.default.yaml
 var defaultConfigYAML []byte
 
+// DefaultCacheMaxEntries is the fallback bounded-entry budget for the
+// in-memory cache provider (VP-026 / workspace-026 GOAL-003 D-001): applied
+// by Load when neither YAML nor env configures cache.max_entries, and by the
+// composition root for zero-value (loader-bypassed) Configs.
+const DefaultCacheMaxEntries = 10000
+
+// DefaultEventBusBuffer is the fallback per-subscription buffer size for the
+// in-memory event-bus provider (VP-028 / workspace-028 GOAL-003 D-001): applied
+// by Load when neither YAML nor env configures eventbus.buffer_size, and by the
+// composition root for zero-value (loader-bypassed) Configs. Must match
+// kernel.DefaultEventBusBuffer.
+const DefaultEventBusBuffer = 64
+
+// MaxEventBusBuffer is the upper bound on eventbus.buffer_size (D-001): buffers
+// larger than this are rejected fail-closed at config load to prevent unbounded
+// memory growth or configuration typos from causing resource exhaustion.
+const MaxEventBusBuffer = 4096
+
 // Config is the R2 runtime configuration: HTTP + logging, plus the auth
 // (JWT / refresh / SQLite) and dev-session surface defined by GOAL-005 D-004,
 // and the upload surface (W7: UPLOAD_* moved from handler package vars into
@@ -69,7 +87,7 @@ type Config struct {
 	// X-Forwarded-Proto headers, which a client can influence. Empty keeps
 	// the request-derived fallback (single-host dev / direct deployments).
 	AuthPublicBaseURL string
-	DBPath                string
+	DBPath            string
 	// DBDialect is the store dialect (VP-013 / R1 v1.4 §5): "" or "sqlite" or
 	// "postgres". Load normalizes empty to "sqlite"; ValidateProd rejects
 	// unknown values and enforces DSN/path pairing rules.
@@ -131,6 +149,22 @@ type Config struct {
 	// ObjectsS3UsePathStyle defaults to true (MinIO/R2 need path-style);
 	// virtual-host style can be enabled for AWS-compatible endpoints.
 	ObjectsS3UsePathStyle bool
+
+	// Cache surface (VP-026 / workspace-026 GOAL-003 D-001, R2).
+	// CacheMaxEntries is the in-memory cache provider's bounded-entry budget:
+	// after every Set the TOTAL stored entry count (including not-yet-swept
+	// expired entries) is <= this value; the oldest entry is FIFO-evicted.
+	// Default 10000; non-positive values fail closed at load (a typo must
+	// never silently degrade to the default).
+	CacheMaxEntries int
+
+	// EventBus surface (VP-028 / workspace-028 GOAL-003 D-001, R2).
+	// EventBusBufferSize is the in-memory event-bus provider's per-subscription
+	// buffered-channel capacity. When a subscriber's buffer is full, Publish
+	// blocks until space is available, the context is cancelled, or Stop drains.
+	// Default 64 (kernel.DefaultEventBusBuffer); <= 0 falls back to that default;
+	// > MaxEventBusBuffer (4096) fails closed at load.
+	EventBusBufferSize int
 
 	// Observability metrics surface (VP-015 / workspace-015 GOAL-002 D-001).
 	// MetricsEnabled selects the DEDICATED Prometheus exposition listener —
@@ -195,6 +229,27 @@ type Config struct {
 	// volume instead.
 	MailMasterKeyPath string
 
+	// Telegram channel runtime surface (VP-030 / GOAL-003 R2).
+	TelegramBotToken      string
+	TelegramWebhookSecret string
+	// TelegramMode selects the Telegram receiver mode independently of the
+	// process-wide RuntimeMode. Empty input normalizes to polling; the only
+	// explicit values are polling and webhook (VP-033 / workspace-033 R2).
+	TelegramMode string
+	// TelegramWebhookPublicBaseURL is the explicit external origin used to
+	// build the webhook endpoint. It is never inferred from request headers or
+	// the process-wide auth.public_base_url.
+	TelegramWebhookPublicBaseURL string
+	// TelegramMasterKey optionally supplies the at-rest master key for the
+	// telegram_config row via TELEGRAM_MASTER_KEY (hashed like mail's
+	// MAIL_CONFIG_MASTER_KEY; F-002 / A-006 — never a source constant). Empty
+	// keeps the auto-generated key file beside the data directory.
+	TelegramMasterKey string
+	// TelegramMasterKeyPath optionally relocates the auto-generated master key
+	// FILE (telegram.master_key_path / TELEGRAM_MASTER_KEY_PATH), mirroring
+	// mail.master_key_path (W13 F-017 pattern).
+	TelegramMasterKeyPath string
+
 	// NavigationOrder is the optional full navigation ordering (GOAL-013 D-002
 	// §4): YAML navigation.order or NAVIGATION_ORDER env (comma-separated
 	// NodeIDs). Empty means the built-in kernel default applies.
@@ -228,6 +283,22 @@ const (
 func ValidRuntimeMode(mode RuntimeMode) bool {
 	switch mode {
 	case RuntimeModeNormal, RuntimeModeMaintenance, RuntimeModeDegraded, RuntimeModeReadOnly:
+		return true
+	default:
+		return false
+	}
+}
+
+const (
+	TelegramModePolling = "polling"
+	TelegramModeWebhook = "webhook"
+)
+
+// ValidTelegramMode reports whether mode is one of the Telegram receiver
+// modes. Empty is accepted by the loader as the documented polling default.
+func ValidTelegramMode(mode string) bool {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "", TelegramModePolling, TelegramModeWebhook:
 		return true
 	default:
 		return false
@@ -328,7 +399,7 @@ type yamlFile struct {
 	Mail struct {
 		Channel       *string `yaml:"channel"`
 		MasterKeyPath *string `yaml:"master_key_path"`
-		SMTP struct {
+		SMTP          struct {
 			Host     *string `yaml:"host"`
 			Port     *int    `yaml:"port"`
 			Username *string `yaml:"username"`
@@ -340,9 +411,29 @@ type yamlFile struct {
 			From   *string `yaml:"from"`
 		} `yaml:"resend"`
 	} `yaml:"mail"`
+	Cache struct {
+		// VP-026 / workspace-026 GOAL-003 D-001: bounded-entry budget of the
+		// in-memory cache provider (respects only positive values; <= 0 fails
+		// closed at load). Env: CACHE_MAX_ENTRIES.
+		MaxEntries *int `yaml:"max_entries"`
+	} `yaml:"cache"`
+	EventBus struct {
+		// VP-028 / workspace-028 GOAL-003 D-001: per-subscription buffer size
+		// of the in-memory event-bus provider. <= 0 falls back to
+		// DefaultEventBusBuffer (64); > MaxEventBusBuffer (4096) fails closed.
+		// Env: EVENTBUS_BUFFER_SIZE.
+		BufferSize *int `yaml:"buffer_size"`
+	} `yaml:"eventbus"`
 	Navigation struct {
 		Order yaml.Node `yaml:"order"`
 	} `yaml:"navigation"`
+	Telegram struct {
+		BotToken             *string `yaml:"bot_token"`
+		WebhookSecret        *string `yaml:"webhook_secret"`
+		Mode                 *string `yaml:"mode"`
+		WebhookPublicBaseURL *string `yaml:"webhook_public_base_url"`
+		MasterKeyPath        *string `yaml:"master_key_path"`
+	} `yaml:"telegram"`
 	Runtime struct {
 		Mode *string `yaml:"mode"`
 	} `yaml:"runtime"`
@@ -375,7 +466,7 @@ func Load() *Config {
 		// VP-021 contract §6: default drain budget = 10s (mirrors the legacy
 		// hard-coded shutdown context in cmd/server/main.go).
 		HTTPShutdownTimeout: 10 * time.Second,
-		LogLevelName: "info",
+		LogLevelName:        "info",
 
 		AuthJWTSecret:            "",
 		AuthAccessTTL:            15 * time.Minute,
@@ -399,12 +490,15 @@ func Load() *Config {
 		BrandingMaxBytes:         4 << 20,
 		ObjectsDriver:            "local",
 		ObjectsS3UsePathStyle:    true,
+		CacheMaxEntries:          DefaultCacheMaxEntries,
+		EventBusBufferSize:       DefaultEventBusBuffer,
 		MetricsEnabled:           false,
 		MetricsAddr:              "127.0.0.1:25081",
 		MetricsAuthToken:         "",
 		TracesEnabled:            false,
 		TracesEndpoint:           "",
 		TracesSampleRatio:        1.0,
+		TelegramMode:             TelegramModePolling,
 		RuntimeMode:              RuntimeModeNormal,
 	}
 
@@ -546,6 +640,20 @@ func Load() *Config {
 	cfg.MailResendAPIKey = strPtrOr(yf.Mail.Resend.APIKey, cfg.MailResendAPIKey)
 	cfg.MailResendFrom = strPtrOr(yf.Mail.Resend.From, cfg.MailResendFrom)
 	cfg.MailMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Mail.MasterKeyPath, cfg.MailMasterKeyPath))
+	cfg.TelegramBotToken = strPtrOr(yf.Telegram.BotToken, cfg.TelegramBotToken)
+	cfg.TelegramWebhookSecret = strPtrOr(yf.Telegram.WebhookSecret, cfg.TelegramWebhookSecret)
+	cfg.TelegramMode = strings.ToLower(strings.TrimSpace(strPtrOr(yf.Telegram.Mode, cfg.TelegramMode)))
+	if cfg.TelegramMode == "" {
+		cfg.TelegramMode = TelegramModePolling
+	}
+	cfg.TelegramWebhookPublicBaseURL = strPtrOr(yf.Telegram.WebhookPublicBaseURL, cfg.TelegramWebhookPublicBaseURL)
+	cfg.TelegramMasterKeyPath = strings.TrimSpace(strPtrOr(yf.Telegram.MasterKeyPath, cfg.TelegramMasterKeyPath))
+	if yf.Cache.MaxEntries != nil {
+		cfg.CacheMaxEntries = *yf.Cache.MaxEntries
+	}
+	if yf.EventBus.BufferSize != nil {
+		cfg.EventBusBufferSize = *yf.EventBus.BufferSize
+	}
 	if yf.Observability.Metrics.Enabled != nil {
 		cfg.MetricsEnabled = *yf.Observability.Metrics.Enabled
 	}
@@ -657,6 +765,49 @@ func Load() *Config {
 	cfg.MailResendFrom = envOr("MAIL_RESEND_FROM", cfg.MailResendFrom)
 	cfg.MailMasterKeyPath = strings.TrimSpace(envOr("MAIL_MASTER_KEY_PATH", cfg.MailMasterKeyPath))
 	cfg.MailConfigMasterKey = envOr("MAIL_CONFIG_MASTER_KEY", cfg.MailConfigMasterKey)
+	cfg.TelegramBotToken = envOr("TELEGRAM_BOT_TOKEN", cfg.TelegramBotToken)
+	cfg.TelegramWebhookSecret = envOr("TELEGRAM_WEBHOOK_SECRET", cfg.TelegramWebhookSecret)
+	cfg.TelegramMasterKey = envOr("TELEGRAM_MASTER_KEY", cfg.TelegramMasterKey)
+	cfg.TelegramMasterKeyPath = strings.TrimSpace(envOr("TELEGRAM_MASTER_KEY_PATH", cfg.TelegramMasterKeyPath))
+	cfg.TelegramMode = strings.ToLower(strings.TrimSpace(envOr("TELEGRAM_MODE", cfg.TelegramMode)))
+	cfg.TelegramWebhookPublicBaseURL = strings.TrimSpace(envOr("TELEGRAM_WEBHOOK_PUBLIC_BASE_URL", cfg.TelegramWebhookPublicBaseURL))
+	if cfg.TelegramMode == "" {
+		cfg.TelegramMode = TelegramModePolling
+	}
+	if !ValidTelegramMode(cfg.TelegramMode) {
+		cfg.LoadError = fmt.Errorf("config: telegram.mode must be one of polling or webhook (got %q)", cfg.TelegramMode)
+		return cfg
+	}
+	if err := ValidateTelegramWebhookPublicBaseURL(cfg.TelegramWebhookPublicBaseURL); err != nil {
+		cfg.LoadError = err
+		return cfg
+	}
+	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): strict env
+	// parse mirroring MAIL_SMTP_PORT — an explicitly supplied invalid value
+	// fails closed instead of silently keeping the default.
+	if raw := strings.TrimSpace(os.Getenv("CACHE_MAX_ENTRIES")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n <= 0 {
+			cfg.LoadError = fmt.Errorf("config: CACHE_MAX_ENTRIES must be a positive integer")
+			return cfg
+		}
+		cfg.CacheMaxEntries = n
+	}
+	// eventbus.buffer_size (VP-028 / workspace-028 GOAL-003 D-001): strict env
+	// parse. <= 0 is acceptable (falls back to DefaultEventBusBuffer); unparsable
+	// or > MaxEventBusBuffer fails closed.
+	if raw := strings.TrimSpace(os.Getenv("EVENTBUS_BUFFER_SIZE")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil {
+			cfg.LoadError = fmt.Errorf("config: EVENTBUS_BUFFER_SIZE must be an integer")
+			return cfg
+		}
+		if n > MaxEventBusBuffer {
+			cfg.LoadError = fmt.Errorf("config: EVENTBUS_BUFFER_SIZE must be <= %d (got %d)", MaxEventBusBuffer, n)
+			return cfg
+		}
+		cfg.EventBusBufferSize = n
+	}
 	if raw := strings.TrimSpace(os.Getenv("MAIL_SMTP_PORT")); raw != "" {
 		port, err := strconv.Atoi(raw)
 		if err != nil || port < 1 || port > 65535 {
@@ -725,6 +876,24 @@ func Load() *Config {
 		}
 	default:
 		cfg.LoadError = fmt.Errorf("config: storage.objects.driver must be one of local or s3 (got %q)", cfg.ObjectsDriver)
+		return cfg
+	}
+
+	// cache.max_entries (VP-026 / workspace-026 GOAL-003 D-001): the in-memory
+	// cache provider's bounded-entry budget must be positive. Explicit YAML /
+	// env values are checked above (pointer mapping / strict env parse); this
+	// block is the fail-closed net for any value that reached the struct.
+	if cfg.CacheMaxEntries <= 0 {
+		cfg.LoadError = fmt.Errorf("config: cache.max_entries must be a positive integer (got %d)", cfg.CacheMaxEntries)
+		return cfg
+	}
+
+	// eventbus.buffer_size (VP-028 / workspace-028 GOAL-003 D-001): the in-memory
+	// event-bus provider's per-subscription buffer size. Explicit YAML / env values
+	// are checked above; <= 0 is acceptable (composition falls back to default);
+	// this block is the fail-closed net for out-of-range values.
+	if cfg.EventBusBufferSize > MaxEventBusBuffer {
+		cfg.LoadError = fmt.Errorf("config: eventbus.buffer_size must be <= %d (got %d)", MaxEventBusBuffer, cfg.EventBusBufferSize)
 		return cfg
 	}
 
@@ -1069,6 +1238,12 @@ func (c *Config) ValidateProd() error {
 	if c.RuntimeMode != "" && !ValidRuntimeMode(c.RuntimeMode) {
 		return fmt.Errorf("invalid runtime mode %q", c.RuntimeMode)
 	}
+	if c.TelegramMode != "" && !ValidTelegramMode(c.TelegramMode) {
+		return fmt.Errorf("config: telegram.mode must be one of polling or webhook (got %q)", c.TelegramMode)
+	}
+	if err := ValidateTelegramWebhookPublicBaseURL(c.TelegramWebhookPublicBaseURL); err != nil {
+		return err
+	}
 	if c.AppEnv == "" {
 		return fmt.Errorf("APP_ENV must be set explicitly (development for local runs, production for deployments); refusing to guess")
 	}
@@ -1087,6 +1262,18 @@ func (c *Config) ValidateProd() error {
 	// for every environment (including development) as well.
 	if err := c.validateObservability(); err != nil {
 		return err
+	}
+	// VP-026 (workspace-026 GOAL-003 D-001): the cache entry budget is a
+	// startup gate for every environment; zero on a bypassed/zero-value
+	// Config means "use load defaults" and is skipped (mirrors the db rules).
+	if c.CacheMaxEntries < 0 {
+		return fmt.Errorf("cache.max_entries must be positive (got %d)", c.CacheMaxEntries)
+	}
+	// VP-028 (workspace-028 GOAL-003 D-001): the event-bus buffer size is a
+	// startup gate for every environment; <= 0 means "use default" and is
+	// skipped; > MaxEventBusBuffer is rejected.
+	if c.EventBusBufferSize > MaxEventBusBuffer {
+		return fmt.Errorf("eventbus.buffer_size must be <= %d (got %d)", MaxEventBusBuffer, c.EventBusBufferSize)
 	}
 	// VP-017 GOAL-003 D-001: mail.smtp pairing rules are startup gates for
 	// every environment (including development), like the db/objects rules.
@@ -1129,6 +1316,25 @@ func (c *Config) ValidateProd() error {
 		if prev == c.AuthJWTSecret {
 			return fmt.Errorf("AUTH_JWT_SECRET_PREVIOUS must differ from AUTH_JWT_SECRET (a no-op rotation is a misconfiguration)")
 		}
+	}
+	return nil
+}
+
+// ValidateTelegramWebhookPublicBaseURL enforces the explicit origin contract
+// for Telegram webhook setup. The endpoint path is appended by the connection
+// manager, so paths, queries, fragments, credentials, and whitespace are not
+// accepted here.
+func ValidateTelegramWebhookPublicBaseURL(raw string) error {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || value != raw || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+		parsed.Host == "" || parsed.User != nil || parsed.Path != "" ||
+		parsed.RawQuery != "" || parsed.Fragment != "" ||
+		strings.ContainsAny(value, " \t\r\n") {
+		return fmt.Errorf("config: telegram.webhook_public_base_url must be an absolute http(s) origin like https://host (no path, query, fragment, credentials, or whitespace); got %q", raw)
 	}
 	return nil
 }

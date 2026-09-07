@@ -63,5 +63,5 @@ version: 0.3.1
 | date | change |
 |------|--------|
 | 2026-08-29 | 初创 v0.1.0（用户指令：维持 Charter 并存战略 + 立项产线化 VP-023；承接 VP-022 go 后清单；组合层平台波 · 与三分支正交；对标 .NET dotnet new + NuGet 产线化） |
-| 2026-08-29 | v0.2.0 · **激活**（用户建仓授权）：[VRev-051](reviews/VRev-051-vp023-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `5c168070`→`041744b3` 不暂挂 `go`）；`planned → active`；lead `workspace-023-productionization-cli-package`；实验仓 `golden-field` 初始化随开区 |
+| 2026-08-29 | v0.2.0 · **激活**（用户建仓授权）：[VRev-051](../reviews/VRev-051-vp023-activation.md) self `pass`（0 required · 架构类轻量 freshness PASS `5c168070`→`041744b3` 不暂挂 `go`）；`planned → active`；lead `workspace-023-productionization-cli-package`；实验仓 `golden-field` 初始化随开区 |
 | 2026-08-29 | v0.3.0 · **关闭**（用户 P-004 裁决：breaking 实演以 v0.3.0 真实执行）：六条判据全达成；grok 独立双审（Root A-002 + R5 A-001）F-001～F-008 全闭合（CLI 双轨同步 / I-023-001~005 登记闭合 / 冻结面路径 / 台账修正）；Root `GOAL-001-productionization-cli-package` `done 5/5`；go 后清单落款 |

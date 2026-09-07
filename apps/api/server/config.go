@@ -41,8 +41,8 @@ func DefaultConfigYAML() []byte { return append([]byte(nil), defaultConfigYAML..
 // 装载链：代码默认 →（显式 path 或内嵌默认）YAML（${VAR}/${VAR:-default} 插值，
 // 裸 ${VAR} 未设置 fail-closed，同 internal/config 语义）→ 进程 env 定向覆盖。
 type Config struct {
-	AppName string
-	AppEnv  string // "" = 未声明（validate 拒绝，refusing to guess；W15 F-001）；非 development 时密钥/种子类键 fail-closed
+	AppName  string
+	AppEnv   string // "" = 未声明（validate 拒绝，refusing to guess；W15 F-001）；非 development 时密钥/种子类键 fail-closed
 	LogLevel string
 
 	HTTPAddr        string
@@ -76,13 +76,13 @@ type yamlFile struct {
 		Env  *string `yaml:"env"`
 	} `yaml:"app"`
 	HTTP struct {
-		Addr            *string   `yaml:"addr"`
-		ReadTimeout     *string   `yaml:"read_timeout"`
-		WriteTimeout    *string   `yaml:"write_timeout"`
-		IdleTimeout     *string   `yaml:"idle_timeout"`
-		ShutdownTimeout *string   `yaml:"shutdown_timeout"`
-		TrustedProxies  []string  `yaml:"trusted_proxies"`
-		CORSOrigins     []string  `yaml:"cors_origins"`
+		Addr            *string  `yaml:"addr"`
+		ReadTimeout     *string  `yaml:"read_timeout"`
+		WriteTimeout    *string  `yaml:"write_timeout"`
+		IdleTimeout     *string  `yaml:"idle_timeout"`
+		ShutdownTimeout *string  `yaml:"shutdown_timeout"`
+		TrustedProxies  []string `yaml:"trusted_proxies"`
+		CORSOrigins     []string `yaml:"cors_origins"`
 	} `yaml:"http"`
 	DB struct {
 		Dialect *string `yaml:"dialect"`
@@ -102,6 +102,15 @@ type yamlFile struct {
 	Log struct {
 		Level *string `yaml:"level"`
 	} `yaml:"log"`
+	// Telegram is recognized for configuration export and future channel
+	// assembly. The public serve surface does not currently instantiate the
+	// Telegram runtime, so these values are intentionally not copied to Config.
+	Telegram struct {
+		BotToken             *string `yaml:"bot_token"`
+		WebhookSecret        *string `yaml:"webhook_secret"`
+		Mode                 *string `yaml:"mode"`
+		WebhookPublicBaseURL *string `yaml:"webhook_public_base_url"`
+	} `yaml:"telegram"`
 }
 
 // LoadConfig 装载 serve 配置。
@@ -109,19 +118,19 @@ type yamlFile struct {
 //	path 为空：内嵌默认（可被 env 覆盖）；显式 path 必须存在（fail-closed）。
 func LoadConfig(path string) (*Config, error) {
 	cfg := &Config{
-		AppName:           "schema-ui-app",
-		AppEnv:            "",
-		LogLevel:          "info",
-		HTTPAddr:          "127.0.0.1:25080", // W15 F-001: loopback default; LAN exposure requires explicit config
-		ReadTimeout:       5 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       60 * time.Second,
-		ShutdownTimeout:   10 * time.Second, // RT-D02 §6 默认
-		DBDialect:         "sqlite",
-		DBPath:            "./data/schema-ui.db",
-		ProfileName:       "admin",
-		AuthAccessTTL:     15 * time.Minute,
-		AuthRefreshTTL:    30 * 24 * time.Hour,
+		AppName:              "schema-ui-app",
+		AppEnv:               "",
+		LogLevel:             "info",
+		HTTPAddr:             "127.0.0.1:25080", // W15 F-001: loopback default; LAN exposure requires explicit config
+		ReadTimeout:          5 * time.Second,
+		WriteTimeout:         10 * time.Second,
+		IdleTimeout:          60 * time.Second,
+		ShutdownTimeout:      10 * time.Second, // RT-D02 §6 默认
+		DBDialect:            "sqlite",
+		DBPath:               "./data/schema-ui.db",
+		ProfileName:          "admin",
+		AuthAccessTTL:        15 * time.Minute,
+		AuthRefreshTTL:       30 * 24 * time.Hour,
 		AdminInitialPassword: "",
 	}
 

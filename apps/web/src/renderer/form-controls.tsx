@@ -535,6 +535,7 @@ function NumberField({
   min,
   max,
   step,
+  unit,
 }: {
   id: string;
   label: string;
@@ -547,7 +548,21 @@ function NumberField({
   min?: number;
   max?: number;
   step?: number;
+  /** "yuan" (Host-local): display/collect in yuan, wire stays integer minor units. */
+  unit?: string;
 }) {
+  // yuan display mode: the wire value is integer minor units (分); the input
+  // shows yuan with cent granularity and commits back integer cents. Matches
+  // the wallet-voucher amount convention; no other field is affected.
+  const scale = unit === "yuan" ? 100 : undefined;
+  const displayValue = (wire: number | undefined): number | string => {
+    if (wire === undefined || !Number.isFinite(wire)) {
+      return "";
+    }
+    // Number inputs cannot hold trailing zeros; step 0.01 + round-trip commit
+    // below keep the precision at cent granularity either way.
+    return scale !== undefined ? wire / scale : wire;
+  };
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-medium text-muted-foreground/80 select-none">
@@ -558,17 +573,23 @@ function NumberField({
         type="number"
         // An empty input renders blank, not "0"; a cleared number is submitted
         // as undefined (field omitted) so the backend default applies (D7).
-        value={Number.isFinite(value) ? value : ""}
+        value={displayValue(value)}
         disabled={disabled}
         readOnly={readOnly}
         aria-required={required === true ? true : undefined}
         aria-describedby={describedBy}
-        min={min}
-        max={max}
-        step={step}
+        min={min !== undefined && scale !== undefined ? min / scale : min}
+        max={max !== undefined && scale !== undefined ? max / scale : max}
+        step={scale !== undefined ? (step ?? 0.01) : step}
         onChange={(event) => {
           const next = event.target.valueAsNumber;
-          onChange(Number.isFinite(next) ? next : undefined);
+          if (!Number.isFinite(next)) {
+            onChange(undefined);
+            return;
+          }
+          // Round to the nearest integer minor unit so binary float drift
+          // (e.g. 9.9 * 100 = 990.0000000000001) never mints a wrong cent.
+          onChange(scale !== undefined ? Math.round(next * scale) : next);
         }}
       />
     </div>
@@ -920,9 +941,10 @@ function FieldControl({
             readOnly={readOnly}
             required={required}
             describedBy={errorId}
-            min={field.min}
-            max={field.max}
+            min={typeof field.min === "number" ? field.min : undefined}
+            max={typeof field.max === "number" ? field.max : undefined}
             step={field.step}
+            unit={field.unit}
             onChange={emitChange}
           />
           {/* W16-F04: wallet adjustment warning for negative or large deltas. */}
@@ -943,6 +965,8 @@ function FieldControl({
           readOnly={readOnly}
           required={required}
           describedBy={errorId}
+          min={typeof field.min === "string" ? field.min : undefined}
+          max={typeof field.max === "string" ? field.max : undefined}
           onChange={emitChange}
         />
       );

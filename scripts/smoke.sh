@@ -18,7 +18,10 @@
 #   API_BASE_URL         默认 http://localhost:25080
 #   WEB_BASE_URL         默认 http://localhost:25081
 #   SMOKE_USERNAME       默认 admin
-#   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）
+#   SMOKE_PASSWORD       必填（无默认，禁止猜测 secret）；缺省时回退到
+#                        ADMIN_PASSWD（本地 gitignored configs/.env / 环境变量的
+#                        当前 admin 现密码声明，见 AGENTS.md「本地开发环境」节）
+#                        —— 连现有库时由此避免因不知道 admin 现密码而撞墙
 #   SMOKE_PASSWORD_NEW   可选：开启 W16-F01 首登强制改密后的新密码
 #                        （默认 = <SMOKE_PASSWORD>-changed；smoke 走真实改密接口）
 #   SMOKE_SEED_ID         默认 user-admin
@@ -39,7 +42,7 @@ SMOKE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_BASE_URL="${API_BASE_URL:-http://localhost:25080}"
 WEB_BASE_URL="${WEB_BASE_URL:-http://localhost:25081}"
 SMOKE_USERNAME="${SMOKE_USERNAME:-admin}"
-SMOKE_PASSWORD="${SMOKE_PASSWORD:-}"
+SMOKE_PASSWORD="${SMOKE_PASSWORD:-${ADMIN_PASSWD:-}}"
 SMOKE_PASSWORD_NEW="${SMOKE_PASSWORD_NEW:-}"
 SMOKE_SEED_ID="${SMOKE_SEED_ID:-user-admin}"
 SMOKE_EXPECTED_SEED_TOTAL="${SMOKE_EXPECTED_SEED_TOTAL:-1}"

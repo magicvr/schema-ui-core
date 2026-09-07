@@ -11,10 +11,11 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
@@ -35,6 +36,11 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cachePort, err := newCache(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eventBusPort := newEventBus(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	mux, err := newMux(
 		cfg,
 		a,
@@ -48,6 +54,10 @@ func operationalGateServer(t *testing.T, mode config.RuntimeMode) *http.Server {
 		jobs,
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		cachePort,
+		eventBusPort,
+		ratelimit.NewProvider(),
+		nil, // tr: this plan has no channel.telegram
 	)
 	if err != nil {
 		t.Fatal(err)

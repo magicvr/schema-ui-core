@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
@@ -18,7 +19,7 @@ func TestReadyzObjectProbes(t *testing.T) {
 	build := func(probes ...func(context.Context) error) *http.ServeMux {
 		env := newAuthTestEnv(t)
 		mux := http.NewServeMux()
-		RegisterWithMFAProbes(mux, env.a, env.st, operationlog.Recorder(nil), kernel.Plan{}, nil, nil, nil, probes...)
+		RegisterWithMFAProbes(mux, env.a, env.st, operationlog.Recorder(nil), kernel.Plan{}, nil, ratelimit.NewProvider(), nil, nil, probes...)
 		_ = auth.IdentityFrom // keep import stable if helpers change
 		return mux
 	}

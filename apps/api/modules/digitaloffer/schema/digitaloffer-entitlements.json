@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "pageId": "digitaloffer-entitlements",
+    "title": "Digital entitlements",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.row.request",
+      "table.sort",
+      "actions.page.trigger"
+    ]
+  },
+  "actions": {
+    "voidEntitlement": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/digitaloffer/entitlements/{id}/void",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "digitaloffer-entitlements",
+    "children": [
+      {
+        "type": "form",
+        "id": "digitaloffer-entitlements-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "digitaloffer-entitlements-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.digitaloffer.search.q"
+            },
+            {
+              "id": "subjectId",
+              "type": "input",
+              "labelKey": "schema.digitaloffer.field.subjectId"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "schema.digitaloffer.field.status",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.digitaloffer.status.all"
+                },
+                {
+                  "value": "active",
+                  "labelKey": "schema.digitaloffer.status.active"
+                },
+                {
+                  "value": "voided",
+                  "labelKey": "schema.digitaloffer.status.voided"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "digitaloffer-entitlements-table",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"digitaloffer.entitlement.void\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "subjectId",
+              "label": "Subject",
+              "sortable": true,
+              "labelKey": "schema.digitaloffer.column.subjectId"
+            },
+            {
+              "field": "offerId",
+              "label": "Offer",
+              "labelKey": "schema.digitaloffer.column.offerId"
+            },
+            {
+              "field": "purchaseId",
+              "label": "Purchase",
+              "labelKey": "schema.digitaloffer.column.purchaseId"
+            },
+            {
+              "field": "form",
+              "label": "Form",
+              "labelKey": "schema.digitaloffer.column.form"
+            },
+            {
+              "field": "remainingCount",
+              "label": "Remaining",
+              "labelKey": "schema.digitaloffer.column.remaining"
+            },
+            {
+              "field": "expiresAt",
+              "label": "Expires",
+              "sortable": true,
+              "labelKey": "schema.digitaloffer.column.expires"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.digitaloffer.column.status"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.digitaloffer.column.created"
+            }
+          ],
+          "dataSource": "/api/digitaloffer/entitlements",
+          "actions": [
+            {
+              "key": "void",
+              "label": "Void",
+              "actionRef": "voidEntitlement",
+              "permissionIntent": "edit",
+              "labelKey": "schema.digitaloffer.action.void",
+              "confirm": "Voiding is final; the entitlement becomes invalid for the subject.",
+              "confirmKey": "schema.digitaloffer.void.message",
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

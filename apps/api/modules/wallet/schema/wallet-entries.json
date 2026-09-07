@@ -6,7 +6,6 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "permissions.inheritance",
       "table.sort",
       "data.route-binding"
     ]

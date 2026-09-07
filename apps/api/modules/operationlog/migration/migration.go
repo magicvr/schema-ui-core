@@ -276,6 +276,7 @@ var (
 	operationLogWalletJobsPGDDL         = pgTimeDDL(operationLogWalletJobsDDL)
 	operationLogServiceCredentialsPGDDL = pgTimeDDL(operationLogServiceCredentialsDDL)
 	operationLogMailEventsPGDDL         = pgTimeDDL(operationLogMailEventsDDL)
+	operationLogDigitalOfferPGDDL       = pgTimeDDL(operationLogDigitalOfferDDL)
 	operationLogArchivePGDDL            = pgTimeDDL(operationLogArchiveDDL)
 )
 
@@ -478,6 +479,14 @@ func Descriptors() []kernel.MigrationContribution {
 			Apply:                migrateOperationLogMailEvents,
 			ApplyPostgres:        MailEventsPGApply(),
 		},
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log_digitaloffer_events"},
+			Version:              71,
+			Name:                 "operation_log_digitaloffer_events",
+			Checksum:             kernel.MigrationChecksum(operationLogDigitalOfferDDL, "0071:operation-log-digitaloffer-events:v1"),
+			Apply:                migrateOperationLogDigitalOffer,
+			ApplyPostgres:        DigitalOfferEventsPGApply(),
+		},
 	}
 }
 
@@ -488,6 +497,22 @@ var operationLogMailEventsDDL = []string{
 	`CREATE TABLE operation_log (
   id         TEXT PRIMARY KEY,
   event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update','mfa.enroll','mfa.confirm','mfa.disable','mfa.recovery-rotate','mfa.admin-reset','mfa.login','wallet.account-create','wallet.account-update','wallet.adjust','wallet.freeze','wallet.unfreeze','wallet.reconcile','wallet.deduct-frozen','account.avatar-change','wallet.reconcile.queued','wallet.reconcile.failed','wallet.reconcile.cancelled','service-credentials.create','service-credentials.use','service-credentials.revoke','mail.channel-update','mail.test-send')),
+  actor_id   TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  record_id  TEXT,
+  detail     TEXT,
+  created_at INTEGER NOT NULL
+)`,
+	`CREATE INDEX idx_operation_log_created_at ON operation_log(created_at DESC)`,
+}
+
+// operationLogDigitalOfferDDL (0071 · workspace-031 post-closure): adds the
+// biz.digital-offer admin audit events (offer create/update/status +
+// entitlement void) to the frozen CHECK enumeration (rebuild like 0053).
+var operationLogDigitalOfferDDL = []string{
+	`CREATE TABLE operation_log (
+  id         TEXT PRIMARY KEY,
+  event      TEXT NOT NULL CHECK (event IN ('records.create','records.update','records.delete','auth.login','auth.logout','auth.refresh','users.create','users.update','users.delete','roles.create','roles.update','roles.delete','settings.update','users.enable','users.disable','users.unlock','account.password-change','account.session-revoke','data.export','data.import','files.upload','files.download','files.delete','dictionary.create','dictionary.update','dictionary.delete','scheduled-tasks.create','scheduled-tasks.update','scheduled-tasks.delete','captcha.settings-update','recycle.restore','recycle.purge','data-permission.policy-update','data-permission.scope-update','mfa.enroll','mfa.confirm','mfa.disable','mfa.recovery-rotate','mfa.admin-reset','mfa.login','wallet.account-create','wallet.account-update','wallet.adjust','wallet.freeze','wallet.unfreeze','wallet.reconcile','wallet.deduct-frozen','account.avatar-change','wallet.reconcile.queued','wallet.reconcile.failed','wallet.reconcile.cancelled','service-credentials.create','service-credentials.use','service-credentials.revoke','mail.channel-update','mail.test-send','bizoffer.offer.create','bizoffer.offer.update','bizoffer.offer.status','bizoffer.entitlement.void')),
   actor_id   TEXT NOT NULL,
   actor_name TEXT NOT NULL,
   record_id  TEXT,
@@ -651,23 +676,37 @@ func migrateOperationLogMFA(tx kernel.Tx) error {
 func MailEventsDDL() []string { return operationLogMailEventsDDL }
 
 func migrateOperationLogMailEvents(tx kernel.Tx) error {
-	return rebuildOperationLogMailEvents(tx, operationLogMailEventsDDL)
+	return rebuildOperationLogWithSessions(tx, operationLogMailEventsDDL, "mail-events-expanded")
 }
 
 // MailEventsPGApply returns the postgres-flavored 0053 apply.
 func MailEventsPGApply() func(kernel.Tx) error {
 	return func(tx kernel.Tx) error {
-		return rebuildOperationLogMailEvents(tx, pgTimeDDL(operationLogMailEventsDDL))
+		return rebuildOperationLogWithSessions(tx, pgTimeDDL(operationLogMailEventsDDL), "mail-events-expanded")
 	}
 }
 
-// rebuildOperationLogMailEvents is the shared dialect-neutral dance used by
-// 0053: like rebuildOperationLogWithCorrelation, plus the 0048
+// migrateOperationLogDigitalOffer (0071 · workspace-031 post-closure) expands
+// the operation_log event CHECK with the biz.digital-offer audit events. Same
+// side-table-preserving dance as 0053.
+func migrateOperationLogDigitalOffer(tx kernel.Tx) error {
+	return rebuildOperationLogWithSessions(tx, operationLogDigitalOfferDDL, "digitaloffer-events-expanded")
+}
+
+// DigitalOfferEventsPGApply returns the postgres-flavored 0071 apply.
+func DigitalOfferEventsPGApply() func(kernel.Tx) error {
+	return func(tx kernel.Tx) error {
+		return rebuildOperationLogWithSessions(tx, operationLogDigitalOfferPGDDL, "digitaloffer-events-expanded")
+	}
+}
+
+// rebuildOperationLogWithSessions is the shared dialect-neutral dance used by
+// 0053/0071: like rebuildOperationLogWithCorrelation, plus the 0048
 // operation_log_session side table — BOTH carry an FK that the rebuild rename
 // would rewrite onto operation_log_old (leaving dangling references after the
 // drop), so each is backed up, dropped before the rename, recreated after,
 // and refilled.
-func rebuildOperationLogMailEvents(tx kernel.Tx, ddl []string) error {
+func rebuildOperationLogWithSessions(tx kernel.Tx, ddl []string, label string) error {
 	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
 SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
 		return fmt.Errorf("backup operation log correlations: %w", err)
@@ -682,7 +721,7 @@ SELECT operation_id, session_id FROM operation_log_session`); err != nil {
 	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
 		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
 	}
-	if err := rebuildOperationLog(tx, ddl, "mail-events-expanded"); err != nil {
+	if err := rebuildOperationLog(tx, ddl, label); err != nil {
 		return err
 	}
 	for _, statement := range operationLogCorrelationDDL {

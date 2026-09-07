@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"os"
@@ -82,14 +84,25 @@ func main() {
 }
 
 // resolveJWTSecret returns the signing secret, failing closed outside
-// development when AUTH_JWT_SECRET is missing (GOAL-005 D-004).
+// development when AUTH_JWT_SECRET is missing (GOAL-005 D-004). W16 F-001
+// (GOAL-017 A-001): development now generates an ephemeral random key per
+// session instead of using a public hardcoded fallback, eliminating token
+// forgery across dev instances and accidental production leaks.
 func resolveJWTSecret(cfg *config.Config, logger *slog.Logger) (string, error) {
 	if cfg.AuthJWTSecret != "" {
 		return cfg.AuthJWTSecret, nil
 	}
 	if cfg.AppEnv == "development" {
-		logger.Warn("AUTH_JWT_SECRET not set; using an insecure development signing key")
-		return "dev-only-insecure-jwt-secret-change-me", nil
+		// W16 F-001: generate ephemeral random key (32 bytes = 256 bits) for this
+		// session. Every server restart invalidates prior dev tokens, preventing
+		// cross-instance forgery and accidental production use.
+		randomBytes := make([]byte, 32)
+		if _, err := rand.Read(randomBytes); err != nil {
+			return "", fmt.Errorf("generate ephemeral JWT secret: %w", err)
+		}
+		secret := base64.StdEncoding.EncodeToString(randomBytes)
+		logger.Warn("AUTH_JWT_SECRET not set; generated ephemeral random key for this development session (tokens expire on restart)")
+		return secret, nil
 	}
 	return "", fmt.Errorf("AUTH_JWT_SECRET must be set in non-development environment")
 }

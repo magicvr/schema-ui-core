@@ -16,16 +16,26 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/cache"
+	telegraminternal "github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/eventbus"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
-	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/mail"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/manifest"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	accountmodule "github.com/magicvr/schema-ui-core/apps/api/modules/account"
 	activitymodule "github.com/magicvr/schema-ui-core/apps/api/modules/activity"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
+	telegrammodule "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram"
+	telegramstore "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/store"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 	dashboardmodule "github.com/magicvr/schema-ui-core/apps/api/modules/dashboard"
 	datadictionarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary"
@@ -35,6 +45,9 @@ import (
 	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
 	datatransfermodule "github.com/magicvr/schema-ui-core/apps/api/modules/datatransfer"
 	devexamplesmodule "github.com/magicvr/schema-ui-core/apps/api/modules/dev/examples"
+	digitaloffermodule "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer"
+	digitalofferservice "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/service"
+	digitalofferstore "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/store"
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/filelibrary"
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/store"
@@ -55,10 +68,7 @@ import (
 	usersmodule "github.com/magicvr/schema-ui-core/apps/api/modules/users"
 	walletmodule "github.com/magicvr/schema-ui-core/apps/api/modules/wallet"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/objectstore"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/obs"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/server"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
@@ -101,6 +111,14 @@ func ResolvePlan(cfg *config.Config) (kernel.Plan, error) {
 // NewApp creates the Fx composition root. Fx types remain confined to this
 // package; module descriptors and kernel contracts remain framework agnostic.
 func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logger) (*fx.App, error) {
+	return newAppWithOptions(cfg, secretValue, seedHash, logger)
+}
+
+// newAppWithOptions is the composition-root test seam (F-001 / A-006): it builds
+// the exact same Fx graph as NewApp plus caller-supplied fx.Options (e.g.
+// fx.Populate) so a test can prove the injected *TelegramRuntime is the SAME
+// instance the webhook mounts, without bypassing the Fx graph.
+func newAppWithOptions(cfg *config.Config, secretValue, seedHash string, logger *slog.Logger, extra ...fx.Option) (*fx.App, error) {
 	plan, err := ResolvePlan(cfg)
 	if err != nil {
 		return nil, err
@@ -108,7 +126,7 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return fx.New(
+	opts := []fx.Option{
 		fx.Provide(
 			func() *config.Config { return cfg },
 			func() jwtSecret { return jwtSecret(secretValue) },
@@ -125,11 +143,19 @@ func NewApp(cfg *config.Config, secretValue, seedHash string, logger *slog.Logge
 			newTracing,
 			newObserver,
 			newMetricsServer,
+			newCache,
+			newEventBus,
+			newRateLimiters,
+			newTelegramRuntimeForFx,
+			func(tr *TelegramRuntime) kernel.TelegramDispatcher { return tr.Dispatcher },
+			func(tr *TelegramRuntime) kernel.TelegramSender { return tr.Sender },
 			newMux,
 			newServer,
 		),
 		fx.Invoke(registerLifecycle),
-	), nil
+	}
+	opts = append(opts, extra...)
+	return fx.New(opts...), nil
 }
 
 // readinessGate reports whether the module graph Start+Ready succeeded (R5 real
@@ -283,8 +309,12 @@ func newMux(
 	jobRuntime *jobRuntime,
 	observer *obs.Observer,
 	logger *slog.Logger,
+	cachePort kernel.Cache,
+	eventBusPort kernel.EventBus,
+	rateLimiters kernel.RateLimiterProvider,
+	tr *TelegramRuntime,
 ) (*http.ServeMux, error) {
-	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger)
+	return newMuxWithExtraProviders(cfg, a, st, authRepository, operations, settingsRepository, plan, gate, secret, jobRuntime, nil, observer, logger, cachePort, eventBusPort, rateLimiters, tr)
 }
 
 // newMuxWithExtraProviders is the composition-root assembly seam used by the S2
@@ -306,6 +336,10 @@ func newMuxWithExtraProviders(
 	extra []kernel.Provider,
 	observer *obs.Observer,
 	logger *slog.Logger,
+	cachePort kernel.Cache,
+	eventBusPort kernel.EventBus,
+	rateLimiters kernel.RateLimiterProvider,
+	tr *TelegramRuntime,
 ) (*http.ServeMux, error) {
 	// VP-015 R2 (GOAL-003 D-001 §1): the instrumented mux is the single
 	// interception point — central handler registrations (Handle/HandleFunc)
@@ -356,9 +390,9 @@ func newMuxWithExtraProviders(
 	var mfaVerifier handler.MFAVerifier
 	if plan.HasModule("admin.mfa") {
 		// W11 F-004: the previous JWT secret (VP-016 rotation window) is passed
-	// to MFA too, so a mid-rotation AUTH_JWT_SECRET change does not lock MFA
-	// users into an undecryptable second factor (empty = single-key behavior).
-	mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
+		// to MFA too, so a mid-rotation AUTH_JWT_SECRET change does not lock MFA
+		// users into an undecryptable second factor (empty = single-key behavior).
+		mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
 		mfaVerifier = mfaService
 	}
 	// VP-014 R3 (GOAL-004 D-001): ONE kernel.ObjectStore instance serves all
@@ -383,9 +417,26 @@ func newMuxWithExtraProviders(
 	if err != nil {
 		return nil, err
 	}
+	// VP-026 / workspace-026 GOAL-003/004 D-001 (R2/R3): the kernel.Cache
+	// single instance arrives via dependency injection — the Fx container
+	// (fx.Provide(newCache)) owns it for the process lifetime (F-002
+	// disposition), and this seam is its explicit injection point: the FIRST
+	// consumer (a future business-domain module or an explicit caching need)
+	// requests it here. No probe: an in-process store has no external
+	// dependency (Redis stays trigger-gated; the seam declaration lives in
+	// docs/architecture/cache-redis-seam-and-track.md). The Telegram capability
+	// service below is the first consumer of this shared port.
+	logger.Info("kernel cache port ready", "provider", "memory", "max_entries", cfg.CacheMaxEntries)
+	// VP-028 / workspace-028 GOAL-003 D-001 (R2): the kernel.EventBus single
+	// instance arrives via dependency injection — the Fx container owns it for
+	// the process lifetime, and this seam is its explicit injection point. No
+	// probe: an in-process channel bus has no external dependency. Stop drain
+	// happens in registerLifecycle OnStop (D-002 §5).
+	_ = eventBusPort // accepted, not yet consumed (intentional until a consumer lands)
+	logger.Info("kernel event-bus port ready", "provider", "memory", "buffer_size", cfg.EventBusBufferSize)
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
-	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
 	// workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery start/complete
 	// pair is a CENTRAL pre-auth surface (same layer as login) so every
 	// profile with core.auth-session gets it. The completion second-factor
@@ -395,8 +446,8 @@ func newMuxWithExtraProviders(
 	if plan.HasModule("admin.mfa") {
 		recoveryGate = mfaService
 	}
-	handler.RegisterInviteAccept(mux, authRepository)
-	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate)
+	handler.RegisterInviteAccept(mux, authRepository, rateLimiters)
+	handler.RegisterRecovery(mux, operations, authRepository, authRepository, mailSender, recoveryGate, rateLimiters)
 	// I-PROTO-FULL-001 D-UPLOAD: server-side upload contract (07 §7.2). The
 	// uploads namespace is shared with admin.data-transfer (F-02 import reads
 	// uploaded CSV files by id) and admin.file-library.
@@ -484,7 +535,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, activitymodule.New(a, operations))
 	}
 	if plan.HasModule("admin.account") {
-		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets, mailSender))
+		providers = append(providers, accountmodule.New(a, authRepository, operations, avatarAssets, mailSender, rateLimiters))
 	}
 	if plan.HasModule("admin.data-transfer") {
 		providers = append(providers, datatransfermodule.New(a, authRepository, operations, objects))
@@ -505,7 +556,7 @@ func newMuxWithExtraProviders(
 		providers = append(providers, scheduledtasksmodule.New(a, scheduledtasksstore.NewRepository(st), operations, trash))
 	}
 	if plan.HasModule("admin.login-captcha") {
-		providers = append(providers, logincaptchamodule.New(a, captchaService, operations))
+		providers = append(providers, logincaptchamodule.New(a, captchaService, operations, rateLimiters))
 	}
 	// S-09 (GOAL-016 D-002 §2): the data-permission service feeds both the
 	// management routes and the RowScopeProvider contract. v1 wires NO
@@ -520,7 +571,7 @@ func newMuxWithExtraProviders(
 	// admin-reset routes and users.mfa-reset. The auth-session repository
 	// satisfies handler.SessionRevoker for disable/reset session invalidation.
 	if plan.HasModule("admin.mfa") {
-		providers = append(providers, mfamodule.New(a, mfaService, operations, authRepository))
+		providers = append(providers, mfamodule.New(a, mfaService, operations, authRepository, rateLimiters))
 	}
 	if plan.HasModule("admin.recycle-bin") {
 		providers = append(providers, recyclebinmodule.New(a, recycleService, operations))
@@ -529,19 +580,51 @@ func newMuxWithExtraProviders(
 	// reconciliation. Money-path mutations are gated by wallet.adjust; the
 	// module never touches the manifest/profile semantics (content extension).
 	if plan.HasModule("admin.wallet") {
-		walletService := walletmodule.NewService(walletstore.NewRepository(st))
+		walletService := walletmodule.NewService(walletstore.NewRepository(st), st)
 		walletJobs, err := walletmodule.NewJobService(walletService, jobRuntime.repository, jobRuntime.runner, operations)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: walletmodule.ModuleID, Detail: fmt.Sprintf("register wallet jobs: %v", err)}
 		}
 		jobRuntime.enabled.Store(true)
-		// W13 F-012 (GOAL-013 A-001): auto-create wallet paths verify the
-		// owner id against the live user table — no orphan account books.
+		// W13 F-012 (GOAL-013 A-001) / VP-029: the by-owner HTTP surface only
+		// opens USER accounts, so its existence gate checks the live user table
+		// ONLY — a registered external subject id must never mint an
+		// owner_type=user book with no admin.users row (VP-029 A-005 F-001,
+		// workspace-029 GOAL-001). Subject existence stays inside
+		// CreateAccount(owner_type=subject) and voucher Redeem (SubjectExists).
 		walletOwnerExists := handler.OwnerExistsFunc(func(ownerID string) bool {
 			_, err := authRepository.UserByID(ownerID)
 			return err == nil
 		})
-		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists))
+		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists, rateLimiters))
+	}
+	// VP-031 (workspace-031 GOAL-003 · GOAL-002 D-002 v1.0.0): biz.digital-offer —
+	// digital offers + thin purchases over the wallet money primitives +
+	// per-subject entitlements. NOT in any default profile; assembled only when
+	// the plan enables biz.digital-offer. Offer store and wallet store share the
+	// platform runner so each purchase attempt spans both domains in ONE
+	// kernel.Tx (D-002 §4.2); subject existence is gated in-tx (§4.4).
+	if plan.HasModule("biz.digital-offer") {
+		// §6: channel enabled -> the §6 commands register on the live
+		// dispatcher; otherwise the DisabledDispatcher no-op keeps the module
+		// testable and Bot-API independent.
+		var tgDispatcher kernel.TelegramDispatcher
+		var tgSender kernel.TelegramSender
+		if plan.HasModule("channel.telegram") && tr != nil && tr.DispatcherState != nil {
+			tgDispatcher = tr.DispatcherState
+			tgSender = tr.Sender
+		} else {
+			tgDispatcher = telegraminternal.NewDisabledDispatcher()
+			tgSender = telegraminternal.NewDisabledSender()
+		}
+		digitalOfferService := digitalofferservice.NewService(
+			digitalofferstore.NewRepository(st),
+			walletstore.NewRepository(st),
+			subject.NewStore(st),
+			operations,
+			rateLimiters,
+		)
+		providers = append(providers, digitaloffermodule.New(a, digitalOfferService, rateLimiters, tgDispatcher, tgSender))
 	}
 	if plan.HasModule("admin.notifications") {
 		providers = append(providers, notificationsmodule.New(a, authRepository))
@@ -549,6 +632,47 @@ func newMuxWithExtraProviders(
 		a.OnLockOpened = func(userID string) {
 			handler.NotifyAccountEvent(authRepository, userID, "account.locked", time.Now().UTC())
 		}
+	}
+
+	// VP-030 (GOAL-003 R2 / GOAL-004 R3 / F-001 / F-002): channel.telegram — Telegram channel runtime.
+	// Assembled by plan enablement (custom profile or explicit app.modules). The
+	// injected `tr` is THE process instance provided by newTelegramRuntime in the
+	// Fx graph — never reconstructed here (F-001 / A-006: variadic removed).
+	if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil {
+		capabilityService := telegraminternal.NewCapabilityService(tr.BotAPI, cachePort)
+		operatorSender := telegraminternal.NewCapabilityInvalidatingSender(
+			tr.Sender,
+			capabilityService,
+			func() int64 {
+				if tr.Manager == nil {
+					return 0
+				}
+				return tr.Manager.ConnectionStatus().BotID
+			},
+		)
+		tgSettings := a.Middleware(telegraminternal.NewSettingsHandler(
+			tr.Manager,
+			func() bool {
+				return tr.DispatcherState != nil && tr.DispatcherState.HasBusinessHandlers()
+			},
+		))
+		tgLease := a.Middleware(telegraminternal.NewLeaseHandler(tr.Connection))
+		tgOperator := a.Middleware(handler.NewTelegramOperatorHandler(
+			func() (int64, string, string, string) {
+				if tr.Manager == nil {
+					return 0, "unconfigured", "none", ""
+				}
+				status := tr.Manager.ConnectionStatus()
+				return status.BotID, status.State, status.Receiver, tr.Manager.GetToken()
+			},
+			func() bool {
+				return tr.DispatcherState != nil && tr.DispatcherState.HasBusinessHandlers()
+			},
+			telegramstore.NewRepository(st),
+			operatorSender,
+			capabilityService,
+		))
+		providers = append(providers, telegrammodule.New(tr.Webhook, tgSettings, tgLease, tgOperator))
 	}
 	providers = append(providers, extra...)
 	set, err := kernel.RegisterContributions(context.Background(), plan, providers)
@@ -707,6 +831,165 @@ func newObjectStore(cfg *config.Config) (kernel.ObjectStore, func(context.Contex
 	return objectstore.NewLocal(root), nil, nil
 }
 
+// newRateLimiters builds THE shared kernel.RateLimiterProvider (VP-027 /
+// workspace-027 GOAL-003 D-001, R2): the in-memory factory. The Fx container
+// owns it for the process lifetime (combination-root single holder, seam doc
+// §2.4); a future Redis-tier provider replaces it at composition when RT-Q05
+// triggers. No probe: an in-process store has no external dependency.
+func newRateLimiters() kernel.RateLimiterProvider {
+	return ratelimit.NewProvider()
+}
+
+// newCache builds THE shared kernel.Cache instance (VP-026 / workspace-026
+// GOAL-003 D-001): the in-memory provider with the configured bounded-entry
+// budget. There is no readyz probe — an in-process store has no external
+// dependency. Zero on a loader-bypassed (zero-value) Config means "use the
+// load default" (mirrors the db rules and newObjectStore's empty-driver
+// handling); a negative budget is a programming error and fails closed.
+func newCache(cfg *config.Config) (kernel.Cache, error) {
+	budget := cfg.CacheMaxEntries
+	if budget < 0 {
+		return nil, fmt.Errorf("composition: cache.max_entries must be positive (got %d)", cfg.CacheMaxEntries)
+	}
+	if budget == 0 {
+		budget = config.DefaultCacheMaxEntries
+	}
+	return cache.NewMemory(budget)
+}
+
+// newEventBus builds THE shared kernel.EventBus instance (VP-028 / workspace-028
+// GOAL-003 D-001): the in-memory provider with the configured per-subscription
+// buffer size. There is no readyz probe — an in-process channel bus has no
+// external dependency. <= 0 on a loader-bypassed Config or explicit YAML/env
+// means "use the default" (mirrors the cache zero-value handling); the provider
+// falls back to kernel.DefaultEventBusBuffer.
+func newEventBus(cfg *config.Config, logger *slog.Logger) kernel.EventBus {
+	buffer := cfg.EventBusBufferSize
+	if buffer == 0 {
+		buffer = config.DefaultEventBusBuffer
+	}
+	return eventbus.NewMemory(buffer, logger)
+}
+
+// TelegramRuntime holds the process-level Telegram ports and state (F-001).
+type TelegramRuntime struct {
+	Dispatcher kernel.TelegramDispatcher
+	// DispatcherState is the concrete runtime probe used by the operator
+	// surface to reject business-handler occupancy without widening the kernel
+	// TelegramDispatcher contract.
+	DispatcherState *telegraminternal.Dispatcher
+	Sender          kernel.TelegramSender
+	BotAPI          *telegraminternal.BotAPIClient
+	Manager         *telegraminternal.RuntimeManager
+	Connection      *telegraminternal.ConnectionManager
+	Webhook         *telegraminternal.WebhookHandler
+}
+
+type telegramRuntimeOptions struct {
+	APIBaseURL string
+	// HTTPClient is an internal test seam; production leaves it nil so the
+	// standard library client is constructed with the configured API base URL.
+	HTTPClient *http.Client
+}
+
+type telegramRuntimeParams struct {
+	fx.In
+	Plan         kernel.Plan
+	Config       *config.Config
+	Store        kernel.Store
+	RateLimiters kernel.RateLimiterProvider
+	Options      *telegramRuntimeOptions `optional:"true"`
+}
+
+func newTelegramRuntimeForFx(params telegramRuntimeParams) (*TelegramRuntime, error) {
+	options := telegramRuntimeOptions{}
+	if params.Options != nil {
+		options = *params.Options
+	}
+	return buildTelegramRuntime(params.Plan, params.Config, params.Store, params.RateLimiters, options)
+}
+
+// newTelegramRuntime is the direct non-Fx test/adaptation seam.
+func newTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider) (*TelegramRuntime, error) {
+	return buildTelegramRuntime(plan, cfg, st, rateLimiters, telegramRuntimeOptions{})
+}
+
+// buildTelegramRuntime builds the shared TelegramRuntime for the process (F-001).
+// The at-rest master key is resolved the same way as the mail channel
+// (F-002 / A-006): operator-passphrase env (TELEGRAM_MASTER_KEY) or an
+// auto-generated key file beside the database — never a source constant.
+func buildTelegramRuntime(plan kernel.Plan, cfg *config.Config, st kernel.Store, rateLimiters kernel.RateLimiterProvider, options telegramRuntimeOptions) (*TelegramRuntime, error) {
+	if plan.HasModule("channel.telegram") {
+		masterKeyPath := cfg.TelegramMasterKeyPath
+		if strings.TrimSpace(masterKeyPath) == "" {
+			masterKeyPath = filepath.Join(filepath.Dir(cfg.DBPath), "telegram-master.key")
+		}
+		masterKey, err := mail.LoadOrCreateMasterKey(cfg.TelegramMasterKey, masterKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("composition: telegram master key: %w", err)
+		}
+		subStore := subject.NewStore(st)
+		inboundStore := telegramstore.NewRepository(st)
+		disp := telegraminternal.NewDispatcher()
+		mockSender := telegraminternal.NewCaptureSender()
+		rt, err := telegraminternal.NewRuntimeManagerWithSettings(cfg.TelegramBotToken, cfg.TelegramWebhookSecret, cfg.TelegramMode, cfg.TelegramWebhookPublicBaseURL, mockSender, masterKey, st)
+		if err != nil {
+			return nil, fmt.Errorf("composition: telegram runtime: %w", err)
+		}
+		// A-012 F-008: the outbound sender rides the same test seam as the
+		// Bot API / polling clients. Production options are zero-valued, so
+		// NewHTTPSender still defaults to the real Bot API client and URL —
+		// no production semantics change; the Telegram-enabled composition-root
+		// acceptance test can then capture replies through the fake client
+		// instead of touching the real network.
+		sender := telegraminternal.NewHTTPSender(rt, options.HTTPClient, options.APIBaseURL)
+		webhook := telegraminternal.NewWebhookHandler(telegraminternal.HandlerConfig{
+			TokenGetter:  rt.GetToken,
+			SecretGetter: rt.GetSecret,
+			RateLimiters: rateLimiters,
+			SubjectStore: subStore,
+			BotIDGetter: func() (int64, error) {
+				status := rt.ConnectionStatus()
+				if status.BotID <= 0 {
+					return 0, fmt.Errorf("telegram: bot identity is unavailable")
+				}
+				return status.BotID, nil
+			},
+			InboundStore: inboundStore,
+			Dispatcher:   disp,
+			Sender:       sender,
+		})
+		botAPI := telegraminternal.NewBotAPIClient(rt, options.HTTPClient, options.APIBaseURL)
+		pollingAPI := telegraminternal.NewPollingBotAPIClient(rt, options.HTTPClient, options.APIBaseURL)
+		connection := telegraminternal.NewConnectionManager(rt, disp, botAPI, pollingAPI, webhook.HandlePollingUpdate)
+		rt.SetSettingsChangedHandler(connection.Reconcile)
+		return &TelegramRuntime{
+			Dispatcher:      disp,
+			DispatcherState: disp,
+			Sender:          sender,
+			BotAPI:          botAPI,
+			Manager:         rt,
+			Connection:      connection,
+			Webhook:         webhook,
+		}, nil
+	}
+	return &TelegramRuntime{
+		Dispatcher: telegraminternal.NewDisabledDispatcher(),
+		Sender:     telegraminternal.NewDisabledSender(),
+	}, nil
+}
+
+// ResolveTelegramPorts returns the process-level TelegramDispatcher and TelegramSender (D-002 §1 / F-001).
+// It is a standalone helper for non-Fx consumers (tests, external harnesses);
+// the Fx production graph injects the single *TelegramRuntime directly.
+func ResolveTelegramPorts(plan kernel.Plan, cfg *config.Config, st kernel.Store) (kernel.TelegramDispatcher, kernel.TelegramSender, error) {
+	tr, err := newTelegramRuntime(plan, cfg, st, newRateLimiters())
+	if err != nil {
+		return nil, nil, err
+	}
+	return tr.Dispatcher, tr.Sender, nil
+}
+
 // newMailRuntime builds THE kernel.MailSender for the process (VP-017 R7 /
 // workspace-017 GOAL-008; Root D-007): a *mail.Switcher over the mail_config
 // runtime row. The row seeds once from the file/env layer resolution
@@ -782,10 +1065,14 @@ func newServer(cfg *config.Config, mux *http.ServeMux, logger *slog.Logger) *htt
 	return server.New(cfg, handler.WithOperationalGate(cfg, mux, routes), logger)
 }
 
-func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing) {
+func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logger *slog.Logger, cfg *config.Config, plan kernel.Plan, gate *readinessGate, jobs *jobRuntime, operations *operationlog.Repository, settingsRepository *settingsrepository.Repository, metrics *obs.Server, tracing *obs.Tracing, eventBusPort kernel.EventBus, tr *TelegramRuntime) {
 	var listener net.Listener
 	var stopRetention func()
-	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }))
+	var connection *telegraminternal.ConnectionManager
+	if tr != nil {
+		connection = tr.Connection
+	}
+	runtime := kernel.NewRuntime(withLifecycleHooks(plan, st, logger, func() bool { return listener != nil }, connection))
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			ln, err := net.Listen("tcp", srv.Addr)
@@ -866,17 +1153,21 @@ func registerLifecycle(lc fx.Lifecycle, srv *http.Server, st kernel.Store, logge
 			}
 			metricsErr := metrics.Stop(ctx)
 			jobsErr := jobs.Stop(ctx)
+			// VP-028 / workspace-028 GOAL-003 D-001 (R2 / D-002 §5): Stop drains
+			// buffered events, waits in-flight handlers against ctx, then rejects
+			// further Publish/Register/Subscribe.
+			eventBusErr := eventBusPort.Stop(ctx)
 			runtimeErr := runtime.Stop(ctx)
 			closeErr := st.Close()
 			// GOAL-004 D-001 §6: shutdown flushes pending spans through the
 			// OTLP exporter before the process exits.
 			tracingErr := tracing.Shutdown(ctx)
-			return errors.Join(shutdownErr, metricsErr, jobsErr, runtimeErr, closeErr, tracingErr)
+			return errors.Join(shutdownErr, metricsErr, jobsErr, eventBusErr, runtimeErr, closeErr, tracingErr)
 		},
 	})
 }
 
-func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, listenerReady func() bool) kernel.Plan {
+func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, listenerReady func() bool, connection *telegraminternal.ConnectionManager) kernel.Plan {
 	for i := range plan.Modules {
 		moduleID := plan.Modules[i].ID
 		plan.Modules[i].Hooks = kernel.Hooks{
@@ -889,6 +1180,13 @@ func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, 
 				case "core.auth-session":
 					if err := st.Ping(ctx); err != nil {
 						return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: moduleID, Detail: fmt.Sprintf("store is not available: %v", err)}
+					}
+				case "channel.telegram":
+					if connection == nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: moduleID, Detail: "telegram connection manager is unavailable"}
+					}
+					if err := connection.Start(ctx); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: moduleID, Detail: fmt.Sprintf("telegram connection start failed: %v", err)}
 					}
 				}
 				logger.Debug("module started", "module_id", moduleID)
@@ -903,9 +1201,19 @@ func withLifecycleHooks(plan kernel.Plan, st kernel.Store, logger *slog.Logger, 
 						return &kernel.Error{Code: kernel.CodeLifecycleReadyFailed, ModuleID: moduleID, Detail: fmt.Sprintf("system-data readiness failed: %v", err)}
 					}
 				}
+				if moduleID == "channel.telegram" && connection != nil {
+					if err := connection.Ready(ctx); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleReadyFailed, ModuleID: moduleID, Detail: fmt.Sprintf("telegram connection readiness failed: %v", err)}
+					}
+				}
 				return nil
 			},
-			Stop: func(context.Context) error {
+			Stop: func(ctx context.Context) error {
+				if moduleID == "channel.telegram" && connection != nil {
+					if err := connection.Stop(ctx); err != nil {
+						return &kernel.Error{Code: kernel.CodeLifecycleStopFailed, ModuleID: moduleID, Detail: fmt.Sprintf("telegram connection stop failed: %v", err)}
+					}
+				}
 				logger.Debug("module stopped", "module_id", moduleID)
 				return nil
 			},

@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -20,6 +21,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/manifest"
 	walletschema "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/schema"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/subject"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
 )
 
 // ModuleID is the stable admin.wallet module identifier.
@@ -27,13 +30,40 @@ const ModuleID = "admin.wallet"
 
 // Service implements handler.WalletService over the wallet store.
 type Service struct {
-	repo *walletstore.Repository
-	now  func() time.Time
+	repo     *walletstore.Repository
+	subjects *subject.Store
+	vouchers *voucher.Service
+	now      func() time.Time
 }
 
 // NewService constructs the wallet domain service.
-func NewService(repo *walletstore.Repository) *Service {
-	return &Service{repo: repo, now: time.Now}
+func NewService(repo *walletstore.Repository, runners ...walletstore.TxRunner) *Service {
+	var runner walletstore.TxRunner
+	if len(runners) > 0 {
+		runner = runners[0]
+	}
+	var subStore *subject.Store
+	var vSvc *voucher.Service
+	if runner != nil {
+		subStore = subject.NewStore(runner)
+		vSvc = voucher.NewService(runner, repo, subStore)
+	}
+	return &Service{
+		repo:     repo,
+		subjects: subStore,
+		vouchers: vSvc,
+		now:      time.Now,
+	}
+}
+
+// SubjectStore returns the external subjects store.
+func (s *Service) SubjectStore() *subject.Store {
+	return s.subjects
+}
+
+// VoucherService returns the prepaid voucher service.
+func (s *Service) VoucherService() *voucher.Service {
+	return s.vouchers
 }
 
 // newID returns a time-ordered hex id: a Unix-millisecond prefix, a
@@ -71,12 +101,22 @@ func (s *Service) GetAccount(id string) (*walletstore.Account, error) {
 // the test double); currency defaults to CNY.
 func (s *Service) CreateAccount(ownerType, ownerID, currency string, now time.Time) (*walletstore.Account, error) {
 	switch ownerType {
-	case walletstore.OwnerUser, walletstore.OwnerBusiness, walletstore.OwnerSystem:
+	case walletstore.OwnerUser, walletstore.OwnerBusiness, walletstore.OwnerSystem, walletstore.OwnerSubject:
 	default:
 		return nil, walletstore.ErrInvalidEntry
 	}
 	if ownerID == "" {
 		return nil, walletstore.ErrInvalidEntry
+	}
+	// For subject account: must reference an existing external subject (W13 F-012 principle, no orphan ledgers).
+	if ownerType == walletstore.OwnerSubject && s.subjects != nil {
+		exists, err := s.subjects.SubjectExists(context.Background(), ownerID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, walletstore.ErrNotFound
+		}
 	}
 	id, err := newID(now)
 	if err != nil {
@@ -153,6 +193,46 @@ func (s *Service) ListReconcileRuns(page, pageSize int) ([]walletstore.Reconcili
 	return s.repo.ListReconcileRuns(page, pageSize)
 }
 
+// GenerateVouchers implements handler.WalletService (VP-029 R3).
+func (s *Service) GenerateVouchers(ctx context.Context, batchID string, count int, amount int64, currency string, expiresAt *time.Time, now time.Time) ([]voucher.GeneratedVoucher, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.GenerateBatch(ctx, batchID, count, amount, currency, expiresAt, now)
+}
+
+// ListVouchers implements handler.WalletService (VP-029 R3).
+func (s *Service) ListVouchers(ctx context.Context, batchID, status string, page, pageSize int) ([]voucher.Voucher, int, error) {
+	if s.vouchers == nil {
+		return nil, 0, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.ListVouchers(ctx, batchID, status, page, pageSize)
+}
+
+// GetVoucher implements handler.WalletService (VP-029 R3).
+func (s *Service) GetVoucher(ctx context.Context, id string) (*voucher.Voucher, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.GetVoucher(ctx, id)
+}
+
+// VoidVoucher implements handler.WalletService (VP-029 R3).
+func (s *Service) VoidVoucher(ctx context.Context, id string, now time.Time) error {
+	if s.vouchers == nil {
+		return errors.New("voucher service not initialized")
+	}
+	return s.vouchers.VoidVoucher(ctx, id, now)
+}
+
+// RedeemForUser implements handler.WalletService (VP-029 R5 · GOAL-005).
+func (s *Service) RedeemForUser(ctx context.Context, userID, actorName, code string, now time.Time) (*voucher.RedeemResult, error) {
+	if s.vouchers == nil {
+		return nil, errors.New("voucher service not initialized")
+	}
+	return s.vouchers.RedeemForUser(ctx, userID, actorName, code, now)
+}
+
 // Provider implements kernel.Provider for admin.wallet.
 type Provider struct {
 	a          *auth.Authenticator
@@ -163,11 +243,12 @@ type Provider struct {
 	// paths verify the owner id against the live user table before opening an
 	// account. Wired from the composition root (auth-session repository).
 	ownerExists handler.OwnerExistsFunc
+	limiters    kernel.RateLimiterProvider
 }
 
 // New constructs the wallet provider.
-func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder, ownerExists handler.OwnerExistsFunc) *Provider {
-	return &Provider{a: a, service: service, jobs: jobs, operations: operations, ownerExists: ownerExists}
+func New(a *auth.Authenticator, service *Service, jobs *JobService, operations operationlog.Recorder, ownerExists handler.OwnerExistsFunc, limiters kernel.RateLimiterProvider) *Provider {
+	return &Provider{a: a, service: service, jobs: jobs, operations: operations, ownerExists: ownerExists, limiters: limiters}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -193,10 +274,14 @@ func (p *Provider) Descriptor() kernel.Module {
 				"POST /api/wallet/jobs/{id}/retry", "GET /api/wallet/jobs/{id}/result",
 				// GOAL-022 (D-002 §2): identity-scoped self-service surface.
 				"GET /api/wallet/me", "POST /api/wallet/me", "GET /api/wallet/me/entries",
+				"POST /api/wallet/me/redeem",
+				// VP-029 R3 (GOAL-003): prepaid vouchers surface.
+				"POST /api/wallet/vouchers/batches", "GET /api/wallet/vouchers",
+				"GET /api/wallet/vouchers/{id}", "POST /api/wallet/vouchers/{id}/void",
 			},
-			Pages:       []string{"wallet", "wallet-entries", "my-wallet"},
-			Navigation:  []string{"menu_wallet", "menu_wallet_self"},
-			Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust"},
+			Pages:       []string{"wallet", "wallet-entries", "my-wallet", "wallet-vouchers"},
+			Navigation:  []string{"menu_wallet", "menu_wallet_self", "menu_wallet_vouchers"},
+			Permissions: []string{"wallet.read", "wallet.write", "wallet.adjust", "wallet.voucher.issue"},
 			Fragments:   []string{"wallet"},
 		},
 	}
@@ -213,7 +298,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		}
 	}
 	// GOAL-022 (D-002 §2): identity-scoped self-service routes.
-	for _, route := range handler.WalletSelfRoutes(p.a, p.service, p.operations, ModuleID) {
+	for _, route := range handler.WalletSelfRoutes(p.a, p.service, p.operations, ModuleID, p.limiters) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
@@ -242,10 +327,22 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	}); err != nil {
 		return err
 	}
+	if err := reg.Schema(kernel.PageContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet-vouchers"},
+		PageID:               "wallet-vouchers",
+		Resources:            []string{"wallet"},
+		Actions:              []string{"list", "create", "update"},
+		DataSource:           "/api/wallet/vouchers",
+		Owner:                ModuleID,
+		Document:             walletschema.SchemaDocuments()["wallet-vouchers"],
+	}); err != nil {
+		return err
+	}
 	for _, permission := range []kernel.PermissionContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.read"}, Permission: "wallet.read", Resource: "wallet", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.write"}, Permission: "wallet.write", Resource: "wallet", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.adjust"}, Permission: "wallet.adjust", Resource: "wallet", Action: "adjust", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "wallet.voucher.issue"}, Permission: "wallet.voucher.issue", Resource: "wallet", Action: "voucher.issue", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	} {
 		if err := reg.Authorization(permission); err != nil {
 			return err
@@ -257,6 +354,18 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "wallet",
 		Order:                10,
 		Label:                "Wallet",
+		Visibility:           authsessiondata.PolicyAdmin,
+		Permission:           "wallet.read",
+		SystemDataVersion:    authsessiondata.SystemDataVersion,
+	}); err != nil {
+		return err
+	}
+	if err := reg.Navigation(kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_wallet_vouchers"},
+		NodeID:               "menu_wallet_vouchers",
+		PageID:               "wallet-vouchers",
+		Order:                11,
+		Label:                "Prepaid vouchers",
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "wallet.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

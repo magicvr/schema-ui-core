@@ -7,7 +7,7 @@
       "app.manifest",
       "app.navigation",
       "actions.upload",
-      "form.controls.extended"
+      "actions.page.trigger"
     ]
   },
   "actions": {

@@ -23,7 +23,7 @@ version: 0.1.0
 ## C9 · B2 F-003b document 字节发布 —— **已兑现 → fixed**
 
 - `PageContribution.Document` 字段随贡献集注入字节；`composition.go:528-579` `RegisterSchemas(mux, set.Pages)`，577 行注释「R6 C6.3: finalized page contributions own both metadata and document bytes; the handler has no static document or owner fallback」；`handler/schema.go` 无静态合并兜底。
-- 回写完成：[W3 Root A-011](../../../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/03-audit/A-011-a010-cohesion-response.md) F-003 行追加「2026-08-23 兑现复核：fixed」。
+- 回写完成：[W3 Root A-011](../../../workspace-003-modular-admin-architecture/GOAL-001-modular-admin-architecture/03-audit/A-011-a010-cohesion-response.md) F-003 行追加「2026-08-23 兑现复核：fixed」。
 
 ## C10 · B3 C4-004 PolicyID/Visibility allowlist —— **未兑现 → 建议续期**
 
@@ -33,7 +33,7 @@ version: 0.1.0
 ## C11 · B4 C5-002 双 Profile Start/Ready 矩阵 —— **已兑现 → fixed**
 
 - `TestDualProfileLifecycleMatrix`（lifecycle_test.go:80-179，mvp/admin × success/start-fail/ready-fail/stop-fail）+ `TestDualProfileContractMatrix`（provider_test.go:514+）交付完整自动化矩阵。
-- 回写完成：[W3 GOAL-011 A-004](../../../../workspace-003-modular-admin-architecture/GOAL-011-r4-c5-acceptance/03-audit/A-004-r4-c5-acceptance-response.md) F-IND-C5-002 行追加「2026-08-23 兑现复核：fixed」。
+- 回写完成：[W3 GOAL-011 A-004](../../../workspace-003-modular-admin-architecture/GOAL-011-r4-c5-acceptance/03-audit/A-004-r4-c5-acceptance-response.md) F-IND-C5-002 行追加「2026-08-23 兑现复核：fixed」。
 
 ## 进度影响
 

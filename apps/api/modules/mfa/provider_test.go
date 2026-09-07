@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/mfa/store"
@@ -54,7 +55,7 @@ func planWithMFA(t *testing.T) kernel.Plan {
 
 func TestMFAProviderRegistersSurfaces(t *testing.T) {
 	a, service, revoker, operations := newMfaTestEnv(t)
-	provider := New(a, service, operations, revoker)
+	provider := New(a, service, operations, revoker, ratelimit.NewProvider())
 	set, err := kernel.RegisterContributions(context.Background(), planWithMFA(t), []kernel.Provider{provider})
 	if err != nil {
 		t.Fatalf("RegisterContributions: %v", err)

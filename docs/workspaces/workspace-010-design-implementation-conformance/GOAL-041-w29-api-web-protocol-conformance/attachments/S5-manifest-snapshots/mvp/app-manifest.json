@@ -1,0 +1,100 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "description": "The schema-ui-core administration workspace.",
+    "homePageRef": "dashboard",
+    "name": "Schema UI Core"
+  },
+  "pages": [
+    {
+      "pageId": "account",
+      "title": "Account",
+      "schemaUrl": "/api/schema/account",
+      "route": "/account",
+      "titleKey": "manifest.title.account"
+    },
+    {
+      "pageId": "dashboard",
+      "title": "Dashboard",
+      "schemaUrl": "/api/schema/dashboard",
+      "route": "/dashboard",
+      "titleKey": "manifest.title.dashboard"
+    },
+    {
+      "pageId": "notifications",
+      "title": "Notifications",
+      "schemaUrl": "/api/schema/notifications",
+      "route": "/notifications",
+      "titleKey": "manifest.title.notifications"
+    },
+    {
+      "pageId": "roles",
+      "title": "Roles",
+      "schemaUrl": "/api/schema/roles",
+      "route": "/roles",
+      "titleKey": "manifest.title.roles"
+    },
+    {
+      "pageId": "users",
+      "title": "Users",
+      "schemaUrl": "/api/schema/users",
+      "route": "/users",
+      "titleKey": "manifest.title.users"
+    },
+    {
+      "pageId": "users-invites",
+      "title": "Invitations",
+      "schemaUrl": "/api/schema/users-invites",
+      "route": "/users-invites",
+      "titleKey": "manifest.title.usersInvites"
+    }
+  ],
+  "navigation": {
+    "top": [],
+    "sidebar": [
+      {
+        "pageRef": "dashboard",
+        "label": "Dashboard",
+        "icon": "dashboard",
+        "visibleWhen": {
+          "when": "$context.features.menu_dashboard == true"
+        },
+        "labelKey": "manifest.nav.dashboard"
+      },
+      {
+        "pageRef": "users",
+        "label": "Users",
+        "icon": "user",
+        "visibleWhen": {
+          "when": "$context.features.menu_users == true"
+        },
+        "labelKey": "manifest.nav.users"
+      },
+      {
+        "pageRef": "roles",
+        "label": "Roles",
+        "icon": "user",
+        "visibleWhen": {
+          "when": "$context.features.menu_roles == true"
+        },
+        "labelKey": "manifest.nav.roles"
+      }
+    ],
+    "user": [
+      {
+        "pageRef": "account",
+        "label": "Account",
+        "icon": "user",
+        "visibleWhen": {
+          "when": "$context.features.menu_account == true"
+        },
+        "labelKey": "manifest.nav.account"
+      }
+    ]
+  }
+}

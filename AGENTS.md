@@ -343,6 +343,12 @@ Skills 与核心方法论**同级必备**：缺 `docs/architecture/` 视为不�
 | 区内 parent 仍短 id | 不把工作区号嵌进 goal id |
 
 
+## 本地开发环境与 admin 凭据约定
+
+- 本地 / 现有库的 `admin` 现密码声明在 gitignored 的 `apps/api/configs/.env`（或进程环境变量）的 **`ADMIN_PASSWD`** 键（canonical 模板与完整说明见 `apps/api/configs/.env.example`）。首次登录强制改密后 `ADMIN_INITIAL_PASSWORD` 不再有效。
+- **AI 助手与自动化测试连接现有库时，从 `.env` / 环境变量读取 `ADMIN_PASSWD` 并以 `admin` 登录**，不要猜测或写死密码；读取到的秘密不得输出到日志/回复、不得提交。
+- `ADMIN_PASSWD` 是**纯声明**：API 不读取、不据此重置密码。若 `must_change_password=1`（admin 尚未改密），按真实首登改密流程处理（smoke 见 `SMOKE_PASSWORD_NEW`）。
+
 ## 快速链接（按项目填写）
 
 - 文档说明：`docs/README.md`

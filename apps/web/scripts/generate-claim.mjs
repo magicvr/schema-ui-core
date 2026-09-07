@@ -28,6 +28,15 @@ const FIXTURE_VERSION = "1.0";
 const SUITE_VERSION = "1.0";
 const ARTIFACT_VERSION = "2.9.0";
 
+// F2 (GOAL-042 D-001): the host support set is a single source of truth in
+// apps/web/src/host/host-support.json, shared with the runtime host-support.ts.
+// The claim's support.pageVersions / support.capabilities MUST be the JSON.
+const hostSupport = JSON.parse(
+  readFileSync(join(WEB_ROOT, "src", "host", "host-support.json"), "utf8"),
+);
+const HOST_PAGE_VERSIONS = hostSupport.supportedPageVersions;
+const HOST_CAPABILITIES = hostSupport.supportedCapabilities;
+
 // Formal 2.9.0 release bindings (tag v2.9.0, commit 81aa1d8; upstream audit
 // 0082). fixture 89baddbc…, content c87c22ad… (release manifest.json).
 const UPSTREAM_SOURCE_COMMIT = "81aa1d8";
@@ -37,17 +46,25 @@ const UPSTREAM_PROTOCOL_CONTENT_SHA256 =
   "c87c22ad2ab4f4f19b93253312d6906b085ae6cd273168cc435d9863809d1c22";
 
 // Suites this repository runs green in CI (zero exclusions) at claim time.
+// Full mandatorySuites union over every claimed capability (capability-registry):
+// app-manifest / app-navigation / host-bootstrap / host-failure /
+// host-conformance-claim / request-construction / component-format /
+// response-mapping / search-table / permissions-inheritance / table-sort /
+// uploads. F-001 (GOAL-041 S2): claim must cover capabilities the served
+// pages actually require, not only the v2.9 deltas.
 const SUITES = [
   { suiteId: "app-manifest", fixtures: 41 },
   { suiteId: "app-navigation", fixtures: 16 },
   { suiteId: "host-bootstrap", fixtures: 23 },
   { suiteId: "host-failure", fixtures: 43 },
   { suiteId: "host-conformance-claim", fixtures: 30 },
-  // v2.9 claimed capabilities' mandatorySuites (capability-registry):
-  // data.route-binding → request-construction; form.controls.readonly →
-  // component-format + request-construction (both run green in CI).
   { suiteId: "request-construction", fixtures: 81 },
   { suiteId: "component-format", fixtures: 5 },
+  { suiteId: "response-mapping", fixtures: 23 },
+  { suiteId: "search-table", fixtures: 11 },
+  { suiteId: "permissions-inheritance", fixtures: 17 },
+  { suiteId: "table-sort", fixtures: 14 },
+  { suiteId: "uploads", fixtures: 13 },
 ];
 
 const packageJson = JSON.parse(readFileSync(join(WEB_ROOT, "package.json"), "utf8"));
@@ -96,7 +113,7 @@ const report = {
   pinnedUpstream: {
     sourceRepo: "https://github.com/magicvr/schema-ui-docs",
     sourceCommit: UPSTREAM_SOURCE_COMMIT,
-    artifactVersion: "2.8.0",
+    artifactVersion: ARTIFACT_VERSION,
     fixtureSha256: UPSTREAM_FIXTURE_SHA256,
     protocolContentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
@@ -116,18 +133,12 @@ const claim = {
     contentSha256: UPSTREAM_PROTOCOL_CONTENT_SHA256,
   },
   support: {
-    pageVersions: ["2.7", "2.9"],
+    pageVersions: [...HOST_PAGE_VERSIONS],
     manifestVersions: ["2.7", "2.8", "2.9"],
-    capabilities: [
-      "app.manifest",
-      "app.navigation",
-      "host.bootstrap",
-      "host.failure-recovery",
-      "host.conformance-claim",
-      // v2.9 (ADR-0039/ADR-0040): dataSource route binding + form readOnly.
-      "data.route-binding",
-      "form.controls.readonly",
-    ],
+    // F2 (GOAL-042 D-001): identical to apps/web/src/host/host-support.json —
+    // the claim attests exactly the host's runtime support set (19 capabilities;
+    // mandatory suites all green, listed below).
+    capabilities: [...HOST_CAPABILITIES],
   },
   conformance: {
     fixtureVersion: FIXTURE_VERSION,

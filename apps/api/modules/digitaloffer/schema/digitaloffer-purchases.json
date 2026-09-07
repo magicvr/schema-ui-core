@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "pageId": "digitaloffer-purchases",
+    "title": "Digital orders",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "table.sort"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "digitaloffer-purchases",
+    "children": [
+      {
+        "type": "form",
+        "id": "digitaloffer-purchases-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "digitaloffer-purchases-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.digitaloffer.search.q"
+            },
+            {
+              "id": "subjectId",
+              "type": "input",
+              "labelKey": "schema.digitaloffer.field.subjectId"
+            },
+            {
+              "id": "offerId",
+              "type": "input",
+              "labelKey": "schema.digitaloffer.field.offerId"
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "digitaloffer-purchases-table",
+        "props": {
+          "columns": [
+            {
+              "field": "subjectId",
+              "label": "Subject",
+              "labelKey": "schema.digitaloffer.column.subjectId"
+            },
+            {
+              "field": "offerName",
+              "label": "Offer",
+              "labelKey": "schema.digitaloffer.column.offerName"
+            },
+            {
+              "field": "amount",
+              "label": "Amount",
+              "sortable": true,
+              "format": "currency",
+              "labelKey": "schema.digitaloffer.column.amount"
+            },
+            {
+              "field": "currency",
+              "label": "Currency",
+              "labelKey": "schema.digitaloffer.column.currency"
+            },
+            {
+              "field": "requestId",
+              "label": "Request ID",
+              "labelKey": "schema.digitaloffer.column.requestId"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.digitaloffer.column.status"
+            },
+            {
+              "field": "createdAt",
+              "label": "Purchased at",
+              "sortable": true,
+              "labelKey": "schema.digitaloffer.column.purchasedAt"
+            }
+          ],
+          "dataSource": "/api/digitaloffer/purchases"
+        }
+      }
+    ]
+  }
+}

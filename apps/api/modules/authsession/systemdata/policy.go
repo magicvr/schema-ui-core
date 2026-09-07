@@ -7,7 +7,14 @@ const (
 	PolicyAdmin             = "system.admin"
 	PolicyAdminEditor       = "system.admin-editor"
 	PolicyAdminEditorViewer = "system.admin-editor-viewer"
-	SystemDataVersion       = 1
+	// SystemDataVersion stamps every permission/navigation contribution
+	// checksum. Bump it whenever the CONTENT of any contribution changes
+	// (label/order/policy/…); the reconcile ledger accepts the new checksums
+	// only on a version increase (same-version mismatch = tamper → fail closed,
+	// see checkLedger). v1 → v2 (2026-09-06 · workspace-031 post-closure):
+	// digital-offer nav label "Digital offers" → "Digital products" and the
+	// new menu_digitaloffer_purchases entry (E-013/E-014).
+	SystemDataVersion = 2
 )
 
 func rolesForPolicy(policyID string) ([]string, bool) {

@@ -52,6 +52,7 @@ go run ./cmd/server
 | `app.profile` (YAML) | `mvp` | `mvp`、`admin`、`demo`；无 `app.modules` 时选内置预设 |
 | `app.modules` (YAML) | 无 | `preset`（内置名或预设文件路径）或内联 `list`；互斥；覆盖 Profile 默认集合 |
 | `ADMIN_INITIAL_PASSWORD` | dev `admin` | 首次种子 admin 密码；生产必填 |
+| `ADMIN_PASSWD` | 无（约定键） | **声明**当前库 `admin` 的现密码（gitignored `configs/.env`），供自动化测试 / AI 助手 / smoke 连现有库登录；**API 不读取、不重置**（见 `.env.example` 说明） |
 | `AUTH_DEV_SESSION_ENABLED` | `false` | 显式本地开发静态会话兜底；**生产禁止启用** |
 
 ### 可观测性（VP-015 · workspace-015）

@@ -177,6 +177,46 @@ describe("loadPageDocument", () => {
     expect(error.message).toContain("catalog");
   });
 
+  // F-001 (GOAL-041 S2): page-level version + capability negotiation, fail-closed.
+  it("rejects a page with an unsupported protocolVersion (UNSUPPORTED_PROTOCOL_VERSION)", async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({
+        meta: {
+          pageId: "overview",
+          title: "Overview",
+          protocolVersion: "2.10",
+          requiredCapabilities: ["app.manifest"],
+        },
+        body: { type: "section" },
+      }),
+    );
+    const error = await expectErrorCode(
+      loadPageDocument(OVERVIEW_PAGE, {}, { baseURL: BASE, fetcher }),
+      "UNSUPPORTED_PROTOCOL_VERSION",
+    );
+    expect(error.message).toContain("2.10");
+  });
+
+  it("rejects a page requiring a capability the host does not support (MISSING_REQUIRED_CAPABILITY)", async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({
+        meta: {
+          pageId: "overview",
+          title: "Overview",
+          protocolVersion: "2.7",
+          requiredCapabilities: ["app.manifest", "host.virtual-reality"],
+        },
+        body: { type: "section" },
+      }),
+    );
+    const error = await expectErrorCode(
+      loadPageDocument(OVERVIEW_PAGE, {}, { baseURL: BASE, fetcher }),
+      "MISSING_REQUIRED_CAPABILITY",
+    );
+    expect(error.message).toContain("host.virtual-reality");
+    expect(error.issues?.some((issue) => issue.message === "host.virtual-reality")).toBe(true);
+  });
+
   it("serves a cached document without refetching or re-validating (W19 perf)", async () => {
     const fetcher = vi.fn(async () => jsonResponse(VALID_DOCUMENT));
     const cache = new Map<string, unknown>();

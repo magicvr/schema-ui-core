@@ -1,6 +1,6 @@
 # VP-017 现行退出分母 · 证据包（R8 · GOAL-009）
 
-> 对照 [VP-017-outbound-mail](../../../../../vision/plans/VP-017-outbound-mail.md) v0.4.0「方向级退出判据（现行 · 再关门用）」1～7 与 Root `GOAL-001-outbound-mail` 成功标准逐条登记。日期：2026-08-24。本文件为关门审计的证据索引，不构成放行本身。
+> 对照 [VP-017-outbound-mail](../../../../vision/plans/VP-017-outbound-mail.md) v0.4.0「方向级退出判据（现行 · 再关门用）」1～7 与 Root `GOAL-001-outbound-mail` 成功标准逐条登记。日期：2026-08-24。本文件为关门审计的证据索引，不构成放行本身。
 
 ## 判据 1 — 内核发送端口仍是唯一合同；公共面无供应商客户端类型
 

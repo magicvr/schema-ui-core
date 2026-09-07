@@ -33,4 +33,4 @@ expect(activitySchema.status()).toBe(401);
 
 ## 验证
 
-修复后全量 e2e 套件复跑结果见 [D-002](../../01-decision/D-002-w14-closeout.md) 关门记录。
+修复后全量 e2e 套件复跑结果见 [D-002](../01-decision/D-002-w14-closeout.md) 关门记录。

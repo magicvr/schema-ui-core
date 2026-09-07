@@ -9,7 +9,7 @@ version: 1.0.0
 
 # E-003 · R-001 处置——e2e 网络层 Bearer 冒烟并入本波
 
-用户指令（2026-08-26）：「把 r-001 并入本波。处理完再关门。」按 [A-001](../../03-audit/A-001-w14-self-closeout.md) §2 的 recommended R-001 实施。
+用户指令（2026-08-26）：「把 r-001 并入本波。处理完再关门。」按 [A-001](../03-audit/A-001-w14-self-closeout.md) §2 的 recommended R-001 实施。
 
 ## 变更
 

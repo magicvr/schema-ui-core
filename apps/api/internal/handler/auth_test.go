@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -334,99 +336,6 @@ func TestLoginRateLimit(t *testing.T) {
 	}
 }
 
-// D2: the sliding window is per-client-identity and expires; successful logins
-// clear the bucket (D-001 P1).
-func TestLoginRateLimiterUnit(t *testing.T) {
-	limiter := newLoginRateLimiter(15*time.Minute, 2, 1<<16)
-	now := time.Now().UTC()
-	limiter.record("10.0.0.1|admin", now)
-	if !limiter.allow("10.0.0.1|admin", now) {
-		t.Fatal("first failure under the limit must still allow")
-	}
-	limiter.record("10.0.0.1|admin", now)
-	if limiter.allow("10.0.0.1|admin", now) {
-		t.Fatal("attempt with the window full must be blocked")
-	}
-	if !limiter.allow("10.0.0.2|admin", now) {
-		t.Fatal("a different IP must not inherit another IP's failures")
-	}
-	if !limiter.allow("10.0.0.1|other", now) {
-		t.Fatal("a different username on the same IP must not inherit the failures")
-	}
-	if !limiter.allow("10.0.0.1|admin", now.Add(16*time.Minute)) {
-		t.Fatal("attempt after the window must be allowed again")
-	}
-
-	// A successful login clears the failure bucket (D-001 P1): the client must
-	// not be locked out by its own earlier mis-typed passwords.
-	limiter.record("10.0.0.1|admin", now)
-	limiter.record("10.0.0.1|admin", now)
-	if limiter.allow("10.0.0.1|admin", now) {
-		t.Fatal("bucket full before clear must block")
-	}
-	limiter.clear("10.0.0.1|admin")
-	if !limiter.allow("10.0.0.1|admin", now) {
-		t.Fatal("after clear the key must be allowed")
-	}
-
-	// Bounded map: spraying distinct identities evicts the oldest key instead
-	// of growing without limit (D-001 P1).
-	small := newLoginRateLimiter(15*time.Minute, 1, 3)
-	small.record("k1", now)
-	small.record("k2", now)
-	small.record("k3", now)
-	small.record("k4", now) // evicts k1 (oldest)
-	if !small.allow("k1", now) {
-		t.Fatal("evicted oldest key must be allowed again")
-	}
-	if small.allow("k4", now) {
-		t.Fatal("newest key must still hold its failure")
-	}
-}
-
-// W4 P0-1 regression: allow() must NOT create a map entry. The login path is
-// allow() before record(); if allow() registered the key first, record()'s
-// capacity eviction would be dead code (exists is always true) and a spray of
-// distinct usernames would grow the map without bound → OOM.
-func TestLoginRateLimiterAllowDoesNotRegisterKey(t *testing.T) {
-	limiter := newLoginRateLimiter(15*time.Minute, 1, 2)
-	now := time.Now().UTC()
-
-	// allow() on a fresh key must be allowed AND leave the map untouched.
-	if !limiter.allow("10.0.0.1|spray", now) {
-		t.Fatal("fresh key must be allowed")
-	}
-	if len(limiter.attempts) != 0 {
-		t.Fatalf("allow() must not register a key, got %d entries", len(limiter.attempts))
-	}
-	if len(limiter.order) != 0 {
-		t.Fatalf("allow() must not touch the eviction order, got %d", len(limiter.order))
-	}
-
-	// Simulate the real login path: allow() then record() for many distinct
-	// usernames. Capacity 2 means only the two newest keys survive.
-	spray := newLoginRateLimiter(15*time.Minute, 1, 2)
-	for _, user := range []string{"a", "b", "c", "d"} {
-		key := "10.0.0.1|" + user
-		if !spray.allow(key, now) {
-			t.Fatalf("fresh key %s must be allowed", user)
-		}
-		spray.record(key, now)
-	}
-	if len(spray.attempts) != 2 {
-		t.Fatalf("sprayed map must stay at capacity 2, got %d entries", len(spray.attempts))
-	}
-	if !spray.allow("10.0.0.1|a", now) {
-		t.Fatal("oldest evicted key must be allowed again")
-	}
-	if !spray.allow("10.0.0.1|b", now) {
-		t.Fatal("second-oldest evicted key must be allowed again")
-	}
-	if spray.allow("10.0.0.1|d", now) {
-		t.Fatal("newest key must still hold its failure")
-	}
-}
-
 // D-001 P1: behind a trusted reverse proxy (loopback/private peer) the
 // X-Real-IP header identifies the real client; it is never trusted from an
 // untrusted peer.
@@ -445,5 +354,126 @@ func TestLoginClientIPTrustsXRealIPOnlyFromTrustedPeer(t *testing.T) {
 	spoofed.Header.Set("X-Real-IP", "198.51.100.1")
 	if got := loginClientIP(spoofed); got != "203.0.113.99" {
 		t.Fatalf("untrusted peer X-Real-IP = %q, want direct peer 203.0.113.99", got)
+	}
+}
+
+// VP-032 C2: verify that concurrent failed login requests cannot penetrate
+// the 20-attempt rate limit budget (zero TOCTOU penetration).
+func TestLoginRateLimit_ConcurrentNoTOCTOUPenetration(t *testing.T) {
+	env := newAuthTestEnv(t)
+	const total = 50
+	const budget = 20
+
+	var passCount, rateLimitCount int32
+	var wg sync.WaitGroup
+	wg.Add(total)
+
+	for i := 0; i < total; i++ {
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+				strings.NewReader(`{"username":"concurrent-user","password":"wrong-password"}`))
+			req.Header.Set("Content-Type", "application/json")
+			req.RemoteAddr = "192.168.1.100:54321"
+			rr := httptest.NewRecorder()
+			env.mux.ServeHTTP(rr, req)
+			switch rr.Code {
+			case http.StatusUnauthorized:
+				atomic.AddInt32(&passCount, 1)
+			case http.StatusTooManyRequests:
+				atomic.AddInt32(&rateLimitCount, 1)
+			default:
+				t.Errorf("unexpected status %d", rr.Code)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if passCount != budget {
+		t.Fatalf("passCount = %d, want exactly %d (budget)", passCount, budget)
+	}
+	if rateLimitCount != total-budget {
+		t.Fatalf("rateLimitCount = %d, want %d", rateLimitCount, total-budget)
+	}
+}
+
+// VP-032 C2: verify that a successful login clears the failure bucket, restoring
+// full budget for subsequent attempts (net-state equivalence).
+func TestLoginRateLimit_SuccessfulLoginClearsFailureBucket(t *testing.T) {
+	env := newAuthTestEnv(t)
+	username := testSeedUsername
+	password := testSeedPassword
+
+	// Repeat 10 cycles of 3 failed logins (< 5-attempt account lock threshold)
+	// followed by 1 successful login. Total failed attempts = 30, which exceeds
+	// the 20-attempt rate limit budget.
+	// If the successful login did not clear the failure bucket, this would trip
+	// 429 RATE_LIMITED after 20 attempts.
+	for cycle := 0; cycle < 10; cycle++ {
+		for i := 0; i < 3; i++ {
+			req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+				strings.NewReader(`{"username":"`+username+`","password":"wrong-password"}`))
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			env.mux.ServeHTTP(rr, req)
+			if rr.Code != http.StatusUnauthorized {
+				t.Fatalf("cycle %d fail %d status = %d, want 401", cycle, i, rr.Code)
+			}
+		}
+
+		// 1 successful login clears the rate limit bucket (and resets consecutive failures).
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login",
+			strings.NewReader(`{"username":"`+username+`","password":"`+password+`"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("cycle %d successful login status = %d, want 200", cycle, rr.Code)
+		}
+	}
+}
+
+// GOAL-003 D-002 #1 (A-002 F-001/F-002): invalid captcha attempts must
+// neither count against nor wipe the login failure history — an attacker
+// cannot reset the lockout budget by failing captcha verification.
+func TestLoginInvalidCaptchaDoesNotClearFailureHistory(t *testing.T) {
+	env := newAuthTestEnv(t)
+	env.captcha.required = true
+	const budget = 20
+	username := "no-such-user"
+
+	login := func(captchaOK bool) int {
+		var body string
+		if captchaOK {
+			body = `{"username":` + quote(username) + `,"password":"wrong-password","captchaId":"cap-test-1","captchaAnswer":"2"}`
+		} else {
+			body = `{"username":` + quote(username) + `,"password":"wrong-password","captchaId":"cap-test-1","captchaAnswer":"0"}`
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	// One real failure counts (valid captcha + wrong password → 401).
+	if code := login(true); code != http.StatusUnauthorized {
+		t.Fatalf("failure status = %d, want 401", code)
+	}
+	// Many invalid captchas: neither counted nor wiping the history.
+	for range 19 {
+		if code := login(false); code != http.StatusBadRequest {
+			t.Fatalf("invalid captcha status = %d, want 400 INVALID_CAPTCHA", code)
+		}
+	}
+	// 19 more real failures → exactly the 20-attempt budget.
+	for i := 0; i < 19; i++ {
+		if code := login(true); code != http.StatusUnauthorized {
+			t.Fatalf("failure %d status = %d, want 401", i+1, code)
+		}
+	}
+	// The next real failure is rate-limited — history was never wiped.
+	if code := login(true); code != http.StatusTooManyRequests {
+		t.Fatalf("post-budget status = %d, want 429", code)
 	}
 }

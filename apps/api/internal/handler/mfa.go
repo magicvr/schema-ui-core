@@ -65,19 +65,22 @@ func mfaStepUpKey(op string, r *http.Request, userID string) string {
 	return op + "|" + loginClientIP(r) + "|" + userID
 }
 
-// guardMFAStepUp runs the allow-check for a second-factor step-up attempt.
-// It writes the 429 response (with Retry-After) and returns false when the
-// bucket for this operation/IP/user is exhausted.
-func guardMFAStepUp(limiter *loginRateLimiter, op string, w http.ResponseWriter, r *http.Request, userID string) bool {
+// guardMFAStepUp runs the atomic tokenized reservation check for a
+// second-factor step-up attempt (GOAL-003 D-002 #7–#9). It writes the 429
+// response (with Retry-After) and returns ok=false when the bucket for this
+// operation/IP/user is exhausted; on ok=true the caller receives the token
+// identifying exactly this attempt and MUST cancel it on non-counting
+// outcomes or clear on the legacy-clearing success paths.
+func guardMFAStepUp(limiter kernel.RateLimiter, op string, w http.ResponseWriter, r *http.Request, userID string) (token uint64, ok bool) {
 	key := mfaStepUpKey(op, r, userID)
-	if limiter.allow(key, time.Now().UTC()) {
-		return true
+	if token, ok := limiter.Reserve(key, time.Now().UTC()); ok {
+		return token, true
 	}
-	if sec := limiter.retryAfterSeconds(key, time.Now().UTC()); sec > 0 {
+	if sec := limiter.RetryAfterSeconds(key, time.Now().UTC()); sec > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(sec))
 	}
 	writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed attempts; try again later")
-	return false
+	return 0, false
 }
 
 // MFASelfService is the identity-scoped self-service surface consumed by the
@@ -101,7 +104,7 @@ type SessionRevoker interface {
 }
 
 // MFARoutes returns the admin.mfa HTTP surface.
-func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operationlog.Recorder, revoker SessionRevoker, moduleID string) []kernel.RouteContribution {
+func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operationlog.Recorder, revoker SessionRevoker, moduleID string, limiters kernel.RateLimiterProvider) []kernel.RouteContribution {
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, h http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -118,7 +121,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 	// as the login limiter). Window/threshold mirror the login limiter (15 min /
 	// 20 max) with a tighter cap (10) because each proof is one-shot, so 10
 	// HTTP-level attempts already cover all legitimate retry scenarios.
-	mfaVerifyLimiter := newLoginRateLimiter(
+	mfaVerifyLimiter := limiters.NewRateLimiter(
 		mfaVerifyRateLimiterWindow,
 		mfaVerifyRateLimiterMax,
 		mfaVerifyRateLimiterCapacity,
@@ -126,7 +129,7 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 
 	// W13 F-002/F-003: shared failure bucket for enroll/disable/recovery
 	// rotate (see the mfaStepUp* constants above).
-	mfaStepUpLimiter := newLoginRateLimiter(
+	mfaStepUpLimiter := limiters.NewRateLimiter(
 		mfaStepUpLimiterWindow,
 		mfaStepUpLimiterMax,
 		mfaStepUpLimiterCapacity,
@@ -140,8 +143,10 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		// user; an IP key still stops a replay-spray from a single host).
 		limiterKey := loginClientIP(r)
 		now := time.Now().UTC()
-		if !mfaVerifyLimiter.allow(limiterKey, now) {
-			if sec := mfaVerifyLimiter.retryAfterSeconds(limiterKey, now); sec > 0 {
+		var token uint64
+		var ok bool
+		if token, ok = mfaVerifyLimiter.Reserve(limiterKey, now); !ok {
+			if sec := mfaVerifyLimiter.RetryAfterSeconds(limiterKey, now); sec > 0 {
 				w.Header().Set("Retry-After", strconv.Itoa(sec))
 			}
 			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many MFA verify attempts; try again later")
@@ -154,18 +159,22 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Proof) == "" {
+			// Legacy: a malformed body never touched the bucket.
+			mfaVerifyLimiter.Cancel(limiterKey, token)
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_MFA_BODY", "body must be JSON with proof and code")
 			return
 		}
 		userID, err := service.Verify(body.Proof, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
-			// Failed verifications count against the limiter bucket so that a
-			// spray of invalid codes from one IP is bounded at the HTTP layer
-			// independently of the service-level proof exhaustion counter.
-			mfaVerifyLimiter.record(limiterKey, now)
+			// Failed verifications count against the limiter bucket. With
+			// entrance Reserve, this attempt's slot is already occupied
+			// (legacy Record) — keep it.
 			writeMFAError(w, r, err)
 			return
 		}
+		// Legacy: a successful verify recorded nothing — roll back only this
+		// attempt's slot, preserving any prior history (GOAL-003 D-002 #6).
+		mfaVerifyLimiter.Cancel(limiterKey, token)
 		access, refresh, user, err := a.IssueTokensFor(userID, time.Now().UTC())
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "authentication unavailable")
@@ -213,20 +222,25 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		// the bucket is checked before any verification work and every failed
 		// proof records a failure (5 / 15 min per IP|user).
 		stepUpKey := mfaStepUpKey("enroll", r, user.ID)
-		if !guardMFAStepUp(mfaStepUpLimiter, "enroll", w, r, user.ID) {
+		var token uint64
+		var granted bool
+		if token, granted = guardMFAStepUp(mfaStepUpLimiter, "enroll", w, r, user.ID); !granted {
 			return
 		}
 		current, err := a.UserByID(user.ID)
 		if err != nil {
+			// Legacy: an internal lookup error never touched the bucket.
+			mfaStepUpLimiter.Cancel(stepUpKey, token)
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load account")
 			return
 		}
 		if !auth.VerifyPassword(current.PasswordHash, body.CurrentPassword) {
-			mfaStepUpLimiter.record(stepUpKey, time.Now().UTC())
+			// Legacy: wrong current password recorded one failure — keep the
+			// slot.
 			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PASSWORD", "current password is incorrect")
 			return
 		}
-		mfaStepUpLimiter.clear(stepUpKey)
+		mfaStepUpLimiter.Clear(stepUpKey)
 		secret, otpauth, codes, err := service.Enroll(user.ID, user.Name, time.Now().UTC())
 		if err != nil {
 			// A-008 recommended: an active enrollment maps to 400
@@ -280,17 +294,21 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		// W13 F-002: the TOTP/recovery proof here is a guessing oracle for an
 		// attacker holding only a session token — bound it with the shared
 		// step-up failure bucket before any verification work.
-		if !guardMFAStepUp(mfaStepUpLimiter, "disable", w, r, user.ID) {
+		var token uint64
+		var granted bool
+		if token, granted = guardMFAStepUp(mfaStepUpLimiter, "disable", w, r, user.ID); !granted {
 			return
 		}
 		if err := service.Disable(user.ID, body.Code, body.RecoveryCode, now); err != nil {
-			if errors.Is(err, ErrMFAInvalid) {
-				mfaStepUpLimiter.record(mfaStepUpKey("disable", r, user.ID), now)
+			if !errors.Is(err, ErrMFAInvalid) {
+				// Legacy: only an invalid code counted; other disable errors
+				// (not enrolled etc.) never touched the bucket.
+				mfaStepUpLimiter.Cancel(mfaStepUpKey("disable", r, user.ID), token)
 			}
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
-		mfaStepUpLimiter.clear(mfaStepUpKey("disable", r, user.ID))
+		mfaStepUpLimiter.Clear(mfaStepUpKey("disable", r, user.ID))
 		if err := revoker.BumpTokenVersionAndRevokeAll(user.ID, now); err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not invalidate sessions")
 			return
@@ -316,18 +334,22 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 		}
 		// W13 F-002: same second-factor guessing oracle as disable — same
 		// shared step-up failure bucket.
-		if !guardMFAStepUp(mfaStepUpLimiter, "recovery-rotate", w, r, user.ID) {
+		var token uint64
+		var granted bool
+		if token, granted = guardMFAStepUp(mfaStepUpLimiter, "recovery-rotate", w, r, user.ID); !granted {
 			return
 		}
 		codes, err := service.RotateRecovery(user.ID, body.Code, body.RecoveryCode, time.Now().UTC())
 		if err != nil {
-			if errors.Is(err, ErrMFAInvalid) {
-				mfaStepUpLimiter.record(mfaStepUpKey("recovery-rotate", r, user.ID), time.Now().UTC())
+			if !errors.Is(err, ErrMFAInvalid) {
+				// Legacy: only an invalid code counted; other rotate errors
+				// never touched the bucket.
+				mfaStepUpLimiter.Cancel(mfaStepUpKey("recovery-rotate", r, user.ID), token)
 			}
 			writeSelfServiceMFAError(w, r, err)
 			return
 		}
-		mfaStepUpLimiter.clear(mfaStepUpKey("recovery-rotate", r, user.ID))
+		mfaStepUpLimiter.Clear(mfaStepUpKey("recovery-rotate", r, user.ID))
 		recordAudit(operations, user, operationlog.EventMFARecoveryRotate, user.ID, auditDetail("recovery-rotate", map[string]any{"userId": user.ID}), time.Now().UTC(), r.Context())
 		writeJSON(w, http.StatusOK, map[string]any{"recoveryCodes": codes})
 	})))

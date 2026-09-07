@@ -18,6 +18,38 @@
       "onSuccess": {
         "behavior": "reload"
       }
+    },
+    "redeemVoucher": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/wallet/me/redeem",
+      "bodyMapping": {
+        "code": "code"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openRedeem": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "redeem-voucher-form",
+        "props": {
+          "fields": [
+            {
+              "id": "code",
+              "label": "Prepaid voucher code",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.myWallet.field.code"
+            }
+          ],
+          "submitAction": "redeemVoucher",
+          "submitLabel": "Redeem",
+          "submitLabelKey": "schema.myWallet.submit.redeem"
+        }
+      }
     }
   },
   "body": {
@@ -32,7 +64,7 @@
       {
         "type": "text",
         "props": {
-          "text": "Your wallet balance and recent ledger entries.",
+          "text": "Your wallet balance and recent ledger entries. Redeem a prepaid voucher to add funds.",
           "textKey": "schema.myWallet.text.intro"
         }
       },
@@ -47,7 +79,7 @@
             "id": "my-wallet-total",
             "props": {
               "label": "Total balance",
-              "format": "plain",
+              "format": "currency",
               "valueField": "balanceTotal",
               "dataSource": "/api/wallet/me",
               "labelKey": "schema.myWallet.statCard.total"
@@ -58,7 +90,7 @@
             "id": "my-wallet-available",
             "props": {
               "label": "Available",
-              "format": "plain",
+              "format": "currency",
               "valueField": "balanceAvailable",
               "dataSource": "/api/wallet/me",
               "labelKey": "schema.myWallet.statCard.available"
@@ -69,7 +101,7 @@
             "id": "my-wallet-frozen",
             "props": {
               "label": "Frozen",
-              "format": "plain",
+              "format": "currency",
               "valueField": "balanceFrozen",
               "dataSource": "/api/wallet/me",
               "labelKey": "schema.myWallet.statCard.frozen"
@@ -92,11 +124,13 @@
               "field": "amountDelta",
               "label": "Amount",
               "sortable": true,
+              "format": "currency",
               "labelKey": "schema.walletEntries.column.amountDelta"
             },
             {
               "field": "balanceAfterTotal",
               "label": "Balance after",
+              "format": "currency",
               "labelKey": "schema.walletEntries.column.balanceAfterTotal"
             },
             {
@@ -109,6 +143,14 @@
               "label": "Created",
               "sortable": true,
               "labelKey": "schema.walletEntries.column.created"
+            }
+          ],
+          "toolbar": [
+            {
+              "key": "redeem",
+              "label": "Redeem voucher",
+              "actionRef": "openRedeem",
+              "labelKey": "schema.myWallet.toolbar.redeem"
             }
           ]
         },

@@ -180,7 +180,7 @@ export interface TableSelection {
 }
 
 export type ActionResult =
-  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>; message?: string; messageKey?: string }
+  | { ok: true; fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>; message?: string; messageKey?: string; data?: unknown }
   | {
       ok: false;
       code: string;
@@ -597,10 +597,12 @@ async function runRequest(
   // W16-F03: a 200 import response may still carry `fieldErrors` (partial
   // failure) — surface them to the form instead of pretending full success.
   let successFieldErrors: Array<{ field: string; reason: string }> | undefined;
+  let parsedData: unknown = undefined;
   try {
     const text = await response.text();
     if (text !== "") {
       const parsed = JSON.parse(text) as { fieldErrors?: unknown };
+      parsedData = parsed;
       if (Array.isArray(parsed.fieldErrors)) {
         const cleaned = parsed.fieldErrors
           .filter((entry): entry is { field?: unknown; reason?: unknown; rowNumber?: unknown } =>
@@ -621,8 +623,8 @@ async function runRequest(
     // non-JSON success body (e.g. 204/CSV) — nothing to surface
   }
   return successFieldErrors !== undefined
-    ? { ok: true, fieldErrors: successFieldErrors }
-    : { ok: true };
+    ? { ok: true, fieldErrors: successFieldErrors, data: parsedData }
+    : { ok: true, data: parsedData };
 }
 
 function requestFailedMessage(error: unknown): string {
@@ -1196,6 +1198,69 @@ function SchemaCrudProvider({
         gateTargetId,
       });
       if (result.ok && (result.fieldErrors === undefined || result.fieldErrors.length === 0)) {
+        // VP-029 判据 #2/#5（A-005 F-002 → A-008；声明载体修正见 E-007）：一次性
+        // 明文 CSV 导出是**声明驱动**——只有提交表单节点的 props 声明 downloadCsv
+        // 时，才在同一手势导出 items[].code；其它表单响应携带同名字段不再被启发
+        // 式误触发下载。声明放在表单节点 props（node schema 的业务级参数区，upstream
+        // pin 允许任意业务键）而不是 action.onSuccess：后者受 pinned action.schema
+        // OutcomeBehavior 严格结构约束（additionalProperties: false），放在那里会
+        // 使页面文档 D-VAL 失败（PAGE_SCHEMA_INVALID，用户可见「页面 Schema 错误」）。
+        const formProps = isRecord(form.props) ? form.props : undefined;
+        const downloadDecl = isRecord(formProps?.downloadCsv)
+          ? (formProps.downloadCsv as Record<string, unknown>)
+          : undefined;
+        const columns = Array.isArray(downloadDecl?.columns)
+          ? (downloadDecl.columns as unknown[]).filter(
+              (column): column is string => typeof column === "string" && column !== "",
+            )
+          : [];
+        const fileNameTemplate =
+          typeof downloadDecl?.fileName === "string" && downloadDecl.fileName !== ""
+            ? downloadDecl.fileName
+            : "";
+        const csvHeaders: Record<string, string> = {
+          code: "Code",
+          codePrefix: "Prefix",
+          batchId: "BatchId",
+          amount: "Amount",
+          currency: "Currency",
+          createdAt: "CreatedAt",
+        };
+        if (
+          downloadDecl !== undefined &&
+          columns.includes("code") &&
+          fileNameTemplate !== "" &&
+          isRecord(result.data) &&
+          Array.isArray(result.data.items)
+        ) {
+          const vouchersWithCode = result.data.items.filter(
+            (it): it is Record<string, unknown> => isRecord(it) && typeof it.code === "string",
+          );
+          if (vouchersWithCode.length > 0) {
+            const lines = [columns.map((column) => csvHeaders[column] ?? column).join(",")];
+            for (const v of vouchersWithCode) {
+              const cells = columns.map((column) => {
+                if (column === "amount") {
+                  // E-008: wire amounts are CNY min units (分); the export and
+                  // the table column (format: currency) both present yuan with
+                  // two decimals (mirrors the W16-F04 display convention).
+                  const cents = Number(v[column] ?? 0);
+                  return Number.isFinite(cents) ? (cents / 100).toFixed(2) : "0.00";
+                }
+                return `"${String(v[column] ?? "")}"`;
+              });
+              lines.push(cells.join(","));
+            }
+            const csvBlob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+            const batchId =
+              typeof prepared.batchId === "string" && prepared.batchId !== ""
+                ? prepared.batchId
+                : typeof vouchersWithCode[0]?.batchId === "string" && vouchersWithCode[0].batchId !== ""
+                  ? (vouchersWithCode[0].batchId as string)
+                  : "vouchers";
+            triggerBlobDownload(csvBlob, sanitizeClientFilename(fileNameTemplate.replace("{batchId}", batchId)));
+          }
+        }
         setFeedback({ kind: "success", message: successMessageFor(actionOf(document, submitAction)?.method, t) });
         reloadList();
         setActiveModal(null);
@@ -2434,6 +2499,18 @@ function useDisplayData(
   return { list, error };
 }
 
+/** W16-F04: cent-valued integers as yuan with two decimals (table currency columns). */
+function formatStatCardCents(value: unknown): string {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "";
+  }
+  return (numeric / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 function StatCardView({ node }: { node: RenderStatCardNode }) {
   const crud = useSchemaCrud();
   const t = useTranslate();
@@ -2501,6 +2578,10 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
+  // W16-F04: currency wire values are minor units (分). Present yuan with two
+  // decimals, matching table columns with format: currency.
+  const displayValue =
+    format === "currency" ? formatStatCardCents(formatResult.value) : String(formatResult.value);
   const label = resolveTextProp(
     node.props as unknown as Record<string, unknown>,
     "labelKey",
@@ -2514,7 +2595,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       <CardContent className="p-4">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-          {String(formatResult.value)}
+          {displayValue}
           {unit !== undefined && unit !== "" ? (
             <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>
           ) : null}
@@ -2832,14 +2913,24 @@ function dispatchParsedNode({
     case "text":
       return <TextView node={node} />;
     case "custom": {
-      // GOAL-018: custom nodes dispatch to the module-level registry; an
-      // unregistered component renders a safe fallback (never crashes).
+      // GOAL-018: custom nodes dispatch to the module-level registry.
+      // C-010 (GOAL-041 S2): an unregistered component renders an obvious
+      // placeholder (01-node-protocol §3.x "明显占位") and logs console.error
+      // with the component key and node id — never a silent blank, never a
+      // subtle inline fallback.
       const Custom = getCustomComponent(node.component);
       if (Custom === null) {
+        console.error(
+          `[schema-ui] unknown custom component "${node.component}"` +
+            (node.id === undefined ? "" : ` (node id: ${node.id})`),
+        );
         return (
-          <p className="text-sm text-muted-foreground">
-            unknown custom component: {node.component}
-          </p>
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/60 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+          >
+            unknown custom component: <code>{node.component}</code>
+          </div>
         );
       }
       return <Custom node={node} context={context} children={node.children} />;

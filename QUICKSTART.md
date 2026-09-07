@@ -33,7 +33,7 @@ cd web && pnpm install && node probe.mjs                             # 三探针
 schema-ui upgrade                    # go get @latest + pnpm add @latest + 探针回归
 ```
 
-> 注：`schema-ui create` 生成骨架钉在 API tag 时刻的包面（当前 = 冻结面 v1.4.0 终值）；`schema-ui upgrade` 会把 Go/npm 依赖拉到最新（registry 语义 · 零冲突）。
+> 注：`schema-ui create` 生成骨架钉在 API tag 时刻的包面（当前 = apps/api/v0.5.0 包面：protocol 0.2.12 · lib 0.1.11 · renderer 0.3.9 · ui 0.1.8 · shell 0.1.5 · theme 0.1.4）；`schema-ui upgrade` 会把 Go/npm 依赖拉到最新（registry 语义 · 零冲突）。
 
 - 计时口径（VP-023 R5 实测）：create → 双端绿 = **分钟级**（去依赖下载）；升级 = 秒级；冲突计数 = 0、无 git merge。
 - 双方言：SQLite 内嵌默认；生产权威 PostgreSQL：golden-field -dialect postgres -dsn …（迁移/备份契约与 fork 形态一致，见 workspace-023 ops-playbook）。
@@ -86,6 +86,7 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 - 模块启用集只来自 `apps/api/configs/config.yaml`（T-06）：`app.profile` 接受 `mvp`、`admin`、`demo`（内置预设），`app.modules` 可指向预设文件或内联 `list`。`mvp` = core + `users`/`roles`/`account`/`notifications`（首页 = Dashboard）；`admin` = `mvp` + `settings`/`activity`/`data-transfer`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`；生产只应使用 `mvp` / `admin`。`app.modules` 覆盖 Profile 默认集合。
 - 每个本地 API/Web 进程共用同一份 `configs/config.yaml`，无需再设置 Profile 环境变量。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
+- **连已有库的 admin 凭据**：首次登录后 `admin` 会被强制改密（`must_change_password`），`ADMIN_INITIAL_PASSWORD`（仅 fresh bootstrap）不再有效。维护者在本地 gitignored 的 `apps/api/configs/.env` 里设置 `ADMIN_PASSWD=<当前 admin 密码>` 作为**声明**，自动化测试 / AI 助手 / smoke 连现有库时从该文件或环境变量读取即可登录。API 不读取、不据此重置密码（约定键，见 `apps/api/configs/.env.example`）。
 
 ### 3.2 启动（两条路径选一）
 

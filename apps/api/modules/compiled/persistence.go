@@ -10,6 +10,7 @@ import (
 	historymigration "github.com/magicvr/schema-ui-core/apps/api/modules/corepersistence/migration"
 	datadictionarymigration "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/migration"
 	datapermissionmigration "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/migration"
+	digitaloffermigration "github.com/magicvr/schema-ui-core/apps/api/modules/digitaloffer/migration"
 	jobsmigration "github.com/magicvr/schema-ui-core/apps/api/modules/jobs/migration"
 	logincaptchamigration "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/migration"
 	mfamigration "github.com/magicvr/schema-ui-core/apps/api/modules/mfa/migration"
@@ -18,6 +19,7 @@ import (
 	recyclebinmigration "github.com/magicvr/schema-ui-core/apps/api/modules/recyclebin/migration"
 	scheduledtasksmigration "github.com/magicvr/schema-ui-core/apps/api/modules/scheduledtasks/migration"
 	settingsmigration "github.com/magicvr/schema-ui-core/apps/api/modules/settings/migration"
+	telegrammigration "github.com/magicvr/schema-ui-core/apps/api/modules/channel/telegram/migration"
 	walletmigration "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/migration"
 )
 
@@ -40,6 +42,8 @@ func PersistenceProviders() []kernel.Provider {
 		operationlogmigration.Provider{},
 		settingsmigration.Provider{},
 		jobsmigration.Provider{},
+		telegrammigration.Provider{},
+		digitaloffermigration.Provider{},
 	}
 }
 

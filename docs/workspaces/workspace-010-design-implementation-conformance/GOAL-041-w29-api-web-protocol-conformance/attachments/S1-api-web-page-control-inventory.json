@@ -1,0 +1,3078 @@
+{
+  "generatedAt": "2026-09-06",
+  "subjectRepoHead": "ce66abab0897b644c695b8365f8324598bfe2bc8",
+  "counts": {
+    "manifestFragments": 17,
+    "pages": 35,
+    "schemaDocuments": 35,
+    "duplicatePageIds": 0,
+    "missingSchemas": 0,
+    "orphanSchemas": 0,
+    "registeredCustomComponents": 15,
+    "usedAfterComponentKeys": 2,
+    "customActionHandlers": 5,
+    "representativePages": 10,
+    "usedCustomNodeKeysTotal": 13,
+    "usedBodyCustomNodeKeys": 12,
+    "usedActionContentCustomNodeKeys": 1
+  },
+  "runtimeManifestProjection": {
+    "evidence": "transient Go test invoked apps/api/internal/manifest.ForModulesWithFragments with profile-filtered fragments on 2026-09-06; test file deleted",
+    "protocolVersion": "2.7",
+    "profiles": {
+      "mvp": {
+        "pageCount": 6,
+        "pageIds": [
+          "account",
+          "dashboard",
+          "notifications",
+          "roles",
+          "users",
+          "users-invites"
+        ]
+      },
+      "admin": {
+        "pageCount": 22,
+        "pageIds": [
+          "account",
+          "activity",
+          "dashboard",
+          "data-dictionary",
+          "data-permission",
+          "dictionary-entries",
+          "file-library",
+          "mail",
+          "mail-outbox",
+          "my-wallet",
+          "notifications",
+          "recycle-bin",
+          "roles",
+          "scheduled-tasks",
+          "settings",
+          "system-monitoring",
+          "task-runs",
+          "users",
+          "users-invites",
+          "wallet",
+          "wallet-entries",
+          "wallet-vouchers"
+        ]
+      },
+      "demo": {
+        "pageCount": 14,
+        "pageIds": [
+          "account",
+          "admin-list-batch",
+          "dashboard",
+          "data-display",
+          "data-table",
+          "form-controls",
+          "form-with-reactions",
+          "form-with-upload",
+          "notifications",
+          "overview",
+          "roles",
+          "search-form-table",
+          "users",
+          "users-invites"
+        ]
+      }
+    },
+    "allFragments": {
+      "pageCount": 35,
+      "pageIds": [
+        "account",
+        "activity",
+        "admin-list-batch",
+        "dashboard",
+        "data-dictionary",
+        "data-display",
+        "data-permission",
+        "data-table",
+        "dictionary-entries",
+        "digitaloffer-entitlements",
+        "digitaloffer-offers",
+        "digitaloffer-purchases",
+        "file-library",
+        "form-controls",
+        "form-with-reactions",
+        "form-with-upload",
+        "mail",
+        "mail-outbox",
+        "my-wallet",
+        "notifications",
+        "overview",
+        "recycle-bin",
+        "roles",
+        "scheduled-tasks",
+        "search-form-table",
+        "settings",
+        "system-monitoring",
+        "task-runs",
+        "telegram-operator",
+        "telegram-settings",
+        "users",
+        "users-invites",
+        "wallet",
+        "wallet-entries",
+        "wallet-vouchers"
+      ]
+    }
+  },
+  "sources": {
+    "profiles": "apps/api/kernel/profile.go:25-113",
+    "composition": "apps/api/internal/composition/composition.go:729-766",
+    "manifestMerge": "apps/api/internal/manifest/manifest.go:39-105",
+    "schemaHandler": "apps/api/internal/handler/schema.go:10-43",
+    "webRoute": "apps/web/src/app/App.tsx:530-609,633-671",
+    "pageLoader": "apps/web/src/protocol/load-page.ts:69-152",
+    "renderer": "apps/web/src/renderer/render.types.ts:35-46,252-295,396-406; apps/web/src/renderer/render.tsx:2877-2956",
+    "controls": "apps/web/src/renderer/form-controls.types.ts:19-64",
+    "custom": "apps/web/src/renderer/custom-components.ts:18-35",
+    "customActions": "apps/web/src/renderer/render.tsx:328-353"
+  },
+  "fragments": [
+    {
+      "moduleId": "admin.account",
+      "path": "apps/api/modules/account/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.activity",
+      "path": "apps/api/modules/activity/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "channel.telegram",
+      "path": "apps/api/modules/channel/telegram/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 2
+    },
+    {
+      "moduleId": "admin.dashboard",
+      "path": "apps/api/modules/dashboard/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.data-dictionary",
+      "path": "apps/api/modules/datadictionary/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 2
+    },
+    {
+      "moduleId": "admin.data-permission",
+      "path": "apps/api/modules/datapermission/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "dev.examples",
+      "path": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 8
+    },
+    {
+      "moduleId": "admin.digital-offer",
+      "path": "apps/api/modules/digitaloffer/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 3
+    },
+    {
+      "moduleId": "admin.file-library",
+      "path": "apps/api/modules/filelibrary/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.notifications",
+      "path": "apps/api/modules/notifications/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.recycle-bin",
+      "path": "apps/api/modules/recyclebin/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.roles",
+      "path": "apps/api/modules/roles/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.scheduled-tasks",
+      "path": "apps/api/modules/scheduledtasks/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 2
+    },
+    {
+      "moduleId": "admin.settings",
+      "path": "apps/api/modules/settings/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 3
+    },
+    {
+      "moduleId": "admin.system-monitoring",
+      "path": "apps/api/modules/systemmonitoring/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 1
+    },
+    {
+      "moduleId": "admin.users",
+      "path": "apps/api/modules/users/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 2
+    },
+    {
+      "moduleId": "admin.wallet",
+      "path": "apps/api/modules/wallet/manifest/fragment.json",
+      "protocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "pageCount": 4
+    }
+  ],
+  "pages": [
+    {
+      "moduleId": "admin.account",
+      "modulePath": "apps/api/modules/account",
+      "profiles": [
+        "mvp",
+        "admin",
+        "demo"
+      ],
+      "pageId": "account",
+      "route": "/account",
+      "schemaUrl": "/api/schema/account",
+      "fragmentPath": "apps/api/modules/account/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/account/schema/account.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.page.trigger",
+        "actions.row.request",
+        "form.controls.extended",
+        "form.controls.advanced",
+        "form.record.load",
+        "actions.upload"
+      ],
+      "navigationRefs": [
+        {
+          "area": "user",
+          "pageRef": "account",
+          "label": "Account",
+          "labelKey": "manifest.nav.account"
+        }
+      ],
+      "nodeCounts": {
+        "custom": 3,
+        "form": 3,
+        "section": 4,
+        "table": 1,
+        "tabs": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "password": 2,
+        "select": 1,
+        "switch": 1,
+        "upload": 1
+      },
+      "actions": [
+        {
+          "id": "saveProfile",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/account/profile",
+          "handler": null
+        },
+        {
+          "id": "uploadAvatar",
+          "type": "upload",
+          "method": null,
+          "url": "/api/account/avatar",
+          "handler": null
+        },
+        {
+          "id": "changePassword",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/account/password",
+          "handler": null
+        },
+        {
+          "id": "revokeSession",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/account/sessions/{id}/revoke",
+          "handler": null
+        },
+        {
+          "id": "saveNotificationSettings",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/notifications/settings",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "account-session-toolbar": 1,
+        "email-identity": 1,
+        "mfa-manager": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "account-session-toolbar": 1,
+        "email-identity": 1,
+        "mfa-manager": 1
+      }
+    },
+    {
+      "moduleId": "admin.activity",
+      "modulePath": "apps/api/modules/activity",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "activity",
+      "route": "/activity",
+      "schemaUrl": "/api/schema/activity",
+      "fragmentPath": "apps/api/modules/activity/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/activity/schema/activity.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "table.sort",
+        "form.controls.extended"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "activity",
+          "label": "Activity",
+          "labelKey": "manifest.nav.activity"
+        }
+      ],
+      "nodeCounts": {
+        "custom": 1,
+        "form": 2,
+        "recordView": 1,
+        "section": 1,
+        "table": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "datePicker": 2,
+        "input": 9,
+        "textarea": 1
+      },
+      "actions": [
+        {
+          "id": "openDetail",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "activity-export": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "activity-export": 1
+      }
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "admin-list-batch",
+      "route": "/admin-list-batch",
+      "schemaUrl": "/api/schema/admin-list-batch",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/dev/examples/schema/admin-list-batch.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.page.trigger",
+        "actions.batch.request",
+        "table.selection"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "admin-list-batch",
+          "label": "List + batch",
+          "labelKey": "manifest.nav.admin-list-batch"
+        }
+      ],
+      "nodeCounts": {
+        "section": 1,
+        "table": 1,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [
+        {
+          "id": "deleteUsers",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/users/batch-delete",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.dashboard",
+      "modulePath": "apps/api/modules/dashboard",
+      "profiles": [
+        "mvp",
+        "admin",
+        "demo"
+      ],
+      "pageId": "dashboard",
+      "route": "/dashboard",
+      "schemaUrl": "/api/schema/dashboard",
+      "fragmentPath": "apps/api/modules/dashboard/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/dashboard/schema/dashboard.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "dashboard",
+          "label": "Dashboard",
+          "labelKey": "manifest.nav.dashboard"
+        }
+      ],
+      "nodeCounts": {
+        "grid": 1,
+        "section": 1,
+        "statCard": 2,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.data-dictionary",
+      "modulePath": "apps/api/modules/datadictionary",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "data-dictionary",
+      "route": "/data-dictionary",
+      "schemaUrl": "/api/schema/data-dictionary",
+      "fragmentPath": "apps/api/modules/datadictionary/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/datadictionary/schema/data-dictionary.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "data-dictionary",
+          "label": "Data dictionary",
+          "labelKey": "manifest.nav.dataDictionary"
+        }
+      ],
+      "nodeCounts": {
+        "form": 3,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 4,
+        "inputNumber": 2,
+        "switch": 2,
+        "textarea": 2
+      },
+      "actions": [
+        {
+          "id": "createType",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/data-dictionary/types",
+          "handler": null
+        },
+        {
+          "id": "updateType",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/data-dictionary/types/{id}",
+          "handler": null
+        },
+        {
+          "id": "deleteType",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/data-dictionary/types/{id}",
+          "handler": null
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEdit",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEntries",
+          "type": "navigate",
+          "method": null,
+          "url": "/dictionary-entries/{dictKey}",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "data-display",
+      "route": "/data-display",
+      "schemaUrl": "/api/schema/data-display",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 28,
+      "schemaPath": "apps/api/modules/dev/examples/schema/data-display.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "data-display",
+          "label": "Data display",
+          "labelKey": "manifest.nav.data-display"
+        }
+      ],
+      "nodeCounts": {
+        "chart": 1,
+        "grid": 1,
+        "section": 1,
+        "statCard": 2,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.data-permission",
+      "modulePath": "apps/api/modules/datapermission",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "data-permission",
+      "route": "/data-permission",
+      "schemaUrl": "/api/schema/data-permission",
+      "fragmentPath": "apps/api/modules/datapermission/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/datapermission/schema/data-permission.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "data-permission",
+          "label": "Data permission",
+          "labelKey": "manifest.nav.dataPermission"
+        }
+      ],
+      "nodeCounts": {
+        "custom": 1,
+        "form": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 2,
+        "select": 1,
+        "switch": 1
+      },
+      "actions": [
+        {
+          "id": "registerPolicy",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/data-permission/policies",
+          "handler": null
+        },
+        {
+          "id": "updateScopes",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/data-permission/scopes",
+          "handler": null
+        },
+        {
+          "id": "openRegister",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "data-permission-scopes": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "data-permission-scopes": 1
+      }
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "data-table",
+      "route": "/data-table",
+      "schemaUrl": "/api/schema/data-table",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 35,
+      "schemaPath": "apps/api/modules/dev/examples/schema/data-table.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "table.sort"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "data-table",
+          "label": "Data table",
+          "labelKey": "manifest.nav.data-table"
+        }
+      ],
+      "nodeCounts": {
+        "section": 1,
+        "table": 1,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.data-dictionary",
+      "modulePath": "apps/api/modules/datadictionary",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "dictionary-entries",
+      "route": "/dictionary-entries/{dictKey}",
+      "schemaUrl": "/api/schema/dictionary-entries",
+      "fragmentPath": "apps/api/modules/datadictionary/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/datadictionary/schema/dictionary-entries.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced",
+        "data.route-binding",
+        "form.controls.readonly"
+      ],
+      "navigationRefs": [],
+      "nodeCounts": {
+        "form": 3,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 8,
+        "inputNumber": 2,
+        "select": 2,
+        "switch": 2,
+        "textarea": 2
+      },
+      "actions": [
+        {
+          "id": "createEntry",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/data-dictionary/entries",
+          "handler": null
+        },
+        {
+          "id": "updateEntry",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/data-dictionary/entries/{id}",
+          "handler": null
+        },
+        {
+          "id": "deleteEntry",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/data-dictionary/entries/{id}",
+          "handler": null
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEdit",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [
+        {
+          "path": "$.body.children[1].data.params.dictKey",
+          "expression": "$context.route.params.dictKey"
+        }
+      ],
+      "readOnlyFields": [
+        {
+          "path": "$.actions.openCreate.content.props.fields[0]",
+          "fieldKey": null
+        },
+        {
+          "path": "$.actions.openCreate.content.props.fields[1]",
+          "fieldKey": null
+        },
+        {
+          "path": "$.actions.openEdit.content.props.fields[0]",
+          "fieldKey": null
+        },
+        {
+          "path": "$.actions.openEdit.content.props.fields[1]",
+          "fieldKey": null
+        }
+      ],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.digital-offer",
+      "modulePath": "apps/api/modules/digitaloffer",
+      "profiles": [
+        "custom-only"
+      ],
+      "pageId": "digitaloffer-entitlements",
+      "route": "/digitaloffer-entitlements",
+      "schemaUrl": "/api/schema/digitaloffer-entitlements",
+      "fragmentPath": "apps/api/modules/digitaloffer/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/digitaloffer/schema/digitaloffer-entitlements.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "table.sort",
+        "data.route-binding"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "digitaloffer-entitlements",
+          "label": "Digital entitlements",
+          "labelKey": "manifest.nav.digitalofferEntitlements"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 2,
+        "select": 1
+      },
+      "actions": [
+        {
+          "id": "voidEntitlement",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/digitaloffer/entitlements/{id}/void",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.digital-offer",
+      "modulePath": "apps/api/modules/digitaloffer",
+      "profiles": [
+        "custom-only"
+      ],
+      "pageId": "digitaloffer-offers",
+      "route": "/digitaloffer-offers",
+      "schemaUrl": "/api/schema/digitaloffer-offers",
+      "fragmentPath": "apps/api/modules/digitaloffer/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/digitaloffer/schema/digitaloffer-offers.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced",
+        "form.controls.readonly"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "digitaloffer-offers",
+          "label": "Digital products",
+          "labelKey": "manifest.nav.digitalofferOffers"
+        }
+      ],
+      "nodeCounts": {
+        "form": 4,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 4,
+        "inputNumber": 5,
+        "select": 3,
+        "switch": 1,
+        "textarea": 2
+      },
+      "actions": [
+        {
+          "id": "createOffer",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/digitaloffer/offers",
+          "handler": null
+        },
+        {
+          "id": "updateOffer",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/digitaloffer/offers/{id}",
+          "handler": null
+        },
+        {
+          "id": "changeStatus",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/digitaloffer/offers/{id}",
+          "handler": null
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEdit",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openStatus",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.digital-offer",
+      "modulePath": "apps/api/modules/digitaloffer",
+      "profiles": [
+        "custom-only"
+      ],
+      "pageId": "digitaloffer-purchases",
+      "route": "/digitaloffer-purchases",
+      "schemaUrl": "/api/schema/digitaloffer-purchases",
+      "fragmentPath": "apps/api/modules/digitaloffer/manifest/fragment.json",
+      "fragmentLine": 28,
+      "schemaPath": "apps/api/modules/digitaloffer/schema/digitaloffer-purchases.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "table.sort"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "digitaloffer-purchases",
+          "label": "Digital orders",
+          "labelKey": "manifest.nav.digitalofferPurchases"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 3
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.file-library",
+      "modulePath": "apps/api/modules/filelibrary",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "file-library",
+      "route": "/file-library",
+      "schemaUrl": "/api/schema/file-library",
+      "fragmentPath": "apps/api/modules/filelibrary/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/filelibrary/schema/file-library.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "actions.upload"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "file-library",
+          "label": "File library",
+          "labelKey": "manifest.nav.fileLibrary"
+        }
+      ],
+      "nodeCounts": {
+        "form": 2,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "upload": 1
+      },
+      "actions": [
+        {
+          "id": "uploadFile",
+          "type": "upload",
+          "method": null,
+          "url": "/api/upload",
+          "handler": null
+        },
+        {
+          "id": "submitUpload",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/library/files/upload",
+          "handler": null
+        },
+        {
+          "id": "openUpload",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "downloadFile",
+          "type": "custom",
+          "method": null,
+          "url": null,
+          "handler": "library.download"
+        },
+        {
+          "id": "previewFile",
+          "type": "custom",
+          "method": null,
+          "url": null,
+          "handler": "library.preview"
+        },
+        {
+          "id": "copyLinkFile",
+          "type": "custom",
+          "method": null,
+          "url": null,
+          "handler": "library.copyLink"
+        },
+        {
+          "id": "deleteFile",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/library/files/{id}",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [
+        "library.copyLink",
+        "library.download",
+        "library.preview"
+      ],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "form-controls",
+      "route": "/form-controls",
+      "schemaUrl": "/api/schema/form-controls",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 49,
+      "schemaPath": "apps/api/modules/dev/examples/schema/form-controls.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "form.controls.extended",
+        "form.controls.advanced"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "form-controls",
+          "label": "Form controls",
+          "labelKey": "manifest.nav.form-controls"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "checkboxGroup": 1,
+        "datePicker": 1,
+        "dateRangePicker": 1,
+        "input": 1,
+        "inputNumber": 1,
+        "radio": 1,
+        "select": 1,
+        "switch": 1,
+        "textarea": 1
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "form-with-reactions",
+      "route": "/form-with-reactions",
+      "schemaUrl": "/api/schema/form-with-reactions",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 56,
+      "schemaPath": "apps/api/modules/dev/examples/schema/form-with-reactions.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "form.controls.extended"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "form-with-reactions",
+          "label": "Form with reactions",
+          "labelKey": "manifest.nav.form-with-reactions"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 1,
+        "switch": 1,
+        "textarea": 1
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "form-with-upload",
+      "route": "/form-with-upload",
+      "schemaUrl": "/api/schema/form-with-upload",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 63,
+      "schemaPath": "apps/api/modules/dev/examples/schema/form-with-upload.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "actions.upload",
+        "form.controls.extended"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "form-with-upload",
+          "label": "Form with upload",
+          "labelKey": "manifest.nav.form-with-upload"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "upload": 1
+      },
+      "actions": [
+        {
+          "id": "uploadAttachment",
+          "type": "upload",
+          "method": null,
+          "url": "/api/upload",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.settings",
+      "modulePath": "apps/api/modules/settings",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "mail",
+      "route": "/mail",
+      "schemaUrl": "/api/schema/mail",
+      "fragmentPath": "apps/api/modules/settings/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/settings/schema/mail.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "mail",
+          "label": "Mail console",
+          "labelKey": "manifest.nav.mail"
+        }
+      ],
+      "nodeCounts": {
+        "custom": 1,
+        "section": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "mail-admin-tab": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "mail-admin-tab": 1
+      }
+    },
+    {
+      "moduleId": "admin.settings",
+      "modulePath": "apps/api/modules/settings",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "mail-outbox",
+      "route": "/mail-outbox",
+      "schemaUrl": "/api/schema/mail-outbox",
+      "fragmentPath": "apps/api/modules/settings/manifest/fragment.json",
+      "fragmentLine": 28,
+      "schemaPath": "apps/api/modules/settings/schema/mail-outbox.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "table.sort"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "mail-outbox",
+          "label": "Outbound email log",
+          "labelKey": "manifest.nav.mailOutbox"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "recordView": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 2
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.wallet",
+      "modulePath": "apps/api/modules/wallet",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "my-wallet",
+      "route": "/my-wallet",
+      "schemaUrl": "/api/schema/my-wallet",
+      "fragmentPath": "apps/api/modules/wallet/manifest/fragment.json",
+      "fragmentLine": 28,
+      "schemaPath": "apps/api/modules/wallet/schema/my-wallet.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "table.sort",
+        "actions.page.trigger",
+        "form.controls.extended"
+      ],
+      "navigationRefs": [
+        {
+          "area": "user",
+          "pageRef": "my-wallet",
+          "label": "My wallet",
+          "labelKey": "manifest.nav.myWallet"
+        }
+      ],
+      "nodeCounts": {
+        "custom": 1,
+        "form": 1,
+        "grid": 1,
+        "section": 1,
+        "statCard": 3,
+        "table": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "input": 1
+      },
+      "actions": [
+        {
+          "id": "openWallet",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/me",
+          "handler": null
+        },
+        {
+          "id": "redeemVoucher",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/me/redeem",
+          "handler": null
+        },
+        {
+          "id": "openRedeem",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "wallet-ensure": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "wallet-ensure": 1
+      }
+    },
+    {
+      "moduleId": "admin.notifications",
+      "modulePath": "apps/api/modules/notifications",
+      "profiles": [
+        "mvp",
+        "admin",
+        "demo"
+      ],
+      "pageId": "notifications",
+      "route": "/notifications",
+      "schemaUrl": "/api/schema/notifications",
+      "fragmentPath": "apps/api/modules/notifications/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/notifications/schema/notifications.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.page.trigger",
+        "actions.row.request",
+        "form.controls.extended"
+      ],
+      "navigationRefs": [],
+      "nodeCounts": {
+        "custom": 1,
+        "form": 1,
+        "section": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 1
+      },
+      "actions": [
+        {
+          "id": "markAllRead",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/notifications/read-all",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "notification-center": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "notification-center": 1
+      }
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "overview",
+      "route": "/overview",
+      "schemaUrl": "/api/schema/overview",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/dev/examples/schema/overview.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "navigationRefs": [
+        {
+          "area": "top",
+          "pageRef": "overview",
+          "label": "Overview",
+          "labelKey": "manifest.nav.overview"
+        }
+      ],
+      "nodeCounts": {
+        "section": 1,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.recycle-bin",
+      "modulePath": "apps/api/modules/recyclebin",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "recycle-bin",
+      "route": "/recycle-bin",
+      "schemaUrl": "/api/schema/recycle-bin",
+      "fragmentPath": "apps/api/modules/recyclebin/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/recyclebin/schema/recycle-bin.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "table.sort"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "recycle-bin",
+          "label": "Recycle bin",
+          "labelKey": "manifest.nav.recycleBin"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 1
+      },
+      "actions": [
+        {
+          "id": "restore",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/recycle-bin/{id}/restore",
+          "handler": null
+        },
+        {
+          "id": "purge",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/recycle-bin/{id}",
+          "handler": null
+        },
+        {
+          "id": "purgeAll",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/recycle-bin/purge-all",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.roles",
+      "modulePath": "apps/api/modules/roles",
+      "profiles": [
+        "mvp",
+        "admin",
+        "demo"
+      ],
+      "pageId": "roles",
+      "route": "/roles",
+      "schemaUrl": "/api/schema/roles",
+      "fragmentPath": "apps/api/modules/roles/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/roles/schema/roles.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.advanced"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "roles",
+          "label": "Roles",
+          "labelKey": "manifest.nav.roles"
+        }
+      ],
+      "nodeCounts": {
+        "form": 3,
+        "recordView": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "checkboxGroup": 4,
+        "input": 4,
+        "select": 1
+      },
+      "actions": [
+        {
+          "id": "createRole",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/roles",
+          "handler": null
+        },
+        {
+          "id": "updateRole",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/roles/{id}",
+          "handler": null
+        },
+        {
+          "id": "deleteRole",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/roles/{id}",
+          "handler": null
+        },
+        {
+          "id": "exportRoles",
+          "type": "custom",
+          "method": null,
+          "url": null,
+          "handler": "export.roles"
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEdit",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [
+        "export.roles"
+      ],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.scheduled-tasks",
+      "modulePath": "apps/api/modules/scheduledtasks",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "scheduled-tasks",
+      "route": "/scheduled-tasks",
+      "schemaUrl": "/api/schema/scheduled-tasks",
+      "fragmentPath": "apps/api/modules/scheduledtasks/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/scheduledtasks/schema/scheduled-tasks.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced",
+        "actions.row.navigate"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "scheduled-tasks",
+          "label": "Scheduled tasks",
+          "labelKey": "manifest.nav.scheduledTasks"
+        }
+      ],
+      "nodeCounts": {
+        "form": 3,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 6,
+        "select": 3,
+        "switch": 2,
+        "textarea": 2
+      },
+      "actions": [
+        {
+          "id": "createTask",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/scheduled-tasks",
+          "handler": null
+        },
+        {
+          "id": "updateTask",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/scheduled-tasks/{id}",
+          "handler": null
+        },
+        {
+          "id": "deleteTask",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/scheduled-tasks/{id}",
+          "handler": null
+        },
+        {
+          "id": "runTask",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/scheduled-tasks/{id}/run",
+          "handler": null
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEdit",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openRuns",
+          "type": "navigate",
+          "method": null,
+          "url": "/task-runs",
+          "handler": null
+        }
+      ],
+      "afterComponents": {
+        "cron-preview": 2
+      },
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "dev.examples",
+      "modulePath": "apps/api/modules/dev/examples",
+      "profiles": [
+        "demo"
+      ],
+      "pageId": "search-form-table",
+      "route": "/search-form-table",
+      "schemaUrl": "/api/schema/search-form-table",
+      "fragmentPath": "apps/api/modules/dev/examples/manifest/fragment.json",
+      "fragmentLine": 42,
+      "schemaPath": "apps/api/modules/dev/examples/schema/search-form-table.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "form.controls.extended",
+        "table.sort"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "search-form-table",
+          "label": "Search + table",
+          "labelKey": "manifest.nav.search-form-table"
+        }
+      ],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "table": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "input": 1
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.settings",
+      "modulePath": "apps/api/modules/settings",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "settings",
+      "route": "/settings",
+      "schemaUrl": "/api/schema/settings",
+      "fragmentPath": "apps/api/modules/settings/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/settings/schema/settings.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.page.trigger",
+        "form.record.load",
+        "form.controls.extended",
+        "actions.upload"
+      ],
+      "navigationRefs": [
+        {
+          "area": "user",
+          "pageRef": "settings",
+          "label": "Settings",
+          "labelKey": "manifest.nav.settings"
+        }
+      ],
+      "nodeCounts": {
+        "actionButton": 1,
+        "custom": 1,
+        "form": 6,
+        "section": 8,
+        "tabs": 1,
+        "text": 1
+      },
+      "controlCounts": {
+        "input": 5,
+        "inputNumber": 1,
+        "select": 4,
+        "upload": 4
+      },
+      "actions": [
+        {
+          "id": "updateGeneral",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/settings/default",
+          "handler": null
+        },
+        {
+          "id": "updateBranding",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/settings/default",
+          "handler": null
+        },
+        {
+          "id": "uploadBrandingLogo",
+          "type": "upload",
+          "method": null,
+          "url": "/api/branding/assets?kind=logo",
+          "handler": null
+        },
+        {
+          "id": "uploadBrandingFavicon",
+          "type": "upload",
+          "method": null,
+          "url": "/api/branding/assets?kind=favicon",
+          "handler": null
+        },
+        {
+          "id": "updateLocalization",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/settings/default",
+          "handler": null
+        },
+        {
+          "id": "updateAppearance",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/settings/default",
+          "handler": null
+        },
+        {
+          "id": "updateAudit",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/settings/default",
+          "handler": null
+        },
+        {
+          "id": "resetSettings",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/settings/default/reset",
+          "handler": null
+        },
+        {
+          "id": "updateCaptcha",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/captcha/settings",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "password-policy-tab": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "password-policy-tab": 1
+      }
+    },
+    {
+      "moduleId": "admin.system-monitoring",
+      "modulePath": "apps/api/modules/systemmonitoring",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "system-monitoring",
+      "route": "/system-monitoring",
+      "schemaUrl": "/api/schema/system-monitoring",
+      "fragmentPath": "apps/api/modules/systemmonitoring/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/systemmonitoring/schema/system-monitoring.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "table.sort"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "system-monitoring",
+          "label": "System monitoring",
+          "labelKey": "manifest.nav.systemMonitoring"
+        }
+      ],
+      "nodeCounts": {
+        "custom": 1,
+        "grid": 1,
+        "section": 1,
+        "statCard": 6,
+        "table": 1,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "monitoring-auto-refresh": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "monitoring-auto-refresh": 1
+      }
+    },
+    {
+      "moduleId": "admin.scheduled-tasks",
+      "modulePath": "apps/api/modules/scheduledtasks",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "task-runs",
+      "route": "/task-runs",
+      "schemaUrl": "/api/schema/task-runs",
+      "fragmentPath": "apps/api/modules/scheduledtasks/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/scheduledtasks/schema/task-runs.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "table.sort"
+      ],
+      "navigationRefs": [],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 1
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "channel.telegram",
+      "modulePath": "apps/api/modules/channel/telegram",
+      "profiles": [
+        "custom-only"
+      ],
+      "pageId": "telegram-operator",
+      "route": "/telegram-settings/operator",
+      "schemaUrl": "/api/schema/telegram-operator",
+      "fragmentPath": "apps/api/modules/channel/telegram/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/channel/telegram/schema/telegram-operator.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation"
+      ],
+      "navigationRefs": [],
+      "nodeCounts": {
+        "custom": 1
+      },
+      "controlCounts": {},
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "telegram-admin-tab": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "telegram-admin-tab": 1
+      }
+    },
+    {
+      "moduleId": "channel.telegram",
+      "modulePath": "apps/api/modules/channel/telegram",
+      "profiles": [
+        "custom-only"
+      ],
+      "pageId": "telegram-settings",
+      "route": "/telegram-settings",
+      "schemaUrl": "/api/schema/telegram-settings",
+      "fragmentPath": "apps/api/modules/channel/telegram/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/channel/telegram/schema/telegram-settings.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.page.trigger"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "telegram-settings",
+          "label": "Telegram channel",
+          "labelKey": "manifest.nav.telegram"
+        }
+      ],
+      "nodeCounts": {
+        "actionButton": 1,
+        "custom": 1,
+        "section": 2,
+        "text": 1
+      },
+      "controlCounts": {},
+      "actions": [
+        {
+          "id": "openTelegramOperator",
+          "type": "navigate",
+          "method": null,
+          "url": "/telegram-settings/operator",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "telegram-admin-tab": 1
+      },
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {
+        "telegram-admin-tab": 1
+      }
+    },
+    {
+      "moduleId": "admin.users",
+      "modulePath": "apps/api/modules/users",
+      "profiles": [
+        "mvp",
+        "admin",
+        "demo"
+      ],
+      "pageId": "users",
+      "route": "/users",
+      "schemaUrl": "/api/schema/users",
+      "fragmentPath": "apps/api/modules/users/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/users/schema/users.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced",
+        "actions.upload"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "users",
+          "label": "Users",
+          "labelKey": "manifest.nav.users"
+        }
+      ],
+      "nodeCounts": {
+        "form": 6,
+        "recordView": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "checkboxGroup": 2,
+        "input": 4,
+        "password": 2,
+        "select": 2,
+        "upload": 1
+      },
+      "actions": [
+        {
+          "id": "openInvites",
+          "type": "navigate",
+          "method": null,
+          "url": "/users-invites",
+          "handler": null
+        },
+        {
+          "id": "createUser",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/users",
+          "handler": null
+        },
+        {
+          "id": "updateUser",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/users/{id}",
+          "handler": null
+        },
+        {
+          "id": "updateUserRoles",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/users/{id}",
+          "handler": null
+        },
+        {
+          "id": "changeUserPassword",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/users/{id}",
+          "handler": null
+        },
+        {
+          "id": "deleteUser",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/users/{id}",
+          "handler": null
+        },
+        {
+          "id": "enableUser",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/users/{id}/enable",
+          "handler": null
+        },
+        {
+          "id": "disableUser",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/users/{id}/disable",
+          "handler": null
+        },
+        {
+          "id": "unlockUser",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/users/{id}/unlock",
+          "handler": null
+        },
+        {
+          "id": "resetUserMfa",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/users/{id}/mfa/reset",
+          "handler": null
+        },
+        {
+          "id": "uploadCsv",
+          "type": "upload",
+          "method": null,
+          "url": "/api/upload",
+          "handler": null
+        },
+        {
+          "id": "exportUsers",
+          "type": "custom",
+          "method": null,
+          "url": null,
+          "handler": "export.users"
+        },
+        {
+          "id": "submitImport",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/import/users",
+          "handler": null
+        },
+        {
+          "id": "openImport",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEdit",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openRoles",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openPassword",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {
+        "import-template-download": 1
+      },
+      "customActionHandlers": [
+        "export.users"
+      ],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.users",
+      "modulePath": "apps/api/modules/users",
+      "profiles": [
+        "mvp",
+        "admin",
+        "demo"
+      ],
+      "pageId": "users-invites",
+      "route": "/users-invites",
+      "schemaUrl": "/api/schema/users-invites",
+      "fragmentPath": "apps/api/modules/users/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/users/schema/users-invites.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.7",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "table.sort",
+        "form.controls.extended"
+      ],
+      "navigationRefs": [],
+      "nodeCounts": {
+        "custom": 2,
+        "form": 1,
+        "recordView": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 1
+      },
+      "actions": [
+        {
+          "id": "revokeInvite",
+          "type": "request",
+          "method": "DELETE",
+          "url": "/api/users/invites/{id}",
+          "handler": null
+        },
+        {
+          "id": "resendInvite",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {
+        "invite-issue-card": 1
+      },
+      "actionContentCustomNodeKeys": {
+        "invite-resend-dialog": 1
+      },
+      "customNodeKeysTotal": {
+        "invite-issue-card": 1,
+        "invite-resend-dialog": 1
+      }
+    },
+    {
+      "moduleId": "admin.wallet",
+      "modulePath": "apps/api/modules/wallet",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "wallet",
+      "route": "/wallet",
+      "schemaUrl": "/api/schema/wallet",
+      "fragmentPath": "apps/api/modules/wallet/manifest/fragment.json",
+      "fragmentLine": 14,
+      "schemaPath": "apps/api/modules/wallet/schema/wallet.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.row.request",
+        "actions.page.trigger",
+        "actions.row.navigate",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced",
+        "form.controls.readonly"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "wallet",
+          "label": "Wallet",
+          "labelKey": "manifest.nav.wallet"
+        }
+      ],
+      "nodeCounts": {
+        "form": 7,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 7,
+        "inputNumber": 5,
+        "select": 3,
+        "textarea": 4
+      },
+      "actions": [
+        {
+          "id": "createAccount",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/accounts",
+          "handler": null
+        },
+        {
+          "id": "updateStatus",
+          "type": "request",
+          "method": "PATCH",
+          "url": "/api/wallet/accounts/{id}",
+          "handler": null
+        },
+        {
+          "id": "adjust",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/accounts/{id}/adjust",
+          "handler": null
+        },
+        {
+          "id": "freeze",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/accounts/{id}/freeze",
+          "handler": null
+        },
+        {
+          "id": "unfreeze",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/accounts/{id}/unfreeze",
+          "handler": null
+        },
+        {
+          "id": "deductFrozen",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/accounts/{id}/deduct-frozen",
+          "handler": null
+        },
+        {
+          "id": "runReconcile",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/reconcile",
+          "handler": null
+        },
+        {
+          "id": "openCreate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openAdjust",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openFreeze",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openUnfreeze",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openDeductFrozen",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openStatus",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "openEntries",
+          "type": "navigate",
+          "method": null,
+          "url": "/wallet-entries/{id}",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [
+        {
+          "path": "$.actions.openStatus.content.props.fields[1]",
+          "fieldKey": null
+        }
+      ],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.wallet",
+      "modulePath": "apps/api/modules/wallet",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "wallet-entries",
+      "route": "/wallet-entries/{id}",
+      "schemaUrl": "/api/schema/wallet-entries",
+      "fragmentPath": "apps/api/modules/wallet/manifest/fragment.json",
+      "fragmentLine": 21,
+      "schemaPath": "apps/api/modules/wallet/schema/wallet-entries.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "table.sort",
+        "data.route-binding"
+      ],
+      "navigationRefs": [],
+      "nodeCounts": {
+        "form": 1,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "input": 1,
+        "select": 1
+      },
+      "actions": [],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [
+        {
+          "path": "$.body.children[1].data.params.accountId",
+          "expression": "$context.route.params.id"
+        }
+      ],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    },
+    {
+      "moduleId": "admin.wallet",
+      "modulePath": "apps/api/modules/wallet",
+      "profiles": [
+        "admin"
+      ],
+      "pageId": "wallet-vouchers",
+      "route": "/wallet-vouchers",
+      "schemaUrl": "/api/schema/wallet-vouchers",
+      "fragmentPath": "apps/api/modules/wallet/manifest/fragment.json",
+      "fragmentLine": 35,
+      "schemaPath": "apps/api/modules/wallet/schema/wallet-vouchers.json",
+      "schemaLine": 3,
+      "schemaProtocolVersion": "2.9",
+      "requiredCapabilities": [
+        "app.manifest",
+        "app.navigation",
+        "permissions.inheritance",
+        "actions.page.trigger",
+        "actions.row.request",
+        "table.sort",
+        "form.controls.extended",
+        "form.controls.advanced"
+      ],
+      "navigationRefs": [
+        {
+          "area": "sidebar",
+          "pageRef": "wallet-vouchers",
+          "label": "Prepaid vouchers",
+          "labelKey": "manifest.nav.walletVouchers"
+        }
+      ],
+      "nodeCounts": {
+        "form": 2,
+        "section": 1,
+        "table": 1
+      },
+      "controlCounts": {
+        "datePicker": 1,
+        "input": 2,
+        "inputNumber": 2,
+        "select": 1
+      },
+      "actions": [
+        {
+          "id": "generateBatch",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/vouchers/batches",
+          "handler": null
+        },
+        {
+          "id": "openGenerate",
+          "type": "modal",
+          "method": null,
+          "url": null,
+          "handler": null
+        },
+        {
+          "id": "voidVoucher",
+          "type": "request",
+          "method": "POST",
+          "url": "/api/wallet/vouchers/{id}/void",
+          "handler": null
+        }
+      ],
+      "afterComponents": {},
+      "customActionHandlers": [],
+      "routeBindings": [],
+      "readOnlyFields": [],
+      "bodyCustomNodeKeys": {},
+      "actionContentCustomNodeKeys": {},
+      "customNodeKeysTotal": {}
+    }
+  ],
+  "web": {
+    "rendererNodeTypes": [
+      "form",
+      "section",
+      "table",
+      "grid",
+      "tabs",
+      "text",
+      "recordView",
+      "actionButton",
+      "statCard",
+      "chart",
+      "custom"
+    ],
+    "formControlTypes": [
+      "input",
+      "select",
+      "inputNumber",
+      "datePicker",
+      "dateRangePicker",
+      "textarea",
+      "switch",
+      "checkbox",
+      "radio",
+      "cascader",
+      "checkboxGroup",
+      "richText",
+      "password",
+      "upload"
+    ],
+    "registeredCustomComponents": [
+      {
+        "key": "account-session-toolbar",
+        "path": "apps/web/src/components/account-session-toolbar.tsx",
+        "line": 84
+      },
+      {
+        "key": "activity-export",
+        "path": "apps/web/src/components/activity-export.tsx",
+        "line": 84
+      },
+      {
+        "key": "cron-preview",
+        "path": "apps/web/src/components/cron-preview.tsx",
+        "line": 134
+      },
+      {
+        "key": "data-permission-scopes",
+        "path": "apps/web/src/components/data-permission-scopes.tsx",
+        "line": 282
+      },
+      {
+        "key": "email-identity",
+        "path": "apps/web/src/components/email-identity.tsx",
+        "line": 195
+      },
+      {
+        "key": "import-template-download",
+        "path": "apps/web/src/components/import-template-download.tsx",
+        "line": 70
+      },
+      {
+        "key": "invite-issue-card",
+        "path": "apps/web/src/components/invite-issue-card.tsx",
+        "line": 248
+      },
+      {
+        "key": "invite-resend-dialog",
+        "path": "apps/web/src/components/invite-resend-dialog.tsx",
+        "line": 133
+      },
+      {
+        "key": "mail-admin-tab",
+        "path": "apps/web/src/components/mail-admin-tab.tsx",
+        "line": 350
+      },
+      {
+        "key": "mfa-manager",
+        "path": "apps/web/src/components/mfa-manager.tsx",
+        "line": 379
+      },
+      {
+        "key": "monitoring-auto-refresh",
+        "path": "apps/web/src/components/monitoring-auto-refresh.tsx",
+        "line": 62
+      },
+      {
+        "key": "notification-center",
+        "path": "apps/web/src/components/notification-center.tsx",
+        "line": 250
+      },
+      {
+        "key": "password-policy-tab",
+        "path": "apps/web/src/components/password-policy-tab.tsx",
+        "line": 137
+      },
+      {
+        "key": "telegram-admin-tab",
+        "path": "apps/web/src/components/telegram-admin-tab.tsx",
+        "line": 1089
+      },
+      {
+        "key": "wallet-ensure",
+        "path": "apps/web/src/components/wallet-ensure.tsx",
+        "line": 112
+      }
+    ],
+    "usedAfterComponentKeys": {
+      "cron-preview": 2,
+      "import-template-download": 1
+    },
+    "customActionHandlers": {
+      "export.roles": 1,
+      "export.users": 1,
+      "library.copyLink": 1,
+      "library.download": 1,
+      "library.preview": 1
+    },
+    "customActionWhitelist": {
+      "export.users": "/api/export/users",
+      "export.roles": "/api/export/roles",
+      "library.download": "/api/library/files/{id}/download",
+      "library.preview": "/api/library/files/{id}/download",
+      "library.copyLink": "/api/library/files/{id}/download"
+    },
+    "hostOwnedPaths": [
+      {
+        "path": "/login",
+        "evidence": "apps/web/src/app/App.tsx:133"
+      }
+    ],
+    "hostSurfaces": [
+      {
+        "surface": "login",
+        "evidence": "apps/web/src/app/LoginPage.tsx:60-91"
+      },
+      {
+        "surface": "auth/session gate",
+        "evidence": "apps/web/src/app/AuthGate.tsx:48-78"
+      },
+      {
+        "surface": "branding",
+        "evidence": "apps/web/src/app/branding.ts; apps/web/src/app/App.tsx:786"
+      },
+      {
+        "surface": "host boot/recovery",
+        "evidence": "apps/web/src/host/boot.ts:269-320"
+      },
+      {
+        "surface": "host failure",
+        "evidence": "apps/web/src/host/failure.ts:43-180; apps/web/src/app/HostFailureScreen.tsx:42-56"
+      },
+      {
+        "surface": "manifest failure",
+        "evidence": "apps/web/src/app/ManifestFailure.tsx:6"
+      },
+      {
+        "surface": "shell/navigation/user menu",
+        "evidence": "apps/web/src/app/App.tsx:291-446"
+      }
+    ],
+    "unknownNode": {
+      "behavior": "fail-closed",
+      "code": "RENDER_UNKNOWN_NODE_TYPE",
+      "evidence": "apps/web/src/renderer/render.types.ts:396-406"
+    },
+    "unknownCustom": {
+      "behavior": "inline safe fallback text",
+      "evidence": "apps/web/src/renderer/render.tsx:2915-2924"
+    },
+    "usedCustomNodeKeysTotal": {
+      "account-session-toolbar": 1,
+      "activity-export": 1,
+      "data-permission-scopes": 1,
+      "email-identity": 1,
+      "invite-issue-card": 1,
+      "invite-resend-dialog": 1,
+      "mail-admin-tab": 1,
+      "mfa-manager": 1,
+      "monitoring-auto-refresh": 1,
+      "notification-center": 1,
+      "password-policy-tab": 1,
+      "telegram-admin-tab": 2,
+      "wallet-ensure": 1
+    },
+    "usedBodyCustomNodeKeys": {
+      "account-session-toolbar": 1,
+      "activity-export": 1,
+      "data-permission-scopes": 1,
+      "email-identity": 1,
+      "invite-issue-card": 1,
+      "mail-admin-tab": 1,
+      "mfa-manager": 1,
+      "monitoring-auto-refresh": 1,
+      "notification-center": 1,
+      "password-policy-tab": 1,
+      "telegram-admin-tab": 2,
+      "wallet-ensure": 1
+    },
+    "usedActionContentCustomNodeKeys": {
+      "invite-resend-dialog": 1
+    }
+  },
+  "tests": {
+    "dogfoodManifests": {
+      "mvp": {
+        "path": "apps/web/src/test-fixtures/app-manifest.mvp-dogfood.json",
+        "protocolVersion": "2.7",
+        "pageIds": [
+          "admin-list-batch",
+          "data-display",
+          "overview",
+          "data-table",
+          "search-form-table",
+          "form-controls",
+          "form-with-reactions",
+          "form-with-upload",
+          "users",
+          "roles",
+          "dashboard",
+          "account",
+          "notifications"
+        ]
+      },
+      "admin": {
+        "path": "apps/web/src/test-fixtures/app-manifest.admin-dogfood.json",
+        "protocolVersion": "2.7",
+        "pageIds": [
+          "admin-list-batch",
+          "data-display",
+          "overview",
+          "data-table",
+          "search-form-table",
+          "form-controls",
+          "form-with-reactions",
+          "form-with-upload",
+          "users",
+          "roles",
+          "settings",
+          "activity",
+          "dashboard",
+          "account",
+          "notifications",
+          "file-library",
+          "data-dictionary",
+          "dictionary-entries",
+          "system-monitoring",
+          "scheduled-tasks",
+          "task-runs",
+          "recycle-bin",
+          "data-permission",
+          "wallet",
+          "wallet-entries",
+          "my-wallet"
+        ]
+      }
+    },
+    "representativePageIds": [
+      "data-table",
+      "search-form-table",
+      "form-controls",
+      "form-with-reactions",
+      "users",
+      "users-invites",
+      "roles",
+      "settings",
+      "activity",
+      "data-permission"
+    ],
+    "representativeCoverage": "10/35",
+    "evidence": "apps/web/src/renderer/representative-pages.test.tsx:25-81,143-156"
+  }
+}

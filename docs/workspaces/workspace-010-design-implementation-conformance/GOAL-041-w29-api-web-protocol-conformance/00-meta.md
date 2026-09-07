@@ -1,0 +1,63 @@
+---
+id: GOAL-041-w29-api-web-protocol-conformance
+title: W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环
+status: done
+parent: GOAL-001-design-implementation-conformance
+created: 2026-09-06
+updated: 2026-09-06
+version: 0.8.0
+progress: 6/6
+---
+
+# GOAL-041 · W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环
+
+## 概述
+
+以现行 Charter 固定的 `schema-ui-docs@v2.9.0`（pinned commit `81aa1d8`）为起始协议身份，对 `apps/api` 与 `apps/web` 的实际页面、控件、Manifest、Schema、registry、request/response/action 映射和运行时失败路径建立完整分母并逐项核验。
+
+本目标不预设“手写 UI = 协议绕过”，而是把候选区分为：
+
+1. **implementation-gap**：上游已有明确协议语义，本仓实现未遵循；应修正本仓实现。
+2. **upstream-protocol-gap**：本仓存在合理需求，但上游没有足够的数据形状、状态/错误、安全边界、能力声明或 fixtures；先形成上游协议增补报告与提案。
+3. **custom-extension-candidate**：上游明确允许或明确不负责，且本仓可以在允许范围内以 namespaced custom 控件/Host 边界承载；须另有可验证的兼容与 fail-closed 决策。
+4. **explicitly-out / excluded**：明确属于 Host、身份/部署安全、业务域或本波边界外，不伪装成协议能力。
+
+对确认为 `upstream-protocol-gap` 的候选，**上游协议 accepted/merged、正式版本与 commit 固定、本仓 provenance/schemas/registry/fixtures/兼容证据完成前，禁止实施或放行依赖该增补的本仓产品修改**。若存在需上游增补的条目，汇总报告固定为 `attachments/upstream-protocol-augmentation-report.md`。
+
+## 边界
+
+### 纳入
+
+- `apps/api` 的页面 Schema 提供、Manifest/fragment 聚合、component/capability registry 映射、action/request/response/dataSource/permission 契约及相关失败路径。
+- `apps/web` 的 manifest route → `schemaUrl` → page document → Renderer 链路，以及 form、table、recordView、actionButton、navigation、route binding、readonly、upload、reaction、custom 控件和错误/降级呈现。
+- `schema-ui-docs@v2.9.0` 机器工件、本仓 provenance/schema/registry/fixtures、实际运行时 Manifest 与代表性页面流程之间的同源一致性。
+- 确认后的本仓实现整改、上游协议增补等待门禁、合法 custom 边界与对应验证。
+
+### 排除
+
+- 不重写或重新开启已完成的 GOAL-004；仅引用其 v2.8 Host/App 边界、处置语义与历史证据。
+- 不把 Login、branding、session、Shell、全局导航、错误边界等 Host 面一概判为违规；只核验其是否落在已固定 Host/App 契约或明确扩展边界内。
+- 不承载纯安全漏洞、性能专项、业务域功能新增或身份平台/token 生命周期实现；命中安全主因时以限定引用移交 workspace-009。
+- 不在上游协议未固定时于本仓自造稳定协议语义；不把静态 schema 通过、registry 存在或单个 happy path 当作运行时符合性证明。
+
+## 成功标准 / 高层路线图
+
+- [x] **S1 · v2.9 分母与候选目录**：已固定 v2.9 tag/commit 与 11/24/19/20 协议分母，建立 17 fragments / 35 页面 schema / 11 renderer nodes / 14 controls / 15 custom registrations 目录，并登记 C-001～C-014；证据见 E-002 与 `attachments/S1-*`。
+- [x] **S2 · 差异分类与方案冻结**：C-001～C-014 全部给出带证据的唯一处置类别（implementation-gap ×6 / custom-extension-candidate ×1 / explicitly-out ×1 / excluded ×2 / no-gap ×3；upstream-protocol-gap = 0）；self（A-001）+ independent（A-002 grok-build）cross 审视完成，A-003 合并响应后 required findings 全闭合（F-002～F-005 fixed；**F-001 accepted-residual 用户书面裁决**，S4 承接）；证据见 E-003、D-002 与 `attachments/S2-candidate-classification.md`。
+- [x] **S3 · 上游协议或 custom 边界固定**：协议缺口取得 accepted/merged 的上游契约、正式版本/commit 与可消费机器工件；custom 候选取得用户书面裁决及 namespace/capability/schema/validator/failure/compatibility/fixture 边界。（upstream-protocol-gap = 0，上游分支不适用；**C-009 用户 P-004 书面裁决 = 本仓合法 custom + 保留现有键 + 新键规范；C-005 子项 = 删除未使用声明**；边界规范见 `attachments/custom-extension-boundary.md`，D-003。）
+- [x] **S4 · API/Web 实现整改**：只按已固定的上游协议或合法 custom 契约修改实现；已有协议偏差全部有修复与防复发证据。（C-001 provenance 路径/note + stage3 守卫；C-002 claim artifactVersion 2.9.0 + 重生成；C-003 台账卫生/README；**C-004/F-001 页面级版本+能力门禁接线（load-page）+ claim/HOST_SUPPORT 扩至 19 能力**；C-005 digitaloffer 未使用声明删除 + 声明-使用守卫；C-006 dogfood 守卫（捕获并修正 dictionary-entries 路由漂移）；C-010 未知 custom 明显占位 + console.error。回归：Web vitest 1271/1271、tsc+build 0、Go 全量 0 FAIL。证据见 E-005、A-005。）
+- [x] **S5 · 运行时符合性验证**：validator、正反 fixtures、代表性页面与失败路径、API/Web 定向与全量回归可复跑；记录 VP-008 `go` 消费影响与暂挂/恢复结论。（35/35 分母 D-VAL+Load+Render（`denominator-render.test.tsx` 36 tests）；5 组合 HTTP Manifest 快照（`s5_manifest_snapshot_test.go`：mvp 6 / admin 22 / demo 14 / admin+digitaloffer 25 / admin+telegram 24）；覆盖矩阵 `attachments/S5-coverage-matrix.md`；失败路径全绿；**I-006 verified、I-007 = 无影响不暂挂**。证据见 E-006、A-006。）
+- [x] **S6 · 关门审计**：全部到期 required 信息项与 required findings 合法闭合；上游报告、custom 裁决、回归和 cross 关门意见完整；用户确认后才可 `done`。（A-007 self close-out + A-008 grok build independent（conditional → A-009 响应 F-001/F-002 均 fixed）+ A-009；I-001～I-008 全 verified/不适用；required 0 开放；**用户书面确认关门 2026-09-06** → `status: done`、progress 6/6。）
+
+`progress` 按上述六个等权检查点确定性派生；部分完成不计入。S1～S6 全部完成，故为 `6/6`；目标 `status: done`（用户书面确认 2026-09-06）。Root 保持 active 程序容器。
+
+## 信息就绪
+
+完整信息台账见 [01-decision.md](01-decision.md)。S1 已以 E-002 和 `attachments/S1-*` 回答 I-001/I-002；S2 已以 `attachments/S2-candidate-classification.md` 与 D-002 回答 I-003（verified）并证据收口 I-004（不适用，upstream gap = 0）；S3 已以 D-003 与 `attachments/custom-extension-boundary.md` 回答 I-005（verified）；S4 已实施 C-001～C-010 整改并验证（E-005/A-005），F-001 复审触发满足并 fixed 闭合；S5 已以 E-006 / `attachments/S5-coverage-matrix.md` + `S5-manifest-snapshots/` 回答 I-006（verified）与 I-007（无影响不暂挂）；**S6 关门：I-008 verified（S2 腿 A-001/A-002/A-003 + S6 腿 A-007/A-008/A-009）**，I-009 non-blocking 已复核。
+
+## 审计模式
+
+- 模式：`cross`。
+- 最低要求：S2 方案冻结前形成 self 意见 + 项目默认 independent provider 的 `/audit` 意见；S6 关门前对运行时符合性、上游门禁、custom 边界与失败路径复审。
+- provider：按项目级 `docs/architecture/independent-audit-execution.md` 使用本地 `grok build`（grok 4.6，思考强度 high）。若 provider 不可用或没有可核对输出，不得冒充 independent，相关门禁保持未满足。
+- 当前状态：**已关门**。S2 cross（A-001/A-002/A-003）→ S3 A-004 → S4 A-005 → S5 A-006 → S6 A-007 self + A-008 grok independent + A-009 响应（A-008 F-001/F-002 均 fixed）→ **用户书面确认关门（2026-09-06）→ status: done / 6/6**。

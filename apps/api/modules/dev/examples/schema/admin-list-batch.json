@@ -6,10 +6,11 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "permissions.inheritance",
       "actions.page.trigger",
       "actions.batch.request",
-      "table.selection"
+      "table.selection",
+      "table.sort",
+      "form.controls.extended"
     ]
   },
   "actions": {

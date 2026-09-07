@@ -30,6 +30,13 @@
       "schemaUrl": "/api/schema/my-wallet",
       "route": "/my-wallet",
       "titleKey": "manifest.title.myWallet"
+    },
+    {
+      "pageId": "wallet-vouchers",
+      "title": "Prepaid vouchers",
+      "schemaUrl": "/api/schema/wallet-vouchers",
+      "route": "/wallet-vouchers",
+      "titleKey": "manifest.title.walletVouchers"
     }
   ],
   "navigation": {
@@ -53,6 +60,15 @@
           "when": "$context.features.menu_wallet == true"
         },
         "labelKey": "manifest.nav.wallet"
+      },
+      {
+        "pageRef": "wallet-vouchers",
+        "label": "Prepaid vouchers",
+        "icon": "card",
+        "visibleWhen": {
+          "when": "$context.features.menu_wallet_vouchers == true"
+        },
+        "labelKey": "manifest.nav.walletVouchers"
       }
     ]
   }

@@ -168,7 +168,7 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(container.textContent).toContain("Revenue");
-    expect(container.textContent).toContain("1250");
+    expect(container.textContent).toContain("12.50");
   });
 
   // GOAL-015 / ADR-0039 (F-002 follow-up): a statCard node-level DataRef
@@ -1302,6 +1302,179 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
       expect(input?.value).toBe("Order-5");
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it("downloads the voucher CSV when the form props declare downloadCsv (VP-029 F-001 · A-008 · E-007)", async () => {
+    let downloadedFilename = "";
+    const originalCreate = globalThis.URL.createObjectURL;
+    const originalRevoke = globalThis.URL.revokeObjectURL;
+    globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
+    globalThis.URL.revokeObjectURL = vi.fn();
+
+    const origCreateElement = document.createElement.bind(document);
+    const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tagName: string, options?: ElementCreationOptions) => {
+      const el = origCreateElement(tagName, options);
+      if (tagName.toLowerCase() === "a") {
+        el.click = () => {
+          downloadedFilename = el.getAttribute("download") || (el as HTMLAnchorElement).download;
+        };
+      }
+      return el;
+    });
+
+    await withFetchSpy(async (fetchSpy) => {
+      const pageDoc = submitFormDocument(
+        [
+          { id: "batchId", label: "Batch ID", type: "input" },
+          { id: "count", label: "Count", type: "input" },
+        ],
+        [],
+      );
+      pageDoc.actions.submit.url = "/api/wallet/vouchers/batches";
+      // A-005 F-002 (A-008 · E-007): export is declaration-driven — declared on
+      // the form node's business props (the pinned OutcomeBehavior schema
+      // cannot carry extra onSuccess keys), never inferred from items[].code.
+      const formNode = pageDoc.body as unknown as { props: Record<string, unknown> };
+      formNode.props.downloadCsv = {
+        columns: ["code", "codePrefix", "batchId", "amount", "currency", "createdAt"],
+        fileName: "vouchers_{batchId}.csv",
+      };
+
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/wallet/vouchers/batches")) {
+          return new Response(
+            JSON.stringify({
+              items: [
+                {
+                  id: "v1",
+                  batchId: "b-test",
+                  code: "CODE11112222333344445555",
+                  codePrefix: "CODE11",
+                  amount: 500,
+                  currency: "CNY",
+                  createdAt: "2026-09-02T10:00:00Z",
+                },
+              ],
+              total: 1,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      try {
+        const container = await renderDocument(pageDoc, {});
+        const button = submitButton(container);
+        expect(button.disabled).toBe(false);
+        await act(async () => {
+          button.click();
+        });
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+
+        expect(fetchSpy).toHaveBeenCalled();
+        expect(downloadedFilename).toBe("vouchers_b-test.csv");
+      } finally {
+        createElementSpy.mockRestore();
+        globalThis.URL.createObjectURL = originalCreate;
+        globalThis.URL.revokeObjectURL = originalRevoke;
+      }
+    });
+  });
+
+  it("does NOT download when the submit action lacks the downloadCsv declaration (A-005 F-002)", async () => {
+    let downloadedFilename = "";
+    const originalCreate = globalThis.URL.createObjectURL;
+    const originalRevoke = globalThis.URL.revokeObjectURL;
+    globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
+    globalThis.URL.revokeObjectURL = vi.fn();
+
+    const origCreateElement = document.createElement.bind(document);
+    const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+      const el = origCreateElement(tagName);
+      if (tagName.toLowerCase() === "a") {
+        el.click = () => {
+          downloadedFilename = el.getAttribute("download") || (el as HTMLAnchorElement).download;
+        };
+      }
+      return el;
+    });
+
+    await withFetchSpy(async (fetchSpy) => {
+      // An unrelated form whose success response happens to carry items[].code
+      // must NOT trigger a browser download — export is declaration-only.
+      const pageDoc = submitFormDocument(
+        [{ id: "name", label: "Name", type: "input" }],
+        [],
+      );
+      pageDoc.actions.submit.url = "/api/unrelated/import";
+
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/unrelated/import")) {
+          return new Response(
+            JSON.stringify({
+              items: [
+                { id: "u1", code: "CODE11112222333344445555", name: "imported row" },
+              ],
+              total: 1,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      });
+
+      try {
+        const container = await renderDocument(pageDoc, {});
+        const button = submitButton(container);
+        await act(async () => {
+          button.click();
+        });
+        await act(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+
+        expect(fetchSpy).toHaveBeenCalled();
+        expect(downloadedFilename).toBe("");
+      } finally {
+        createElementSpy.mockRestore();
+        globalThis.URL.createObjectURL = originalCreate;
+        globalThis.URL.revokeObjectURL = originalRevoke;
+      }
+    });
+  });
+});
+
+// C-010 (GOAL-041 S2): an unregistered custom component renders an obvious
+// placeholder (role=alert, shows the component key) and logs console.error —
+// it never crashes and never degrades silently.
+describe("RenderPage unknown custom component (C-010)", () => {
+  it("renders an obvious placeholder and logs console.error for an unregistered key", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const pageDoc: RenderPageDocument = {
+        meta: { protocolVersion: "2.7", requiredCapabilities: ["app.manifest"] },
+        body: {
+          type: "section",
+          children: [
+            { type: "custom", id: "widget-1", component: "never-registered-widget" },
+          ],
+        },
+      };
+      const container = await renderDocument(pageDoc, {});
+      const alert = container.querySelector('[role="alert"]');
+      expect(alert).not.toBeNull();
+      expect(alert?.textContent ?? "").toContain("never-registered-widget");
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("never-registered-widget"),
+      );
+    } finally {
+      errorSpy.mockRestore();
     }
   });
 });

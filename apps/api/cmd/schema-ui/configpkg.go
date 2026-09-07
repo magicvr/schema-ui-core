@@ -85,6 +85,10 @@ type cfgTree struct {
 	Log struct {
 		Level string `yaml:"level,omitempty" json:"level,omitempty"`
 	} `yaml:"log,omitempty" json:"log,omitempty"`
+	Telegram struct {
+		Mode                 string `yaml:"mode,omitempty" json:"mode,omitempty"`
+		WebhookPublicBaseURL string `yaml:"webhook_public_base_url,omitempty" json:"webhook_public_base_url,omitempty"`
+	} `yaml:"telegram,omitempty" json:"telegram,omitempty"`
 }
 
 type pkgMeta struct {
@@ -143,6 +147,12 @@ type treeFile struct {
 	Log struct {
 		Level *string `yaml:"level"`
 	} `yaml:"log"`
+	Telegram struct {
+		BotToken             *string `yaml:"bot_token"`
+		WebhookSecret        *string `yaml:"webhook_secret"`
+		Mode                 *string `yaml:"mode"`
+		WebhookPublicBaseURL *string `yaml:"webhook_public_base_url"`
+	} `yaml:"telegram"`
 }
 
 // sensitiveNameRe 是实现宽规则的保守匹配（合同 §1：键名含 secret/password/
@@ -224,6 +234,8 @@ func buildExportTree(path string) (cfgTree, []secretEntry, error) {
 	tree.Auth.PublicBaseURL = strOr(file.Auth.PublicBaseURL, def.Auth.PublicBaseURL)
 	tree.Admin.InitialPassword = strOr(file.Admin.InitialPassword, def.Admin.InitialPassword)
 	tree.Log.Level = strOr(file.Log.Level, def.Log.Level)
+	tree.Telegram.Mode = strOr(file.Telegram.Mode, def.Telegram.Mode)
+	tree.Telegram.WebhookPublicBaseURL = strOr(file.Telegram.WebhookPublicBaseURL, def.Telegram.WebhookPublicBaseURL)
 
 	// 敏感键剔除（宽规则匹配字段名）+ secrets.exclude（键路径 + 所需 env）。
 	// sensitiveFields 登记表 = 当前 serve 面敏感字段全集；新增字段若命中宽规则
@@ -236,6 +248,8 @@ func buildExportTree(path string) (cfgTree, []secretEntry, error) {
 	fields := []sensitiveField{
 		{path: "auth.jwt_secret", srcFile: file.Auth.JWTSecret, srcDefault: def.Auth.JWTSecret},
 		{path: "admin.initial_password", srcFile: file.Admin.InitialPassword, srcDefault: def.Admin.InitialPassword},
+		{path: "telegram.bot_token", srcFile: file.Telegram.BotToken, srcDefault: def.Telegram.BotToken},
+		{path: "telegram.webhook_secret", srcFile: file.Telegram.WebhookSecret, srcDefault: def.Telegram.WebhookSecret},
 	}
 	exclude := []secretEntry{}
 	for _, f := range fields {

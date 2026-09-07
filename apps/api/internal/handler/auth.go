@@ -11,8 +11,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
-	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
 // MFAVerifier is the optional second-factor login gate (S-10 · GOAL-017
@@ -45,19 +46,19 @@ type authHandler struct {
 	a           *auth.Authenticator
 	operations  operationlog.Recorder
 	now         func() time.Time
-	rateLimiter *loginRateLimiter
+	rateLimiter kernel.RateLimiter
 	captcha     CaptchaVerifier
 	// mfa is the optional second-factor gate (S-10 · GOAL-017 D-002 §3);
 	// nil keeps the login contract byte-identical.
 	mfa MFAVerifier
 }
 
-func authsHandler(mux routeRegistrar, a *auth.Authenticator, operations operationlog.Recorder, captcha CaptchaVerifier, mfa ...MFAVerifier) {
+func authsHandler(mux routeRegistrar, a *auth.Authenticator, operations operationlog.Recorder, limiters kernel.RateLimiterProvider, captcha CaptchaVerifier, mfa ...MFAVerifier) {
 	h := &authHandler{
 		a:           a,
 		operations:  operations,
 		now:         time.Now,
-		rateLimiter: newLoginRateLimiter(15*time.Minute, 20, 1<<16),
+		rateLimiter: limiters.NewRateLimiter(15*time.Minute, 20, 1<<16),
 		captcha:     captcha,
 	}
 	if len(mfa) > 0 && mfa[0] != nil {
@@ -102,13 +103,21 @@ func (h *authHandler) login() http.HandlerFunc {
 		// D-001 P1: the bucket key is the real client IP (trusted reverse proxy
 		// X-Real-IP) plus the attempted username, so one attacker spraying many
 		// usernames cannot lock out unrelated clients behind the same proxy.
+		// VP-032 / GOAL-003 D-002: tokenized Reserve occupies this attempt's
+		// slot atomically (no TOCTOU); non-counting outcomes (invalid captcha)
+		// Cancel exactly this slot; success clears the bucket (legacy Clear).
 		limiterKey := loginClientIP(r) + "|" + strings.ToLower(strings.TrimSpace(creds.Username))
-		if h.rateLimiter != nil && !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
-			if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
-				w.Header().Set("Retry-After", strconv.Itoa(sec))
+		var token uint64
+		if h.rateLimiter != nil {
+			var ok bool
+			token, ok = h.rateLimiter.Reserve(limiterKey, h.now().UTC())
+			if !ok {
+				if sec := h.rateLimiter.RetryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
+					w.Header().Set("Retry-After", strconv.Itoa(sec))
+				}
+				writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
+				return
 			}
-			writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many failed login attempts; try again later")
-			return
 		}
 		// S-11 (GOAL-011 D-002): when the captcha gate is enabled it runs after
 		// the rate limiter (which bounds challenge exhaustion) and before
@@ -116,6 +125,12 @@ func (h *authHandler) login() http.HandlerFunc {
 		// code; failures do not count against the lockout budget.
 		if h.captcha != nil && h.captcha.Required() {
 			if err := h.captcha.Verify(creds.CaptchaID, creds.CaptchaAnswer, h.now().UTC()); err != nil {
+				// Legacy semantics: a captcha failure never touched the bucket.
+				// Roll back exactly this attempt's slot, preserving any history
+				// (GOAL-003 D-002 #1).
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(limiterKey, token)
+				}
 				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_CAPTCHA", "captcha verification failed")
 				return
 			}
@@ -130,20 +145,13 @@ func (h *authHandler) login() http.HandlerFunc {
 		// locked/disabled" from "does not exist" (account-enumeration oracle).
 		// Fail-closed: no lock/disable status leak on the login surface.
 		// W11 F-007 (D2 residual): these terminal states now also count
-		// against the client's failure bucket — otherwise an attacker could
-		// probe lock/disable transitions without ever being rate-limited
-		// (a missing user and a locked user differ by ~6 timing probes).
+		// against the client's failure bucket. With entrance Reserve,
+		// the slot is already occupied.
 		if errors.Is(err, auth.ErrAccountLocked) || errors.Is(err, auth.ErrAccountDisabled) {
-			if h.rateLimiter != nil {
-				h.rateLimiter.record(limiterKey, h.now().UTC())
-			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
 		if errors.Is(err, auth.ErrInvalidCredentials) {
-			if h.rateLimiter != nil {
-				h.rateLimiter.record(limiterKey, h.now().UTC())
-			}
 			writeLocalizedError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "invalid username or password")
 			return
 		}
@@ -154,37 +162,37 @@ func (h *authHandler) login() http.HandlerFunc {
 		if errors.As(err, &mfaReq) {
 			if h.mfa == nil {
 				// The gate vanished between Login and here — fail closed.
+				// Legacy: an internal LOGIN_FAILED never recorded — roll back
+				// only this attempt's slot (A-004 R-001).
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(limiterKey, token)
+				}
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
 			}
 			// W11 F-003: the "password passed, awaiting second factor" state
-			// is rate-limited like the password factor itself — each proof
-			// issuance consumes one slot of the same IP|username bucket, so
-			// an attacker with the password cannot mint an unlimited number
-			// of fresh 5-guess proofs. Proofs stay one-shot and 5-failure
-			// capped in the service, but the bucket bounds the TOTAL guess
-			// budget (proofs issued per 15 min).
-			if h.rateLimiter != nil {
-				if !h.rateLimiter.allow(limiterKey, h.now().UTC()) {
-					if sec := h.rateLimiter.retryAfterSeconds(limiterKey, h.now().UTC()); sec > 0 {
-						w.Header().Set("Retry-After", strconv.Itoa(sec))
-					}
-					writeLocalizedError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "too many login attempts; try again later")
-					return
-				}
-			}
+			// is rate-limited like the password factor itself. With entrance
+			// Reserve, this attempt's slot is already occupied (legacy: one
+			// Record at proof issuance — same net count).
 			proof, perr := h.mfa.BeginChallenge(mfaReq.UserID, h.now().UTC())
 			if perr != nil {
+				// Legacy: a failed proof issuance never recorded — roll back
+				// only this attempt's slot (A-004 R-001).
+				if h.rateLimiter != nil {
+					h.rateLimiter.Cancel(limiterKey, token)
+				}
 				writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 				return
-			}
-			if h.rateLimiter != nil {
-				h.rateLimiter.record(limiterKey, h.now().UTC())
 			}
 			writeJSON(w, http.StatusOK, map[string]any{"mfaRequired": true, "mfaProof": proof})
 			return
 		}
 		if err != nil {
+			// Legacy: an unexpected auth error never recorded — roll back
+			// only this attempt's slot (A-004 R-001).
+			if h.rateLimiter != nil {
+				h.rateLimiter.Cancel(limiterKey, token)
+			}
 			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGIN_FAILED", "authentication unavailable")
 			return
 		}
@@ -192,9 +200,14 @@ func (h *authHandler) login() http.HandlerFunc {
 		// legitimate user who mis-typed the password a few times must not be
 		// locked out by their own earlier failures.
 		if h.rateLimiter != nil {
-			h.rateLimiter.clear(limiterKey)
+			h.rateLimiter.Clear(limiterKey)
 		}
 		h.logOperation(operationlog.EventAuthLogin, user.ID, user.Name, newAuthDetail("login", creds.Username), requestid.FromContext(r.Context()), user.SessionID)
+		// W17 GOAL-018 D-001 I-003: set the refresh token as an httpOnly cookie
+		// (priority 1: browser SPA defense against XSS exfiltration). The JSON
+		// response still contains refreshToken for non-browser client compatibility
+		// (mobile SDKs, CLI tools) per I-002 three-layer fallback.
+		setRefreshCookie(w, refresh, !isDevMode(r))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -202,13 +215,23 @@ func (h *authHandler) login() http.HandlerFunc {
 // refresh rotates a valid refresh token into a new access/refresh pair.
 func (h *authHandler) refresh() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body tokenRequest
-		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
+		// W17 GOAL-018 D-001 I-002: three-layer fallback (Cookie → Header → Body)
+		refreshToken := extractRefreshToken(r)
+		if refreshToken == "" {
+			// Priority 3: try JSON body if Cookie and Header both empty
+			var body tokenRequest
+			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_REFRESH_BODY", "body must be JSON with refreshToken")
+				return
+			}
+			refreshToken = body.RefreshToken
+		}
+		if refreshToken == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "MISSING_REFRESH_TOKEN", "refresh token required in cookie, header, or body")
 			return
 		}
-		access, refresh, user, err := h.a.Refresh(body.RefreshToken, h.now().UTC())
+		access, refresh, user, err := h.a.Refresh(refreshToken, h.now().UTC())
 		if errors.Is(err, auth.ErrInvalidToken) || errors.Is(err, auth.ErrExpiredToken) || errors.Is(err, auth.ErrTokenRevoked) {
 			writeLocalizedError(w, r, http.StatusUnauthorized, "REFRESH_TOKEN_EXPIRED", "invalid, expired or revoked refresh token")
 			return
@@ -218,6 +241,10 @@ func (h *authHandler) refresh() http.HandlerFunc {
 			return
 		}
 		h.authEvent(operationlog.EventAuthRefresh, user.ID, requestid.FromContext(r.Context()), user.SessionID)
+		// W17 GOAL-018 D-001 I-003: update the httpOnly cookie with the new token
+		// (cookie rotation on every refresh). The JSON response still contains
+		// refreshToken for non-browser client compatibility.
+		setRefreshCookie(w, refresh, !isDevMode(r))
 		writeJSON(w, http.StatusOK, tokenResponse{AccessToken: access, RefreshToken: refresh, User: user})
 	}
 }
@@ -226,13 +253,23 @@ func (h *authHandler) refresh() http.HandlerFunc {
 // auth.logout operation for the token's owner (I-008-003 §2/§5).
 func (h *authHandler) logout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body tokenRequest
-		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
+		// W17 GOAL-018 D-001 I-002: three-layer fallback (Cookie → Header → Body)
+		refreshToken := extractRefreshToken(r)
+		if refreshToken == "" {
+			// Priority 3: try JSON body if Cookie and Header both empty
+			var body tokenRequest
+			r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_LOGOUT_BODY", "body must be JSON with refreshToken")
+				return
+			}
+			refreshToken = body.RefreshToken
+		}
+		if refreshToken == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "MISSING_REFRESH_TOKEN", "refresh token required in cookie, header, or body")
 			return
 		}
-		userID, sessionID, err := h.a.Logout(body.RefreshToken, h.now().UTC())
+		userID, sessionID, err := h.a.Logout(refreshToken, h.now().UTC())
 		if err != nil {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "LOGOUT_FAILED", "logout unavailable")
 			return
@@ -240,6 +277,8 @@ func (h *authHandler) logout() http.HandlerFunc {
 		if userID != "" {
 			h.authEvent(operationlog.EventAuthLogout, userID, requestid.FromContext(r.Context()), sessionID)
 		}
+		// W17 GOAL-018 D-001: clear the httpOnly cookie on logout
+		clearRefreshCookie(w)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

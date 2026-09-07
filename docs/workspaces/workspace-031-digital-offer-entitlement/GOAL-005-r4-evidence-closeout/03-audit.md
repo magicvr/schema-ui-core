@@ -1,0 +1,33 @@
+---
+id: GOAL-005-r4-evidence-closeout
+title: R4 证据矩阵/边界核账/关门审计
+status: active
+parent: GOAL-001-digital-offer-entitlement
+created: 2026-09-05
+updated: 2026-09-05
+version: 0.1.0
+---
+
+# GOAL-005-r4-evidence-closeout · 03-audit 索引
+
+| id | date | scope | summary | status |
+|----|------|-------|---------|--------|
+| A-001 | 2026-09-05 | self | R4 关门自审（C1 证据矩阵 + 边界核账） | pass | 0 | 判据 1～8 证据矩阵完成；边界核账五项通过；Root 关门由 A-002 独立确认 | [A-001-self-closeout-review.md](03-audit/A-001-self-closeout-review.md) |
+| A-002 | 2026-09-05 | independent | Root close-out · 成功标准/VP-031 判据/子目标审计/信息台账 | independent · **conditional** · open required **2**；标准 1～7 事实成立，F-001/F-002 阻断关门 | 2 | F-001 投影/索引缺口；F-002 E-001 命令 cwd 边界 | [A-002-independent-closeout-audit.md](03-audit/A-002-independent-closeout-audit.md) |
+| A-003 | 2026-09-05 | self | 响应 A-002（F-001/F-002 required） | pass | 0 | 全部 fixed：索引补登（GOAL-004 A-001/A-003、GOAL-005 E-001/A-001/A-002/A-003）、陈旧投影清理（workspace/Root meta/goal-tree/Root 03-audit）、E-001 命令边界改为 apps/api module | [A-003-self-response-a002.md](03-audit/A-003-self-response-a002.md) |
+| A-004 | 2026-09-05 | independent | finding-closure · A-002 F-001/F-002 | **pass** | **0** | 两项 med required 均按 fixed 成立；Root 可关门 | [A-004-independent-closure-review.md](03-audit/A-004-independent-closure-review.md) |
+| A-005 | 2026-09-05 | self | 响应 A-004 并执行关门（GOAL-005 done 2/2；Root GOAL-001 done 4/4） | pass | 0 | A-004 `pass` 0 required；Root 关门决策记录见 Root E-005；无未闭合 required | [A-005-self-response-a004.md](03-audit/A-005-self-response-a004.md) |
+
+## 审计记录（ledger）
+
+`03-audit/` 平铺；编号递增。
+| A-006 | 2026-09-05 | independent | workspace-031 Root/GOAL-005 close-out：迁移、Manifest、schema、模块注册与组合根可达性 | **fail** | **4** | 当前 `biz.digital-offer` Provider 未进入 `kernel.BuiltinModules()`，配置启用路径不可达；0070 全局迁移策略未闭合；Offer Delete 缺失；缺少从配置到 Manifest/schema/HTTP 的真实组合验收 | [A-006-independent-runtime-integration-audit.md](03-audit/A-006-independent-runtime-integration-audit.md) |
+| A-007 | 2026-09-05 | self | 响应 A-006（F-003～F-006 required） | pass | 0 | 全部 closed：F-003 BuiltinModules 注册 + F-006 组合根验收测试（fixed）；F-004 按 D-002 §2 收窄（contract-conformant）；F-005 迁移策略裁决 = 保留 compiled-global（D-003）；Root/GOAL-005/VP-031 关门撤回 | [A-007-self-response-a006.md](03-audit/A-007-self-response-a006.md) |
+| A-008 | 2026-09-05 | independent | finding-closure · A-006 F-003～F-006 | **fail** | **1** | F-003/F-005/F-006 关闭成立；F-004 的 D-002 无删除裁决成立，但 A-008 取证时 E-001 仍写 Offer CRUD，证据分母未同步，Root/GOAL-005 不可重新关门 | [A-008-independent-closure-review-2.md](03-audit/A-008-independent-closure-review-2.md) |
+| A-009 | 2026-09-05 | self | 响应 A-008（A-006 F-004 的 E-001 收窄补齐） | pass | 0 | 前提承认：A-007 声称已同步但未实际编辑 E-001——即时修正：判据 1 行改为「Offer 生命周期管理（无删除，D-002 §2）」；待 A-010 focused 复审 | [A-009-self-response-a008.md](03-audit/A-009-self-response-a008.md) |
+| A-010 | 2026-09-05 | independent | finding-closure ? A-009 ? A-008 ?? open required?A-006 F-004 ? E-001 ??? | **pass** | **0** | E-001 ?? 1 ???? Offer ???????Create/Read/Update/Status???????? D-002 ?2??Offer CRUD?????????????Root/GOAL-005 ?? /govern ????????? | [A-010-independent-closure-review-3.md](03-audit/A-010-independent-closure-review-3.md) |
+| A-011 | 2026-09-05 | self | 响应 A-010 并重新关门（GOAL-005 done 2/2；Root done 4/4；VP-031 closed） | pass | 0 | A-006 四项 required 全部 closed 且经 A-008/A-010 两轮 independent 确认；关门登记见 Root E-007 | [A-011-self-response-a010.md](03-audit/A-011-self-response-a010.md) |
+| A-012 | 2026-09-05 | independent | workspace-031 运行时集成整改复审：迁移、Manifest、模块注册与组合根 | **conditional** | **2** | 主方案成立且无需更换；F-007 缺迁移 Apply 中途失败/reopen 双方言证据，F-008 缺 Telegram-enabled 真实组合根及结构化 Manifest 验收 | [A-012-independent-runtime-closure-reaudit.md](03-audit/A-012-independent-runtime-closure-reaudit.md) |
+| A-013 | 2026-09-05 | self | 响应 A-012（F-007/F-008 证据缺口） | pass | 0 | 两项 required 全部 closed（fixed ×2）：迁移中途失败零残留 + corrected reopen（SQLite + 真实 PG）；Telegram-enabled 真实组合根 + 结构化 Manifest + DELETE 负向；**未关门**，待 focused independent closure 复审 | [A-013-self-response-a012.md](03-audit/A-013-self-response-a012.md) |
+| A-014 | 2026-09-05 | independent | finding-closure · A-012 F-007/F-008 关闭复审（SQLite/PG Apply 中途失败零残留 + corrected reopen；Telegram-enabled 真实组合根同一 dispatcher；结构化 Manifest 断言） | **pass** | **0** | A-013 closed ×2 成立：两项必改要求逐条对证通过；本轮实际执行 3 项定向测试 + 2 个全包套件 + go build 全绿，真实 PG 未 skip；F-001（recommended）为可选加固 | [A-014-independent-closure-review-f007-f008.md](03-audit/A-014-independent-closure-review-f007-f008.md) |
+| A-015 | 2026-09-05 | self | 响应 A-014 F-001（关门前置加固） | pass | 0 | F-001（recommended）fixed：disabled 分支 Manifest 断言升级为结构化（route/schemaUrl/pageRef）；Telegram-enabled 测试增加 dispatcher 指针同一显式断言（tr.Dispatcher==DispatcherState + probe_f008 行为探针经真实 webhook）；三项定向测试 + 全包 PASS；第 3 次关门执行 | [A-015-self-response-a014.md](03-audit/A-015-self-response-a014.md) |

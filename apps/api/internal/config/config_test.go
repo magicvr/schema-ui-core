@@ -168,6 +168,53 @@ func TestLoadRuntimeModePrecedenceAndFailClosed(t *testing.T) {
 	}
 }
 
+func TestLoadTelegramConnectionSettings(t *testing.T) {
+	t.Run("yaml values and environment overrides", func(t *testing.T) {
+		writeConfig(t, `app:
+  env: development
+telegram:
+  mode: webhook
+  webhook_public_base_url: https://yaml.example
+`)
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.TelegramMode != TelegramModeWebhook || cfg.TelegramWebhookPublicBaseURL != "https://yaml.example" {
+			t.Fatalf("yaml telegram settings = mode %q url %q error %v", cfg.TelegramMode, cfg.TelegramWebhookPublicBaseURL, cfg.LoadError)
+		}
+
+		t.Setenv("TELEGRAM_MODE", TelegramModePolling)
+		t.Setenv("TELEGRAM_WEBHOOK_PUBLIC_BASE_URL", "https://env.example")
+		cfg = Load()
+		if cfg.LoadError != nil || cfg.TelegramMode != TelegramModePolling || cfg.TelegramWebhookPublicBaseURL != "https://env.example" {
+			t.Fatalf("env telegram settings = mode %q url %q error %v", cfg.TelegramMode, cfg.TelegramWebhookPublicBaseURL, cfg.LoadError)
+		}
+	})
+
+	t.Run("empty mode defaults to polling", func(t *testing.T) {
+		writeConfig(t, "app:\n  env: development\ntelegram:\n  mode: \"\"\n")
+		cfg := Load()
+		if cfg.LoadError != nil || cfg.TelegramMode != TelegramModePolling {
+			t.Fatalf("empty telegram mode = %q, error %v; want polling", cfg.TelegramMode, cfg.LoadError)
+		}
+	})
+
+	for _, tc := range []struct {
+		name string
+		yaml string
+	}{
+		{name: "unknown mode", yaml: "app:\n  env: development\ntelegram:\n  mode: long-polling\n"},
+		{name: "webhook URL with path", yaml: "app:\n  env: development\ntelegram:\n  webhook_public_base_url: https://example.test/bot\n"},
+		{name: "webhook URL with query", yaml: "app:\n  env: development\ntelegram:\n  webhook_public_base_url: https://example.test?x=1\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			writeConfig(t, tc.yaml)
+			cfg := Load()
+			if cfg.LoadError == nil {
+				t.Fatalf("invalid Telegram setting must fail closed: %+v", cfg)
+			}
+		})
+	}
+}
+
 // TestValidateProd covers the production guard added in response to GOAL-008
 // A-005 F-002 (dev-session fallback) and A-002 F-002-005 (JWT secret minimum
 // length/entropy): both are local-development-only or non-negotiable settings

@@ -13,7 +13,7 @@ version: 1.0.0
 
 ## 已发生事实
 
-- 按用户指令「渐进开始子目标承载治理上下文」，创建 [GOAL-002-identity-contract-freeze](../GOAL-002-identity-contract-freeze/00-meta.md)，承接纲领阶段 R1。
+- 按用户指令「渐进开始子目标承载治理上下文」，创建 [GOAL-002-identity-contract-freeze](../../GOAL-002-identity-contract-freeze/00-meta.md)，承接纲领阶段 R1。
 - `parent = GOAL-001-account-email-identity`；五件套 + 台账目录一次建齐；goal-tree 树与表已同步。
 - 未写 DDL、未改应用代码。
 

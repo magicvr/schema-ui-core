@@ -9,7 +9,6 @@
       "permissions.inheritance",
       "actions.page.trigger",
       "form.record.load",
-      "form.controls.extended",
       "actions.upload"
     ]
   },

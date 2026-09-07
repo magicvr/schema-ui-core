@@ -23,9 +23,9 @@ version: 1.0.0
 
 | 主张 | 路径 |
 |------|------|
-| 合同冻结节 | [GOAL-006 D-002](../GOAL-006-channel-provider-contract/01-decision/D-002-r5-channel-contract-freeze.md) |
+| 合同冻结节 | [GOAL-006 D-002](../../GOAL-006-channel-provider-contract/01-decision/D-002-r5-channel-contract-freeze.md) |
 | 子目标审计 | GOAL-006 `03-audit/A-001-self-r5-contract.md`（pass） |
-| 执行细节 | [GOAL-006 E-002](../GOAL-006-channel-provider-contract/02-execution/E-002-r5-contract-frozen.md) |
+| 执行细节 | [GOAL-006 E-002](../../GOAL-006-channel-provider-contract/02-execution/E-002-r5-contract-frozen.md) |
 
 ## 未做
 

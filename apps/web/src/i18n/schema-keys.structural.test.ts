@@ -148,6 +148,7 @@ describe("S2 · F-V029 denominator schema key completeness", () => {
       "apps/api/modules/datadictionary/manifest/fragment.json",
       "apps/api/modules/systemmonitoring/manifest/fragment.json",
       "apps/api/modules/scheduledtasks/manifest/fragment.json",
+      "apps/api/modules/channel/telegram/manifest/fragment.json",
     ];
     const unknown: string[] = [];
     const keys: string[] = [];

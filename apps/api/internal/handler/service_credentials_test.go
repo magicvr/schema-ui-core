@@ -64,6 +64,7 @@ func TestServiceCredentialManagementAndAuthentication(t *testing.T) {
 		{http.MethodGet, "/api/mfa/status"},
 		{http.MethodGet, "/api/notifications"},
 		{http.MethodGet, "/api/wallet/me"},
+		{http.MethodPost, "/api/wallet/me/redeem"},
 	} {
 		userOnly := httptest.NewRecorder()
 		env.mux.ServeHTTP(userOnly, bearer(t, secret, userOnlyRoute.method, userOnlyRoute.path, ""))

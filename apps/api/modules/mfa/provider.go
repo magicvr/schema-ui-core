@@ -28,12 +28,13 @@ type Provider struct {
 	service    *Service
 	operations operationlog.Recorder
 	revoker    handler.SessionRevoker
+	limiters   kernel.RateLimiterProvider
 }
 
 // New constructs the MFA provider. revoker (the auth-session repository)
 // powers the disable/admin-reset session invalidation (A-004 F-002).
-func New(a *auth.Authenticator, service *Service, operations operationlog.Recorder, revoker handler.SessionRevoker) *Provider {
-	return &Provider{a: a, service: service, operations: operations, revoker: revoker}
+func New(a *auth.Authenticator, service *Service, operations operationlog.Recorder, revoker handler.SessionRevoker, limiters kernel.RateLimiterProvider) *Provider {
+	return &Provider{a: a, service: service, operations: operations, revoker: revoker, limiters: limiters}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -60,7 +61,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.MFARoutes(p.a, p.service, p.operations, p.revoker, ModuleID) {
+	for _, route := range handler.MFARoutes(p.a, p.service, p.operations, p.revoker, ModuleID, p.limiters) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

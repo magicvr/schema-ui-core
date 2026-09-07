@@ -1,0 +1,369 @@
+{
+  "meta": {
+    "pageId": "digitaloffer-offers",
+    "title": "Digital products",
+    "protocolVersion": "2.9",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "permissions.inheritance",
+      "actions.page.trigger",
+      "table.sort",
+      "form.controls.extended",
+      "form.controls.advanced"
+    ]
+  },
+  "actions": {
+    "createOffer": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/digitaloffer/offers",
+      "bodyMapping": {
+        "name": "name",
+        "description": "description",
+        "priceAmount": "priceAmount",
+        "currency": "currency",
+        "entitlementForm": "entitlementForm",
+        "durationSeconds": "durationSeconds",
+        "countPerPurchase": "countPerPurchase",
+        "onSale": "onSale"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "updateOffer": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/digitaloffer/offers/{id}",
+      "bodyMapping": {
+        "name": "name",
+        "description": "description",
+        "priceAmount": "priceAmount",
+        "version": "version"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "changeStatus": {
+      "type": "request",
+      "method": "PATCH",
+      "url": "/api/digitaloffer/offers/{id}",
+      "bodyMapping": {
+        "status": "status",
+        "version": "version"
+      },
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "openCreate": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "create-digitaloffer-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"digitaloffer.offer.manage\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.digitaloffer.field.name"
+            },
+            {
+              "id": "description",
+              "label": "Description",
+              "type": "textarea",
+              "labelKey": "schema.digitaloffer.field.description"
+            },
+            {
+              "id": "priceAmount",
+              "label": "Price (yuan, up to 2 decimals)",
+              "type": "inputNumber",
+              "required": true,
+              "step": 0.01,
+              "unit": "yuan",
+              "labelKey": "schema.digitaloffer.field.priceAmount"
+            },
+            {
+              "id": "currency",
+              "label": "Currency",
+              "type": "input",
+              "defaultValue": "CNY",
+              "labelKey": "schema.digitaloffer.field.currency"
+            },
+            {
+              "id": "entitlementForm",
+              "label": "Entitlement form",
+              "type": "select",
+              "required": true,
+              "options": [
+                {
+                  "value": "duration",
+                  "label": "Duration",
+                  "labelKey": "schema.digitaloffer.form.duration"
+                },
+                {
+                  "value": "count",
+                  "label": "Count",
+                  "labelKey": "schema.digitaloffer.form.count"
+                }
+              ],
+              "labelKey": "schema.digitaloffer.field.entitlementForm"
+            },
+            {
+              "id": "durationSeconds",
+              "label": "Duration (seconds)",
+              "type": "inputNumber",
+              "labelKey": "schema.digitaloffer.field.durationSeconds"
+            },
+            {
+              "id": "countPerPurchase",
+              "label": "Count per purchase",
+              "type": "inputNumber",
+              "labelKey": "schema.digitaloffer.field.countPerPurchase"
+            },
+            {
+              "id": "onSale",
+              "label": "On sale immediately",
+              "type": "switch",
+              "labelKey": "schema.digitaloffer.field.onSale"
+            }
+          ],
+          "submitAction": "createOffer",
+          "submitLabel": "Create product",
+          "submitLabelKey": "schema.digitaloffer.submit.create"
+        }
+      }
+    },
+    "openEdit": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "edit-digitaloffer-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"digitaloffer.offer.manage\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "input",
+              "required": true,
+              "labelKey": "schema.digitaloffer.field.name"
+            },
+            {
+              "id": "description",
+              "label": "Description",
+              "type": "textarea",
+              "labelKey": "schema.digitaloffer.field.description"
+            },
+            {
+              "id": "priceAmount",
+              "label": "Price (yuan, up to 2 decimals)",
+              "type": "inputNumber",
+              "required": true,
+              "step": 0.01,
+              "unit": "yuan",
+              "labelKey": "schema.digitaloffer.field.priceAmount"
+            }
+          ],
+          "submitAction": "updateOffer",
+          "submitLabel": "Save product",
+          "submitLabelKey": "schema.digitaloffer.submit.update"
+        }
+      }
+    },
+    "openStatus": {
+      "type": "modal",
+      "content": {
+        "type": "form",
+        "id": "status-digitaloffer-form",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"digitaloffer.offer.manage\""
+        },
+        "props": {
+          "fields": [
+            {
+              "id": "status",
+              "label": "Status",
+              "type": "select",
+              "required": true,
+              "options": [
+                {
+                  "value": "draft",
+                  "label": "Draft",
+                  "labelKey": "schema.digitaloffer.status.draft"
+                },
+                {
+                  "value": "on_sale",
+                  "label": "On sale",
+                  "labelKey": "schema.digitaloffer.status.onSale"
+                },
+                {
+                  "value": "off_sale",
+                  "label": "Off sale",
+                  "labelKey": "schema.digitaloffer.status.offSale"
+                }
+              ],
+              "labelKey": "schema.digitaloffer.field.status"
+            },
+            {
+              "id": "version",
+              "label": "Version",
+              "type": "inputNumber",
+              "required": true,
+              "labelKey": "schema.digitaloffer.field.version"
+            }
+          ],
+          "submitAction": "changeStatus",
+          "submitLabel": "Change status",
+          "submitLabelKey": "schema.digitaloffer.submit.status"
+        }
+      }
+    }
+  },
+  "body": {
+    "type": "section",
+    "id": "digitaloffer-offers",
+    "children": [
+      {
+        "type": "form",
+        "id": "digitaloffer-offers-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "digitaloffer-offers-table",
+          "fields": [
+            {
+              "id": "q",
+              "type": "input",
+              "labelKey": "schema.digitaloffer.search.q"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "schema.digitaloffer.field.status",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.digitaloffer.status.all"
+                },
+                {
+                  "value": "draft",
+                  "labelKey": "schema.digitaloffer.status.draft"
+                },
+                {
+                  "value": "on_sale",
+                  "labelKey": "schema.digitaloffer.status.onSale"
+                },
+                {
+                  "value": "off_sale",
+                  "labelKey": "schema.digitaloffer.status.offSale"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "digitaloffer-offers-table",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"digitaloffer.offer.manage\""
+        },
+        "props": {
+          "columns": [
+            {
+              "field": "name",
+              "label": "Name",
+              "sortable": true,
+              "labelKey": "schema.digitaloffer.column.name"
+            },
+            {
+              "field": "priceAmount",
+              "label": "Price",
+              "sortable": true,
+              "format": "currency",
+              "labelKey": "schema.digitaloffer.column.price"
+            },
+            {
+              "field": "currency",
+              "label": "Currency",
+              "labelKey": "schema.digitaloffer.column.currency"
+            },
+            {
+              "field": "entitlementForm",
+              "label": "Form",
+              "labelKey": "schema.digitaloffer.column.form"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.digitaloffer.column.status"
+            },
+            {
+              "field": "updatedAt",
+              "label": "Updated",
+              "sortable": true,
+              "labelKey": "schema.digitaloffer.column.updated"
+            }
+          ],
+          "dataSource": "/api/digitaloffer/offers",
+          "toolbar": [
+            {
+              "key": "create",
+              "label": "New product",
+              "actionRef": "openCreate",
+              "permissionIntent": "edit",
+              "labelKey": "schema.digitaloffer.toolbar.create"
+            }
+          ],
+          "actions": [
+            {
+              "key": "edit",
+              "label": "Edit",
+              "actionRef": "openEdit",
+              "permissionIntent": "edit",
+              "labelKey": "schema.digitaloffer.action.edit"
+            },
+            {
+              "key": "status",
+              "label": "Status",
+              "actionRef": "openStatus",
+              "permissionIntent": "edit",
+              "labelKey": "schema.digitaloffer.action.status"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -2,7 +2,7 @@
   "sourceRepo": "https://github.com/magicvr/schema-ui-docs",
   "sourceCommit": "81aa1d8954717f4ebdcc695eed6fafaeafcebe8d",
   "artifactVersion": "2.9.0",
-  "note": "上游 schema-ui-protocol v2.9.0（tag v2.9.0 @ 81aa1d8，PR #39，上游审计 0082）：MINOR 发布 — ADR-0039 data.route-binding（data.params / optionsSource.params / datasources.*.params 的 $context.route.query.* / $context.route.params.* 整值绑定，缺失 tombstone 删除）与 ADR-0040 form.controls.readonly（表单字段 readOnly 声明，用户不可编辑但值仍参与 values 与提交投影）。本仓消费 pin：docs/schemas 全量 11 件 + 20 个 conformance fixture 套件（scenarios 未 vendor）；fixture 算法线升 2.9（fixture digest 89baddbc…）。v2.8.x（521cff8…f07157d）与本版机器契约差异即上述两个 capability 增补 + 协议版本线。",
+  "note": "上游 schema-ui-protocol v2.9.0（tag v2.9.0 @ 81aa1d8，PR #39，上游审计 0082）：MINOR 发布 — ADR-0039 data.route-binding（data.params / optionsSource.params / datasources.*.params 的 $context.route.query.* / $context.route.params.* 整值绑定，缺失 tombstone 删除）与 ADR-0040 form.controls.readonly（表单字段 readOnly 声明，用户不可编辑但值仍参与 values 与提交投影）。本仓消费 pin：docs/schemas 10 件 + conformance/schemas 1 件（fixture-suite.schema.json，C-001 路径口径修正）+ 19 个 vendored conformance fixture 套件（scenarios 13 cases 未 vendor；上游共 20 suites / 450 cases）；fixture 算法线升 2.9（fixture digest 89baddbc…）。v2.8.x（521cff8…f07157d）与本版机器契约差异即上述两个 capability 增补 + 协议版本线。",
   "artifacts": [
     {
       "path": "docs/schemas/action.schema.json",
@@ -21,7 +21,7 @@
       "sha256": "0714e1339b175a0822398d6105467aeb2dcba663903c141fee11d7911b2d21a9"
     },
     {
-      "path": "docs/schemas/fixture-suite.schema.json",
+      "path": "conformance/schemas/fixture-suite.schema.json",
       "sha256": "a93f500bcb94f93e7a289af700227a407688f8205218fe5681269956b91fd1a3"
     },
     {

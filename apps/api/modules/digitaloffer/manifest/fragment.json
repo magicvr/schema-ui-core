@@ -1,0 +1,66 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "digitaloffer-offers",
+      "title": "Digital products",
+      "schemaUrl": "/api/schema/digitaloffer-offers",
+      "route": "/digitaloffer-offers",
+      "titleKey": "manifest.title.digitalofferOffers"
+    },
+    {
+      "pageId": "digitaloffer-entitlements",
+      "title": "Digital entitlements",
+      "schemaUrl": "/api/schema/digitaloffer-entitlements",
+      "route": "/digitaloffer-entitlements",
+      "titleKey": "manifest.title.digitalofferEntitlements"
+    },
+    {
+      "pageId": "digitaloffer-purchases",
+      "title": "Digital orders",
+      "schemaUrl": "/api/schema/digitaloffer-purchases",
+      "route": "/digitaloffer-purchases",
+      "titleKey": "manifest.title.digitalofferPurchases"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "digitaloffer-offers",
+        "label": "Digital products",
+        "icon": "card",
+        "visibleWhen": {
+          "when": "$context.features.menu_digitaloffer_offers == true"
+        },
+        "labelKey": "manifest.nav.digitalofferOffers"
+      },
+      {
+        "pageRef": "digitaloffer-entitlements",
+        "label": "Digital entitlements",
+        "icon": "check-badge",
+        "visibleWhen": {
+          "when": "$context.features.menu_digitaloffer_entitlements == true"
+        },
+        "labelKey": "manifest.nav.digitalofferEntitlements"
+      },
+      {
+        "pageRef": "digitaloffer-purchases",
+        "label": "Digital orders",
+        "icon": "receipt",
+        "visibleWhen": {
+          "when": "$context.features.menu_digitaloffer_purchases == true"
+        },
+        "labelKey": "manifest.nav.digitalofferPurchases"
+      }
+    ]
+  }
+}

@@ -24,6 +24,9 @@ import "@/components/activity-export";
 // fields, mock-record table under mock only, test composer with subject/body).
 import "@/components/mail-admin-tab";
 import "@/components/password-policy-tab";
+// GOAL-006 R5 (判据 #5 补做 Admin UI tab): Telegram channel settings console —
+// write-only token/secret edit + status + mock capture counter.
+import "@/components/telegram-admin-tab";
 import "@/components/invite-issue-card";
 import "@/components/invite-resend-dialog";
 import { ManifestFailure } from "@/app/ManifestFailure";

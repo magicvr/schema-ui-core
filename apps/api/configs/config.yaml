@@ -32,16 +32,48 @@ app:
   # development | production | test. Empty keeps the explicit-set requirement
   # of ValidateProd (APP_ENV must be set explicitly, refusing to guess).
   env: ""
-  # mvp | admin | demo. Selects the built-in preset when app.modules is absent.
-  profile: mvp
   # T-06 (GOAL-013 D-007): the enabled-modules set is YAML-only — either a
   # preset (builtin name or a custom preset file path) or an inline list.
   # preset and list are mutually exclusive. APP_PROFILE / APP_MODULES_ENABLED
   # env vars and the legacy app.modules_enabled comma string are NOT read.
-  # modules:
-  #   preset: admin            # builtin: mvp | admin | demo
-  #   preset: ./configs/modules/my-company.yaml   # custom preset file
-  #   list: [core.server-registration, admin.users, admin.roles]
+  #
+  # VP-030 / GOAL-006 R5: the operator profile is a custom list = the full
+  # admin preset PLUS channel.telegram (Telegram Bot channel runtime, whose
+  # settings UI is the「Telegram channel」sidebar entry — 判据 #5 补做).
+  # channel.telegram is intentionally NOT in any default profile (VP-030 red
+  # line); it must be enumerated here to surface its admin console.
+  profile: custom
+  modules:
+    list:
+      - core.server-registration
+      - core.auth-session
+      - core.manifest-route
+      - core.navigation-capability
+      - core.schema-render
+      - core.operationlog
+      - admin.users
+      - admin.roles
+      - admin.settings
+      - admin.activity
+      - admin.account
+      - admin.data-transfer
+      - admin.dashboard
+      - admin.notifications
+      - admin.file-library
+      - admin.data-dictionary
+      - admin.system-monitoring
+      - admin.scheduled-tasks
+      - admin.login-captcha
+      - admin.recycle-bin
+      - admin.data-permission
+      - admin.mfa
+      - admin.wallet
+      - channel.telegram
+      # VP-031 (workspace-031): biz.digital-offer — digital offers + thin
+      # purchases + entitlements. Deliberately NOT in any default profile
+      # (D-002 §6 red line); enumerated here so the dev operator config
+      # surfaces its admin pages (digitaloffer-offers / -entitlements).
+      - biz.digital-offer
 
 http:
   addr: ":25080"
@@ -208,6 +240,28 @@ mail:
     password: ""            # required SECRET — via MAIL_SMTP_PASSWORD env / configs/.env only, never a literal
     from: ""                # MAIL_SMTP_FROM; default sender, bare address
 
+telegram:
+  # polling (default) or webhook. This is independent of runtime.mode.
+  mode: polling             # TELEGRAM_MODE
+  # Explicit public origin; the fixed webhook path is appended by the runtime.
+  webhook_public_base_url: "" # TELEGRAM_WEBHOOK_PUBLIC_BASE_URL
+
 runtime:
   # normal | maintenance | degraded | read-only. RUNTIME_MODE overrides.
   mode: normal
+
+cache:
+  # VP-026 (workspace-026 GOAL-003 D-001): PROCESS-WIDE bounded-entry budget
+  # of the in-memory cache provider (total entries across all namespaces,
+  # incl. not-yet-swept expired ones; FIFO eviction of the globally oldest).
+  # Non-positive or unparsable values fail closed at startup.
+  # Env override: CACHE_MAX_ENTRIES.
+  max_entries: 10000
+
+eventbus:
+  # VP-028 (workspace-028 GOAL-003 D-001): per-subscription buffered-channel
+  # capacity of the in-memory event-bus provider. When a subscriber's buffer
+  # is full, Publish blocks until space, ctx cancel, or Stop drains. <= 0
+  # falls back to DefaultEventBusBuffer (64); > MaxEventBusBuffer (4096) fails
+  # closed. Env override: EVENTBUS_BUFFER_SIZE.
+  buffer_size: 64

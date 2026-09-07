@@ -85,6 +85,16 @@ if [ -n "${PRERELEASE_PROFILE:-}" ]; then
   esac
   SMOKE_CFG="$OVERRIDE_DIR/smoke-config.yaml"
   cp apps/api/configs/config.yaml "$SMOKE_CFG"
+  # T-06：app.modules（preset|list）存在时 profile 会被解析为 custom——dev operator
+  # 配置现为 custom list（含 channel.telegram / biz.digital-offer，见 3e634545），
+  # 若不剥离，mvp/admin/demo 矩阵腿都会按全量列表启动，SM-007 Profile/Manifest
+  # 断言失真（mvp 会误报包含 settings/activity）。显式请求内置 profile 时剥离
+  # app.modules 块，让该腿真正按内置预设启动；无 modules 块的历史配置原样通过。
+  awk '
+    /^  modules:/ { skip=1; next }
+    skip && /^[a-zA-Z]/ { skip=0 }
+    !skip { print }
+  ' "$SMOKE_CFG" > "$SMOKE_CFG.tmp" && mv "$SMOKE_CFG.tmp" "$SMOKE_CFG"
   sed -i -E "s/^([[:space:]]*)profile:.*/\1profile: $PROFILE/" "$SMOKE_CFG"
   cat > "$OVERRIDE_FILE" <<EOF
 services:

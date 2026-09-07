@@ -17,7 +17,7 @@ serves_summary: 以证据驱动验证「构建期包消费」分发路径（Go �
 
 ## 概述
 
-承接 [VP-022-distribution-package-pilot](../../vision/plans/VP-022-distribution-package-pilot.md)（**closed** v0.4.0 · 2026-08-29）：在既有 fork 消费路径之外，验证「构建期包消费」最小闭环——本仓以 Go 库模块 + npm 包组形态发布 kernel / 标准模块 / Renderer / Shell，空下游仓以 `go get` / `pnpm add` 组装并完成一次零冲突升级演练；产出实测对比与 go/no-go 报告。**试点已 GO**：六条退出判据按有界口径满足（用户 P-004），Charter 0.3.0 strategic 已把构建期包消费写入成功边界 #1（VR-050 · pin 2.9.0）；fork 保留为深度定制逃生舱（不弃 fork）。
+承接 [VP-022-distribution-package-pilot](../../../vision/plans/VP-022-distribution-package-pilot.md)（**closed** v0.4.0 · 2026-08-29）：在既有 fork 消费路径之外，验证「构建期包消费」最小闭环——本仓以 Go 库模块 + npm 包组形态发布 kernel / 标准模块 / Renderer / Shell，空下游仓以 `go get` / `pnpm add` 组装并完成一次零冲突升级演练；产出实测对比与 go/no-go 报告。**试点已 GO**：六条退出判据按有界口径满足（用户 P-004），Charter 0.3.0 strategic 已把构建期包消费写入成功边界 #1（VR-050 · pin 2.9.0）；fork 保留为深度定制逃生舱（不弃 fork）。
 
 ## 成功标准（对应 VP-022 六条退出判据）
 

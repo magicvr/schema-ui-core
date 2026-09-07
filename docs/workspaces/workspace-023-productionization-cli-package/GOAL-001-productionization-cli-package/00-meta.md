@@ -17,7 +17,7 @@ serves_summary: 把 VP-022 验证的构建期包消费可行性闭环升级为�
 
 ## 概述
 
-承接 [VP-023-productionization-cli-package](../../vision/plans/VP-023-productionization-cli-package.md)（**closed** v0.3.0 · 2026-08-29）：六条方向级退出判据全部落地（真实发布通道 / CLI / 六包细化+d.ts / PG+运维 / 上手迁移 / 产线化报告）。**不改 Charter**（fork 与包消费并存维持，Charter @0.3.0 表述未动）。实验下游仓 = `github.com/magicvr/golden-field`（已初始化 · Go 无 replace · 六包 GH Packages registry 语义消费 · consumer-regression workflow 槽位）。breaking 实演以 v0.3.0 真实执行（用户 P-004 裁决）。
+承接 [VP-023-productionization-cli-package](../../../vision/plans/VP-023-productionization-cli-package.md)（**closed** v0.3.0 · 2026-08-29）：六条方向级退出判据全部落地（真实发布通道 / CLI / 六包细化+d.ts / PG+运维 / 上手迁移 / 产线化报告）。**不改 Charter**（fork 与包消费并存维持，Charter @0.3.0 表述未动）。实验下游仓 = `github.com/magicvr/golden-field`（已初始化 · Go 无 replace · 六包 GH Packages registry 语义消费 · consumer-regression workflow 槽位）。breaking 实演以 v0.3.0 真实执行（用户 P-004 裁决）。
 
 ## 成功标准（对应 VP-023 六条判据）
 

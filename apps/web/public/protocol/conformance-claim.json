@@ -3,7 +3,7 @@
   "host": {
     "hostId": "schema-ui-web",
     "hostVersion": "0.1.0",
-    "buildId": "git:9337fd841c4256733acc3856fa518e2af4b4d33f"
+    "buildId": "git:04de9cb8b124b0e997079d444b98be027b0d5567"
   },
   "protocolArtifact": {
     "artifactVersion": "2.9.0",
@@ -12,6 +12,7 @@
   "support": {
     "pageVersions": [
       "2.7",
+      "2.8",
       "2.9"
     ],
     "manifestVersions": [
@@ -25,8 +26,20 @@
       "host.bootstrap",
       "host.failure-recovery",
       "host.conformance-claim",
-      "data.route-binding",
-      "form.controls.readonly"
+      "actions.upload",
+      "actions.row.request",
+      "actions.page.trigger",
+      "actions.row.navigate",
+      "actions.batch.request",
+      "form.record.load",
+      "form.controls.extended",
+      "form.controls.advanced",
+      "form.controls.readonly",
+      "table.selection",
+      "table.sort",
+      "record.view.load",
+      "permissions.inheritance",
+      "data.route-binding"
     ]
   },
   "conformance": {
@@ -67,15 +80,40 @@
         "suiteId": "component-format",
         "suiteVersion": "1.0",
         "result": "pass"
+      },
+      {
+        "suiteId": "response-mapping",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "search-table",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "permissions-inheritance",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "table-sort",
+        "suiteVersion": "1.0",
+        "result": "pass"
+      },
+      {
+        "suiteId": "uploads",
+        "suiteVersion": "1.0",
+        "result": "pass"
       }
     ]
   },
   "evidence": [
     {
       "kind": "local-report",
-      "subjectBuildId": "git:9337fd841c4256733acc3856fa518e2af4b4d33f",
+      "subjectBuildId": "git:04de9cb8b124b0e997079d444b98be027b0d5567",
       "uri": "/protocol/conformance-local-report.json",
-      "sha256": "3823b20137d448a6f43a4601cfacd830f918b83141c043ef3bd5cf64b52132c7"
+      "sha256": "89cbc5ba1ee0ecf4e329ea6ae6bb5b2c1fcc68e7fd2c1a0048e5a91f8b8d614b"
     }
   ]
 }

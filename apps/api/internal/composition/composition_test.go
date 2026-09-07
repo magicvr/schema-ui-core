@@ -19,12 +19,13 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func compositionCount(t *testing.T, st *store.Store, query string, args ...any) int {
@@ -43,6 +44,11 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 	if err != nil {
 		return nil, err
 	}
+	cachePort, err := newCache(&config.Config{DBPath: "test.db"})
+	if err != nil {
+		return nil, err
+	}
+	eventBusPort := newEventBus(&config.Config{DBPath: "test.db"}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	return newMux(
 		&config.Config{DBPath: "test.db"},
 		a,
@@ -56,6 +62,10 @@ func testMux(a *auth.Authenticator, st *store.Store, plan kernel.Plan, gate *rea
 		jobRuntime,
 		nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		cachePort,
+		eventBusPort,
+		ratelimit.NewProvider(),
+		nil, // tr: this plan has no channel.telegram
 	)
 }
 
@@ -510,11 +520,13 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// no navigation — personal-center block + users row action).
 		// S-14 (GOAL-019): admin.wallet contributes wallet.read/wallet.write/
 		// wallet.adjust (+3 permissions) and menu_wallet (+1 navigation).
+		// VP-029 (GOAL-003): admin.wallet adds wallet.voucher.issue (+1 permission)
+		// and menu_wallet_vouchers (+1 navigation).
 		// GOAL-022: admin.wallet adds menu_wallet_self (+1 navigation, no
 		// permission keys — identity-only self-service).
 		// W26 (GOAL-038): admin.settings adds menu_mail/menu_mail_outbox
 		// (+2 navigation, no new permission keys — settings.read reuse).
-		{profile: "admin", wantPermissions: 33, wantNavigation: 17},
+		{profile: "admin", wantPermissions: 34, wantNavigation: 18},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {
@@ -1092,6 +1104,10 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		labels := fetchSidebar(t, plan, nil)
 		want := []string{
 			"Dashboard", "Users", "Roles", "Wallet",
+			// VP-029 R3 (GOAL-003, user 2026-09-02): prepaid vouchers sits
+			// directly below Wallet (menu_wallet_vouchers in
+			// DefaultNavigationOrder, right after menu_wallet).
+			"Prepaid vouchers",
 			"Activity",
 			// W26 (GOAL-038): standalone mail pages after the settings entry
 			// they split off from (settings itself lives in the user menu).

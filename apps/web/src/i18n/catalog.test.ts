@@ -37,6 +37,11 @@ describe("catalog integrity", () => {
     expect(hasTranslation("locale.switcher.auto", "zh-CN")).toBe(true);
   });
 
+  it("keeps the Telegram operator send label exact in both catalogs", () => {
+    expect(enUS["schema.telegram.operator.send"]).toBe("Send");
+    expect(zhCN["schema.telegram.operator.send"]).toBe("发送");
+  });
+
   it("zh-CN and en-US catalogs have identical key sets (S2 maintainability)", () => {
     expect(Object.keys(zhCN).sort()).toEqual(Object.keys(enUS).sort());
   });

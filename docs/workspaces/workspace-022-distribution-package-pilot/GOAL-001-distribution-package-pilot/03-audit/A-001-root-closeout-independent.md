@@ -18,7 +18,7 @@ version: 0.1.0
 
 ## 范围与区间
 
-只审本工作区。R5 细节与独立复跑数据以同日 [GOAL-006 A-002](../GOAL-006-r5-release-and-gono-go/03-audit/A-002-r5-closeout-independent.md) 为准；本条判定 Root 能否关门、六条判据能否在 Root 成功标准上勾选、以及愿景对齐链是否与 Charter `@0.3.0` 一致。
+只审本工作区。R5 细节与独立复跑数据以同日 [GOAL-006 A-002](../../GOAL-006-r5-release-and-gono-go/03-audit/A-002-r5-closeout-independent.md) 为准；本条判定 Root 能否关门、六条判据能否在 Root 成功标准上勾选、以及愿景对齐链是否与 Charter `@0.3.0` 一致。
 
 ## 成果（有证据）
 

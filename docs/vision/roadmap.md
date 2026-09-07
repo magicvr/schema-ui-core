@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-08-30
+updated: 2026-09-05
 parent: null
-version: 0.60.0
+version: 0.75.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -42,6 +42,14 @@ version: 0.60.0
 | 25 | [VP-025-config-export-diff-dryrun-import](plans/VP-025-config-export-diff-dryrun-import.md) | Admin 功能 · 配置包导出 / diff / dry-run / 导入（基架能力剩余 #3）：可移植配置包 + 键级差量 + 只读预检 + 安全导入；密钥 fail-closed 保持、热加载不进分母、不改 Profile 默认集/Manifest（VP-008 `go` 红线）。 | 继承 RT-K01 配置系统（YAML+env 插值）与 VP-023/024 CLI/包产线 + VP-003 模块边界 / VP-007 设置面；**Admin 功能分支非门控未立项项（roadmap 点名）**；与 VP-009/010 正交 | **closed**（2026-08-30 v0.3.0 关闭 · 用户书面确认；六判据全满足（r4-evidence-matrix）· 关门双审 A-001 self `pass` + A-002 grok build independent（F-001～F-008 全 fixed · 开放 required=0）· VRev-055 `pass`；lead workspace-025 · Root `done` 4/4） |
 | 23 | [VP-023-productionization-cli-package](plans/VP-023-productionization-cli-package.md) | 包消费产线化：发布运营（Go tag/proxy go get + npm registry）+ CLI（create/add/upgrade，对标 dotnet new + NuGet）+ 六包细化与 d.ts 自动化 + PG external/运维 + golden-field 从零上线与 fork→包迁移指南。 | 继承 VP-022（dist-lib/pack/双 golden/冻结面 v1.2.0/go 后清单）+ VP-003/005/006（pin 2.9.0）/008；**组合层平台波，与三分支正交**；不改 Charter（fork 与包并存维持）；与 VP-009/010 正交 | **closed**（2026-08-29 v0.3.0 关闭 · 用户 P-004 裁决 breaking 实演 v0.3.0 真实执行；六条判据达成；grok 独立双审 F-001～F-008 全闭合；lead workspace-023-productionization-cli-package · Root `done` 5/5；go 后清单 = serve 壳 / 六包 external 化 / 纯原子拆分 / fork 对照计时 / 迁移工具化 / 包公开可见性 / compose CI 实跑，已并入 VP-024 收口） |
 | 22 | [VP-022-distribution-package-pilot](plans/VP-022-distribution-package-pilot.md) | 分发形态试点：**构建期包消费**最小闭环（Go 库模块 + npm 包组 + 空下游仓零冲突升级演练；对标 dotnet new + NuGet / Spring Boot starters）；不改 Charter、不弃 fork（保留为深度定制逃生舱）。 | 继承 VP-003 模块契约 / VP-004 playbook（仅评估）/ VP-005 主题覆盖 / VP-006 协议面 / VP-008 `go` 消费基线；**组合层平台波，与三分支正交**；与 VP-009/010 正交 | **closed**（2026-08-29 v0.4.0 关闭 · 用户 P-004 裁决：六条判据按有界口径满足；independent 双审闭合；Charter 0.3.0 strategic 随 GO 裁决落地（VR-050）；lead workspace-022 Root done 5/5） |
+| 26 | [VP-026-cache-port](plans/VP-026-cache-port.md) | 架构 · **通用缓存端口**（H-002 同进程基座早期化 · 承接 RT-Q03）：Cache 端口（Get/Set/Delete + TTL）+ 绝对/滑动过期 + 可插拔策略接口 + **内存供应商（默认）** + **Redis 接缝声明（不实现）**；.NET IMemoryCache 式轻量分层。 | 继承 VP-003 模块契约 + Charter 0.4.0 成功边界 #6 / H-002；与 VP-027/028 按"触发条件独立 × 关门能力独立"分立；Redis 实现仍 trigger-gated；与 VP-009/010 正交 | **closed**（2026-09-01 v0.3.0 · **用户书面确认关门**：八条判据证据矩阵 verified · R1～R4 阶段 self + grok independent 双审闭合（开放 required=0）· VRev-061 `pass`；lead `workspace-026-cache-port` · Root `GOAL-001-cache-port` `done` 4/4；Redis 实现仍 trigger-gated（不消耗 RT-Q03）） |
+| 27 | [VP-027-rate-limiter-port](plans/VP-027-rate-limiter-port.md) | 架构 · **通用限流器端口**（H-002 早期化 · 承接 RT-Q05）：RateLimiter 端口（Allow/Record/Reset/RetryAfter）+ 滑动窗口**内存供应商**（演进既有 loginRateLimiter）+ **7 处使用点完整迁移**（含 MFA verify 独立桶 / 邀请接受）+ **Redis 接缝声明（不实现）**；W12 D-002 窗口常量保持。 | 继承 VP-003 模块契约 + Charter 0.4.0 成功边界 #6 / H-002；与 VP-026/028 分立；Redis 实现仍 trigger-gated；与 VP-009/010 正交 | **closed**（2026-09-01 · v0.3.0 · **用户书面确认关门** · VRev-063 self `pass` · 判据 #1～#7 证据矩阵 7/7 · Root 双审 0 required；lead workspace-027-rate-limiter-port · Root done 4/4） |
+| 28 | [VP-028-event-bus-port](plans/VP-028-event-bus-port.md) | 架构 · **进程内事件总线运输端口**（H-002 早期化 · 承接 RT-Q02 运输端口前置）：类型化 EventBus（Publish/Subscribe/Unsubscribe）+ 进程内 channel 实现 + **outbox/MQ 接缝声明（不实现）**；**不解除** Admin 功能分支 typed domain event 扩展接缝的 trigger-gated（应用契约仍归 Admin 功能）；EventBus ≠ Job 端口。 | 继承 VP-003 模块契约 + Charter 0.4.0 成功边界 #6 / H-002；与 VP-026/027 分立；outbox/broker 仍 trigger-gated；不重开 VP-012；与 VP-009/010 正交 | **closed**（2026-09-01 · v0.3.0 · Root `done` 4/4；lead `workspace-028-event-bus-port`；outbox/broker 仍 trigger-gated，不消耗 RT-Q02） |
+| 29 | [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) | Admin 功能 · **钱包预付资金凭证 + 外部主体接缝**：`(issuer, external_id) → subject_id`（不创建 `admin.users`）+ 卡密批次生成/导出/作废/核销入账（哈希存储、幂等 Redeem）。**R5**：Admin 已登录自助核销 HTTP + 「我的钱包」入口（入账 `owner_type=user`）。扩展 `admin.wallet`，**不是**支付业务域。 | 继承 VP-011 钱包账本；不重开 VP-011；与 VP-030/031 同批；硬前置于 030 身份与 031 扣款主体 | **closed**（2026-09-02 · v0.5.0 · 用户指令授权 · VRev-069 self `pass` · 十条判据全量 verified · Root done 5/5 · GOAL-005 独立审与 Root 关门自审 pass；lead `workspace-029-wallet-prepaid-instrument` 结项） |
+| 30 | [VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) | 架构 · **C 端 Telegram 通道运行时**（对标 VP-017）：webhook + Update 分发端口 + SendMessage 文本 + `issuer=telegram` 主体映射 + Admin bot 设置。**不是**业务域、**不是**付费命令实现。 | 硬前置 = VP-029 主体接缝（已交付）；消费 VP-027 限流；激活前评估 C 端桶已落盘（进程内够用、不需要 Redis）；与 VP-009/010 正交 | **active**（2026-09-03 · v0.2.0 · VRev-070 self `pass` · 架构类 freshness PASS `b5c39dfb`→`42036a3c` · lead `workspace-030-telegram-channel-runtime`） |
+| 31 | [VP-031-digital-offer-entitlement](plans/VP-031-digital-offer-entitlement.md) | 业务域 · **数字 Offer + 薄购买凭证 + 权益**（本仓首个业务域 VP）。服务视为可售 Offer，不是电商类目/SKU/税/库存/物流订单。 | VP-029 硬前置已满足；H-002 同进程书面确认；RT-Q03/Q05 均评估为本波不需要 Redis；R1 required 信息未冻结前不得进入 R2 | **closed**（2026-09-05 · v0.3.4 · 第 3 次关门：A-012 `conditional` 2 required → D-004 fixed ×2 + A-013 closed ×2 → A-014 independent `pass` 0 required → F-001 前置加固（A-015）· lead `workspace-031-digital-offer-entitlement` · Root `done` 4/4；可作为后继 VP 已验证前置） |
+| 32 | [VP-032-rate-limiter-atomic-port](plans/VP-032-rate-limiter-atomic-port.md) | 架构 · **限流器端口原子化**（GOAL-001 A-008 R-007 residual 承接）：`kernel.RateLimiter` 新增原子 `AllowRecord` 与令牌化 `Reserve`/`Cancel`，迁移冻结 14 处使用点（4 立即消费 + 10 失败预算），消除 Allow→Record TOCTOU；`Allow`/`Record` 保留兼容；内存供应商实现；Redis 仍 RT-Q05 trigger-gated。 | 继承 VP-027 端口语义（**不重开** VP-027 关门事实）；VP-030 三桶限流直接受益；与 VP-009/010 正交 | **closed**（2026-09-04 · v0.3.0 · **用户书面确认关门** · VRev-074 self `pass` · 五判据全部 verified（E-004 矩阵）· Root A-001 self + A-002 grok independent 双 `pass` 0 required；lead workspace-032-rate-limiter-atomic-port 结项 · Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3；失败预算口径承接 = GOAL-003 D-002 令牌化；Redis 实现仍 trigger-gated） |
+| 33 | [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) | Admin 功能 · **Telegram Bot 人工控制台**：连接状态（`getMe` / `setWebhook`）+ 入站模式开关（webhook \| 单实例 `getUpdates`）+ 业务占用位 + 未绑定人工 IM（代 bot 发言、无权限灰掉）。消费 VP-030 runtime，**不是**业务域。 | 硬前置 = VP-030 通道运行时已交付（不重开 030）；与 VP-031 占用位衔接；SSE/多实例 polling 仍 gated；与 VP-009/010 正交 | **active**（2026-09-04 · v0.2.0 · VRev-075 self `pass` · Admin freshness `42036a3c`→`dd1edade` PASS · lead `workspace-033-telegram-operator-console` · Root `done` 4/4，R1～R4 已完成；VP 层关门留后续 `/vision`） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -136,10 +144,10 @@ version: 0.60.0
 | id | 项 | 现状 | 状态 | 备注 |
 |----|----|------|------|------|
 | RT-Q01 | 进程内 Job 六态 | VP-012 R4 | **delivered** | 外部队列当时显式推迟 |
-| RT-Q02 | 外部消息队列 / Job broker | 无 | **trigger-gated** | 触发：多实例、跨机长任务、或领域事件要 fan-out。优先评估 PG `SKIP LOCKED` |
-| RT-Q03 | 缓存（Redis 等） | 无 | **trigger-gated** | 用途须先钉死：共享限流 / 分布式锁 / 热配置 / 查询缓存。禁止「先上 Redis 再找场景」 |
+| RT-Q02 | 外部消息队列 / Job broker | 无 | **trigger-gated** | 触发：多实例、跨机长任务、或领域事件要 fan-out。优先评估 PG `SKIP LOCKED`。**运输端口前置 = [VP-028](plans/VP-028-event-bus-port.md) `closed`**（2026-09-01 关门 · v0.3.0 · lead `workspace-028-event-bus-port` Root done 4/4；进程内 EventBus 运输端口 + outbox/MQ 接缝声明已交付；broker 运输仍 gated；不解除 Admin typed domain event gated——应用契约归 Admin 功能分支；不消耗 RT-Q02 trigger） |
+| RT-Q03 | 缓存（Redis 等） | 无 | **trigger-gated** | 用途须先钉死：共享限流 / 分布式锁 / 热配置 / 查询缓存。禁止「先上 Redis 再找场景」。**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块正式接入同进程。业务域 VP 激活即视为触发条件成立，架构分支须在该 VP 开区前完成评估并在路线图中登记位置（可选「不需要」结论，但评估本身不可跳过）。**承接 = [VP-026-cache-port](plans/VP-026-cache-port.md) `closed`**（端口 + 内存默认 + 双策略 + Redis 接缝声明已交付；Redis 实现仍 gated——VP-026 不消耗 trigger）。**VP-031 激活评估（VRev-080 · 2026-09-05）**：同进程首波的 Offer/权益读取以权威存储为正确性来源，现有内存 Cache 仅按性能证据选择性使用；结论 = 本波不需要 Redis。多实例或跨实例共享失效需求触发复审 |
 | RT-Q04 | 分布式锁 / leader election | 无 | **trigger-gated** | 定时任务、单飞 Job；PG advisory lock 可推迟 Redis |
-| RT-Q05 | 登录/API 限流跨实例 | 进程内滑动窗口 | **trigger-gated** | 单实例够用；多实例才需要共享存储 |
+| RT-Q05 | 登录/API 限流跨实例 | 进程内滑动窗口 | **trigger-gated** | 单实例够用；**触发条件（H-002 · VR-052）**：多实例部署 **或** C 端业务域模块接入且 C 端限流需求不可共用进程内 limiter。业务域 VP 激活即视为触发条件成立，须评估进程内 limiter 是否满足 C 端场景并登记路线图位置。**承接 = [VP-027-rate-limiter-port](plans/VP-027-rate-limiter-port.md) `closed`**（2026-09-01 关门 · v0.3.0 · lead `workspace-027-rate-limiter-port` Root done 4/4；端口 + 内存默认 + 7 处使用点迁移 + 接缝声明已交付；Redis 实现仍 gated）。**C 端 ingress 评估（VP-030 · VRev-070 §6，2026-09-03）**：webhook/`chat_id`/`telegram_user_id` 桶可被进程内 limiter 覆盖，结论 = 不需要 Redis；VP-030 已于 2026-09-05 经 VRev-076 `pass` 关门，不消耗本行 trigger。**端口原子化（VP-032 `closed` v0.3.0 · 2026-09-04 · VRev-074 self `pass`）**：进程内 Allow/Record TOCTOU 由 `AllowRecord` + 令牌化 `Reserve`/`Cancel` 收口；仍不消耗本行 Redis trigger。**VP-031 激活复核（VRev-080 · 2026-09-05）**：VP-030 ingress 桶继续覆盖通道入口；购买/权益业务端点采用独立进程内请求计数桶，结论 = 本波不需要 Redis。R1 冻结 key/阈值/拒绝语义，不使用 key-wide `Clear` 抹除历史 |
 | RT-Q06 | 事务 outbox / inbox | 无 | **trigger-gated** | Admin 功能「领域事件」契约的运输前置；先 DB outbox，后可选 broker |
 | RT-Q07 | 分布式 cron | 定时任务模块，单进程 | **trigger-gated** | 与 RT-Q04 绑定 |
 
@@ -247,6 +255,7 @@ version: 0.60.0
 |----|----|------|------|------|
 | RT-M01 | 出站邮件发送端口 + 可切换渠道 | VP-017 v0.5.0 按现行分母 closed：mock 站内记录 + Resend（live PASS）+ 设置热切换/试发 | **delivered** | 2026-08-24 再关门放行（A-003/A-004 pass）；R1～R4 实施史保留 |
 | RT-M02 | SMS / 其它推送运输 | 无 | **trigger-gated** | 用户 2026-08-22：审核麻烦，有真实需求再做 |
+| RT-M03 | C 端聊天通道（Telegram Bot 运行时） | VP-030 + VP-033 | **delivered** | [VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `closed` v0.3.0（2026-09-05 · VRev-076 · workspace-030 Root done）；[VP-033](plans/VP-033-telegram-operator-console.md) `closed` v0.3.0（2026-09-05 · VRev-077 · workspace-033 Root done）。入站 webhook + 出站 SendMessage + 分发端口 + 单实例有界 `getUpdates` 与人工控制台均已交付；**不是**业务域。Mini App / Stars、多实例 / HA 长轮询仍 gated |
 
 ### 现行：出站邮件 A6 退出分母（VP-017 · 2026-08-24 重开）
 
@@ -294,7 +303,7 @@ A7  优雅停机 / 连接排空合同（RT-D02 → VP-021 **closed** v0.3.0，20
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s、SMS。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支当前拍：**[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `closed`**（2026-08-24 按现行渠道分母再关门 · v0.5.0；RT-M01 delivered）。**[VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md)（RT-D02）`closed` v0.3.0**（2026-08-27 关门 · 优雅停机 / 连接排空合同，单进程基线，不与 A3 绑定；VRev-047 self `pass` + 关闭双审闭合；RT-D02 → **delivered**；lead workspace-021 结项）。A3 余项仍 trigger-gated（多实例才评估就绪探针扩依赖 / PG 锁 vs Redis vs 队列）。
+架构分支最近一拍：**[VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `closed` v0.3.0**（2026-09-05 · VRev-076 self `pass` · 八条判据 verified · workspace-030 Root done · R-009 按 A-009 保留 bounded accepted-residual）；人工控制台 / 入站模式开关由 Admin 功能 [VP-033](plans/VP-033-telegram-operator-console.md) **`closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root done）。两条 VP 合并交付 RT-M03，**不**把人工控制台倒灌进 VP-030 分母。**此前**：[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `closed`（2026-08-24 按现行渠道分母再关门 · v0.5.0；RT-M01 delivered）。**[VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md)（RT-D02）`closed` v0.3.0**（2026-08-27 关门 · 优雅停机 / 连接排空合同，单进程基线，不与 A3 绑定；VRev-047 self `pass` + 关闭双审闭合；RT-D02 → **delivered**；lead workspace-021 结项）。A3 余项仍 trigger-gated（多实例才评估就绪探针扩依赖 / PG 锁 vs Redis vs 队列）。
 
 ---
 
@@ -329,11 +338,17 @@ VP-011 已交付的标准 Admin 模块（用户/角色/设置/钱包演示面等
 
 typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、Entitlement、多组织 context、SSE/WebSocket、外部连接器/Secret 的产品面、自定义 metadata/tags、文件预览。
 
+> **SSE 注记（2026-09-03）**：VP-033 人工控制台首波用 Admin 短轮询 + 控制台 heartbeat，**不**解除本行 SSE/WebSocket trigger-gated。
+
+> **Entitlement 注记（2026-09-02）**：VP-031 只交付**数字 Offer 本域**权益表与校验，**不**解除本行通用 Entitlement / Approval Gate 接缝的 trigger-gated。
+
 **体验增强**
 
 全局搜索 / Command Palette、Saved Views、批量结果中心、未保存保护、统一 Toast/错误恢复、版本与维护提示。全局搜索若需要专用引擎，拉动架构 RT-X01。
 
 Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3 · **已由 [VP-025](plans/VP-025-config-export-diff-dryrun-import.md) 交付并 `closed`**）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
+
+Admin 功能最近一拍：**[VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) `closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root `done` 4/4 · 八条判据 verified；后续 IM 修正由 A-015 收口）。硬前置 [VP-030](plans/VP-030-telegram-channel-runtime.md) 已于同日 `closed` v0.3.0（VRev-076），不重开 030。上一拍 [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) 已 `closed` v0.5.0。VP-031 仍 `planned`，体验增强（全局搜索 / Command Palette）仍登记、不插队。
 
 ---
 
@@ -360,13 +375,19 @@ Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（
 8. CMS、内容发布、知识库  
 9. 支付网关、ERP、物流、CRM 连接器（领域侧；通用连接器接缝在 Admin 功能）
 
-已有的钱包模块是 VP-011 交付的 Admin 演示/能力面，**不**等于本分支「支付/结算」业务域已成立。
+已有的钱包模块是 VP-011 交付的 Admin 演示/能力面，**不**等于本分支「支付/结算」业务域已成立。VP-029 的卡密入金仍属 Admin 功能（资金通道），不把本表第 3 项提前成立。
 
-业务域下一拍：仅当某个域有真实业务触发时 `/vision` 建该域 VP；不要把多个域打进同一个 VP，也不要在无触发时预先开区。
+**已立项（2026-09-02 · 真实触发 = 下游 Telegram 付费服务 · 用户确认同进程）**
+
+| VP | 收窄后的域 | 明确不做 |
+|----|------------|----------|
+| [VP-031-digital-offer-entitlement](plans/VP-031-digital-offer-entitlement.md) `planned` | 数字 Offer + 薄购买凭证 + 本域权益 | 类目树、SKU/税/库存、物流订单、支付网关、通用 Entitlement 框架 |
+
+业务域下一拍：**激活 VP-031 之前**必须完成业务域 freshness（含 H-002 同进程再确认）与 RT-Q03/Q05 评估；硬前置 VP-029。不要把候选 1～9 打进同一个 VP，也不要在无触发时预开第二域。
 
 ---
 
-**当前组合焦点**：**无 active 交付 VP**——组合层平台波 [VP-022-distribution-package-pilot](plans/VP-022-distribution-package-pilot.md)（`closed` v0.4.0 · 2026-08-29）与 [VP-023-productionization-cli-package](plans/VP-023-productionization-cli-package.md)（`closed` v0.3.0 · 2026-08-29）均已结项（Charter 0.3.0 strategic 随 VP-022 GO 落地）；go 后残余已立案收口为 **[VP-024-distribution-formalization](plans/VP-024-distribution-formalization.md)** 并于 2026-08-29 **`closed`**（v0.3.0 · VRev-053 independent `pass` · 八判据核销 · 方法 B 置顶 · 残余四项登记）。**Admin 功能分支**＝基架能力剩余 #3 **配置包导出 / diff / dry-run / 导入**，已由 **[VP-025-config-export-diff-dryrun-import](plans/VP-025-config-export-diff-dryrun-import.md)** 于 2026-08-30 **`closed` v0.3.0**（用户书面确认 · 六判据全满足 · 双审闭合 · VRev-055 pass · lead workspace-025 Root done 4/4）；三分支候选继续待立项（Admin 分支下一非门控项 = 体验增强：全局搜索 / Command Palette 等）；持续程序 VP-009/010 照常。**[VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md)（架构 · RT-D02）已于 2026-08-27 `closed` v0.3.0**（2026-08-26 激活并开区 · 同日结项 lead workspace-021 Root done 3/3；关闭双审 A-001 self `pass` + A-002 grok independent 0 开放；VRev-047 self `pass`；RT-D02 → **delivered**）。**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md)（Admin 功能 · 时区/数字/货币格式语义）已于 2026-08-27 `closed` v0.3.0**（2026-08-26 激活并开区 · 同日全链交付至 27 日结项；lead `workspace-020` Root done 4/4；关门审计 A-001 self + A-002 grok independent 双 pass；VRev-045 pass）；[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（Admin 功能 · IAM）已于 2026-08-26 **`closed` v0.3.0**（用户书面确认；2026-08-25 同日全链交付，Root done 4/4；关后独立复审 A-001 `pass`）。[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) 已于 2026-08-24 按**现行渠道分母**再 `closed`（v0.5.0 · 架构 A6；RT-M01 delivered）；**[VP-018-account-email-identity](plans/VP-018-account-email-identity.md) 已于 2026-08-24 同日 `closed`**（v1.0.0 · 账号邮箱身份）。[VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) 已于 2026-08-22 有界 `closed`（架构 A5）。**[VP-015-observability](plans/VP-015-observability.md) 已于 2026-08-22 有界 `closed`**（架构 A4）。**[VP-014-object-storage](plans/VP-014-object-storage.md) 已于 2026-08-21 有界 `closed`**（架构 A2）。**[VP-013-store-dialects](plans/VP-013-store-dialects.md) 已于 2026-08-21 有界 `closed`**（架构 A1）。后续方向按 **架构** / **Admin 功能** / **业务域** 三分支并行登记。持续程序 = **VP-009 `active`** 与 **VP-010 `active`**。VP-001～008、VP-011～021 均为历史 `closed`（VP-017 为 2026-08-24 按现行分母再关门；VP-018 同日关门；VP-021 为 2026-08-27 关门）。VP-008 `go` 消费有效性在无新的共享基架阻断时保持可消费。协议覆盖权威 `I-PROTO-FULL-001`（v2.7.0 历史分母，被 v2.8.0 覆盖）。
+**当前组合焦点**：active 交付 VP = **无**（[VP-031](plans/VP-031-digital-offer-entitlement.md) 已于 2026-09-05 v0.3.4 第 3 次关门：A-012 `conditional` 2 required 经 D-004/A-013 fixed ×2 → A-014 independent `pass` 0 required → F-001 前置加固（A-015）→ Root `done` 4/4；workspace-031 可作为后继 VP 已验证前置）。VP-029 硬前置已满足；VP-030/031/032/033 均 `closed`；RT-Q03/Q05 激活评估均为本波不需要 Redis。持续程序 VP-009/010 照常；体验增强不插队。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
 
 ## 单主线模块化策略
 

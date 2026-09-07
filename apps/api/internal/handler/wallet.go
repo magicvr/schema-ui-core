@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,10 +20,11 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/concurrency"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
+	"github.com/magicvr/schema-ui-core/apps/api/modules/wallet/voucher"
 )
 
 // WalletService is the surface the wallet routes consume (satisfied
@@ -41,6 +44,15 @@ type WalletService interface {
 	Mutate(id string, in walletstore.LedgerEntryInput, now time.Time) (*walletstore.Account, *walletstore.LedgerEntry, bool, error)
 	Reconcile(accountID, actorID string, now time.Time) (*walletstore.ReconciliationRun, error)
 	ListReconcileRuns(page, pageSize int) ([]walletstore.ReconciliationRun, int, error)
+	// Prepaid vouchers surface (VP-029 R3 · GOAL-003).
+	GenerateVouchers(ctx context.Context, batchID string, count int, amount int64, currency string, expiresAt *time.Time, now time.Time) ([]voucher.GeneratedVoucher, error)
+	ListVouchers(ctx context.Context, batchID, status string, page, pageSize int) ([]voucher.Voucher, int, error)
+	GetVoucher(ctx context.Context, id string) (*voucher.Voucher, error)
+	VoidVoucher(ctx context.Context, id string, now time.Time) error
+	// RedeemForUser credits the session user's owner_type=user ledger
+	// (VP-029 R5 · GOAL-005). Identity is supplied by the handler, never
+	// from the request body.
+	RedeemForUser(ctx context.Context, userID, actorName, code string, now time.Time) (*voucher.RedeemResult, error)
 }
 
 // WalletJobService is the actor-scoped async boundary consumed by wallet
@@ -57,6 +69,33 @@ type WalletJobService interface {
 // ledger rows for nonexistent owners (orphan account books). nil disables the
 // gate (bare test environments only).
 type OwnerExistsFunc func(ownerID string) bool
+
+// voucherJSON is the operator-facing voucher row (list + get). Wire amounts
+// stay cents; voidable is true only while status is unused so the table can
+// hide the Void action after redeem/void.
+func voucherJSON(v voucher.Voucher) map[string]any {
+	row := map[string]any{
+		"id":         v.ID,
+		"batchId":    v.BatchID,
+		"codePrefix": v.CodePrefix,
+		"amount":     v.Amount,
+		"currency":   v.Currency,
+		"status":     string(v.Status),
+		"voidable":   v.Status == voucher.StatusUnused,
+		"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+	}
+	if v.ExpiresAt != nil {
+		row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+	}
+	if v.RedeemedBy != nil {
+		row["redeemedBy"] = *v.RedeemedBy
+	}
+	if v.RedeemedAt != nil {
+		row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+	}
+	return row
+}
 
 // WalletRoutes returns the admin.wallet HTTP surface.
 func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string, ownerExists OwnerExistsFunc) []kernel.RouteContribution {
@@ -438,6 +477,188 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
 	})))
 
+	// Vouchers: generate batch (audited). Requires wallet.voucher.issue.
+	// E-008: batchId is OPTIONAL — omitted, the server generates a unique
+	// VB-… id (operators no longer invent ids); amount is entered in CNY yuan
+	// with up to 2 decimal places and converted to min units (分) internally.
+	add("POST", "/api/wallet/vouchers/batches", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.voucher.issue")
+		if !ok {
+			return
+		}
+		var body struct {
+			BatchID   string          `json:"batchId"`
+			Count     int             `json:"count"`
+			Amount    json.RawMessage `json:"amount"`
+			Currency  string          `json:"currency"`
+			ExpiresAt json.RawMessage `json:"expiresAt"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with count and amount")
+			return
+		}
+		currency := strings.TrimSpace(body.Currency)
+		if currency != "" && currency != walletstore.DefaultCurrency {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "currency must be CNY")
+			return
+		}
+		if body.Count <= 0 || body.Count > 1000 {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "invalid count (1-1000)")
+			return
+		}
+		amountCents, okAmount := parseYuanToCents(body.Amount)
+		if !okAmount || amountCents <= 0 {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "amount must be a CNY amount in yuan with up to 2 decimal places and greater than zero (e.g. 12.5)")
+			return
+		}
+		now := time.Now().UTC()
+		batchID := strings.TrimSpace(body.BatchID)
+		if batchID == "" {
+			id, err := voucher.NewBatchID(now)
+			if err != nil {
+				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate voucher batch id")
+				return
+			}
+			batchID = id
+		}
+		// E-009: expiresAt accepts legacy Unix seconds or a UTC date
+		// (YYYY-MM-DD) picked in the admin form — the server converts the date
+		// to end-of-day seconds (valid through 23:59:59 of the chosen day).
+		expiry, okExpiry := parseVoucherExpiry(body.ExpiresAt)
+		if !okExpiry {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "expiresAt must be omitted, Unix seconds, or a YYYY-MM-DD UTC date (valid through 23:59:59 that day; range 2001-09-09..2099-12-31)")
+			return
+		}
+		var exp *time.Time
+		if expiry != nil {
+			t := time.Unix(*expiry, 0).UTC()
+			exp = &t
+		}
+		generated, err := service.GenerateVouchers(r.Context(), batchID, body.Count, amountCents, currency, exp, now)
+		if err != nil {
+			// A-005 F-004 (A-008): repeated batchId is a conflict (0065
+			// registry), not an internal error. Explicit batchId remains
+			// supported for API callers; the admin form omits it.
+			if errors.Is(err, voucher.ErrVoucherBatchExists) {
+				writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_BATCH_EXISTS", "a batch with that batchId already exists")
+				return
+			}
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not generate voucher batch")
+			return
+		}
+		// Audited without plaintext codes!
+		recordWalletEvent(operations, user, "records.create", "batch-generate", map[string]any{
+			"batchId":  batchID,
+			"count":    body.Count,
+			"amount":   amountCents,
+			"currency": currency,
+		}, now)
+
+		items := make([]map[string]any, len(generated))
+		for i, g := range generated {
+			item := map[string]any{
+				"id":         g.Voucher.ID,
+				"batchId":    g.Voucher.BatchID,
+				"codePrefix": g.Voucher.CodePrefix,
+				"amount":     g.Voucher.Amount,
+				"currency":   g.Voucher.Currency,
+				"status":     string(g.Voucher.Status),
+				"code":       g.Code, // One-time plaintext returned only here
+				"createdAt":  g.Voucher.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+			}
+			if g.Voucher.ExpiresAt != nil {
+				item["expiresAt"] = g.Voucher.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+			}
+			items[i] = item
+		}
+		writeJSON(w, http.StatusCreated, map[string]any{
+			"items": items,
+			"total": len(items),
+		})
+	})))
+
+	// Vouchers: list (requires wallet.read). Never returns plaintext codes.
+	add("GET", "/api/wallet/vouchers", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
+			return
+		}
+		page, ok := intParam(r.URL.Query().Get("page"), 1)
+		if !ok {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE", "page must be a positive integer")
+			return
+		}
+		pageSize, ok := intParam(r.URL.Query().Get("pageSize"), DefaultPageSize)
+		if !ok || pageSize > maxPageSize {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_PAGE_SIZE", "pageSize must be a positive integer not exceeding 100")
+			return
+		}
+		batchID := r.URL.Query().Get("batchId")
+		status := r.URL.Query().Get("status")
+		vouchers, total, err := service.ListVouchers(r.Context(), batchID, status, page, pageSize)
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not list vouchers")
+			return
+		}
+		rows := make([]map[string]any, len(vouchers))
+		for i, v := range vouchers {
+			rows[i] = voucherJSON(v)
+		}
+		writeJSON(w, http.StatusOK, resourceList{Items: rows, Total: total, Page: page, PageSize: pageSize})
+	})))
+
+	// Vouchers: get by id (requires wallet.read).
+	add("GET", "/api/wallet/vouchers/{id}", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := requirePermission(w, r, "wallet.read"); !ok {
+			return
+		}
+		id := strings.TrimSpace(r.PathValue("id"))
+		if id == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_ID", "id is required")
+			return
+		}
+		v, err := service.GetVoucher(r.Context(), id)
+		if errors.Is(err, voucher.ErrNotFound) {
+			writeLocalizedError(w, r, http.StatusNotFound, "VOUCHER_NOT_FOUND", "voucher not found")
+			return
+		}
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not get voucher")
+			return
+		}
+		row := voucherJSON(*v)
+		writeJSON(w, http.StatusOK, row)
+	})))
+
+	// Vouchers: void voucher (audited). Requires wallet.voucher.issue.
+	add("POST", "/api/wallet/vouchers/{id}/void", a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := requirePermission(w, r, "wallet.voucher.issue")
+		if !ok {
+			return
+		}
+		id := strings.TrimSpace(r.PathValue("id"))
+		if id == "" {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_ID", "id is required")
+			return
+		}
+		now := time.Now().UTC()
+		err := service.VoidVoucher(r.Context(), id, now)
+		if errors.Is(err, voucher.ErrNotFound) {
+			writeLocalizedError(w, r, http.StatusNotFound, "VOUCHER_NOT_FOUND", "voucher not found")
+			return
+		}
+		if errors.Is(err, voucher.ErrVoucherAlreadyRedeemed) {
+			writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_ALREADY_REDEEMED", "cannot void already redeemed voucher")
+			return
+		}
+		if err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not void voucher")
+			return
+		}
+		recordWalletEvent(operations, user, "records.update", "voucher-void", map[string]any{"voucherId": id}, now)
+		writeJSON(w, http.StatusOK, map[string]any{"id": id, "status": "void"})
+	})))
+
 	return routes
 }
 
@@ -523,7 +744,141 @@ func walletMutate(w http.ResponseWriter, r *http.Request, service WalletService,
 	writeWalletMutation(w, *account, *entry, replayed)
 }
 
-// writeWalletError maps wallet domain errors to the frozen wire codes.
+// voucher expiry window (A-005 F-005 / A-008): 2001-09-09T00:00:00Z ..
+// 2100-01-01T00:00:00Z in Unix seconds.
+const (
+	voucherExpiryMinUnix int64 = 1_000_000_000
+	voucherExpiryMaxUnix int64 = 4_102_444_800
+)
+
+// parseVoucherExpiry normalizes an expiresAt payload to Unix seconds:
+//   - absent / "" / <=0 seconds → nil (no expiry, historical semantics)
+//   - numeric Unix seconds (JSON int, exponent form, or quoted digits)
+//   - a "YYYY-MM-DD" UTC date (E-009): converted to 23:59:59 UTC of that day,
+//     so the whole chosen day stays redeemable
+//
+// Out-of-window values and malformed input return ok=false (fail-closed).
+func parseVoucherExpiry(raw json.RawMessage) (*int64, bool) {
+	if len(raw) == 0 {
+		return nil, true
+	}
+	s := strings.TrimSpace(string(raw))
+	if s == "" {
+		return nil, true
+	}
+	var sec int64
+	if s[0] == '"' {
+		var str string
+		if err := json.Unmarshal(raw, &str); err != nil {
+			return nil, false
+		}
+		s = strings.TrimSpace(str)
+		if s == "" {
+			return nil, true
+		}
+		if endOfDay, ok := voucherDateToEndOfDaySeconds(s); ok {
+			sec = endOfDay
+		} else {
+			n, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				return nil, false
+			}
+			sec = n
+		}
+	} else {
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil || f != math.Trunc(f) {
+			return nil, false
+		}
+		sec = int64(f)
+	}
+	if sec <= 0 {
+		return nil, true // historical "absent" semantics
+	}
+	if sec < voucherExpiryMinUnix || sec > voucherExpiryMaxUnix {
+		return nil, false
+	}
+	return &sec, true
+}
+
+// voucherDateToEndOfDaySeconds converts a strict YYYY-MM-DD date (interpreted
+// in UTC, the store's clock) to 23:59:59 UTC of the same day.
+func voucherDateToEndOfDaySeconds(s string) (int64, bool) {
+	if len(s) != len("2006-01-02") {
+		return 0, false
+	}
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return 0, false
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.UTC).Unix(), true
+}
+
+// parseYuanToCents converts a CNY amount given in yuan (JSON number or quoted
+// string, up to 2 decimal places, e.g. 12.5 or "12.50") to integer min units
+// (分). Returns ok=false for absent, malformed, non-positive or >2-decimal
+// input. Floats are normalized through their shortest decimal representation
+// (strconv.FormatFloat -1) so binary drift can never mint a wrong cent value
+// (E-008: voucher batch generation inputs amounts in yuan).
+func parseYuanToCents(raw json.RawMessage) (int64, bool) {
+	s := strings.TrimSpace(string(raw))
+	if len(s) >= 2 && s[0] == '"' {
+		var str string
+		if err := json.Unmarshal(raw, &str); err != nil {
+			return 0, false
+		}
+		s = strings.TrimSpace(str)
+	}
+	if s == "" {
+		return 0, false
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil || f <= 0 {
+		return 0, false
+	}
+	// Shortest round-trip decimal: reject more than two fractional digits
+	// instead of silently rounding (e.g. 12.345).
+	rep := strconv.FormatFloat(f, 'f', -1, 64)
+	whole := rep
+	frac := ""
+	if dot := strings.IndexByte(rep, '.'); dot >= 0 {
+		whole, frac = rep[:dot], rep[dot+1:]
+	}
+	if strings.HasPrefix(whole, "-") || len(whole) > 15 || len(frac) > 2 {
+		return 0, false
+	}
+	yuan, err := strconv.ParseInt(whole, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	cents := yuan * 100
+	if len(frac) == 1 {
+		cents += int64(frac[0]-'0') * 10
+	} else if len(frac) == 2 {
+		cents += int64(frac[0]-'0')*10 + int64(frac[1]-'0')
+	}
+	return cents, true
+}
+
+func writeVoucherRedeemError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, voucher.ErrNotFound):
+		writeLocalizedError(w, r, http.StatusNotFound, "VOUCHER_NOT_FOUND", "voucher not found")
+	case errors.Is(err, voucher.ErrVoucherAlreadyRedeemed), errors.Is(err, voucher.ErrVoucherConflict):
+		writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_ALREADY_REDEEMED", "voucher has already been redeemed")
+	case errors.Is(err, voucher.ErrVoucherVoid):
+		writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_VOID", "voucher has been voided")
+	case errors.Is(err, voucher.ErrVoucherExpired):
+		writeLocalizedError(w, r, http.StatusConflict, "VOUCHER_EXPIRED", "voucher has expired")
+	case errors.Is(err, voucher.ErrInvalidInput), errors.Is(err, voucher.ErrVoucherInvalid):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_BODY", "body must be JSON with code")
+	case errors.Is(err, voucher.ErrCurrencyMismatch):
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_VOUCHER_PARAMS", "voucher currency mismatch")
+	default:
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "voucher redeem failed")
+	}
+}
+
 func writeWalletError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, walletstore.ErrNotFound):

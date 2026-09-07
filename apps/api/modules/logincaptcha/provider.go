@@ -27,11 +27,12 @@ type Provider struct {
 	a          *auth.Authenticator
 	service    *Service
 	operations operationlog.Recorder
+	limiters   kernel.RateLimiterProvider
 }
 
 // New constructs the captcha provider.
-func New(a *auth.Authenticator, service *Service, operations operationlog.Recorder) *Provider {
-	return &Provider{a: a, service: service, operations: operations}
+func New(a *auth.Authenticator, service *Service, operations operationlog.Recorder, limiters kernel.RateLimiterProvider) *Provider {
+	return &Provider{a: a, service: service, operations: operations, limiters: limiters}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -56,7 +57,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.CaptchaRoutes(p.a, p.service, p.operations, ModuleID) {
+	for _, route := range handler.CaptchaRoutes(p.a, p.service, p.operations, ModuleID, p.limiters) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 )
 
 func openTestStore(t *testing.T) *store.Store {

@@ -1,0 +1,36 @@
+# R4 独立审计请求
+
+请对 GOAL-005-r4-evidence-closeout（R4 证据与关门）进行独立交叉审计。
+
+## 审计范围
+
+- **目标**：GOAL-005-r4-evidence-closeout
+- **路径**：docs/workspaces/workspace-028-event-bus-port/GOAL-005-r4-evidence-closeout/
+- **交付物**：
+  - E-001: 判据 #7 越界核账（边界保持验证）
+  - E-002: VP-028 八条退出判据证据矩阵  
+  - E-003: R1–R3 审计意见汇总与闭合状态
+- **成功标准**：C1 越界核账完成 + C2 审计意见台账完成 + C3 证据矩阵落盘
+
+## 审计重点
+
+1. **判据 #7 越界核账完整性**：7 项边界红线验证是否充分
+2. **证据矩阵完整性**：八条退出判据的决策/执行/审计交叉索引是否完整可追溯
+3. **审计意见汇总准确性**：R1–R3 审计意见汇总是否准确；开放 required findings = 0 验证是否正确
+4. **信息项闭合验证**：4 个 required 信息项是否全部 verified
+5. **P-001 路线图完整性**：R1～R4 四阶段是否按纲领完成
+
+## 审计依据
+
+- AGENTS.md §6b (P-002～P-005)
+- docs/architecture/principles.md
+- VP-028 八条方向级退出判据
+- Root Goal (GOAL-001) 纲领路线图
+
+## 期望输出
+
+- verdict: pass / conditional / fail
+- findings: 列出所有发现（标注 required / non-required）
+- 推进建议
+
+请严格按照独立审计标准进行评估。
