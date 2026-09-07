@@ -23,6 +23,14 @@ for (const name of schemaImports) {
   mkdirSync(outDir, { recursive: true });
   copyFileSync(src, path.join(outDir, `${name}.schema.json`));
 }
+// F2 (GOAL-042 · host-support 移入 protocol 包)：tsc 不复制 JSON 资产，构建时
+// 把版本/能力协商单源 host-support.json 拷入包内（load-page 运行时依赖）。
+const hostSupportJsonSrc = path.join(here, "../apps/web/src/protocol/host-support.json");
+if (existsSync(hostSupportJsonSrc)) {
+  const outDir = path.join(distRoot, "protocol");
+  mkdirSync(outDir, { recursive: true });
+  copyFileSync(hostSupportJsonSrc, path.join(outDir, "host-support.json"));
+}
 const protocolDir = path.join(distRoot, "protocol");
 const walkProto = (d) => {
   for (const ent of readdirSync(d, { withFileTypes: true })) {
@@ -31,7 +39,8 @@ const walkProto = (d) => {
     else if (/\.js$/.test(ent.name)) {
       const t = readFileSync(full, "utf8");
       let out = t.replace(/@schemas\/([a-z-]+)\.schema\.json/g, (m, n) => `./schemas/${n}.schema.json`);
-      out = out.replace(/from\s+(["']\.\/schemas\/[^"']+\.json["'])/g, 'from $1 with { type: "json" }');
+      // 包内相对 JSON import（schemas/*.json、host-support.json）→ import attributes
+      out = out.replace(/from\s+(["']\.\/[^"']+\.json["'])/g, 'from $1 with { type: "json" }');
       if (out !== t) writeFileSync(full, out);
     }
   }

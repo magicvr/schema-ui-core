@@ -29,10 +29,11 @@ const SUITE_VERSION = "1.0";
 const ARTIFACT_VERSION = "2.9.0";
 
 // F2 (GOAL-042 D-001): the host support set is a single source of truth in
-// apps/web/src/host/host-support.json, shared with the runtime host-support.ts.
-// The claim's support.pageVersions / support.capabilities MUST be the JSON.
+// apps/web/src/protocol/host-support.json, shared with the runtime
+// host-support.ts. The claim's support.pageVersions / support.capabilities
+// MUST be the JSON.
 const hostSupport = JSON.parse(
-  readFileSync(join(WEB_ROOT, "src", "host", "host-support.json"), "utf8"),
+  readFileSync(join(WEB_ROOT, "src", "protocol", "host-support.json"), "utf8"),
 );
 const HOST_PAGE_VERSIONS = hostSupport.supportedPageVersions;
 const HOST_CAPABILITIES = hostSupport.supportedCapabilities;
@@ -135,7 +136,7 @@ const claim = {
   support: {
     pageVersions: [...HOST_PAGE_VERSIONS],
     manifestVersions: ["2.7", "2.8", "2.9"],
-    // F2 (GOAL-042 D-001): identical to apps/web/src/host/host-support.json —
+    // F2 (GOAL-042 D-001): identical to apps/web/src/protocol/host-support.json —
     // the claim attests exactly the host's runtime support set (19 capabilities;
     // mandatory suites all green, listed below).
     capabilities: [...HOST_CAPABILITIES],

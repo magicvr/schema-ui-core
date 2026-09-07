@@ -20,7 +20,7 @@ R3 implements the app-manifest and navigation subset pinned to
   页面文档接受 `2.7` / `2.8` / `2.9`（`HOST_SUPPORTED_PAGE_VERSIONS`）。
 - 页面级版本 + 能力协商在 `load-page.ts` `loadPageDocument` 中 fail-closed
   （`UNSUPPORTED_PROTOCOL_VERSION` / `MISSING_REQUIRED_CAPABILITY`）；支持集见
-  `apps/web/src/host/host-support.ts`（与 claim `support.capabilities` 一致）。
+  `apps/web/src/protocol/host-support.ts`（与 claim `support.capabilities` 一致）。
 - Manifest envelope 与页面版本解耦（上游 decoupledVersions）：API 服务 2.7 envelope、
   35 页中 8 页声明 2.9，属合法协商形态。
 

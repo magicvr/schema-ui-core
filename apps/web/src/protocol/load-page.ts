@@ -15,7 +15,7 @@ import { validatePageDocument } from "@/protocol/conformance/runtime-schema-vali
 import {
   HOST_SUPPORTED_CAPABILITIES,
   HOST_SUPPORTED_PAGE_VERSIONS,
-} from "@/host/host-support";
+} from "@/protocol/host-support";
 import { withTimeout } from "@/lib/fetch-timeout";
 
 export type PageSchemaErrorCode =

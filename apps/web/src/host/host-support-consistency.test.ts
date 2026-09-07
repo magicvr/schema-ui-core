@@ -2,8 +2,8 @@
 //
 // F2 (GOAL-042 W30 · D-001): mechanical claim ↔ host-support consistency.
 // host-support.json is the single source of truth for the runtime support set
-// (host-support.ts) and the build-time claim (generate-claim.mjs). This test
-// locks the chain:
+// (protocol/host-support.ts) and the build-time claim (generate-claim.mjs).
+// This test locks the chain:
 //   1. the generated claim's support.* equals host-support.json exactly;
 //   2. every claimed capability is a valid upstream capability-registry id;
 //   3. every claimed capability's mandatorySuites are covered by the claim's
@@ -42,7 +42,7 @@ interface ClaimFixture {
   conformance: { suites: Array<{ suiteId: string; result: string }> };
 }
 
-const hostSupport = readJson<HostSupport>("src/host/host-support.json");
+const hostSupport = readJson<HostSupport>("src/protocol/host-support.json");
 const registry = readJson<CapabilityRegistry>("../../docs/schemas/capability-registry.json");
 const claim = readJson<ClaimFixture>("public/protocol/conformance-claim.json");
 
