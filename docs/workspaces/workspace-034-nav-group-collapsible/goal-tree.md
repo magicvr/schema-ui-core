@@ -18,7 +18,7 @@ workspace_id: workspace-034-nav-group-collapsible
 ## 目标树
 
 ```text
-GOAL-001-nav-group-collapsible [active · 4/5]
+GOAL-001-nav-group-collapsible [done · 5/5]
 └── （R1-R5 纲领阶段尚未拆分细粒度子目标）
 ```
 
@@ -29,17 +29,17 @@ R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
  → R2 模块注册与跨模块聚合契约 [completed]
  → R3 Shell 折叠展开 / 可访问性 / 直接 URL 自动展开 [completed]
  → R4 当前 sidebar 导航全量迁移与 default/optional/custom/demo 回归 [completed]
- → R5 证据矩阵 / 全量回归 / Goal 审计 / 关门准备 [pending]
+ → R5 证据矩阵 / 全量回归 / Goal 审计 / 关门准备 [completed]
 ```
 
 ## 状态表
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **active** | 4/5 | null | R1-R4 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2 Grok independent `pass`、R3 self `pass`、R4 self `pass` 已记录；checkpoint `41e89f47`/`6e581ca9` 已创建，R4 checkpoint 待创建；下一阶段为 R5 关门准备 |
+| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **done** | 5/5 | null | R1-R5 检查点已完成；A-002 required 已由 A-004 全部 fixed；R2/R5 均有 Grok independent `pass`，R3/R4 self `pass`；checkpoint `41e89f47`/`6e581ca9`/`b25bd777` 已创建，R5 最终 checkpoint 待提交；VP-034 仍 active，另走 `/vision` |
 
 ## 维护说明
 
-- Root `progress: 0%` 由 `00-meta.md` 的 5 个显式检查点派生。
+- Root `progress: 100%` 由 `00-meta.md` 的 5 个显式检查点派生（R1-R5 completed）。
 - 新建阶段子目标前，先在 Root 决策/路线图中冻结阶段边界；目标文件夹在本工作区根平铺。
 - status/progress/parent 或新增子目标发生变化时，必须同步本文件树与状态表。

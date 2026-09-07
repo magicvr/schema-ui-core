@@ -129,21 +129,28 @@ func TestR4NavigationGroupProfileMatrix(t *testing.T) {
 	for _, tc := range r4NavigationCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			document, _ := fetchR4Manifest(t, tc)
-			allSidebarRefs := collectManifestNavigationPageRefs(document.Navigation.Sidebar)
-			if !allSidebarRefs["dashboard"] {
-				t.Fatalf("dashboard must remain a top-level sidebar singleton; refs=%v", allSidebarRefs)
+			if len(document.Navigation.Sidebar) == 0 {
+				t.Fatal("sidebar must contain the Dashboard singleton")
+			}
+			var firstSidebar struct {
+				PageRef string            `json:"pageRef"`
+				Items   []json.RawMessage `json:"items"`
+			}
+			if err := json.Unmarshal(document.Navigation.Sidebar[0], &firstSidebar); err != nil {
+				t.Fatal(err)
+			}
+			if firstSidebar.PageRef != "dashboard" || len(firstSidebar.Items) != 0 {
+				t.Fatalf("first sidebar item = %+v, want top-level dashboard link", firstSidebar)
 			}
 			for groupKey, wantRefs := range tc.groups {
 				gotRefs := manifestGroupPageRefs(document.Navigation.Sidebar, groupKey)
+				if len(gotRefs) != len(wantRefs) {
+					t.Fatalf("group %s refs=%v, want exact %v", groupKey, gotRefs, wantRefs)
+				}
 				for _, pageRef := range wantRefs {
 					if !gotRefs[pageRef] {
 						t.Fatalf("group %s missing %s; got=%v", groupKey, pageRef, gotRefs)
 					}
-				}
-			}
-			for groupKey := range tc.groups {
-				if len(manifestGroupPageRefs(document.Navigation.Sidebar, groupKey)) == 0 {
-					t.Fatalf("group %s has no visible members", groupKey)
 				}
 			}
 			userRefs := collectManifestNavigationPageRefs(document.Navigation.User)

@@ -80,6 +80,7 @@ apps/api/modules/compiled/            # 全局迁移收集（全候选）
 - `Group` 为空：导航保持协议原有的顶层平铺语义，模块无需为了接入分组而改造。
 - `Group` 非空时必须包含小写英文短横线 `Key`、非负 `Order`，以及 `Label` / `LabelKey` 至少一个；`Icon` 可选。
 - `Key` 是跨模块共享的产品语义 key，不自动加模块前缀；不同模块声明同一 key 时，`Key/Order/Label/LabelKey/Icon` 必须精确一致。kernel finalize 会在 Manifest 发布前以 `CodeModuleNavigationGroupConflict` fail closed，禁止 first-writer 覆盖。
+- `Group.Order` 只决定组间顺序；组内叶子沿用已验证的 NodeID/`DefaultNavigationOrder` 相对顺序，配置的 `NAVIGATION_ORDER` 只能重排叶子而不能改变五组的显式顺序。
 - Group 只表达公开 Manifest 的 sidebar 展示聚合，不表达 `Parent` 层级，不改变 `menu_items` 身份、权限授权或 system-data checksum，也不要求迁移。
 - Provider 的 Manifest fragment 继续贡献普通 sidebar links；composition/serve 由结构化贡献把已匹配的 sidebar NodeID 归一化为标准协议 `NavGroup`。不向现行 NavGroup 输出内部 `key` / `id`，top/user slot 不参与归一化。
 - `menu_dashboard` 等有意顶层单例可以不分组但必须回归；已有 authored 协议组（如 `dev.examples` 的 `Examples`）保留，不与模块结构化组隐式合并。

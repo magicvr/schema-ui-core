@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-nav-group-collapsible
 title: Admin 导航分组折叠体验交付
-status: active
+status: done
 parent: null
 created: 2026-09-07
 updated: 2026-09-07
 version: 0.1.0
-progress: 0%
+progress: 100%
 plan_refs:
   - VP-034-nav-group-collapsible
 primary_plan: VP-034-nav-group-collapsible
@@ -62,9 +62,9 @@ serves_summary: 在现行 Admin Shell 中交付与模块解耦的导航分组、
 | R2 | 模块注册与聚合契约：可选 group、跨模块共组、无 group 向后兼容 | completed |
 | R3 | Shell 交互：折叠/展开、键盘可访问、直接 URL 自动展开、状态保持 | completed |
 | R4 | 当前已注册 sidebar 全量迁移；默认、optional、custom/demo 组合与 top/user slot 回归 | completed |
-| R5 | 证据矩阵、全量回归、Goal 审计、required finding 闭合与关门准备 | pending |
+| R5 | 证据矩阵、全量回归、Goal 审计、required finding 闭合与关门准备 | completed |
 
-`progress: 80%` = 4/5 个检查点完成（R1、R2、R3、R4）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+`progress: 100%` = 4/5 个检查点完成（R1、R2、R3、R4）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
 ## 信息就绪与未知项（P-005）
 

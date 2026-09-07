@@ -1,7 +1,7 @@
 ---
 id: workspace-034-nav-group-collapsible
 title: Admin 导航分组折叠体验工作区
-status: active
+status: done
 root_goal: GOAL-001-nav-group-collapsible
 canonical_scope: docs/workspaces/workspace-034-nav-group-collapsible/
 shared_materials_catalog: none
@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · Admin 导航分组折叠体验
 
-本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。
+本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。workspace-034 Root 已于 R5 关门，`GOAL-001-nav-group-collapsible` 为 `done 5/5`；VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
 
 - 本区不属于 workspace-010；VP-010 继续承担长期设计意图—实现符合性程序，本区是 Admin 功能分支的有界交付。
 - 本区必须覆盖当前已注册 sidebar 导航，不以“既有模块”作为排除理由。
@@ -29,10 +29,10 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-034-nav-group-collapsible` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-nav-group-collapsible` | `parent: null`；长期 VP-034 有界交付 Root |
+| Root Goal | `GOAL-001-nav-group-collapsible` | `parent: null`；**done 5/5**；长期 VP-034 有界交付 Root |
 | canonical 范围 | `docs/workspaces/workspace-034-nav-group-collapsible/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料 |
-| 愿景角色 | `delivery` | VP-034 lead delivery；不改变 Charter primary workspace |
+| 愿景角色 | `delivery` | VP-034 lead delivery；workspace-034 已结项；不改变 Charter primary workspace |
 | 规划对齐 | `primary_plan` = `VP-034-nav-group-collapsible` | `plan_refs` 必填且已精确绑定 |
 
 ## 愿景对齐
@@ -43,7 +43,7 @@ parent: null
 - Scope 修正审视：[VRev-084](../../vision/reviews/VRev-084-vp034-existing-navigation-scope-correction.md) self `pass`
 - Vision open required：0；V-F121 为 inherited recommended，不阻断
 
-## 初始分组基线（R1 待冻结）
+## 初始分组基线（R1 已冻结并由 R2/R4 验证）
 
 | group key | 初始标题 | sidebar 节点 |
 |-----------|----------|--------------|
@@ -64,7 +64,7 @@ parent: null
 | R2 | 模块 NavigationContribution 与 Manifest 聚合契约：可选 `group`、跨模块共组、向后兼容 | completed |
 | R3 | Shell 左侧分组折叠/展开、键盘可访问性、激活态自动展开与状态保持 | completed |
 | R4 | 当前已注册 sidebar 导航全量迁移，覆盖默认/optional/custom/demo 组合并保持 top/user slot | completed |
-| R5 | 证据矩阵、全量回归、self/independent 审计与 VP 关门准备 | planned |
+| R5 | 证据矩阵、全量回归、self/independent 审计与 VP 关门准备 | completed |
 
 纲领阶段按 R1 → R2 → R3 → R4 → R5 串行推进；同一阶段内的细粒度子目标需在 R1 冻结后按证据与并行价值创建。
 

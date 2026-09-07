@@ -11,7 +11,7 @@ version: 0.1.0
 # 审计 · GOAL-001-nav-group-collapsible
 
 > 本文件是 Goal 审计稳定索引；Vision Review 不替代本目标的 Goal `03-audit`。
-> R1-R3 门禁与 checkpoint 已完成：R2 由 A-005 self/A-006 Grok independent 双腿 `pass`，R3 由 A-008 self `pass`；A-007 已响应 R2 recommended。R4 matrix/Playbook/optional custom 回归由 A-009 self `pass` 核对，I-034-004/I-034-005 已 verified，当前 open required = 0；R4 checkpoint 待创建，R5 关门准备仍未完成。
+> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended，当前 open required/recommended = 0。Root 可按本轮明确目标授权关门；VP-034 仍留给 `/vision` 单独关门。
 
 ## 信息就绪核对（按 scope）
 
@@ -34,6 +34,9 @@ version: 0.1.0
 | A-007 | 2026-09-07 | self | A-006 recommended 响应与 R2 收尾 | pass | 0 | [`03-audit/A-007-a006-recommended-response.md`](03-audit/A-007-a006-recommended-response.md) |
 | A-008 | 2026-09-07 | self | R3 Shell 分组折叠、键盘交互、sessionStorage 与深链自动展开 | pass | 0 | [`03-audit/A-008-r3-shell-self.md`](03-audit/A-008-r3-shell-self.md) |
 | A-009 | 2026-09-07 | self | R4 当前 sidebar 全量迁移与 Profile/slot/route 矩阵 | pass | 0 | [`03-audit/A-009-r4-matrix-self.md`](03-audit/A-009-r4-matrix-self.md) |
+| A-010 | 2026-09-07 | self | R5 Root 关门准备与最终证据矩阵 | pass | 0 | [`03-audit/A-010-r5-closeout-self.md`](03-audit/A-010-r5-closeout-self.md) |
+| A-011 | 2026-09-07 | independent | R5 Root 关门准备与最终证据矩阵 | pass | 0 | [`03-audit/A-011-r5-closeout-independent.md`](03-audit/A-011-r5-closeout-independent.md) |
+| A-012 | 2026-09-07 | self | A-011 recommended 响应与 R5 关门放行 | pass | 0 | [`03-audit/A-012-a011-recommended-response.md`](03-audit/A-012-a011-recommended-response.md) |
 
 ## 愿景层意见（仅作上下文）
 
@@ -43,4 +46,4 @@ version: 0.1.0
 
 ## 结论状态
 
-R3 Shell 代码实施与 Web 验证已记录，A-008 self `pass`；R1/R2/R3 检查点为 3/5，R3 checkpoint `6e581ca9` 已创建。R4 matrix 与 Playbook 更新已由 A-009 self `pass` 核对，I-034-004/I-034-005 证据齐备；R4 checkpoint 待创建，R5 仍未完成。
+R1-R4 检查点、矩阵与 checkpoint 已完成；R3 A-008 self `pass`、R4 A-009 self `pass`，I-034-001～005 已 verified。R5 证据矩阵与最终验证由 A-010 self `pass` 核对，当前 open required = 0；等待本地 grok build independent close-out 审计后再决定 Root 关门。
