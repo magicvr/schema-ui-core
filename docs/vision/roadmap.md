@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-09-05
+updated: 2026-09-07
 parent: null
-version: 0.75.0
+version: 0.76.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -50,6 +50,7 @@ version: 0.75.0
 | 31 | [VP-031-digital-offer-entitlement](plans/VP-031-digital-offer-entitlement.md) | 业务域 · **数字 Offer + 薄购买凭证 + 权益**（本仓首个业务域 VP）。服务视为可售 Offer，不是电商类目/SKU/税/库存/物流订单。 | VP-029 硬前置已满足；H-002 同进程书面确认；RT-Q03/Q05 均评估为本波不需要 Redis；R1 required 信息未冻结前不得进入 R2 | **closed**（2026-09-05 · v0.3.4 · 第 3 次关门：A-012 `conditional` 2 required → D-004 fixed ×2 + A-013 closed ×2 → A-014 independent `pass` 0 required → F-001 前置加固（A-015）· lead `workspace-031-digital-offer-entitlement` · Root `done` 4/4；可作为后继 VP 已验证前置） |
 | 32 | [VP-032-rate-limiter-atomic-port](plans/VP-032-rate-limiter-atomic-port.md) | 架构 · **限流器端口原子化**（GOAL-001 A-008 R-007 residual 承接）：`kernel.RateLimiter` 新增原子 `AllowRecord` 与令牌化 `Reserve`/`Cancel`，迁移冻结 14 处使用点（4 立即消费 + 10 失败预算），消除 Allow→Record TOCTOU；`Allow`/`Record` 保留兼容；内存供应商实现；Redis 仍 RT-Q05 trigger-gated。 | 继承 VP-027 端口语义（**不重开** VP-027 关门事实）；VP-030 三桶限流直接受益；与 VP-009/010 正交 | **closed**（2026-09-04 · v0.3.0 · **用户书面确认关门** · VRev-074 self `pass` · 五判据全部 verified（E-004 矩阵）· Root A-001 self + A-002 grok independent 双 `pass` 0 required；lead workspace-032-rate-limiter-atomic-port 结项 · Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3；失败预算口径承接 = GOAL-003 D-002 令牌化；Redis 实现仍 trigger-gated） |
 | 33 | [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) | Admin 功能 · **Telegram Bot 人工控制台**：连接状态（`getMe` / `setWebhook`）+ 入站模式开关（webhook \| 单实例 `getUpdates`）+ 业务占用位 + 未绑定人工 IM（代 bot 发言、无权限灰掉）。消费 VP-030 runtime，**不是**业务域。 | 硬前置 = VP-030 通道运行时已交付（不重开 030）；与 VP-031 占用位衔接；SSE/多实例 polling 仍 gated；与 VP-009/010 正交 | **active**（2026-09-04 · v0.2.0 · VRev-075 self `pass` · Admin freshness `42036a3c`→`dd1edade` PASS · lead `workspace-033-telegram-operator-console` · Root `done` 4/4，R1～R4 已完成；VP 层关门留后续 `/vision`） |
+| 34 | [VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) | Admin 功能 · **导航分组折叠体验**：Admin Shell 左侧导航引入可折叠/展开分组（Group）；分组与模块解耦（模块可将导航注册到跨模块共享分组）；当前已注册 sidebar 导航全部纳入合理分组迁移与验证（`identity-access` / `content-data` / `operations` / `communications` / `commerce`，Dashboard 顶层单例）；直接 URL 进入时对应分组自动展开；playbook 更新注册规范。 | 继承 VP-003 模块架构 + VP-004 贡献 playbook + VP-005 设计系统；无硬前置；与 VP-009/010 正交 | **active**（2026-09-07 · v0.3.0 scope correction · VRev-083 activation `pass` + VRev-084 scope correction `pass` · Admin freshness `dd1edade`→`f2044cf3` PASS · lead `workspace-034-nav-group-collapsible`） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -348,7 +349,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3 · **已由 [VP-025](plans/VP-025-config-export-diff-dryrun-import.md) 交付并 `closed`**）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
 
-Admin 功能最近一拍：**[VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) `closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root `done` 4/4 · 八条判据 verified；后续 IM 修正由 A-015 收口）。硬前置 [VP-030](plans/VP-030-telegram-channel-runtime.md) 已于同日 `closed` v0.3.0（VRev-076），不重开 030。上一拍 [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) 已 `closed` v0.5.0。VP-031 仍 `planned`，体验增强（全局搜索 / Command Palette）仍登记、不插队。
+Admin 功能最近一拍：**[VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) `closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root `done` 4/4 · 八条判据 verified；后续 IM 修正由 A-015 收口）。硬前置 [VP-030](plans/VP-030-telegram-channel-runtime.md) 已于同日 `closed` v0.3.0（VRev-076），不重开 030。上一拍 [VP-029-wallet-prepaid-instrument](plans/VP-029-wallet-prepaid-instrument.md) 已 `closed` v0.5.0。VP-031 仍 `planned`，体验增强（全局搜索 / Command Palette）仍登记、不插队。**下一拍 = [VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md)（2026-09-07 立项 `planned`，导航分组折叠体验；用户确认结构选型：新 VP + 新工作区，不作为 VP-010 子目标）。**
 
 ---
 
@@ -387,7 +388,7 @@ Admin 功能最近一拍：**[VP-033-telegram-operator-console](plans/VP-033-tel
 
 ---
 
-**当前组合焦点**：active 交付 VP = **无**（[VP-031](plans/VP-031-digital-offer-entitlement.md) 已于 2026-09-05 v0.3.4 第 3 次关门：A-012 `conditional` 2 required 经 D-004/A-013 fixed ×2 → A-014 independent `pass` 0 required → F-001 前置加固（A-015）→ Root `done` 4/4；workspace-031 可作为后继 VP 已验证前置）。VP-029 硬前置已满足；VP-030/031/032/033 均 `closed`；RT-Q03/Q05 激活评估均为本波不需要 Redis。持续程序 VP-009/010 照常；体验增强不插队。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
+**当前组合焦点**：active 交付 VP = **[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md)**（2026-09-07 激活 v0.2.0，2026-09-07 v0.3.0 scope correction；Admin 功能分支 · 导航分组折叠体验；当前已注册 sidebar 导航纳入合理分组迁移/验证；lead `workspace-034-nav-group-collapsible`；VRev-083/VRev-084 self `pass`，open required = 0）。VP-029 硬前置已满足；VP-030/031/032/033 均 `closed`；RT-Q03/Q05 激活评估均为本波不需要 Redis。持续程序 VP-009/010 照常。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
 
 ## 单主线模块化策略
 

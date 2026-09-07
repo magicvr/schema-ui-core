@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-09-05
+updated: 2026-09-07
 parent: null
-version: 0.49.8
+version: 0.49.9
 ---
 
 # 工作区贡献图
@@ -45,6 +45,7 @@ version: 0.49.8
 | workspace-031-digital-offer-entitlement | docs/workspaces/workspace-031-digital-offer-entitlement/ | GOAL-001-digital-offer-entitlement | delivery | VP-031-digital-offer-entitlement | **done**（2026-09-05 激活开区 · **第 3 次关门**：A-012 `conditional` 2 required（F-007/F-008）→ D-004 fixed ×2 + A-013 closed ×2 → A-014 independent `pass` 0 required（真实 PG 未 skip）→ F-001 前置加固（A-015）→ Root `GOAL-001-digital-offer-entitlement` `done · 4/4`，R1～R4 全部关门；**VP-031 `closed` v0.3.4**；可作为后继 VP 已验证前置） |
 | workspace-032-rate-limiter-atomic-port | docs/workspaces/workspace-032-rate-limiter-atomic-port/ | GOAL-001-rate-limiter-atomic-port | delivery | VP-032-rate-limiter-atomic-port | **done**（2026-09-03 激活开区 · 2026-09-04 全链结项：Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3（R1 合同冻结 → R2 14 处迁移+handler 回归（A-002 证伪后 D-002 令牌化 Reserve/Cancel 修复）→ R3 证据与关门）；关门双审 A-001 self `pass` + A-002 grok independent `pass`（0 required）；**VP-032 `closed` v0.3.0（2026-09-04 用户书面确认 · VRev-074 pass）**，判据 #2 失败预算口径承接由 GOAL-003 D-002 取代并登记于规划短史） |
 | workspace-033-telegram-operator-console | docs/workspaces/workspace-033-telegram-operator-console/ | GOAL-001-telegram-operator-console | delivery | VP-033-telegram-operator-console | **done**（2026-09-04 激活开区 · 2026-09-05 Root `GOAL-001-telegram-operator-console` `done · 4/4`；R4 A-001/A-002/A-003/A-004 完成，A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`；A-015 IM 最终响应后 open required/recommended = 0；VRev-077 self `pass`，VP-033 `active → closed` v0.3.0） |
+| workspace-034-nav-group-collapsible | docs/workspaces/workspace-034-nav-group-collapsible/ | GOAL-001-nav-group-collapsible | delivery | VP-034-nav-group-collapsible | **active**（2026-09-07 开区；Root active 0/5；VRev-083 activation `pass` + VRev-084 scope correction `pass`；R1-R5 已建立，当前已注册 sidebar 导航纳入分组迁移范围） |
 
 ## 说明
 
