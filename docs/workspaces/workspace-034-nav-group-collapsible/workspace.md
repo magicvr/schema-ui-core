@@ -1,7 +1,7 @@
 ---
 id: workspace-034-nav-group-collapsible
 title: Admin 导航分组折叠体验工作区
-status: active
+status: done
 root_goal: GOAL-001-nav-group-collapsible
 canonical_scope: docs/workspaces/workspace-034-nav-group-collapsible/
 shared_materials_catalog: none
@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · Admin 导航分组折叠体验
 
-本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`）；当前 `GOAL-003-sidebar-engine-navigation` 正在承接新的 Sidebar Engine 与通用详情抽屉视觉增量，workspace-034 保持 active；不重开或改写父目标。VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
+本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`）；当前 `GOAL-003-sidebar-engine-navigation` 已完成新的 Sidebar Engine 与通用详情抽屉视觉增量（`done 3/3`）；workspace-034 恢复 done；不重开或改写父目标。VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
 
 - 本区不属于 workspace-010；VP-010 继续承担长期设计意图—实现符合性程序，本区是 Admin 功能分支的有界交付。
 - 本区必须覆盖当前已注册 sidebar 导航，不以“既有模块”作为排除理由。
@@ -53,7 +53,7 @@ parent: null
 | `operations` | Operations | `menu_activity`、`menu_monitoring`、`menu_scheduled_tasks`、`menu_recycle_bin` |
 | `communications` | Communications | `menu_mail`、`menu_mail_outbox`、`menu_telegram` |
 | `commerce` | Commerce | `menu_wallet`、`menu_wallet_vouchers`、`menu_digitaloffer_offers`、`menu_digitaloffer_entitlements`、`menu_digitaloffer_purchases` |
-| 顶层单例 | Dashboard | `menu_dashboard`（有意不包进单项组） |
+| `workspace`（GOAL-003 current presentation） | Workspace | `menu_dashboard`（Dashboard 由 Provider 显式注册入组；R1 的顶层单例仅为历史基线） |
 
 `dev.examples` 的现有 `Examples` 组保留并纳入 demo 回归。`menu_settings`、`menu_account`、`menu_wallet_self` 和通知面保留在 user slot，不搬到 sidebar。
 
@@ -73,7 +73,7 @@ parent: null
 
 - `GOAL-001-nav-group-collapsible`：原始 Root `done 5/5`，历史事实保持不变。
 - 已完成增量：`GOAL-002-navigation-group-polish`（`done 2/2` · `parent: GOAL-001-nav-group-collapsible`），只承载历史导航分组语义样式优化与默认关闭行为修正。
-- 当前增量：`GOAL-003-sidebar-engine-navigation`（`active 0/3` · `parent: GOAL-001-nav-group-collapsible`），承载 Sidebar Engine 视觉、副字符注册链与通用详情抽屉优化。
+- 已完成增量：`GOAL-003-sidebar-engine-navigation`（`done 3/3` · `parent: GOAL-001-nav-group-collapsible`），承载 Sidebar Engine 视觉、副字符注册链与通用详情抽屉优化；A-001 self `pass`，checkpoint `de71fff0`。
 
 ## 固定共享资料引用
 

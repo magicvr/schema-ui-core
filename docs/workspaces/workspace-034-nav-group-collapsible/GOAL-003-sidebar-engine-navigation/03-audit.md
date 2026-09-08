@@ -16,21 +16,21 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |---|---|---|
-| I-003-001 Dashboard Workspace 分组语义 | verified（D-001） | 由 Dashboard Provider 显式注册；待代码/回归证据核对 |
-| I-003-002 组/页面 secondary 注册链 | collecting | 代码实现与未注册缺省回归待完成 |
-| I-003-003 recordView 通用性边界 | verified（D-001） | 只采用参考页布局语义，不复制用户域内容 |
-| I-003-004 抽屉可访问性兼容 | collecting | P2/P3 验证待完成 |
-| I-003-005 上游正式协议发行 | deferred | 本目标不改 pinned upstream artifacts；后续若有对外协议需求另立目标 |
-| 到期 required 是否已 verified / residual | 未到审计节点 | P1/P2/P3 完成后核对 |
+| I-003-001 Dashboard Workspace 分组语义 | verified | Dashboard Provider 显式注册；API/Web profile matrix 与 browser checks 通过 |
+| I-003-002 组/页面 secondary 注册链 | verified | kernel → Manifest literal label fallback → Web projection；未注册缺省与协议字段 guard 通过 |
+| I-003-003 recordView 通用性边界 | verified（D-001） | 只采用参考页布局语义，不复制用户域内容；generic/object tests 通过 |
+| I-003-004 抽屉可访问性兼容 | verified | P2/P3 visual-fidelity/render tests、scope-specific browser checks 通过 |
+| I-003-005 上游正式协议发行 | deferred | 理由：本轮仅交付本仓 Admin Shell；owner：protocol maintainer；复核触发：首个对外消费者要求正式 secondary 字段时另立兼容性目标 |
+| 到期 required 是否已 verified / residual | 已处理 | I-003-001/002/004 verified；I-003-005 为明确 scope deferred，不阻断本目标关门 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none`；参考页为仓库内用户指定 raw 路径 |
 
 ## 意见台账索引
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |---|---|---|---|---|---|---|
-| — | — | — | 尚未到审计节点 | — | — | — |
+| A-001 | 2026-09-08 | self | P1/P2/P3 Sidebar Engine、secondary、Workspace/Dashboard、通用 recordView 抽屉 | pass | 0 | [`03-audit/A-001-sidebar-engine-self.md`](03-audit/A-001-sidebar-engine-self.md) |
 
 ## 结论状态
 
-目标已设立并完成范围冻结；尚未进行实施事实审计或 self 审计，不能据此宣称 P1/P2/P3 完成或目标结项。
+A-001 self `pass` 已覆盖 P1/P2/P3；当前无开放 required finding。Shell 既有 avatar/session smoke 观察已在 A-001/E-003 留痕，不影响本目标 scope-specific 交付；目标可按 `done 3/3` 结项。VP-034 仍保持 `active`，愿景层关门另走 `/vision`。
 

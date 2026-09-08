@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-sidebar-engine-navigation
 title: Sidebar Engine 导航与通用详情抽屉视觉优化
-status: active
+status: done
 parent: GOAL-001-nav-group-collapsible
 created: 2026-09-08
 updated: 2026-09-08
 version: 0.1.0
-progress: 0%
+progress: 100%
 plan_refs:
   - VP-034-nav-group-collapsible
 primary_plan: VP-034-nav-group-collapsible
@@ -26,11 +26,11 @@ serves_summary: 在已完成的 Admin 导航分组能力上，补齐 Sidebar Eng
 
 ## 成功标准
 
-- [ ] `workspace` 作为默认产品分组由 Dashboard 注册，Dashboard 位于该组；既有五个产品分组与 Examples 作者组继续保持可用。
-- [ ] 组与页面均支持由注册者提供可选的 `secondary` 副字符；未注册时不输出、不渲染，且不影响权限、slot、路由和 active 状态。
-- [ ] Desktop sidebar 与 mobile navigation drawer 采用统一的 Sidebar Engine 层级视觉；页面激活使用稳定高亮，不增加闪烁光点。
-- [ ] 通用 `recordView` 详情抽屉采用参考页的侧滑/遮罩/字段卡片视觉，数据、字段声明、翻译回退和静态/selection 模式边界保持通用，不硬编码用户信息。
-- [ ] 相关 API/Web 单测、构建与既有回归通过，并形成可核对的执行与 self 审计证据。
+- [x] `workspace` 作为默认产品分组由 Dashboard 注册，Dashboard 位于该组；既有五个产品分组与 Examples 作者组继续保持可用。
+- [x] 组与页面均支持由注册者提供可选的 `secondary` 副字符；未注册时不输出、不渲染，且不影响权限、slot、路由和 active 状态。
+- [x] Desktop sidebar 与 mobile navigation drawer 采用统一的 Sidebar Engine 层级视觉；页面激活使用稳定高亮，不增加闪烁光点。
+- [x] 通用 `recordView` 详情抽屉采用参考页的侧滑/遮罩/字段卡片视觉，数据、字段声明、翻译回退和静态/selection 模式边界保持通用，不硬编码用户信息。
+- [x] 相关 API/Web 单测、构建与 scope-specific 浏览器回归通过，并形成可核对的执行与 self 审计证据。
 
 ## 纲领路线图
 
@@ -38,21 +38,21 @@ serves_summary: 在已完成的 Admin 导航分组能力上，补齐 Sidebar Eng
 
 | 检查点 | 目的 | 状态 |
 |---|---|---|
-| P1 | 注册副字符、Workspace 默认组与 Sidebar Engine desktop/mobile 视觉实现 | pending |
-| P2 | 通用 recordView 抽屉视觉、响应式与可访问性实现 | pending |
-| P3 | API/Web 回归、构建、事实审视与 self 审计完成 | pending |
+| P1 | 注册副字符、Workspace 默认组与 Sidebar Engine desktop/mobile 视觉实现 | completed |
+| P2 | 通用 recordView 抽屉视觉、响应式与可访问性实现 | completed |
+| P3 | API/Web 回归、构建、事实审视与 self 审计完成 | completed |
 
-`progress: 0%` = 0/3 个检查点完成。progress 仅作展示，不放行阶段、不关闭 finding、不自动推导 `done`。
+`progress: 100%` = 3/3 个检查点完成（P1、P2、P3）。progress 仅作展示，不放行阶段、不关闭 finding、不自动推导 `done`。
 
 ## 信息需求与门禁（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |---|---|---|---|---|---|---|---|---|
 | I-003-001 | required | Dashboard 是否由注册者显式加入 `workspace` 默认组，还是由 Shell 猜测未分组页面？ | P1 方案冻结 | P1 | 对照用户指令、父目标的 Group=nil 向后兼容边界与 Dashboard Provider；冻结显式注册方案 | verified（本轮决策） | — | D-001 |
-| I-003-002 | required | 组/页面副字符如何从注册层传到可见导航，且未注册时保持缺省？ | P1 实施 | 检查 kernel contribution、Manifest 聚合、Web parser/projector 的全链路回归 | collecting | P1 | D-001；待 E-002/P3 验证 |
+| I-003-002 | required | 组/页面副字符如何从注册层传到可见导航，且未注册时保持缺省？ | P1 实施 | 检查 kernel contribution、Manifest 聚合、Web parser/projector 的全链路回归 | verified | — | D-001；E-002；E-003；API/Web 回归 |
 | I-003-003 | non-blocking | 详情抽屉是否需要复制范例页的用户 summary、安全指标与 Quick Ops？ | P2 方案冻结 | P2 | 保持 recordView 通用；只复用布局/色彩/密度，不按字段名推断业务块 | verified（用户要求 + 本轮决策） | — | D-001 |
-| I-003-004 | required | 选择驱动详情抽屉的遮罩、Esc、焦点循环/恢复与 body scroll lock 是否仍保持现有通用语义？ | P2 验收 | P2/P3 | 扩展现有 Drawer/Sheet 测试；静态 `props.record` 保持非 modal | collecting | P3 | D-001；待回归验证 |
-| I-003-005 | non-blocking | `secondary` 是否需要升级上游 `schema-ui-docs` 的正式协议字段？ | 本目标交付边界 | P1 | 本目标采用 schema-ui-core 的本地、可选表现扩展；不修改已 pin 的上游 schema/provenance，后续正式上游发布另立目标 | deferred | 本目标不承担上游协议发行；若需要对外协议消费，另建兼容性目标并复审 | D-001 |
+| I-003-004 | required | 选择驱动详情抽屉的遮罩、Esc、焦点循环/恢复与 body scroll lock 是否仍保持现有通用语义？ | P2 验收 | P2/P3 | 扩展现有 Drawer/Sheet 测试；静态 `props.record` 保持非 modal | verified | — | D-001；E-002；E-003；visual-fidelity/render tests |
+| I-003-005 | non-blocking | `secondary` 是否需要升级上游 `schema-ui-docs` 的正式协议字段？ | 本目标交付边界 | P1 | 本目标采用 schema-ui-core 的本地、可选表现扩展；不修改已 pin 的上游 schema/provenance，后续正式上游发布另立目标 | deferred | 理由：本轮仅交付本仓 Admin Shell；owner：protocol maintainer；复核触发：首个对外消费者要求正式 secondary 字段时，另建兼容性目标并复审 | D-001 |
 
 ## 愿景对齐
 

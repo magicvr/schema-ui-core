@@ -15,10 +15,10 @@ version: 0.1.0
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |---|---|---|---|---|---|---|---|---|
 | I-003-001 | required | Dashboard 的默认分组语义 | P1 | P1 | Dashboard Provider 显式声明 `workspace` Group；删除聚合层对 Dashboard 顶层单例的强制保留 | verified（用户决策） | — | D-001 |
-| I-003-002 | required | 组/页面副字符的注册与传输 | P1 | P1 | kernel `Secondary` → Manifest 组装 → Web `secondary` projection；空值不输出/不渲染 | collecting | P1/P3 | D-001 |
+| I-003-002 | required | 组/页面副字符的注册与传输 | P1 | P1 | kernel `Secondary` → Manifest 组装 → Web `secondary` projection；空值不输出/不渲染 | verified | — | D-001；E-002；E-003 |
 | I-003-003 | non-blocking | 详情抽屉的通用性边界 | P2 | P2 | 仅实现布局和通用值格式化；不按 `username/email/status` 等业务字段推断 summary/操作区 | verified（用户要求） | — | D-001 |
-| I-003-004 | required | 抽屉交互可访问性兼容 | P2/P3 | P3 | 保留 static/selection 分支；补遮罩、Esc、focus trap/restore、body lock 与响应式断言 | collecting | P3 | D-001 |
-| I-003-005 | non-blocking | 上游正式协议发行 | 本目标边界 | P1 | 保持 v2.7/v2.8/v2.9 pinned artifacts 不变；本地扩展不宣称上游协议字段 | deferred | 另立兼容性目标时复核 | D-001 |
+| I-003-004 | required | 抽屉交互可访问性兼容 | P2/P3 | P3 | 保留 static/selection 分支；补遮罩、Esc、focus trap/restore、body lock 与响应式断言 | verified | — | D-001；E-002；E-003 |
+| I-003-005 | non-blocking | 上游正式协议发行 | 本目标边界 | P1 | 保持 v2.7/v2.8/v2.9 pinned artifacts 不变；本地扩展不宣称上游协议字段 | deferred | 理由：本轮仅交付本仓 Admin Shell；owner：protocol maintainer；复核触发：首个对外消费者要求正式 secondary 字段时，另立兼容性目标并复审 | D-001 |
 
 ## 决策索引
 

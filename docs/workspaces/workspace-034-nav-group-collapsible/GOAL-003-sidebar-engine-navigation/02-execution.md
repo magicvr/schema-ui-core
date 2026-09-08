@@ -17,6 +17,7 @@ version: 0.1.0
 | E-001 | 2026-09-08 | 新增子目标与范围冻结 | recorded | `02-execution/E-001-goal-003-scope-freeze.md` |
 | E-002 | 2026-09-08 | Sidebar Engine 与通用详情抽屉实施 | recorded | `02-execution/E-002-implementation.md` |
 | E-003 | 2026-09-08 | API/Web/浏览器验证 | recorded | `02-execution/E-003-verification.md` |
+| E-004 | 2026-09-08 | 实施 checkpoint | recorded | `02-execution/E-004-implementation-checkpoint.md` |
 
 ## 事实边界
 
