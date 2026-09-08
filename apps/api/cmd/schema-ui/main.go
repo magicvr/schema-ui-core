@@ -27,12 +27,12 @@ const (
 	apiModule  = "github.com/magicvr/schema-ui-core/apps/api"
 	apiVersion = "v0.6.0" // 模板钉 = 当前发布（apps/api/v0.6.0 tag）；R2 发布通道核销
 	// 六包终值（R5 · A-002 F-002 响应）：create 骨架生成即装终值；upgrade 拉 npm/Go latest 保对齐
-	protocolVer  = "0.2.13"
-	libVersion   = "0.1.13"
+	protocolVer  = "0.2.15"
+	libVersion   = "0.1.14"
 	shellVersion = "0.1.6"
 	themeVersion = "0.1.4"
-	uiVersion    = "0.1.10"
-	rendererVer  = "0.3.11"
+	uiVersion    = "0.1.11"
+	rendererVer  = "0.3.13"
 )
 
 type createOpts struct {
