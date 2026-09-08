@@ -43,11 +43,11 @@ async function signInZh(page: Page): Promise<void> {
     return;
   } catch {
     // Fresh-initial login failed because the password was already replaced:
-    // fall back to the shared e2e password. Wait for the button to re-enable
-    // first — the first attempt's POST must have settled (W23: a slow login
-    // round-trip used to keep the submit disabled and stalled this click).
-    await page.getByLabel("密码", { exact: true }).fill("admin-e2e-pass");
+    // fall back to the shared e2e password. Wait for the first attempt's POST
+    // to settle before replacing the password; otherwise a slow round-trip can
+    // keep the submit disabled while the fallback value is being filled.
     await expect(page.getByRole("button", { name: "登录" })).toBeEnabled({ timeout: 15000 });
+    await page.getByLabel("密码", { exact: true }).fill("admin-e2e-pass");
     await page.getByRole("button", { name: "登录" }).click();
     await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
   }
