@@ -30,19 +30,22 @@ const faces = {
 };
 
 // 包终名 = 发布实态全名（@magicvr/schema-ui-<pkg>）；versions/peers 以包短名为键
+// Current npmjs package face for apps/api/v0.6.0. Only packages whose
+// shipped source/runtime changed in the grouped-navigation release advance;
+// protocol and theme remain at their existing versions.
 const versions = {
-  "renderer": "0.3.4",
-  "protocol": "0.2.3",
-  "lib": "0.1.3",
-  "ui": "0.1.3",
-  "theme": "0.1.2",
-  "shell": "0.1.2",
+  renderer: "0.3.10",
+  protocol: "0.2.12",
+  lib: "0.1.12",
+  ui: "0.1.9",
+  theme: "0.1.4",
+  shell: "0.1.6",
 };
 
 const peers = {
-  "renderer": { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.3", "@magicvr/schema-ui-lib": "^0.1.3", "@magicvr/schema-ui-ui": "^0.1.3" },
-  "ui": { react: "^19.0.0", "react-dom": "^19.0.0" },
-  "shell": { react: "^19.0.0", "react-dom": "^19.0.0" },
+  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12", "@magicvr/schema-ui-lib": "^0.1.12", "@magicvr/schema-ui-ui": "^0.1.9" },
+  ui: { react: "^19.0.0", "react-dom": "^19.0.0" },
+  shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12" },
 };
 
 // 无法映射面（无对应包）计数（shell 的 host/account 面 → 残余登记）
@@ -90,9 +93,10 @@ for (const pkg of readdirSync(distRoot)) {
 
   // package.json 定稿
   const exported = { ".": { types, import: "./index.js" }, "./*": "./*" };
+  const packageKey = pkg;
   const next = {
     name: old.name || `@schema-ui/${pkg}`,
-    version: versions[old.name || `@schema-ui/${pkg}`] || old.version || "0.1.0",
+    version: versions[packageKey] || old.version || "0.1.0",
     type: "module",
     description: old.description || `schema-ui-core 包面（${pkg}）`,
     main: old.main || "index.js",
@@ -101,7 +105,7 @@ for (const pkg of readdirSync(distRoot)) {
     files,
     license: old.license || "UNLICENSED",
   };
-  if (peers[old.name || `@schema-ui/${pkg}`]) next.peerDependencies = { ...peers[old.name || `@schema-ui/${pkg}`] };
+  if (peers[packageKey]) next.peerDependencies = { ...peers[packageKey] };
   writeFileSync(pkgPath, JSON.stringify(next, null, 2));
   console.log(`${next.name} -> v${next.version} · exports "./*" · files [${files.join(", ")}]`);
 }
