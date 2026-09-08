@@ -4,7 +4,7 @@ doc: audit
 status: active
 parent: null
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-08
 version: 0.1.0
 ---
 
@@ -37,6 +37,8 @@ version: 0.1.0
 | A-010 | 2026-09-07 | self | R5 Root 关门准备与最终证据矩阵 | pass | 0 | [`03-audit/A-010-r5-closeout-self.md`](03-audit/A-010-r5-closeout-self.md) |
 | A-011 | 2026-09-07 | independent | R5 Root 关门准备与最终证据矩阵 | pass | 0 | [`03-audit/A-011-r5-closeout-independent.md`](03-audit/A-011-r5-closeout-independent.md) |
 | A-012 | 2026-09-07 | self | A-011 recommended 响应与 R5 关门放行 | pass | 0 | [`03-audit/A-012-a011-recommended-response.md`](03-audit/A-012-a011-recommended-response.md) |
+| A-013 | 2026-09-08 | self | 发布候选预检（v0.6.0 版本钉 + 本地 API/Web 回归） | pass | 0 | [`03-audit/A-013-release-preflight-self.md`](03-audit/A-013-release-preflight-self.md) |
+| A-014 | 2026-09-08 | independent | 发布候选预检（版本/本地证据/外部发布门禁） | pass | 0 | [`03-audit/A-014-release-preflight-independent.md`](03-audit/A-014-release-preflight-independent.md) |
 
 ## 愿景层意见（仅作上下文）
 
