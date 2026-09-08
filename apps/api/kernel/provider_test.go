@@ -344,6 +344,39 @@ func TestPolicyReferenceGrammar(t *testing.T) {
 	}
 }
 
+func TestNavigationSecondaryValidation(t *testing.T) {
+	base := NavigationContribution{
+		ContributionIdentity: ContributionIdentity{ModuleID: "test.navigation", Key: "menu_sample"},
+		NodeID:               "menu_sample",
+		PageID:               "sample",
+		Label:                "Sample",
+		Visibility:           "system.admin",
+		SystemDataVersion:    1,
+	}
+	for _, secondary := range []string{"01", "SQL", "v3"} {
+		candidate := base
+		candidate.Secondary = secondary
+		if err := validateNavigation("test.navigation", candidate); err != nil {
+			t.Fatalf("secondary %q rejected: %v", secondary, err)
+		}
+	}
+	for _, secondary := range []string{" ", " leading", "trailing "} {
+		candidate := base
+		candidate.Secondary = secondary
+		if err := validateNavigation("test.navigation", candidate); err == nil {
+			t.Fatalf("invalid secondary %q accepted", secondary)
+		}
+	}
+	for _, secondary := range []string{"IAM", "WORKSPACE"} {
+		if err := validateNavigationGroup("test.navigation", "menu_sample", &NavigationGroup{Key: "sample", Order: 1, Label: "Sample", Secondary: secondary}); err != nil {
+			t.Fatalf("group secondary %q rejected: %v", secondary, err)
+		}
+	}
+	if err := validateNavigationGroup("test.navigation", "menu_sample", &NavigationGroup{Key: "sample", Order: 1, Label: "Sample", Secondary: " "}); err == nil {
+		t.Fatal("blank group secondary accepted")
+	}
+}
+
 func TestRegisterContributionsSkipsPlanModulesWithoutProvider(t *testing.T) {
 	// A plan module without a compiled provider stays centrally registered
 	// until C3 migration; the contract function does not fail on it (freeze §7).
@@ -607,5 +640,98 @@ func TestNavigationParentOrderIndependent(t *testing.T) {
 	}
 	if len(set.Navigation) != 2 {
 		t.Fatalf("navigation = %d, want 2", len(set.Navigation))
+	}
+}
+
+func TestNavigationGroupMetadataConflictFailsClosed(t *testing.T) {
+	newProvider := func(moduleID, navKey, pageID, permission string, group NavigationGroup) (Module, Provider) {
+		module := Module{
+			ID:             moduleID,
+			Version:        "2.0.0",
+			KernelAPIRange: ">=2.0 <3.0",
+			Provides:       []Capability{CapabilityHTTP, CapabilitySchema, CapabilityAuthorization, CapabilityNavigation, CapabilityManifest},
+			Contributions: ContributionKeys{
+				Pages:       []string{pageID},
+				Navigation:  []string{navKey},
+				Permissions: []string{permission},
+				Fragments:   []string{"fragment-" + moduleID},
+			},
+		}
+		provider := &testProvider{desc: module}
+		provider.mutate = func(r Registrar) error {
+			if err := r.Schema(PageContribution{
+				ContributionIdentity: ContributionIdentity{ModuleID: moduleID, Key: pageID},
+				PageID:               pageID,
+				Owner:                moduleID,
+				Document:             testPageDocument(pageID),
+			}); err != nil {
+				return err
+			}
+			if err := r.Authorization(PermissionContribution{
+				ContributionIdentity: ContributionIdentity{ModuleID: moduleID, Key: permission},
+				Permission:           permission,
+				Resource:             "sample",
+				Action:               "read",
+				PolicyID:             "system.admin",
+				SystemDataVersion:    1,
+			}); err != nil {
+				return err
+			}
+			if err := r.Navigation(NavigationContribution{
+				ContributionIdentity: ContributionIdentity{ModuleID: moduleID, Key: navKey},
+				NodeID:               navKey,
+				PageID:               pageID,
+				Label:                pageID,
+				Visibility:           "system.admin",
+				Permission:           permission,
+				Group:                &group,
+				SystemDataVersion:    1,
+			}); err != nil {
+				return err
+			}
+			return r.Manifest(FragmentContribution{
+				ContributionIdentity: ContributionIdentity{ModuleID: moduleID, Key: "fragment-" + moduleID},
+				FragmentID:           "fragment-" + moduleID,
+				ProtocolVersion:      "2.7",
+				JSON:                 []byte(`{"ok":true}`),
+			})
+		}
+		return module, provider
+	}
+
+	groupA := NavigationGroup{Key: "shared", Order: 10, Label: "Shared", LabelKey: "group.shared"}
+	groupB := NavigationGroup{Key: "shared", Order: 20, Label: "Shared", LabelKey: "group.shared"}
+	moduleA, providerA := newProvider("test.a", "menu_a", "page-a", "a.read", groupA)
+	moduleB, providerB := newProvider("test.b", "menu_b", "page-b", "b.read", groupB)
+	plan := Plan{
+		Modules:      []Module{moduleA, moduleB},
+		Capabilities: []Capability{CapabilitySchema, CapabilityAuthorization, CapabilityNavigation, CapabilityManifest},
+	}
+	_, err := RegisterContributions(context.Background(), plan, []Provider{providerA, providerB})
+	var kerr *Error
+	if !errors.As(err, &kerr) || kerr.Code != CodeModuleNavigationGroupConflict {
+		t.Fatalf("err = %v, want %s", err, CodeModuleNavigationGroupConflict)
+	}
+}
+
+func TestNavigationGroupMetadataEqualityCoversAllFields(t *testing.T) {
+	base := NavigationGroup{Key: "shared", Order: 10, Label: "Shared", LabelKey: "group.shared", Secondary: "SHARED", Icon: "boxes"}
+	if !navigationGroupMetadataEqual(base, base) {
+		t.Fatal("identical group metadata must compare equal")
+	}
+	cases := map[string]NavigationGroup{
+		"key":       {Key: "other", Order: base.Order, Label: base.Label, LabelKey: base.LabelKey, Secondary: base.Secondary, Icon: base.Icon},
+		"order":     {Key: base.Key, Order: 11, Label: base.Label, LabelKey: base.LabelKey, Secondary: base.Secondary, Icon: base.Icon},
+		"label":     {Key: base.Key, Order: base.Order, Label: "Other", LabelKey: base.LabelKey, Secondary: base.Secondary, Icon: base.Icon},
+		"label key": {Key: base.Key, Order: base.Order, Label: base.Label, LabelKey: "group.other", Secondary: base.Secondary, Icon: base.Icon},
+		"secondary": {Key: base.Key, Order: base.Order, Label: base.Label, LabelKey: base.LabelKey, Secondary: "OTHER", Icon: base.Icon},
+		"icon":      {Key: base.Key, Order: base.Order, Label: base.Label, LabelKey: base.LabelKey, Secondary: base.Secondary, Icon: "folder"},
+	}
+	for name, other := range cases {
+		t.Run(name, func(t *testing.T) {
+			if navigationGroupMetadataEqual(base, other) {
+				t.Fatalf("metadata with changed %s field compared equal", name)
+			}
+		})
 	}
 }

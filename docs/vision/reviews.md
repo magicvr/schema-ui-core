@@ -1,11 +1,11 @@
----
+﻿---
 doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-09-06
+updated: 2026-09-07
 parent: null
-version: 1.3.88
+version: 1.3.90
 ---
 
 # Vision Review 台账
@@ -30,6 +30,8 @@ version: 1.3.88
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-084（self · `/vision` · 2026-09-07，`pass`）**：响应用户对 VP-034 的 scope 修正——当前已注册 sidebar 导航全部纳入合理分组迁移/验证；`identity-access`、`content-data`、`operations`、`communications`、`commerce` 初始基线已写入 VP；`menu_dashboard` 保留为有意顶层单例；top/user slot 保留原语义；无 Charter/VP-008 `go` 影响；0 required。可以交 `/govern` 开区。 |
+| — | — | — | **无** | **VRev-082（self · `/vision` · 2026-09-07，`pass`）**：VP-034 计划阶段意图审视——导航分组折叠体验；Charter 对齐成立（成功边界 #3/#5 直接覆盖）；结构选型 = 新 VP（不作为 VP-010 子目标，语义不匹配）用户已确认；5 条退出判据可判定；0 required；V-F121 recommended（playbook 中明确 group key 命名空间约定，不阻断）。**不是激活许可**——激活前须 Admin 类 freshness review + 激活就绪 self Review。 |
 | — | — | — | **无** | **VRev-081（self · `/vision` · 2026-09-06，`pass`）**：VP-010 / workspace-010 / Root 的 Charter `@0.4.0` re-align 已完成；workspace-010 scope strategic 宽阻断解除；open required = 0。V-F120 recommended：VP-009 仍保留旧 `@0.3.0` 引用，属独立 scope，不阻断 W29，但 workspace-009 再推进前须单独 re-align。 |
 | — | — | — | **无** | **VRev-080（self · `/vision` · 2026-09-05，`pass`）**：VP-031 激活就绪——用户书面确认 H-002 同进程模块；业务域 freshness PASS；VP-029 硬前置满足；RT-Q03/Q05 均评估为本波不需要 Redis；VP-031 `planned → active` v0.2.0 并绑定 `workspace-031-digital-offer-entitlement`；V-F119 recommended（R1 冻结业务桶，禁用 key-wide Clear）不阻断。**VRev-079（self · /vision · 2026-09-05，pass）**：响应 VRev-078 independent fail 的 2 个聚合 required 状态同步问题；self 复核将同一 F-002 家族的第 4 个陈旧文本位置一并 fixed，4 个现行位置均已同步为 closed v0.3.0；VP-030/VP-033 现行计划、workspace、Root meta 与愿景投影一致；open required = 0。VRev-078 原始 independent fail 保留，不改写；R-009 继续保留为 workspace-030 A-009 已接受的 bounded residual。 |
 | — | — | — | **无** | **VRev-075（self · `/vision` · 2026-09-04，`pass`）**：VP-033 激活就绪——I-033-007/008 已书面冻结；Admin freshness `42036a3c`→`dd1edade` PASS；open required = 0；VP-033 `planned → active` v0.2.0 并绑定 `workspace-033-telegram-operator-console`。V-F118 recommended（VP-030 后续另轮关门）不阻断，VP-030 本轮保持 `active`。 |
@@ -126,3 +128,6 @@ version: 1.3.88
 | VRev-079 | 2026-09-05 | self | 响应 VRev-078；VP-030/VP-033 关门投影状态同步 | pass | 0 | F-001/F-002 均已 fixed：4 个现行陈旧文本位置同步为 closed v0.3.0；历史 active 记录保留；VP-030/VP-033 当前无状态同步 required | [VRev-079-vp030-vp033-closeout-status-sync-response-self.md](reviews/VRev-079-vp030-vp033-closeout-status-sync-response-self.md) |
 | VRev-080 | 2026-09-05 | self | VP-031 激活就绪 · 业务域 freshness（H-002 同进程）/ RT-Q03/Q05 / 工作区对齐 | pass | 0 | 用户书面确认同进程模块；freshness PASS；VP-029 硬前置满足；RT-Q03/Q05 = 本波不需要 Redis；VP-031 `planned → active` v0.2.0，lead workspace-031；V-F119 recommended 不阻断 | [VRev-080-vp031-digital-offer-entitlement-activation.md](reviews/VRev-080-vp031-digital-offer-entitlement-activation.md) |
 | VRev-081 | 2026-09-06 | self | VP-010 / workspace-010 / Root Charter 0.4.0 re-align | pass | 0 | 用户书面选择“对齐后建目标”；VP-010 `vision_ref`、workspace-010 与 Root Charter 声明已同步为 `@0.4.0`，意图/status/绑定不变；workspace-010 scope 宽阻断解除；V-F120 recommended 指向 VP-009 独立对齐债务 | [VRev-081-vp010-charter-0-4-0-realign.md](reviews/VRev-081-vp010-charter-0-4-0-realign.md) |
+| VRev-082 | 2026-09-07 | self | VP-034 计划阶段意图审视 · 导航分组折叠体验 | pass | 0 | Charter 对齐成立（成功边界 #3/#5）；结构选型新 VP（不作为 VP-010 子目标）用户确认；5 条退出判据可判定；V-F121 recommended（playbook group key 命名）不阻断；不是激活许可 | [VRev-082-vp034-nav-group-collapsible-planned.md](reviews/VRev-082-vp034-nav-group-collapsible-planned.md) |
+| VRev-083 | 2026-09-07 | self | VP-034 激活就绪 · Admin freshness review / VRev-082 findings 状态 | pass | 0 | freshness PASS（`dd1edade`→`f2044cf3`；五域零变更；不暂挂 `go`）；required = 0；V-F121 recommended 不阻断；VP-034 planned → active v0.2.0，lead workspace-034-nav-group-collapsible | [VRev-083-vp034-nav-group-collapsible-activation.md](reviews/VRev-083-vp034-nav-group-collapsible-activation.md) |
+| VRev-084 | 2026-09-07 | self | VP-034 既有导航纳入范围修正 · v0.3.0 scope correction | pass | 0 | 用户修正：当前已注册 sidebar 导航全部纳入合理分组迁移/验证；五个初始分组基线、Dashboard 顶层单例、top/user slot 保留和 custom/demo 回归范围已写入 VP；无 Charter/VP-008 go 影响；可交 `/govern` 开区 | [VRev-084-vp034-existing-navigation-scope-correction.md](reviews/VRev-084-vp034-existing-navigation-scope-correction.md) |

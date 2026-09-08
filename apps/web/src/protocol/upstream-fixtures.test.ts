@@ -72,8 +72,10 @@ const APP_NAVIGATION_FIXTURE_SHA256 =
 // entry (user slot: account → my-wallet → settings).
 // C-006 (GOAL-041 S4): dictionary-entries route corrected to the parametric
 // /dictionary-entries/{dictKey} (module union guard caught the stale copy).
+// workspace-034 GOAL-003: Dashboard fixture enters the Workspace group and uses
+// the protocol-safe literal-label secondary carrier.
 const STATIC_MANIFEST_SHA256 =
-  "ec00f6f1cab7bd0e2e54bc2e68370dee19c3354dfe36fcadac20331bfdeb0a5f";
+  "af6b95d3d461e9bd4931339a03f09dae30861d5f6cc1a4ba6fd7ef141fb10215";
 
 function readJson<T>(relativePath: string): PinnedJson<T> {
   const bytes = canonicalArtifactBytes(readFileSync(new URL(relativePath, import.meta.url)));

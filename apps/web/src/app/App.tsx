@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  PanelLeft,
   Pencil,
   Receipt,
   Search,
@@ -35,7 +34,11 @@ import {
   subscribeToBrandingChanges,
   type Branding,
 } from "@/app/branding";
-import { projectNavigation, type ProjectedItem } from "@/app/navigation";
+import {
+  NAVIGATION_PAGE_PARENTS,
+  projectNavigation,
+  type ProjectedItem,
+} from "@/app/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TimezoneSwitcher } from "@/components/timezone-switcher";
@@ -195,21 +198,9 @@ function BrandLink({
 }
 
 /**
- * GOAL-015 semantic breadcrumbs: inner pages reached by row navigation declare
- * their parent page here (web-shell level, no protocol change). The trail is
- * hierarchy, not visit history (user ruling 2026-08-14): 首页 => 一级页 => ...
- * => n级内页, rooted at the manifest homePageRef.
+ * GOAL-015 semantic breadcrumbs: inner-page parents are shared with navigation
+ * active-state projection through NAVIGATION_PAGE_PARENTS (no protocol change).
  */
-const BREADCRUMB_PAGE_PARENTS: Record<string, string> = {
-  "dictionary-entries": "data-dictionary",
-  "task-runs": "scheduled-tasks",
-  // GOAL-020 (user 2026-08-16): wallet entries is the wallet inner page.
-  "wallet-entries": "wallet",
-  // workspace-019: invitation management is the users inner page.
-  "users-invites": "users",
-  // Telegram operator conversations are opened from the channel settings page.
-  "telegram-operator": "telegram-settings",
-};
 
 // Parses the current URL's query string into a plain record; deep-linked query
 // parameters reach $context.route.query.* bindings through the render context.
@@ -238,18 +229,45 @@ function NavigationLink({
   onNavigate: (href: string) => void;
   horizontal?: boolean;
 }) {
-  // D-004 shell language: Linear/Vercel — rounded side items, subtle active fill.
+  // Sidebar Engine language: compact tree rows, a quiet active surface and
+  // optional registration-owned metadata aligned to the trailing edge.
   const className = item.active
     ? horizontal
-      ? "flex min-h-9 items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground"
-      : "flex min-h-9 items-center gap-3 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
+      ? "group/nav-item flex min-h-9 items-center gap-2 rounded-md border border-border/70 bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground shadow-sm"
+      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md border border-border/70 bg-card px-2 py-1.5 text-sm font-medium text-foreground shadow-sm"
     : horizontal
-      ? "flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
-      : "flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
+      ? "group/nav-item flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
+      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
   const content = (
     <>
-      {iconFor(item.icon)}
-      <span className="truncate">{item.label}</span>
+      <span className="flex min-w-0 items-center gap-2.5">
+        {!horizontal ? (
+          <span
+            aria-hidden="true"
+            data-navigation-active-marker={item.active ? "active" : undefined}
+            className={`h-4 w-0.5 shrink-0 rounded-sm ${item.active ? "bg-primary" : "bg-transparent"}`}
+          />
+        ) : null}
+        {iconFor(item.icon)}
+        <span className="truncate">{item.label}</span>
+      </span>
+      {item.secondary !== undefined ? (
+        <span
+          data-navigation-secondary={item.secondary}
+          className="shrink-0 font-mono text-[10px] font-medium tracking-[0.08em] text-muted-foreground/80"
+        >
+          {item.secondary}
+        </span>
+      ) : item.active ? (
+        <span
+          aria-hidden="true"
+          data-navigation-active-dot="active"
+          className="relative inline-flex size-1.5 shrink-0"
+        >
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+          <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
+        </span>
+      ) : null}
     </>
   );
 
@@ -288,6 +306,141 @@ function NavigationLink({
   );
 }
 
+const NAVIGATION_GROUP_STATE_STORAGE_KEY = "schema-ui:nav-groups:v1";
+
+type NavigationGroupState = Record<string, boolean>;
+
+function readNavigationGroupState(): NavigationGroupState {
+  try {
+    const raw = window.sessionStorage.getItem(NAVIGATION_GROUP_STATE_STORAGE_KEY);
+    if (raw === null) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    const state: NavigationGroupState = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof value === "boolean") {
+        state[key] = value;
+      }
+    }
+    return state;
+  } catch {
+    return {};
+  }
+}
+
+function writeNavigationGroupState(key: string, open: boolean): void {
+  try {
+    const state = readNavigationGroupState();
+    state[key] = open;
+    window.sessionStorage.setItem(
+      NAVIGATION_GROUP_STATE_STORAGE_KEY,
+      JSON.stringify(state),
+    );
+  } catch {
+    // Storage can be disabled or unavailable in embedded/opaque documents;
+    // navigation must remain usable with in-memory state only.
+  }
+}
+
+function navigationGroupDomID(key: string): string {
+  const safe = key.replace(/[^A-Za-z0-9_-]/g, "-");
+  return `navigation-group-${safe}`;
+}
+
+function CollapsibleNavigationGroup({
+  item,
+  onNavigate,
+}: {
+  item: Extract<ProjectedItem, { type: "group" }>;
+  onNavigate: (href: string) => void;
+}) {
+  const [open, setOpen] = useState(() => {
+    if (item.active) {
+      return true;
+    }
+    return readNavigationGroupState()[item.key] ?? false;
+  });
+  const contentID = navigationGroupDomID(item.key);
+
+  // A direct URL into a child or a known inner page always reveals its group.
+  // Do not persist this automatic reveal, so a later manual collapse remains
+  // the user's session preference after leaving the active route.
+  useEffect(() => {
+    if (item.active) {
+      setOpen(true);
+    }
+  }, [item.active]);
+
+  const toggle = () => {
+    setOpen((value) => {
+      const next = !value;
+      writeNavigationGroupState(item.key, next);
+      return next;
+    });
+  };
+
+  return (
+    <section
+      className="space-y-1"
+      data-navigation-group={item.key}
+      data-navigation-group-active={item.active}
+      data-navigation-group-state={open ? "open" : "closed"}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentID}
+        data-navigation-group-toggle={item.key}
+        data-navigation-group-active={item.active}
+        className="group/nav-header flex min-h-8 w-full items-center justify-between gap-3 rounded-md px-2 py-1 text-left transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 data-[navigation-group-active=true]:text-foreground"
+        onClick={toggle}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggle();
+          }
+        }}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          {iconFor(item.icon)}
+          <span
+            className={`truncate text-[13px] font-medium tracking-normal ${item.active ? "text-foreground" : "text-muted-foreground"}`}
+          >
+            {item.label}
+          </span>
+          {item.secondary !== undefined ? (
+            <span
+              data-navigation-group-secondary={item.secondary}
+              className="truncate font-mono text-[10px] font-medium tracking-[0.1em] text-muted-foreground/70"
+            >
+              {item.secondary}
+            </span>
+          ) : null}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open ? (
+        <div id={contentID} className="space-y-0.5 pt-1">
+          {item.items.map((child, childIndex) => (
+            <NavigationLink
+              key={`${child.href}-${childIndex}`}
+              item={child}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function NavigationItems({
   items,
   onNavigate,
@@ -298,7 +451,7 @@ function NavigationItems({
   horizontal?: boolean;
 }) {
   return (
-    <div className={horizontal ? "flex min-w-max items-center gap-1" : "space-y-1"}>
+    <div className={horizontal ? "flex min-w-max items-center gap-1" : "space-y-2"}>
       {items.map((item, index) =>
         item.type === "link" ? (
           <NavigationLink
@@ -307,26 +460,34 @@ function NavigationItems({
             onNavigate={onNavigate}
             horizontal={horizontal}
           />
-        ) : (
-          <section
-            key={`${item.label}-${index}`}
-            className={horizontal ? "flex items-center gap-1" : "pt-3"}
-          >
+        ) : horizontal ? (
+          <section key={`${item.key}-${index}`} className="flex items-center gap-1">
             <div className="flex items-center gap-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {iconFor(item.icon)}
               <span>{item.label}</span>
+              {item.secondary !== undefined ? (
+                <span className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground/70">
+                  {item.secondary}
+                </span>
+              ) : null}
             </div>
-            <div className={horizontal ? "flex items-center gap-1" : "space-y-1 pl-2"}>
+            <div className="flex items-center gap-1">
               {item.items.map((child, childIndex) => (
                 <NavigationLink
                   key={`${child.href}-${childIndex}`}
                   item={child}
                   onNavigate={onNavigate}
-                  horizontal={horizontal}
+                  horizontal
                 />
               ))}
             </div>
           </section>
+        ) : (
+          <CollapsibleNavigationGroup
+            key={`${item.key}-${index}`}
+            item={item}
+            onNavigate={onNavigate}
+          />
         ),
       )}
     </div>
@@ -689,7 +850,7 @@ function PageSurface({
     t,
     {
       navigation: manifest.navigation,
-      parents: BREADCRUMB_PAGE_PARENTS,
+      parents: NAVIGATION_PAGE_PARENTS,
       homePageId: manifest.app.homePageRef,
     },
   );
@@ -1009,21 +1170,28 @@ export function App({
           />
           <nav
             ref={drawerNavRef}
-            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border bg-card shadow-lg lg:hidden"
+            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border/80 bg-card shadow-2xl lg:hidden"
             aria-label="Mobile navigation"
           >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <span className="text-sm font-semibold">{appName}</span>
+            <div className="flex h-16 items-center justify-between border-b border-border px-4">
+              <BrandLink
+                href={manifest.app.homePageRef ? "/" : "#main"}
+                onClick={handleBrandClick}
+                branding={branding}
+                appName={appName}
+                t={t}
+                className="flex min-w-0 items-center gap-3"
+              />
               <button
                 type="button"
                 aria-label={t("shell.closeMenu")}
-                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => setMobileDrawerOpen(false)}
               >
                 <X aria-hidden="true" className="size-4" />
               </button>
             </div>
-            <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
               <NavigationItems
                 items={[...projection.top, ...projection.sidebar]}
                 onNavigate={onNavigate}
@@ -1047,15 +1215,9 @@ export function App({
         <aside
           data-shell-region="sidenav"
           data-shell-sidenav-width="256"
-          className="sticky top-14 hidden h-full w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 px-3 py-5 lg:block"
+          className="sticky top-14 hidden h-full w-64 shrink-0 overflow-y-auto border-r border-border/80 bg-card/25 px-3 py-4 lg:block"
         >
-          <div className="mb-3 flex items-center gap-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <PanelLeft aria-hidden="true" className="size-3.5" />
-            <span>{t("shell.workspace")}</span>
-          </div>
-          <div className="space-y-0.5">
-            <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />
-          </div>
+          <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />
         </aside>
 
         <main

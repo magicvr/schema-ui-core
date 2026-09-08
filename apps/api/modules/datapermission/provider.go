@@ -16,9 +16,9 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
-	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/manifest"
 	datapermissionschema "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/schema"
+	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 )
 
@@ -170,6 +170,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "data-permission",
 		Order:                9,
 		Label:                "Data permission",
+		Group:                &kernel.NavigationGroup{Key: "identity-access", Order: 10, Label: "Identity & access", LabelKey: "manifest.nav.group.identityAccess", Secondary: "IAM"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "data-permission.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

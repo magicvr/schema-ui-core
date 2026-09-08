@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -57,16 +58,36 @@ type PermissionContribution struct {
 	SystemDataVersion int
 }
 
+// NavigationGroup describes the optional presentation group for a sidebar
+// navigation node. Group metadata is a cross-module contract: declarations
+// using the same Key must be exactly equal at ContributionSet finalization.
+type NavigationGroup struct {
+	Key      string
+	Order    int
+	Label    string
+	LabelKey string
+	// Secondary is optional, short presentation metadata such as an English
+	// abbreviation. It is intentionally separate from the localized label.
+	Secondary string
+	Icon      string
+}
+
 // NavigationContribution registers one navigation node (freeze package §2.2).
 type NavigationContribution struct {
 	ContributionIdentity
-	NodeID     string
-	PageID     string
-	Parent     string
-	Order      int
-	Label      string
+	NodeID string
+	PageID string
+	Parent string
+	Order  int
+	Label  string
+	// Secondary is optional, short presentation metadata such as a page code or
+	// version. It is omitted from public output when the provider leaves it blank.
+	Secondary  string
 	Visibility string
 	Permission string
+	// Group is presentation-only Manifest metadata. It does not change
+	// menu_items identity, grants, or the system-data checksum.
+	Group *NavigationGroup
 	// SystemDataVersion identifies the versioned persistence contract for this
 	// navigation node's system-data reconcile entry.
 	SystemDataVersion int
@@ -210,6 +231,30 @@ func validatePermission(moduleID string, p PermissionContribution) error {
 	return nil
 }
 
+var navigationGroupKeyPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+func validateNavigationGroup(moduleID, nodeID string, group *NavigationGroup) error {
+	if group == nil {
+		return nil
+	}
+	if strings.TrimSpace(group.Key) != group.Key || !navigationGroupKeyPattern.MatchString(group.Key) {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q has invalid group key %q", nodeID, group.Key)
+	}
+	if group.Order < 0 {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q has negative group order", nodeID)
+	}
+	if strings.TrimSpace(group.Label) == "" && strings.TrimSpace(group.LabelKey) == "" {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q group %q requires label or label key", nodeID, group.Key)
+	}
+	if strings.TrimSpace(group.Label) != group.Label || strings.TrimSpace(group.LabelKey) != group.LabelKey || strings.TrimSpace(group.Secondary) != group.Secondary || strings.TrimSpace(group.Icon) != group.Icon {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q group %q metadata must be trimmed", nodeID, group.Key)
+	}
+	if group.Secondary != "" && strings.TrimSpace(group.Secondary) == "" {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q group %q secondary must not be blank", nodeID, group.Key)
+	}
+	return nil
+}
+
 func validateNavigation(moduleID string, n NavigationContribution) error {
 	if err := validateIdentity(moduleID, KindNavigation, n.Key, n.NodeID); err != nil {
 		return err
@@ -220,13 +265,19 @@ func validateNavigation(moduleID string, n NavigationContribution) error {
 	if strings.TrimSpace(n.PageID) == "" || strings.TrimSpace(n.PageID) != n.PageID {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a trimmed page id", n.NodeID)
 	}
+	if strings.TrimSpace(n.Secondary) != n.Secondary {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q secondary must be trimmed", n.NodeID)
+	}
+	if n.Secondary != "" && strings.TrimSpace(n.Secondary) == "" {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q secondary must not be blank", n.NodeID)
+	}
 	if !validDottedIdentifier(n.Visibility) {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a valid visibility policy reference", n.NodeID)
 	}
 	if n.SystemDataVersion <= 0 {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a positive system-data version", n.NodeID)
 	}
-	return nil
+	return validateNavigationGroup(moduleID, n.NodeID, n.Group)
 }
 
 func validateFragment(moduleID string, f FragmentContribution) error {

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -2309,16 +2310,190 @@ function TextView({ node }: { node: RenderTextNode }) {
  * - Empty: inline placeholder
  * - With record: desktop right Drawer + mobile full-height Sheet (not centered Modal)
  * Static `props.record` still uses the same chrome so fixtures remain observable.
+ *
+ * The shell is deliberately data-only: field labels and values come from the
+ * page declaration/record. Reference-page concepts such as users, status,
+ * security, avatars and quick operations do not belong here.
  */
 function formatRecordViewValue(value: unknown): string {
   if (Array.isArray(value)) {
-    return value.join(", ");
+    if (value.every((item) => item === null || typeof item !== "object")) {
+      return value.join(", ");
+    }
+    try {
+      return JSON.stringify(value, null, 2) ?? "—";
+    } catch {
+      return String(value);
+    }
   }
   if (value === undefined || value === null) {
     return "—";
   }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2) ?? "—";
+    } catch {
+      return String(value);
+    }
+  }
   // ISO timestamps render as local "YYYY-MM-DD HH:mm" (display formatting).
   return formatDisplayTime(value) ?? String(value);
+}
+
+const RECORD_VIEW_FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function recordViewFocusable(panel: HTMLElement): HTMLElement[] {
+  return Array.from(panel.querySelectorAll<HTMLElement>(RECORD_VIEW_FOCUSABLE_SELECTOR));
+}
+
+function RecordViewPanel({
+  title,
+  rows,
+  canClose,
+  onClose,
+}: {
+  title: string;
+  rows: Array<{ key: string; label: string; value: unknown }>;
+  canClose: boolean;
+  onClose: () => void;
+}) {
+  const t = useTranslate();
+  const panelRef = useRef<HTMLElement>(null);
+  const titleId = `record-view-title-${useId().replace(/:/g, "")}`;
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!canClose) {
+      return;
+    }
+    const panel = panelRef.current;
+    if (panel === null) {
+      return;
+    }
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusable = recordViewFocusable(panel);
+    (focusable[0] ?? panel).focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") {
+        return;
+      }
+      const current = recordViewFocusable(panel);
+      if (current.length === 0) {
+        return;
+      }
+      const first = current[0];
+      const last = current[current.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey) {
+        if (active === first || !panel.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !panel.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocusedRef.current?.focus();
+      previouslyFocusedRef.current = null;
+    };
+  }, [canClose]);
+
+  return (
+    <>
+      {canClose ? (
+        <div
+          data-record-view="backdrop"
+          className="fixed inset-0 z-40 bg-overlay backdrop-blur-[2px] transition-opacity duration-200"
+          aria-hidden="true"
+          onClick={onClose}
+        />
+      ) : null}
+      <aside
+        ref={panelRef}
+        data-record-view="panel"
+        data-record-view-mode={canClose ? "drawer" : "panel"}
+        role="dialog"
+        aria-modal={canClose ? true : undefined}
+        aria-label={title}
+        aria-labelledby={titleId}
+        tabIndex={canClose ? -1 : undefined}
+        className={
+          canClose
+            ? "fixed inset-y-0 right-0 z-50 flex w-full max-w-[460px] flex-col border-l border-border bg-card shadow-2xl shadow-black/40 outline-none max-md:inset-x-0 max-md:top-auto max-md:h-[min(92vh,100%)] max-md:max-w-none max-md:rounded-t-xl max-md:border-l-0 max-md:border-t"
+            : "w-full max-w-[30rem] rounded-lg border border-border bg-card shadow-sm"
+        }
+      >
+        <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-6">
+          <h2 id={titleId} className="truncate text-sm font-semibold tracking-tight text-foreground">
+            {title}
+          </h2>
+          {canClose ? (
+            <button
+              type="button"
+              aria-label={t("feedback.closeRecordDetails")}
+              onClick={onClose}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </button>
+          ) : null}
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6">
+          <section data-record-view-section="properties" className="space-y-3">
+            <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {t("feedback.recordProperties")}
+            </h3>
+            <dl
+              data-record-view-fields="properties"
+              className="overflow-hidden rounded-lg border border-border bg-muted/10 divide-y divide-border"
+            >
+              {rows.map((row) => (
+                <div
+                  key={row.key}
+                  className="grid gap-1 px-4 py-2.5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-start sm:gap-3"
+                >
+                  <dt className="text-xs font-medium text-muted-foreground">
+                    {row.label}
+                  </dt>
+                  <dd className="min-w-0 break-words whitespace-pre-wrap text-sm text-foreground sm:text-right">
+                    {formatRecordViewValue(row.value)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </div>
+        {canClose ? (
+          <div className="flex shrink-0 items-center justify-end border-t border-border bg-card/70 p-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-muted/40 px-4 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {t("feedback.done")}
+            </button>
+          </div>
+        ) : null}
+      </aside>
+    </>
+  );
 }
 
 function RecordView({ node }: { node: RenderRecordViewNode }) {
@@ -2344,17 +2519,6 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
             value: record[field.key],
           }))
         : Object.entries(record).map(([key, value]) => ({ key, label: key, value }));
-  if (rows.length === 0) {
-    return (
-      <p
-        data-record-view="empty"
-        className="text-sm text-muted-foreground"
-      >
-        {t("feedback.selectRecordToView")}
-      </p>
-    );
-  }
-
   const title = resolveTextProp(
     node.props as unknown as Record<string, unknown>,
     "titleKey",
@@ -2362,68 +2526,22 @@ function RecordView({ node }: { node: RenderRecordViewNode }) {
     t,
     t("feedback.recordDetails"),
   );
-
   const canClose = !hasStatic && crud !== null;
-  const onClose = () => {
+  const onClose = useCallback(() => {
     if (canClose) {
-      crud.selectRow(null);
+      crud?.selectRow(null);
     }
-  };
+  }, [canClose, crud]);
 
-  return (
-    <>
-      {/* Dimmer only when selection-driven (static fixtures stay non-modal). */}
-      {canClose ? (
-        <div
-          data-record-view="backdrop"
-          className="fixed inset-0 z-40 bg-overlay"
-          aria-hidden="true"
-          onClick={onClose}
-        />
-      ) : null}
-      <aside
-        data-record-view="panel"
-        data-record-view-mode={canClose ? "drawer" : "panel"}
-        role="dialog"
-        aria-modal={canClose ? true : undefined}
-        aria-label={title}
-        className={
-          canClose
-            ? // Desktop (md+): right Drawer; mobile (<768, D-004): full-height Sheet
-              "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-card shadow-lg max-md:inset-x-0 max-md:top-auto max-md:h-[min(92vh,100%)] max-md:rounded-t-xl max-md:border-l-0 max-md:border-t md:max-w-md"
-            : "w-full max-w-md rounded-lg border border-border bg-card shadow-sm"
-        }
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold tracking-tight text-foreground">
-            {title}
-          </h2>
-          {canClose ? (
-            <button
-              type="button"
-              aria-label={t("feedback.closeRecordDetails")}
-              onClick={onClose}
-              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              ×
-            </button>
-          ) : null}
-        </div>
-        <dl className="flex-1 space-y-3 overflow-y-auto p-4">
-          {rows.map((row) => (
-            <div key={row.key} className="grid gap-0.5 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
-              <dt className="text-xs font-medium text-muted-foreground">
-                {row.label}
-              </dt>
-              <dd className="break-words text-foreground">
-                {formatRecordViewValue(row.value)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </aside>
-    </>
-  );
+  if (rows.length === 0) {
+    return (
+      <p data-record-view="empty" className="text-sm text-muted-foreground">
+        {t("feedback.selectRecordToView")}
+      </p>
+    );
+  }
+
+  return <RecordViewPanel title={title} rows={rows} canClose={canClose} onClose={onClose} />;
 }
 
 /** Shared data fetch for statCard/chart (supportsData components, registry). */

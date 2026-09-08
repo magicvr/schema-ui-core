@@ -1,4 +1,4 @@
-﻿import { readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -81,6 +81,27 @@ function expectCode(action: () => unknown, code: string) {
 }
 
 describe("app manifest validation", () => {
+  it("accepts the protocol-safe literal label carrier for optional secondary metadata", () => {
+    const result = validateAppManifest(
+      manifest({
+        navigation: {
+          sidebar: [
+            {
+              label: "Workspace · WORKSPACE",
+              labelKey: "manifest.nav.group.workspace",
+              items: [{ pageRef: "orders", label: "Orders · 01" }],
+            },
+          ],
+        },
+      }),
+    );
+    const group = result.navigation?.sidebar?.[0];
+    expect(group).toMatchObject({ label: "Workspace · WORKSPACE" });
+    if (group !== undefined && "items" in group) {
+      expect(group.items[0]).toMatchObject({ label: "Orders · 01" });
+    }
+  });
+
   it("accepts the pinned default manifest shape", () => {
     const result = validateAppManifest(manifest());
     expect(result.protocolVersion).toBe(APP_MANIFEST_PROTOCOL_VERSION);

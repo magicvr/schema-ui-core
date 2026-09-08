@@ -801,6 +801,22 @@ describe("RenderPage recordView title and field labels", () => {
     expect(panel?.getAttribute("aria-label")).toBe("Record details");
     expect(panel?.querySelector("dt")?.textContent).toBe("username");
   });
+
+  it("formats nested values generically instead of coercing them to [object Object]", async () => {
+    const pageDoc = displayDocument({
+      type: "recordView",
+      props: {
+        record: {
+          project: { owner: "Ada", scope: "admin" },
+          tags: [{ key: "one" }, { key: "two" }],
+        },
+      },
+    });
+    const container = await renderDocument(pageDoc, {});
+    expect(container.textContent).toContain('"owner": "Ada"');
+    expect(container.textContent).toContain('"key": "two"');
+    expect(container.textContent).not.toContain("[object Object]");
+  });
 });
 
 describe("RenderPage recordView long-value wrapping (W4 · GOAL-005)", () => {

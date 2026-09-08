@@ -161,7 +161,12 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 			knownNodeIDs = append(knownNodeIDs, n.NodeID)
 		}
 		navOrder := kernel.NormalizeNavigationOrder(plan.NavigationOrder, knownNodeIDs)
-		data, err := manifest.ForModulesWithFragments(plan.IDs(), moduleFragments, navOrder)
+		data, err := manifest.ForModulesWithFragmentsAndGroups(
+			plan.IDs(),
+			moduleFragments,
+			navOrder,
+			manifest.NavigationPresentationsFromContributions(set.Navigation),
+		)
 		if err != nil {
 			_ = st.Close()
 			return "", fmt.Errorf("server: build manifest: %w", err)
@@ -341,7 +346,7 @@ func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		origin := r.Header.Get("Origin")
-		
+
 		// W16 F-002: validate origin before reflecting it in ACAO header
 		if origin != "" {
 			// Reject null origin (often from sandboxed iframe or data: scheme)
@@ -350,14 +355,14 @@ func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			
+
 			// Validate origin is well-formed URL
 			if !isValidOrigin(origin) {
 				// Malformed origin: deny silently (no CORS headers)
 				next.ServeHTTP(w, r)
 				return
 			}
-			
+
 			// Check whitelist
 			if _, ok := allow[origin]; ok {
 				// Allowed origin: set CORS headers
@@ -371,7 +376,7 @@ func wrapSecurity(cfg *Config, next http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				// W16 F-002: preflight cache (24 hours)
 				w.Header().Set("Access-Control-Max-Age", "86400")
-				
+
 				if r.Method == http.MethodOptions {
 					w.WriteHeader(http.StatusNoContent)
 					return

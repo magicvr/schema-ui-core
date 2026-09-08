@@ -205,13 +205,19 @@
     ],
     "sidebar": [
       {
-        "pageRef": "dashboard",
-        "label": "Dashboard",
-        "icon": "dashboard",
-        "labelKey": "manifest.nav.dashboard",
-        "visibleWhen": {
-          "when": "$context.features.menu_dashboard == true"
-        }
+        "label": "Workspace · WORKSPACE",
+        "labelKey": "manifest.nav.group.workspace",
+        "items": [
+          {
+            "pageRef": "dashboard",
+            "label": "Dashboard · 01",
+            "icon": "dashboard",
+            "labelKey": "manifest.nav.dashboard",
+            "visibleWhen": {
+              "when": "$context.features.menu_dashboard == true"
+            }
+          }
+        ]
       },
       {
         "pageRef": "file-library",

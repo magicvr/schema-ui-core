@@ -743,7 +743,12 @@ func newMuxWithExtraProviders(
 			knownNodeIDs = append(knownNodeIDs, n.NodeID)
 		}
 		navOrder := kernel.NormalizeNavigationOrder(plan.NavigationOrder, knownNodeIDs)
-		data, err := manifest.ForModulesWithFragments(plan.IDs(), moduleFragments, navOrder)
+		data, err := manifest.ForModulesWithFragmentsAndGroups(
+			plan.IDs(),
+			moduleFragments,
+			navOrder,
+			manifest.NavigationPresentationsFromContributions(set.Navigation),
+		)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}
 		}

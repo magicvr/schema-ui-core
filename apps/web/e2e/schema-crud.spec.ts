@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { signInAsAdmin } from "./sign-in";
+import { openSidebarGroup, signInAsAdmin } from "./sign-in";
 // A-010 R-004 · real browser Schema CRUD lifecycle against Go + SQLite.
 // GOAL-011 S3 repoints the driver from the retired demo page to the users
 // resource page. Boots via playwright webServer (same as shell.spec.ts): Go API
@@ -21,6 +21,7 @@ test("users and roles drive real authorization management against Go SQLite", as
 	const replacementPassword = "  e2e-password-new  ";
 
   await signInAsAdmin(page);
+  await openSidebarGroup(page, "manifest.nav.group.identityAccess");
 
   // Menu projection (GOAL-011 S4): admin seed grants menu_users; login must
   // resolve /me features so the link is present after sign-in.

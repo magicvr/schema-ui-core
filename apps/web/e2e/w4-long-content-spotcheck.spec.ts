@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { signInAsAdmin } from "./sign-in";
+import { openSidebarGroup, signInAsAdmin } from "./sign-in";
 
 // W4 · GOAL-005 (workspace-010) browser spot-check — answers A-003 F-3:
 // the roles list must no longer let long permissions/menuItems values crowd
@@ -14,6 +14,7 @@ test.use({ viewport: { width: 1440, height: 900 } });
 test("roles list truncates long columns and the detail drawer wraps", async ({ page }) => {
   // Sign in (W16-F01-aware; shared helper handles forced first-login change).
   await signInAsAdmin(page);
+  await openSidebarGroup(page, "manifest.nav.group.identityAccess");
   await expect(page.getByRole("link", { name: "Roles" })).toBeVisible();
 
   await page.getByRole("link", { name: "Roles" }).click();

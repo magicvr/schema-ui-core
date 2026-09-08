@@ -81,6 +81,25 @@ func sampleSystemData() ([]kernel.PermissionContribution, []kernel.NavigationCon
 	return permissions, navigation
 }
 
+func TestNavigationPresentationMetadataDoesNotChangeSystemDataChecksum(t *testing.T) {
+	base := kernel.NavigationContribution{
+		ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.sample", Key: "menu_sample"},
+		NodeID:               "menu_sample",
+		PageID:               "sample",
+		Order:                1,
+		Label:                "Sample",
+		Visibility:           PolicyAdmin,
+		Permission:           "sample.read",
+		SystemDataVersion:    1,
+	}
+	withSecondary := base
+	withSecondary.Secondary = "SQL"
+	withSecondary.Group = &kernel.NavigationGroup{Key: "sample", Order: 10, Label: "Sample", Secondary: "SAMPLE"}
+	if navigationChecksum(base) != navigationChecksum(withSecondary) {
+		t.Fatal("presentation-only navigation metadata changed the system-data checksum")
+	}
+}
+
 func queryInt(t *testing.T, st *store.Store, query string, args ...any) int {
 	t.Helper()
 	var value int

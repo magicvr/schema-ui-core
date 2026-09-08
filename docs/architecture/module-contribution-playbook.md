@@ -3,10 +3,10 @@ doc_type: architecture-playbook
 title: 一方模块贡献 Playbook
 status: active
 created: 2026-08-06
-updated: 2026-08-06
+updated: 2026-09-08
 parent: null
-version: 1.0.0
-vision_ref: schema-ui-core-admin-foundation@0.2.0
+version: 1.3.0
+vision_ref: schema-ui-core-admin-foundation@0.4.0
 serves: VP-004-module-contribution-readiness
 authority_of: product-module-contribution
 architecture_boundary: module-architecture.md
@@ -72,6 +72,22 @@ apps/api/modules/compiled/            # 全局迁移收集（全候选）
 4. **Navigation** — `reg.Navigation(NavigationContribution{...})`
 5. **Manifest** — `reg.Manifest(FragmentContribution{...})`
 6. **Persistence** — 迁移归全局台账；`admin.users` 将账户/RBAC 迁移归属 `core.auth-session`（`CompiledPersistence` 空返回 + 依赖声明），业务表迁移则应进入 `compiled.PersistenceProviders`
+
+### 1.3 Navigation group 贡献规范（VP-034）
+
+标准 Admin 模块的 sidebar 导航可以通过 `kernel.NavigationContribution.Group` 声明可选的展示分组；这是模块贡献契约，不是 Shell 中央业务注册表。
+
+- `Group` 为空：导航保持协议原有的顶层平铺语义，模块无需为了接入分组而改造。
+- `Group` 非空时必须包含小写英文短横线 `Key`、非负 `Order`，以及 `Label` / `LabelKey` 至少一个；`Icon` 与可选 `Secondary`（如 `IAM` / `WORKSPACE`）可选。
+- `NavigationContribution.Secondary` 是可选的页面副字符（如稳定编号、协议代号或版本短码）；为空时不得输出空占位。组/页面副字符与主 `Label` 分离，不参与 i18n 主文案。
+- `Key` 是跨模块共享的产品语义 key，不自动加模块前缀；不同模块声明同一 key 时，`Key/Order/Label/LabelKey/Secondary/Icon` 必须精确一致。kernel finalize 会在 Manifest 发布前以 `CodeModuleNavigationGroupConflict` fail closed，禁止 first-writer 覆盖。
+- `Secondary` 由 schema-ui-core 当前 Admin Shell 在 Manifest 聚合时写入协议已允许的 literal `label` fallback（`主文案 · secondary`），Web projection 再拆为主文案与副字符；因此不增加 `schema-ui-docs@v2.9.0` pinned schema 的字段。本地消费者可省略该扩展，正式跨项目协议发行需另行升级/审视，不得把本地扩展写成上游兼容声明。
+- `Group.Order` 只决定组间顺序；组内叶子沿用已验证的 NodeID/`DefaultNavigationOrder` 相对顺序，配置的 `NAVIGATION_ORDER` 只能重排叶子而不能改变五组的显式顺序。
+- Group 只表达公开 Manifest 的 sidebar 展示聚合，不表达 `Parent` 层级，不改变 `menu_items` 身份、权限授权或 system-data checksum，也不要求迁移。
+- Provider 的 Manifest fragment 继续贡献普通 sidebar links；composition/serve 由结构化贡献把已匹配的 sidebar NodeID 归一化为标准协议 `NavGroup`。不向现行 NavGroup 输出内部 `key` / `id`，top/user slot 不参与归一化。
+- `menu_dashboard` 等有意顶层单例可以不分组但必须回归；已有 authored 协议组（如 `dev.examples` 的 `Examples`）保留，不与模块结构化组隐式合并。
+
+**迁移建议**：先从当前注册清单建立 NodeID → group/profile/slot 矩阵；再按产品语义声明 group；最后用默认、optional、custom/demo Profile 的 Manifest 与直接 URL 回归证明无丢失。分组与模块一对一无关；一个模块的不同导航节点可以进入不同组，也可以保留明确的未分组例外。
 
 ---
 
@@ -198,3 +214,5 @@ apps/api/modules/compiled/            # 全局迁移收集（全候选）
 |------|------|------|
 | 1.0.0 | 2026-08-06 | VP-004 / workspace-004 Root 首版：MUST / DO NOT / 归属法；路径对齐现网 modules + composition + kernel |
 | 1.1.0 | 2026-08-23 | 新增 §6 页面数据面性能规范（W25：展示节点合并/定向刷新、自定义组件禁止挂载即写 + 整页重拉、注册校验与行为回归要求） |
+| 1.2.0 | 2026-09-07 | VP-034：新增 Navigation group 贡献规范、跨模块共组/冲突 fail-closed、slot 边界与迁移建议 |
+| 1.3.0 | 2026-09-08 | workspace-034 GOAL-003：新增可选 secondary 表现元数据与本地扩展边界；不改变上游 pinned schema |

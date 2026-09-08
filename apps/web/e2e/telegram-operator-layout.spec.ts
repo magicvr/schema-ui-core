@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { signInAsAdmin } from "./sign-in";
+import { openSidebarGroup, signInAsAdmin } from "./sign-in";
 
 const appProfile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
 
@@ -184,6 +184,7 @@ test("Telegram operator keeps document/main fixed while sessions and messages sc
   test.skip(appProfile !== "custom", "requires APP_PROFILE=custom so channel.telegram is enabled");
 
   await signInAsAdmin(page);
+  await openSidebarGroup(page, "manifest.nav.group.communications");
   await installTelegramFixtures(page);
   // Stay inside the authenticated SPA route so the browser measurement covers
   // the same navigation path an operator uses and does not require a second
@@ -318,6 +319,7 @@ test("Telegram operator uses message senders for group and channel conversations
   test.skip(appProfile !== "custom", "requires APP_PROFILE=custom so channel.telegram is enabled");
 
   await signInAsAdmin(page);
+  await openSidebarGroup(page, "manifest.nav.group.communications");
   await installTelegramFixtures(page, {
     sessions: groupAndChannelOperatorSessions(),
     messagesByChatId: groupAndChannelOperatorMessages(),

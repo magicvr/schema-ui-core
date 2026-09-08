@@ -9,8 +9,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
-	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsconfiguration "github.com/magicvr/schema-ui-core/apps/api/modules/settings/configuration"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/settings/manifest"
@@ -156,6 +156,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			NodeID:               "menu_mail",
 			PageID:               "mail",
 			Label:                "Mail console",
+			Group:                &kernel.NavigationGroup{Key: "communications", Order: 40, Label: "Communications", LabelKey: "manifest.nav.group.communications", Secondary: "COMMS"},
 			Visibility:           authsessiondata.PolicyAdmin,
 			Permission:           "settings.read",
 			SystemDataVersion:    authsessiondata.SystemDataVersion,
@@ -165,6 +166,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 			NodeID:               "menu_mail_outbox",
 			PageID:               "mail-outbox",
 			Label:                "Outbound email log",
+			Group:                &kernel.NavigationGroup{Key: "communications", Order: 40, Label: "Communications", LabelKey: "manifest.nav.group.communications", Secondary: "COMMS"},
 			Visibility:           authsessiondata.PolicyAdmin,
 			Permission:           "settings.read",
 			SystemDataVersion:    authsessiondata.SystemDataVersion,
