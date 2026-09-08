@@ -52,11 +52,11 @@ export async function signInAsAdmin(page: Page): Promise<void> {
     return;
   } catch {
     // Fresh-initial login failed because the password was already replaced:
-    // fall back to the shared e2e password. Wait for the button to re-enable
-    // first — the first attempt's POST must have settled (W23: a slow login
-    // round-trip used to keep the submit disabled and stalled this click).
-    await page.getByLabel("Password", { exact: true }).fill(E2E_PASSWORD);
+    // fall back to the shared e2e password. Wait for the first attempt's POST
+    // to settle before replacing the password; otherwise a slow round-trip can
+    // keep the submit disabled while the fallback value is being filled.
     await expect(page.getByRole("button", { name: "Sign in" })).toBeEnabled({ timeout: 15000 });
+    await page.getByLabel("Password", { exact: true }).fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(homeRe, { timeout: 15000 });
   }
