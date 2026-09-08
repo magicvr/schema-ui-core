@@ -234,10 +234,10 @@ function NavigationLink({
   const className = item.active
     ? horizontal
       ? "group/nav-item flex min-h-9 items-center gap-2 rounded-md border border-border/70 bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground shadow-sm"
-      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md border border-border/70 bg-card px-2.5 py-1.5 text-sm font-medium text-foreground shadow-sm"
+      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md border border-border/70 bg-card px-2 py-1.5 text-sm font-medium text-foreground shadow-sm"
     : horizontal
       ? "group/nav-item flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
-      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
+      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
   const content = (
     <>
       <span className="flex min-w-0 items-center gap-2.5">
@@ -257,6 +257,15 @@ function NavigationLink({
           className="shrink-0 font-mono text-[10px] font-medium tracking-[0.08em] text-muted-foreground/80"
         >
           {item.secondary}
+        </span>
+      ) : item.active ? (
+        <span
+          aria-hidden="true"
+          data-navigation-active-dot="active"
+          className="relative inline-flex size-1.5 shrink-0"
+        >
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+          <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
         </span>
       ) : null}
     </>
@@ -418,7 +427,7 @@ function CollapsibleNavigationGroup({
         />
       </button>
       {open ? (
-        <div id={contentID} className="ml-2 space-y-0.5 border-l border-border/70 pl-3 pt-1">
+        <div id={contentID} className="space-y-0.5 pt-1">
           {item.items.map((child, childIndex) => (
             <NavigationLink
               key={`${child.href}-${childIndex}`}

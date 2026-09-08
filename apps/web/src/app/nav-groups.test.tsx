@@ -20,6 +20,7 @@ function manifest() {
     pages: [
       { pageId: "dashboard", title: "Dashboard", schemaUrl: "/schema/dashboard", route: "/dashboard" },
       { pageId: "users", title: "Users", schemaUrl: "/schema/users", route: "/users" },
+      { pageId: "roles", title: "Roles", schemaUrl: "/schema/roles", route: "/roles" },
       {
         pageId: "users-invites",
         title: "Invitations",
@@ -37,7 +38,10 @@ function manifest() {
         {
           label: "Identity & access · IAM",
           labelKey: GROUP_KEY,
-          items: [{ pageRef: "users", label: "Users · SQL" }],
+          items: [
+            { pageRef: "users", label: "Users · SQL" },
+            { pageRef: "roles", label: "Roles" },
+          ],
         },
       ],
     },
@@ -61,6 +65,7 @@ function schemaFetcher(input: RequestInfo | URL): Promise<Response> {
   const documents: Record<string, unknown> = {
     "/schema/dashboard": schemaDocument("dashboard", "Dashboard"),
     "/schema/users": schemaDocument("users", "Users"),
+    "/schema/roles": schemaDocument("roles", "Roles"),
     "/schema/users-invites": schemaDocument("users-invites", "Invitations"),
   };
   const document = documents[pathname];
@@ -122,14 +127,17 @@ describe("R3 collapsible navigation groups", () => {
     expect(groupButton).not.toBeNull();
     expect(groupButton?.className).toContain("hover:bg-accent/60");
     expect(groupButton?.closest("section")?.className).toContain("space-y-1");
-    expect(container.querySelector('[id^="navigation-group-"]')?.className).toContain("border-l");
+    const groupContent = container.querySelector<HTMLElement>('[id^="navigation-group-"]');
+    expect(groupContent?.className).not.toContain("border-l");
+    expect(groupContent?.className).not.toContain("ml-2");
+    expect(groupContent?.className).not.toContain("pl-3");
     expect(groupButton?.textContent).toContain("IAM");
     expect(container.querySelector('a[href="/users"]')?.textContent).toContain("SQL");
     expect(container.querySelector('[data-navigation-secondary="SQL"]')).not.toBeNull();
+    expect(container.querySelector('[data-navigation-active-dot="active"]')).toBeNull();
     const activeMarker = container.querySelector<HTMLElement>('[data-navigation-active-marker="active"]');
     expect(activeMarker).not.toBeNull();
     expect(activeMarker?.className).toContain("bg-primary");
-    expect(container.querySelector(".animate-ping")).toBeNull();
     expect(container.querySelector('aside[data-shell-region="sidenav"] > div')?.className).toContain("space-y-2");
     expect(groupButton?.getAttribute("aria-expanded")).toBe("true");
     expect(container.querySelector('a[href="/users"]')).not.toBeNull();
@@ -146,6 +154,16 @@ describe("R3 collapsible navigation groups", () => {
     });
     expect(groupButton?.getAttribute("aria-expanded")).toBe("true");
     expect(container.querySelector('a[href="/users"]')).not.toBeNull();
+  });
+
+  it("shows the active pulse only when no secondary text is registered", async () => {
+    const container = await renderApp("/roles");
+    const rolesLink = container.querySelector<HTMLAnchorElement>('a[href="/roles"]');
+    expect(rolesLink?.getAttribute("aria-current")).toBe("page");
+    expect(rolesLink?.querySelector('[data-navigation-active-dot="active"]')).not.toBeNull();
+    expect(rolesLink?.querySelector(".animate-ping")).not.toBeNull();
+    expect(rolesLink?.querySelector("[data-navigation-secondary]")).toBeNull();
+    expect(rolesLink?.querySelector('[data-navigation-active-marker="active"]')?.className).toContain("bg-primary");
   });
 
   it("defaults an inactive group to closed", async () => {
