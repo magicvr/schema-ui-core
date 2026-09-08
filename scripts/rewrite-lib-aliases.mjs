@@ -34,18 +34,33 @@ const faces = {
 // shipped source/runtime changed in the grouped-navigation release advance;
 // protocol and theme remain at their existing versions.
 const versions = {
-  renderer: "0.3.11",
-  protocol: "0.2.13",
-  lib: "0.1.13",
-  ui: "0.1.10",
+  renderer: "0.3.13",
+  protocol: "0.2.15",
+  lib: "0.1.14",
+  ui: "0.1.11",
   theme: "0.1.4",
   shell: "0.1.6",
 };
 
+const dependencies = {
+  protocol: { ajv: "^8.20.0" },
+  lib: { clsx: "^2.1.1", "tailwind-merge": "^3.3.1" },
+  ui: {
+    clsx: "^2.1.1",
+    "tailwind-merge": "^3.3.1",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.525.0",
+    "@radix-ui/react-slot": "^1.2.3",
+  },
+};
+
 const peers = {
-  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.13", "@magicvr/schema-ui-lib": "^0.1.13", "@magicvr/schema-ui-ui": "^0.1.10" },
+  lib: { react: "^19.0.0" },
+  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.15", "@magicvr/schema-ui-lib": "^0.1.14", "@magicvr/schema-ui-ui": "^0.1.11" },
   ui: { react: "^19.0.0", "react-dom": "^19.0.0" },
-  shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.13" },
+  // shell@0.1.6 is already published with a compatible ^0.2.12 peer range;
+  // keep its metadata stable while protocol receives the asset fix.
+  shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12" },
 };
 
 // 无法映射面（无对应包）计数（shell 的 host/account 面 → 残余登记）
@@ -59,7 +74,11 @@ for (const pkg of readdirSync(distRoot)) {
   const topDirs = readdirSync(dir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name);
-  const files = pkg === "renderer" ? ["index.js", "renderer", "components"] : ["index.js", ...topDirs];
+  const files = pkg === "renderer"
+    ? ["index.js", "renderer", "components"]
+    : pkg === "protocol"
+      ? ["index.js", "lib", "protocol", "schemas"]
+      : ["index.js", ...topDirs];
   const defaultTypes = topDirs.length > 0 ? `./${topDirs[0]}/index.d.ts` : "./index.d.ts";
   const types = old.types || defaultTypes; // 缺 package.json 包（renderer clean 后）按默认模板生成
   const rewritten = [];
@@ -111,6 +130,7 @@ for (const pkg of readdirSync(distRoot)) {
     exports: exported,
     files,
     license: old.license || "UNLICENSED",
+    ...(dependencies[packageKey] ? { dependencies: { ...dependencies[packageKey] } } : {}),
   };
   if (peers[packageKey]) next.peerDependencies = { ...peers[packageKey] };
   writeFileSync(pkgPath, JSON.stringify(next, null, 2));
