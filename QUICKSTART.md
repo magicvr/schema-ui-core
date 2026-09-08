@@ -33,7 +33,7 @@ cd web && pnpm install && node probe.mjs                             # 三探针
 schema-ui upgrade                    # go get @latest + pnpm add @latest + 探针回归
 ```
 
-> 注：`schema-ui create` 生成骨架钉在 API tag 时刻的包面（当前 = apps/api/v0.6.0 包面：protocol 0.2.12 · lib 0.1.11 · renderer 0.3.9 · ui 0.1.8 · shell 0.1.5 · theme 0.1.4）；`schema-ui upgrade` 会把 Go/npm 依赖拉到最新（registry 语义 · 零冲突）。
+> 注：`schema-ui create` 生成骨架钉在 API tag 时刻的包面（当前 = apps/api/v0.6.0 包面：protocol 0.2.12 · lib 0.1.12 · renderer 0.3.10 · ui 0.1.9 · shell 0.1.6 · theme 0.1.4）；`schema-ui upgrade` 会把 Go/npm 依赖拉到最新（registry 语义 · 零冲突）。
 
 - 计时口径（VP-023 R5 实测）：create → 双端绿 = **分钟级**（去依赖下载）；升级 = 秒级；冲突计数 = 0、无 git merge。
 - 双方言：SQLite 内嵌默认；生产权威 PostgreSQL：golden-field -dialect postgres -dsn …（迁移/备份契约与 fork 形态一致，见 workspace-023 ops-playbook）。
