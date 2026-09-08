@@ -35,6 +35,7 @@ version: 0.1.0
    - `schema-ui-ui` 导出 18 项
 5. 初次 npm 发布后，消费者冒烟发现旧包面存在真实元数据缺口：tsc 包的 root exports、runtime dependencies 与 protocol schemas 文件集不完整。已通过 PR #13/#14 递增 patch 版本修正；最终版本在干净消费者中通过，不把中间版本作为最终推荐包面。
 6. CLI 当前版本钉已更新为 `apps/api/v0.6.1`，包面为 protocol `0.2.15`、lib `0.1.14`、renderer `0.3.13`、ui `0.1.11`、shell `0.1.6`、theme `0.1.4`。
+7. 已创建并推送 annotated tag `apps/api/v0.6.1`，tag target 为 PR #15 merge commit `e5ae7be99d6bb536b16a02ce224cd88e3670987e`；`go list -m github.com/magicvr/schema-ui-core/apps/api@v0.6.1` 已从 Go proxy 成功解析。
 
 ## 证据边界
 
