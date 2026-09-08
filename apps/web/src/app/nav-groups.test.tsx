@@ -126,7 +126,11 @@ describe("R3 collapsible navigation groups", () => {
     expect(groupButton?.textContent).toContain("IAM");
     expect(container.querySelector('a[href="/users"]')?.textContent).toContain("SQL");
     expect(container.querySelector('[data-navigation-secondary="SQL"]')).not.toBeNull();
-    expect(container.querySelector('[data-navigation-active-marker]')).toBeNull();
+    const activeMarker = container.querySelector<HTMLElement>('[data-navigation-active-marker="active"]');
+    expect(activeMarker).not.toBeNull();
+    expect(activeMarker?.className).toContain("bg-primary");
+    expect(container.querySelector(".animate-ping")).toBeNull();
+    expect(container.querySelector('aside[data-shell-region="sidenav"] > div')?.className).toContain("space-y-2");
     expect(groupButton?.getAttribute("aria-expanded")).toBe("true");
     expect(container.querySelector('a[href="/users"]')).not.toBeNull();
 

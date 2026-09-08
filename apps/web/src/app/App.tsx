@@ -241,6 +241,13 @@ function NavigationLink({
   const content = (
     <>
       <span className="flex min-w-0 items-center gap-2.5">
+        {!horizontal ? (
+          <span
+            aria-hidden="true"
+            data-navigation-active-marker={item.active ? "active" : undefined}
+            className={`h-4 w-0.5 shrink-0 rounded-sm ${item.active ? "bg-primary" : "bg-transparent"}`}
+          />
+        ) : null}
         {iconFor(item.icon)}
         <span className="truncate">{item.label}</span>
       </span>
@@ -435,7 +442,7 @@ function NavigationItems({
   horizontal?: boolean;
 }) {
   return (
-    <div className={horizontal ? "flex min-w-max items-center gap-1" : "space-y-6"}>
+    <div className={horizontal ? "flex min-w-max items-center gap-1" : "space-y-2"}>
       {items.map((item, index) =>
         item.type === "link" ? (
           <NavigationLink
