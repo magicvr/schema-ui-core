@@ -1,7 +1,7 @@
 ---
 id: workspace-034-nav-group-collapsible
 title: Admin 导航分组折叠体验工作区
-status: done
+status: active
 root_goal: GOAL-001-nav-group-collapsible
 canonical_scope: docs/workspaces/workspace-034-nav-group-collapsible/
 shared_materials_catalog: none
@@ -10,18 +10,19 @@ plan_refs:
   - VP-034-nav-group-collapsible
 primary_plan: VP-034-nav-group-collapsible
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-08
 version: 0.1.0
 parent: null
 ---
 
 # 工作区上下文 · Admin 导航分组折叠体验
 
-本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`），workspace-034 恢复 done；不重开或改写父目标。VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
+本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`）；当前 `GOAL-003-sidebar-engine-navigation` 正在承接新的 Sidebar Engine 与通用详情抽屉视觉增量，workspace-034 保持 active；不重开或改写父目标。VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
 
 - 本区不属于 workspace-010；VP-010 继续承担长期设计意图—实现符合性程序，本区是 Admin 功能分支的有界交付。
 - 本区必须覆盖当前已注册 sidebar 导航，不以“既有模块”作为排除理由。
-- `menu_dashboard` 保持顶层主入口单例；top/user slot 导航保持原 slot 语义并做兼容回归。
+- `menu_dashboard` 的历史顶层单例事实由 GOAL-001 保留；GOAL-003 的新视觉增量按用户新指令由 Dashboard Provider 注册到 `workspace` 默认分组，不改写父目标历史。
+- top/user slot 导航保持原 slot 语义并做兼容回归。
 - 组与模块解耦：模块可将多个导航条目注册到同一组，也可在明确理由下保留顶层单例或不分组。
 
 ## 绑定
@@ -71,7 +72,8 @@ parent: null
 ## 结项后增量
 
 - `GOAL-001-nav-group-collapsible`：原始 Root `done 5/5`，历史事实保持不变。
-- 当前增量：`GOAL-002-navigation-group-polish`（`done 2/2` · `parent: GOAL-001-nav-group-collapsible`），只承载导航分组语义样式优化与默认关闭行为修正。
+- 已完成增量：`GOAL-002-navigation-group-polish`（`done 2/2` · `parent: GOAL-001-nav-group-collapsible`），只承载历史导航分组语义样式优化与默认关闭行为修正。
+- 当前增量：`GOAL-003-sidebar-engine-navigation`（`active 0/3` · `parent: GOAL-001-nav-group-collapsible`），承载 Sidebar Engine 视觉、副字符注册链与通用详情抽屉优化。
 
 ## 固定共享资料引用
 

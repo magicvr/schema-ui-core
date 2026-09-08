@@ -66,17 +66,23 @@ type NavigationGroup struct {
 	Order    int
 	Label    string
 	LabelKey string
-	Icon     string
+	// Secondary is optional, short presentation metadata such as an English
+	// abbreviation. It is intentionally separate from the localized label.
+	Secondary string
+	Icon      string
 }
 
 // NavigationContribution registers one navigation node (freeze package §2.2).
 type NavigationContribution struct {
 	ContributionIdentity
-	NodeID     string
-	PageID     string
-	Parent     string
-	Order      int
-	Label      string
+	NodeID string
+	PageID string
+	Parent string
+	Order  int
+	Label  string
+	// Secondary is optional, short presentation metadata such as a page code or
+	// version. It is omitted from public output when the provider leaves it blank.
+	Secondary  string
 	Visibility string
 	Permission string
 	// Group is presentation-only Manifest metadata. It does not change
@@ -240,8 +246,11 @@ func validateNavigationGroup(moduleID, nodeID string, group *NavigationGroup) er
 	if strings.TrimSpace(group.Label) == "" && strings.TrimSpace(group.LabelKey) == "" {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q group %q requires label or label key", nodeID, group.Key)
 	}
-	if strings.TrimSpace(group.Label) != group.Label || strings.TrimSpace(group.LabelKey) != group.LabelKey || strings.TrimSpace(group.Icon) != group.Icon {
+	if strings.TrimSpace(group.Label) != group.Label || strings.TrimSpace(group.LabelKey) != group.LabelKey || strings.TrimSpace(group.Secondary) != group.Secondary || strings.TrimSpace(group.Icon) != group.Icon {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q group %q metadata must be trimmed", nodeID, group.Key)
+	}
+	if group.Secondary != "" && strings.TrimSpace(group.Secondary) == "" {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q group %q secondary must not be blank", nodeID, group.Key)
 	}
 	return nil
 }
@@ -255,6 +264,12 @@ func validateNavigation(moduleID string, n NavigationContribution) error {
 	}
 	if strings.TrimSpace(n.PageID) == "" || strings.TrimSpace(n.PageID) != n.PageID {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a trimmed page id", n.NodeID)
+	}
+	if strings.TrimSpace(n.Secondary) != n.Secondary {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q secondary must be trimmed", n.NodeID)
+	}
+	if n.Secondary != "" && strings.TrimSpace(n.Secondary) == "" {
+		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q secondary must not be blank", n.NodeID)
 	}
 	if !validDottedIdentifier(n.Visibility) {
 		return kernelError(CodeModuleInvalid, moduleID, "navigation node %q requires a valid visibility policy reference", n.NodeID)

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import Ajv, { type ValidateFunction } from "ajv";
 import { expect, test } from "@playwright/test";
 
-import { signInAsAdmin } from "./sign-in";
+import { openSidebarGroup, signInAsAdmin } from "./sign-in";
 
 // R2 hygiene regression guard: the published runtime manifest must satisfy the
 // pinned protocol schema (docs/schemas/app-manifest.schema.json — every block
@@ -125,8 +125,14 @@ test("login gates the shell and the real auth chain works through the proxy", as
   // brand link — so target the LAST occurrence (the visible desktop one).
   await expect(page.getByText(brandBody.siteTitle).last()).toBeVisible();
 
-  // Manifest-driven navigation slots render (top / sidebar / user). Production
-  // profiles expose no dev.examples navigation (S5 hygiene); demo does.
+  // Manifest-driven navigation slots render (top / sidebar / user). Inactive
+  // groups start collapsed, so open the groups whose children this smoke checks.
+  await openSidebarGroup(page, "manifest.nav.group.identityAccess");
+  if (isAdminProfile) {
+    await openSidebarGroup(page, "manifest.nav.group.contentData");
+    await openSidebarGroup(page, "manifest.nav.group.operations");
+  }
+  // Production profiles expose no dev.examples navigation (S5 hygiene); demo does.
   await expect(page.getByRole("link", { name: "Users" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Overview" })).toHaveCount(isDemoProfile ? 1 : 0);
   await expect(page.getByRole("link", { name: "Data table" })).toHaveCount(isDemoProfile ? 1 : 0);

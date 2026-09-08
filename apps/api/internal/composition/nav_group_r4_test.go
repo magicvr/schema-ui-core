@@ -36,6 +36,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 			name:    "mvp",
 			profile: "mvp",
 			groups: map[string][]string{
+				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles"},
 			},
 			wantUser: []string{"account"},
@@ -44,6 +45,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 			name:    "admin",
 			profile: "admin",
 			groups: map[string][]string{
+				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles", "data-permission"},
 				"manifest.nav.group.contentData":    {"file-library", "data-dictionary"},
 				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin"},
@@ -56,6 +58,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 			name:    "demo",
 			profile: "demo",
 			groups: map[string][]string{
+				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles"},
 			},
 			wantUser:     []string{"account"},
@@ -68,6 +71,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 			extra:        withAdmin("channel.telegram"),
 			withTelegram: true,
 			groups: map[string][]string{
+				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles", "data-permission"},
 				"manifest.nav.group.contentData":    {"file-library", "data-dictionary"},
 				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin"},
@@ -82,6 +86,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 			extra:        withAdmin("channel.telegram", "biz.digital-offer"),
 			withTelegram: true,
 			groups: map[string][]string{
+				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles", "data-permission"},
 				"manifest.nav.group.contentData":    {"file-library", "data-dictionary"},
 				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin"},
@@ -130,17 +135,28 @@ func TestR4NavigationGroupProfileMatrix(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			document, _ := fetchR4Manifest(t, tc)
 			if len(document.Navigation.Sidebar) == 0 {
-				t.Fatal("sidebar must contain the Dashboard singleton")
+				t.Fatal("sidebar must contain the Workspace group")
 			}
 			var firstSidebar struct {
-				PageRef string            `json:"pageRef"`
-				Items   []json.RawMessage `json:"items"`
+				Label    string            `json:"label"`
+				LabelKey string            `json:"labelKey"`
+				Items    []json.RawMessage `json:"items"`
 			}
 			if err := json.Unmarshal(document.Navigation.Sidebar[0], &firstSidebar); err != nil {
 				t.Fatal(err)
 			}
-			if firstSidebar.PageRef != "dashboard" || len(firstSidebar.Items) != 0 {
-				t.Fatalf("first sidebar item = %+v, want top-level dashboard link", firstSidebar)
+			if firstSidebar.Label != "Workspace · WORKSPACE" || firstSidebar.LabelKey != "manifest.nav.group.workspace" || len(firstSidebar.Items) != 1 {
+				t.Fatalf("first sidebar item = %+v, want Workspace group with Dashboard", firstSidebar)
+			}
+			var dashboard struct {
+				PageRef string `json:"pageRef"`
+				Label   string `json:"label"`
+			}
+			if err := json.Unmarshal(firstSidebar.Items[0], &dashboard); err != nil {
+				t.Fatal(err)
+			}
+			if dashboard.PageRef != "dashboard" || dashboard.Label != "Dashboard · 01" {
+				t.Fatalf("workspace dashboard = %+v, want registered 01 secondary", dashboard)
 			}
 			for groupKey, wantRefs := range tc.groups {
 				gotRefs := manifestGroupPageRefs(document.Navigation.Sidebar, groupKey)

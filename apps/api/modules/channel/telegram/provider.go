@@ -227,7 +227,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "telegram-settings",
 		Order:                2,
 		Label:                "Telegram channel",
-		Group:                &kernel.NavigationGroup{Key: "communications", Order: 40, Label: "Communications", LabelKey: "manifest.nav.group.communications"},
+		Group:                &kernel.NavigationGroup{Key: "communications", Order: 40, Label: "Communications", LabelKey: "manifest.nav.group.communications", Secondary: "COMMS"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "settings.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

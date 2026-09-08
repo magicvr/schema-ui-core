@@ -8,9 +8,9 @@ import (
 	"context"
 
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
+	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/dashboard/manifest"
 	dashboardschema "github.com/magicvr/schema-ui-core/apps/api/modules/dashboard/schema"
-	authsessiondata "github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 )
 
 const ModuleID = "admin.dashboard"
@@ -60,6 +60,8 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "dashboard",
 		Order:                0,
 		Label:                "Dashboard",
+		Secondary:            "01",
+		Group:                &kernel.NavigationGroup{Key: "workspace", Order: 0, Label: "Workspace", LabelKey: "manifest.nav.group.workspace", Secondary: "WORKSPACE"},
 		Visibility:           authsessiondata.PolicyAdminEditorViewer,
 		Permission:           "",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

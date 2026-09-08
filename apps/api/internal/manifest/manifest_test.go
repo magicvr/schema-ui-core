@@ -127,6 +127,16 @@ func TestForModulesOnlyPublishesSelectedAdminPages(t *testing.T) {
 	}
 }
 
+func TestForModulesRejectsDisabledFragment(t *testing.T) {
+	_, err := ForModulesWithFragments(
+		[]string{"core.manifest-route"},
+		[]Fragment{{ModuleID: "admin.users", Raw: usersmanifest.FragmentJSON}},
+	)
+	if err == nil || !strings.Contains(err.Error(), "is not enabled") {
+		t.Fatalf("expected disabled fragment rejection, got %v", err)
+	}
+}
+
 func TestAggregateRejectsDuplicateModuleFragments(t *testing.T) {
 	fragment := []byte(`{"protocolVersion":"0.1.3","requiredCapabilities":[],"app":{"appId":"test"},"pages":[],"navigation":{"top":[],"sidebar":[],"user":[]}}`)
 	if _, err := Aggregate([]Fragment{{ModuleID: "same", Raw: fragment}, {ModuleID: "same", Raw: fragment}}); err == nil {
@@ -308,6 +318,71 @@ func TestNormalizeSidebarGroupsUsesExplicitGroupOrderAndPreservesAuthoredGroups(
 	}
 	if _, ok := examples["items"]; !ok {
 		t.Fatalf("authored Examples group should remain after structured groups: %s", data)
+	}
+}
+
+func TestNavigationPresentationProjectsWorkspaceAndOptionalSecondary(t *testing.T) {
+	fragment := []byte(`{"protocolVersion":"2.7","requiredCapabilities":[],"app":{"appId":"schema-ui-core","name":"Schema UI Core","description":"The schema-ui-core administration workspace."},"pages":[],"navigation":{"top":[{"pageRef":"top","label":"Top"}],"sidebar":[{"pageRef":"dashboard","label":"Dashboard","visibleWhen":{"when":"$context.features.menu_dashboard == true"}},{"pageRef":"users","label":"Users","visibleWhen":{"when":"$context.features.menu_users == true"}},{"pageRef":"future","label":"Future"}],"user":[{"pageRef":"profile","label":"Profile"}]}}`)
+	data, err := ForModulesWithFragmentsAndPresentation(
+		[]string{"core.manifest-route", "test"},
+		[]Fragment{{ModuleID: "test", Raw: fragment}},
+		nil,
+		[]NavigationGrouping{
+			{NodeID: "menu_dashboard", NodeSecondary: "01", GroupKey: "workspace", GroupOrder: 0, GroupLabel: "Workspace", GroupLabelKey: "manifest.nav.group.workspace", GroupSecondary: "WORKSPACE"},
+			{NodeID: "menu_users", GroupKey: "identity-access", GroupOrder: 10, GroupLabel: "Identity", GroupLabelKey: "group.identity", GroupSecondary: "IAM"},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Navigation struct {
+			Top     []json.RawMessage `json:"top"`
+			Sidebar []json.RawMessage `json:"sidebar"`
+			User    []json.RawMessage `json:"user"`
+		} `json:"navigation"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if len(decoded.Navigation.Sidebar) != 3 {
+		t.Fatalf("sidebar = %s, want workspace + identity + future", data)
+	}
+	var workspace struct {
+		Label    string `json:"label"`
+		LabelKey string `json:"labelKey"`
+		Items    []struct {
+			PageRef string `json:"pageRef"`
+			Label   string `json:"label"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(decoded.Navigation.Sidebar[0], &workspace); err != nil {
+		t.Fatal(err)
+	}
+	if workspace.Label != "Workspace · WORKSPACE" || workspace.LabelKey != "manifest.nav.group.workspace" || len(workspace.Items) != 1 || workspace.Items[0].PageRef != "dashboard" || workspace.Items[0].Label != "Dashboard · 01" {
+		t.Fatalf("workspace = %+v", workspace)
+	}
+	var identity struct {
+		Label    string `json:"label"`
+		LabelKey string `json:"labelKey"`
+	}
+	if err := json.Unmarshal(decoded.Navigation.Sidebar[1], &identity); err != nil {
+		t.Fatal(err)
+	}
+	if identity.Label != "Identity · IAM" || identity.LabelKey != "group.identity" {
+		t.Fatalf("identity = %+v", identity)
+	}
+	var future struct {
+		Label string `json:"label"`
+	}
+	if err := json.Unmarshal(decoded.Navigation.Sidebar[2], &future); err != nil {
+		t.Fatal(err)
+	}
+	if future.Label != "Future" {
+		t.Fatalf("unregistered secondary leaked to future link: %+v", future)
+	}
+	if len(decoded.Navigation.Top) != 1 || len(decoded.Navigation.User) != 1 {
+		t.Fatalf("top/user navigation changed: %+v", decoded.Navigation)
 	}
 }
 

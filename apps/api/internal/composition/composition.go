@@ -747,7 +747,7 @@ func newMuxWithExtraProviders(
 			plan.IDs(),
 			moduleFragments,
 			navOrder,
-			manifest.GroupingsFromContributions(set.Navigation),
+			manifest.NavigationPresentationsFromContributions(set.Navigation),
 		)
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: "core.manifest-route", Detail: err.Error()}

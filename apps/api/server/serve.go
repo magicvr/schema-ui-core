@@ -165,7 +165,7 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 			plan.IDs(),
 			moduleFragments,
 			navOrder,
-			manifest.GroupingsFromContributions(set.Navigation),
+			manifest.NavigationPresentationsFromContributions(set.Navigation),
 		)
 		if err != nil {
 			_ = st.Close()

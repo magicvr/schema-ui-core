@@ -32,11 +32,11 @@ function testManifest(): AppManifest {
       sidebar: [
         { pageRef: "orders", label: "Orders", icon: "orders" },
         {
-          label: "Admin",
+          label: "Admin · IAM",
           items: [
             {
               pageRef: "orders-detail",
-              label: "Details",
+              label: "Details · SQL",
               permissions: { view: '$context.user.roles contains "admin"' },
             },
           ],
@@ -62,7 +62,8 @@ describe("navigation projection", () => {
     expect(result.sidebar[0]).toMatchObject({ type: "link", active: true });
     expect(result.sidebar[1]).toMatchObject({
       type: "group",
-      items: [{ label: "Details", active: false }],
+      secondary: "IAM",
+      items: [{ label: "Details", secondary: "SQL", active: false }],
     });
     if (result.sidebar[1]?.type === "group") {
       expect(result.sidebar[1].items[0]).not.toHaveProperty("href");

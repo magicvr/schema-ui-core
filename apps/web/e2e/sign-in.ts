@@ -15,6 +15,14 @@ const homeUrl = (profile: string) => {
   return homeRe;
 };
 
+export async function openSidebarGroup(page: Page, groupKey: string): Promise<void> {
+  const toggle = page.locator(`section[data-navigation-group="${groupKey}"] button`);
+  await expect(toggle).toBeVisible();
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") {
+    await toggle.click();
+  }
+}
+
 export async function signInAsAdmin(page: Page): Promise<void> {
   const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
   const homeRe = homeUrl(profile);

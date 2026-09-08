@@ -91,7 +91,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "file-library",
 		Order:                3,
 		Label:                "File library",
-		Group:                &kernel.NavigationGroup{Key: "content-data", Order: 20, Label: "Content & data", LabelKey: "manifest.nav.group.contentData"},
+		Group:                &kernel.NavigationGroup{Key: "content-data", Order: 20, Label: "Content & data", LabelKey: "manifest.nav.group.contentData", Secondary: "CMS"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "files.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  PanelLeft,
   Pencil,
   Receipt,
   Search,
@@ -230,18 +229,29 @@ function NavigationLink({
   onNavigate: (href: string) => void;
   horizontal?: boolean;
 }) {
-  // D-004 shell language: Linear/Vercel — rounded side items, subtle active fill.
+  // Sidebar Engine language: compact tree rows, a quiet active surface and
+  // optional registration-owned metadata aligned to the trailing edge.
   const className = item.active
     ? horizontal
-      ? "flex min-h-9 items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground"
-      : "flex min-h-9 items-center gap-3 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
+      ? "group/nav-item flex min-h-9 items-center gap-2 rounded-md border border-border/70 bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground shadow-sm"
+      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md border border-border/70 bg-card px-2.5 py-1.5 text-sm font-medium text-foreground shadow-sm"
     : horizontal
-      ? "flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
-      : "flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
+      ? "group/nav-item flex min-h-9 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground"
+      : "group/nav-item flex min-h-9 items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground";
   const content = (
     <>
-      {iconFor(item.icon)}
-      <span className="truncate">{item.label}</span>
+      <span className="flex min-w-0 items-center gap-2.5">
+        {iconFor(item.icon)}
+        <span className="truncate">{item.label}</span>
+      </span>
+      {item.secondary !== undefined ? (
+        <span
+          data-navigation-secondary={item.secondary}
+          className="shrink-0 font-mono text-[10px] font-medium tracking-[0.08em] text-muted-foreground/80"
+        >
+          {item.secondary}
+        </span>
+      ) : null}
     </>
   );
 
@@ -359,7 +369,7 @@ function CollapsibleNavigationGroup({
 
   return (
     <section
-      className="border-t border-border/60 pt-3 first:border-t-0 first:pt-0"
+      className="space-y-1"
       data-navigation-group={item.key}
       data-navigation-group-active={item.active}
       data-navigation-group-state={open ? "open" : "closed"}
@@ -370,7 +380,7 @@ function CollapsibleNavigationGroup({
         aria-controls={contentID}
         data-navigation-group-toggle={item.key}
         data-navigation-group-active={item.active}
-        className="group/nav-header flex min-h-10 w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-sm transition-colors hover:border-border hover:bg-accent/70 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 data-[navigation-group-active=true]:border-primary/30 data-[navigation-group-active=true]:bg-accent/50 data-[navigation-group-active=true]:text-foreground"
+        className="group/nav-header flex min-h-8 w-full items-center justify-between gap-3 rounded-md px-2 py-1 text-left transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 data-[navigation-group-active=true]:text-foreground"
         onClick={toggle}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -381,15 +391,27 @@ function CollapsibleNavigationGroup({
       >
         <span className="flex min-w-0 items-center gap-2">
           {iconFor(item.icon)}
-          <span className="truncate">{item.label}</span>
+          <span
+            className={`truncate text-[13px] font-medium tracking-normal ${item.active ? "text-foreground" : "text-muted-foreground"}`}
+          >
+            {item.label}
+          </span>
+          {item.secondary !== undefined ? (
+            <span
+              data-navigation-group-secondary={item.secondary}
+              className="truncate font-mono text-[10px] font-medium tracking-[0.1em] text-muted-foreground/70"
+            >
+              {item.secondary}
+            </span>
+          ) : null}
         </span>
         <ChevronDown
           aria-hidden="true"
-          className={`size-3.5 shrink-0 transition-transform ${open ? "" : "-rotate-90"}`}
+          className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
         />
       </button>
       {open ? (
-        <div id={contentID} className="ml-2 space-y-1 border-l border-border/70 pl-3 pt-1">
+        <div id={contentID} className="ml-2 space-y-0.5 border-l border-border/70 pl-3 pt-1">
           {item.items.map((child, childIndex) => (
             <NavigationLink
               key={`${child.href}-${childIndex}`}
@@ -413,7 +435,7 @@ function NavigationItems({
   horizontal?: boolean;
 }) {
   return (
-    <div className={horizontal ? "flex min-w-max items-center gap-1" : "space-y-1"}>
+    <div className={horizontal ? "flex min-w-max items-center gap-1" : "space-y-6"}>
       {items.map((item, index) =>
         item.type === "link" ? (
           <NavigationLink
@@ -427,6 +449,11 @@ function NavigationItems({
             <div className="flex items-center gap-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {iconFor(item.icon)}
               <span>{item.label}</span>
+              {item.secondary !== undefined ? (
+                <span className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground/70">
+                  {item.secondary}
+                </span>
+              ) : null}
             </div>
             <div className="flex items-center gap-1">
               {item.items.map((child, childIndex) => (
@@ -1127,21 +1154,28 @@ export function App({
           />
           <nav
             ref={drawerNavRef}
-            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border bg-card shadow-lg lg:hidden"
+            className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-border/80 bg-card shadow-2xl lg:hidden"
             aria-label="Mobile navigation"
           >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <span className="text-sm font-semibold">{appName}</span>
+            <div className="flex h-16 items-center justify-between border-b border-border px-4">
+              <BrandLink
+                href={manifest.app.homePageRef ? "/" : "#main"}
+                onClick={handleBrandClick}
+                branding={branding}
+                appName={appName}
+                t={t}
+                className="flex min-w-0 items-center gap-3"
+              />
               <button
                 type="button"
                 aria-label={t("shell.closeMenu")}
-                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => setMobileDrawerOpen(false)}
               >
                 <X aria-hidden="true" className="size-4" />
               </button>
             </div>
-            <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
               <NavigationItems
                 items={[...projection.top, ...projection.sidebar]}
                 onNavigate={onNavigate}
@@ -1165,15 +1199,9 @@ export function App({
         <aside
           data-shell-region="sidenav"
           data-shell-sidenav-width="256"
-          className="sticky top-14 hidden h-full w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 px-3 py-5 lg:block"
+          className="sticky top-14 hidden h-full w-64 shrink-0 overflow-y-auto border-r border-border/80 bg-card/25 px-3 py-4 lg:block"
         >
-          <div className="mb-3 flex items-center gap-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <PanelLeft aria-hidden="true" className="size-3.5" />
-            <span>{t("shell.workspace")}</span>
-          </div>
-          <div className="space-y-0.5">
-            <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />
-          </div>
+          <NavigationItems items={projection.sidebar} onNavigate={onNavigate} />
         </aside>
 
         <main

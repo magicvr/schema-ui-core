@@ -82,7 +82,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "activity",
 		Order:                2,
 		Label:                "Activity",
-		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations"},
+		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations", Secondary: "OPS"},
 		Visibility:           authsessiondata.PolicyAdminEditor,
 		Permission:           "operations.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

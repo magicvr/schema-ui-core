@@ -135,6 +135,11 @@ describe("S2 recordView Drawer/Sheet presentation", () => {
     expect(renderSource).toContain('t("feedback.recordDetails")');
     expect(renderSource).toContain('t("feedback.closeRecordDetails")');
     expect(renderSource).toMatch(/fixed inset-y-0 right-0/);
+    expect(renderSource).toContain("max-w-[460px]");
+    expect(renderSource).toContain("backdrop-blur-[2px]");
+    expect(renderSource).toContain("h-14 shrink-0");
+    expect(renderSource).toContain("min-h-0 flex-1 overflow-y-auto");
+    expect(renderSource).toContain("divide-y divide-border");
     expect(renderSource).toMatch(/role="dialog"/);
     // D-004 mobile band uses md (768), not max-sm (640) alone
     expect(renderSource).toMatch(/max-md:/);
@@ -317,18 +322,22 @@ describe("S2 recordView Drawer/Sheet presentation", () => {
     expect(panel).not.toBeNull();
     expect(panel?.getAttribute("data-record-view-mode")).toBe("drawer");
     expect(panel?.getAttribute("aria-modal")).toBe("true");
+    expect(panel?.getAttribute("aria-labelledby")).toMatch(/^record-view-title-/);
     expect(container.querySelector('[data-record-view="backdrop"]')).not.toBeNull();
     expect(container.textContent).toContain("admin");
+    expect(document.body.style.overflow).toBe("hidden");
 
     const close = container.querySelector<HTMLButtonElement>(
       'button[aria-label="Close record details"]',
     );
     expect(close).not.toBeNull();
+    expect(document.activeElement).toBe(close);
     await act(async () => {
       close!.click();
     });
     expect(container.querySelector('[data-record-view="panel"]')).toBeNull();
     expect(container.querySelector('[data-record-view="backdrop"]')).toBeNull();
+    expect(document.body.style.overflow).toBe("");
   });
 });
 

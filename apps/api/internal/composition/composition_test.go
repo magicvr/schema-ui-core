@@ -1147,9 +1147,12 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 		for _, entry := range entries {
 			labels = append(labels, entry.Label)
 		}
-		want := []string{"Dashboard", "Identity & access", "Content & data", "Operations", "Communications", "Commerce"}
+		want := []string{"Workspace · WORKSPACE", "Identity & access · IAM", "Content & data · CMS", "Operations · OPS", "Communications · COMMS", "Commerce · COMMERCE"}
 		if strings.Join(labels, "|") != strings.Join(want, "|") {
 			t.Fatalf("sidebar containers = %v, want %v", labels, want)
+		}
+		if got := len(entries[0].Items); got != 1 {
+			t.Fatalf("workspace items = %d, want 1", got)
 		}
 		if got := len(entries[1].Items); got != 3 {
 			t.Fatalf("identity-access items = %d, want 3", got)
@@ -1165,8 +1168,8 @@ func TestPublishedManifestNavigationOrder(t *testing.T) {
 			t.Fatal(err)
 		}
 		entries := fetchSidebar(t, plan, []string{"menu_recycle_bin", "menu_dashboard"})
-		if len(entries) < 4 || entries[0].Label != "Dashboard" || entries[3].Label != "Operations" {
-			t.Fatalf("sidebar containers = %+v, want Dashboard then explicit group order", entries)
+		if len(entries) < 4 || entries[0].Label != "Workspace · WORKSPACE" || entries[3].Label != "Operations · OPS" {
+			t.Fatalf("sidebar containers = %+v, want Workspace then explicit group order", entries)
 		}
 		if len(entries[3].Items) == 0 || entries[3].Items[0].Label != "Recycle bin" {
 			t.Fatalf("operations items = %+v, want override to move Recycle bin first", entries[3].Items)

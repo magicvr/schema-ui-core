@@ -4,6 +4,7 @@ import { projectNavigation } from "@/app/navigation";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 
 const GROUP_KEYS = {
+  workspace: "manifest.nav.group.workspace",
   identity: "manifest.nav.group.identityAccess",
   content: "manifest.nav.group.contentData",
   operations: "manifest.nav.group.operations",
@@ -18,6 +19,7 @@ type RouteCase = {
 };
 
 const routeCases: RouteCase[] = [
+  { path: "/dashboard", groupKey: GROUP_KEYS.workspace, pageRef: "dashboard" },
   { path: "/users", groupKey: GROUP_KEYS.identity, pageRef: "users" },
   { path: "/users-invites", groupKey: GROUP_KEYS.identity, pageRef: "users" },
   { path: "/roles", groupKey: GROUP_KEYS.identity, pageRef: "roles" },
@@ -96,7 +98,11 @@ function routeMatrixManifest(): AppManifest {
     pages,
     navigation: {
       sidebar: [
-        link("dashboard"),
+        {
+          label: "Workspace · WORKSPACE",
+          labelKey: GROUP_KEYS.workspace,
+          items: [{ ...link("dashboard"), label: "dashboard · 01" }],
+        },
         {
           label: "Identity & access",
           labelKey: GROUP_KEYS.identity,
@@ -151,11 +157,17 @@ describe("R4 grouped navigation route matrix", () => {
     }
   });
 
-  it("keeps Dashboard top-level and user-slot links outside groups", () => {
+  it("places Dashboard in Workspace and keeps user-slot links outside groups", () => {
     const manifest = routeMatrixManifest();
     const dashboard = projectNavigation(manifest, "/dashboard", { features: {} });
-    expect(dashboard.sidebar[0]).toMatchObject({ type: "link", pageRef: "dashboard", active: true });
-    expect(dashboard.sidebar.filter((item) => item.type === "group")).toHaveLength(5);
+    expect(dashboard.sidebar[0]).toMatchObject({
+      type: "group",
+      key: GROUP_KEYS.workspace,
+      secondary: "WORKSPACE",
+      active: true,
+      items: [{ pageRef: "dashboard", secondary: "01", active: true }],
+    });
+    expect(dashboard.sidebar.filter((item) => item.type === "group")).toHaveLength(6);
 
     const settings = projectNavigation(manifest, "/settings", { features: {} });
     expect(settings.user.find((item) => item.type === "link" && item.pageRef === "settings")).toMatchObject({

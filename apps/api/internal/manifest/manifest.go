@@ -21,39 +21,63 @@ type Fragment struct {
 }
 
 // NavigationGrouping is the Manifest-facing projection of a validated kernel
-// NavigationGroup. NodeID is intentionally retained only as an assembly input;
-// the published protocol NavGroup stays compatible with the strict 2.7/2.8/2.9
-// schema and does not gain a non-protocol key/id field.
+// navigation presentation declaration. NodeID is retained only as an assembly
+// input; the published protocol does not gain an internal key/id field. The
+// optional Secondary fields are schema-ui-core's local presentation extension:
+// they are not menu identity, permission, route, or system-data metadata.
 type NavigationGrouping struct {
-	NodeID        string
-	GroupKey      string
-	GroupOrder    int
-	GroupLabel    string
-	GroupLabelKey string
-	GroupIcon     string
+	NodeID         string
+	NodeSecondary  string
+	GroupKey       string
+	GroupOrder     int
+	GroupLabel     string
+	GroupLabelKey  string
+	GroupSecondary string
+	GroupIcon      string
 }
 
-// GroupingsFromContributions projects presentation-only group metadata out of
-// finalized kernel contributions. It does not include ungrouped or top/user
-// entries and does not alter system-data persistence semantics.
-func GroupingsFromContributions(contributions []kernel.NavigationContribution) []NavigationGrouping {
-	groupings := make([]NavigationGrouping, 0)
+// NavigationPresentationsFromContributions projects every registered
+// presentation declaration that can affect the public manifest. Entries with a
+// nil Group are retained only when they carry a node secondary, so an optional
+// page suffix can be applied without inventing a navigation link.
+func NavigationPresentationsFromContributions(contributions []kernel.NavigationContribution) []NavigationGrouping {
+	presentations := make([]NavigationGrouping, 0)
 	for _, contribution := range contributions {
-		if contribution.Group == nil {
+		if contribution.Group == nil && contribution.Secondary == "" {
 			continue
 		}
-		groupings = append(groupings, NavigationGrouping{
+		presentation := NavigationGrouping{
 			NodeID:        contribution.NodeID,
-			GroupKey:      contribution.Group.Key,
-			GroupOrder:    contribution.Group.Order,
-			GroupLabel:    contribution.Group.Label,
-			GroupLabelKey: contribution.Group.LabelKey,
-			GroupIcon:     contribution.Group.Icon,
-		})
+			NodeSecondary: contribution.Secondary,
+		}
+		if contribution.Group != nil {
+			presentation.GroupKey = contribution.Group.Key
+			presentation.GroupOrder = contribution.Group.Order
+			presentation.GroupLabel = contribution.Group.Label
+			presentation.GroupLabelKey = contribution.Group.LabelKey
+			presentation.GroupSecondary = contribution.Group.Secondary
+			presentation.GroupIcon = contribution.Group.Icon
+		}
+		presentations = append(presentations, presentation)
 	}
-	sort.Slice(groupings, func(i, j int) bool {
-		return groupings[i].NodeID < groupings[j].NodeID
+	sort.Slice(presentations, func(i, j int) bool {
+		return presentations[i].NodeID < presentations[j].NodeID
 	})
+	return presentations
+}
+
+// GroupingsFromContributions preserves the historical grouped-only helper for
+// callers that only need group declarations. The full assembly path uses
+// NavigationPresentationsFromContributions so ungrouped page secondary values
+// can also be projected.
+func GroupingsFromContributions(contributions []kernel.NavigationContribution) []NavigationGrouping {
+	all := NavigationPresentationsFromContributions(contributions)
+	groupings := make([]NavigationGrouping, 0, len(all))
+	for _, presentation := range all {
+		if presentation.GroupKey != "" {
+			groupings = append(groupings, presentation)
+		}
+	}
 	return groupings
 }
 
@@ -104,6 +128,15 @@ func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment, ord
 	if _, ok := enabled["core.manifest-route"]; !ok {
 		return nil, fmt.Errorf("manifest: core.manifest-route must be enabled to publish a manifest")
 	}
+	for _, fragment := range moduleFragments {
+		moduleID := strings.TrimSpace(fragment.ModuleID)
+		if moduleID == "" {
+			return nil, fmt.Errorf("manifest: fragment module id is required")
+		}
+		if _, ok := enabled[moduleID]; !ok {
+			return nil, fmt.Errorf("manifest: fragment module %q is not enabled", moduleID)
+		}
+	}
 
 	var base envelope
 	if err := json.Unmarshal(defaultManifest, &base); err != nil {
@@ -133,14 +166,26 @@ func ForModulesWithFragments(moduleIDs []string, moduleFragments []Fragment, ord
 // Keeping this as a separate entry point preserves existing callers/tests that
 // only need protocol aggregation.
 func ForModulesWithFragmentsAndGroups(moduleIDs []string, moduleFragments []Fragment, order []string, groupings []NavigationGrouping) ([]byte, error) {
+	return ForModulesWithFragmentsAndPresentation(moduleIDs, moduleFragments, order, groupings)
+}
+
+// ForModulesWithFragmentsAndPresentation is the full local presentation path.
+// In addition to grouping sidebar links it overlays optional node secondary
+// metadata on already-registered links in any navigation slot.
+func ForModulesWithFragmentsAndPresentation(moduleIDs []string, moduleFragments []Fragment, order []string, presentations []NavigationGrouping) ([]byte, error) {
 	data, err := ForModulesWithFragments(moduleIDs, moduleFragments, order)
 	if err != nil {
 		return nil, err
 	}
-	return NormalizeSidebarGroups(data, groupings)
+	return NormalizeSidebarGroups(data, presentations)
 }
 
 var manifestGroupKeyPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+// navigationSecondarySeparator keeps the pinned app-manifest fieldset intact:
+// secondary presentation metadata rides in the protocol-sanctioned literal
+// label fallback and is projected back into a separate Web field by navigation.ts.
+const navigationSecondarySeparator = " · "
 
 type sidebarSlot struct {
 	raw           json.RawMessage
@@ -160,14 +205,13 @@ type protocolNavigationGroup struct {
 	Items    []json.RawMessage `json:"items"`
 }
 
-// NormalizeSidebarGroups converts flat sidebar links into protocol NavGroup
-// objects. It deliberately publishes no internal group key/id, because the
-// current protocol schema rejects unknown NavGroup fields. Dashboard is kept
-// first, structured groups use explicit GroupOrder, ungrouped links retain
-// their relative order, and authored protocol groups (e.g. Examples) remain
-// separate and follow the structured groups.
-func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte, error) {
-	if len(groupings) == 0 {
+// NormalizeSidebarGroups converts registered flat sidebar links into protocol
+// NavGroup objects and overlays optional local presentation metadata. It does
+// not publish the internal group key/id. Structured groups use explicit order,
+// ungrouped links retain their relative order, and authored protocol groups
+// (for example dev.examples/Examples) remain separate and follow them.
+func NormalizeSidebarGroups(data []byte, presentations []NavigationGrouping) ([]byte, error) {
+	if len(presentations) == 0 {
 		return data, nil
 	}
 	var document envelope
@@ -175,32 +219,48 @@ func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte
 		return nil, fmt.Errorf("manifest: parse aggregated document for sidebar grouping: %w", err)
 	}
 
-	byNode := make(map[string]NavigationGrouping, len(groupings))
+	byNode := make(map[string]NavigationGrouping, len(presentations))
 	definitions := make(map[string]NavigationGrouping)
-	for _, grouping := range groupings {
-		if strings.TrimSpace(grouping.NodeID) == "" {
-			return nil, fmt.Errorf("manifest: navigation grouping requires node id")
+	for _, presentation := range presentations {
+		if strings.TrimSpace(presentation.NodeID) == "" {
+			return nil, fmt.Errorf("manifest: navigation presentation requires node id")
 		}
-		if strings.TrimSpace(grouping.GroupKey) != grouping.GroupKey || !manifestGroupKeyPattern.MatchString(grouping.GroupKey) {
-			return nil, fmt.Errorf("manifest: navigation grouping %q has invalid group key %q", grouping.NodeID, grouping.GroupKey)
+		if strings.TrimSpace(presentation.NodeSecondary) != presentation.NodeSecondary {
+			return nil, fmt.Errorf("manifest: navigation node %q secondary must be trimmed", presentation.NodeID)
 		}
-		if grouping.GroupOrder < 0 {
-			return nil, fmt.Errorf("manifest: navigation grouping %q has negative group order", grouping.GroupKey)
+		if presentation.NodeSecondary != "" && strings.TrimSpace(presentation.NodeSecondary) == "" {
+			return nil, fmt.Errorf("manifest: navigation node %q secondary must not be blank", presentation.NodeID)
 		}
-		if strings.TrimSpace(grouping.GroupLabel) == "" && strings.TrimSpace(grouping.GroupLabelKey) == "" {
-			return nil, fmt.Errorf("manifest: navigation grouping %q requires label or labelKey", grouping.GroupKey)
+		if _, exists := byNode[presentation.NodeID]; exists {
+			return nil, fmt.Errorf("manifest: navigation presentation node %q is declared more than once", presentation.NodeID)
 		}
-		if strings.TrimSpace(grouping.GroupLabel) != grouping.GroupLabel || strings.TrimSpace(grouping.GroupLabelKey) != grouping.GroupLabelKey || strings.TrimSpace(grouping.GroupIcon) != grouping.GroupIcon {
-			return nil, fmt.Errorf("manifest: navigation grouping %q metadata must be trimmed", grouping.GroupKey)
+		if presentation.GroupKey != "" {
+			if strings.TrimSpace(presentation.GroupKey) != presentation.GroupKey || !manifestGroupKeyPattern.MatchString(presentation.GroupKey) {
+				return nil, fmt.Errorf("manifest: navigation grouping %q has invalid group key %q", presentation.NodeID, presentation.GroupKey)
+			}
+			if presentation.GroupOrder < 0 {
+				return nil, fmt.Errorf("manifest: navigation grouping %q has negative group order", presentation.GroupKey)
+			}
+			if strings.TrimSpace(presentation.GroupLabel) == "" && strings.TrimSpace(presentation.GroupLabelKey) == "" {
+				return nil, fmt.Errorf("manifest: navigation grouping %q requires label or labelKey", presentation.GroupKey)
+			}
+			if presentation.GroupSecondary != "" && strings.TrimSpace(presentation.GroupLabel) == "" {
+				return nil, fmt.Errorf("manifest: navigation grouping %q secondary requires a literal label fallback", presentation.GroupKey)
+			}
+			if strings.TrimSpace(presentation.GroupLabel) != presentation.GroupLabel || strings.TrimSpace(presentation.GroupLabelKey) != presentation.GroupLabelKey || strings.TrimSpace(presentation.GroupSecondary) != presentation.GroupSecondary || strings.TrimSpace(presentation.GroupIcon) != presentation.GroupIcon {
+				return nil, fmt.Errorf("manifest: navigation grouping %q metadata must be trimmed", presentation.GroupKey)
+			}
+			if presentation.GroupSecondary != "" && strings.TrimSpace(presentation.GroupSecondary) == "" {
+				return nil, fmt.Errorf("manifest: navigation grouping %q secondary must not be blank", presentation.GroupKey)
+			}
+			if previous, exists := definitions[presentation.GroupKey]; exists && !sameNavigationGroupingMetadata(previous, presentation) {
+				return nil, fmt.Errorf("manifest: navigation group %q metadata conflict", presentation.GroupKey)
+			}
+			definitions[presentation.GroupKey] = presentation
+		} else if presentation.GroupOrder != 0 || presentation.GroupLabel != "" || presentation.GroupLabelKey != "" || presentation.GroupSecondary != "" || presentation.GroupIcon != "" {
+			return nil, fmt.Errorf("manifest: navigation presentation node %q has group metadata without a group key", presentation.NodeID)
 		}
-		if _, exists := byNode[grouping.NodeID]; exists {
-			return nil, fmt.Errorf("manifest: navigation grouping node %q is declared more than once", grouping.NodeID)
-		}
-		byNode[grouping.NodeID] = grouping
-		if previous, exists := definitions[grouping.GroupKey]; exists && !sameNavigationGroupingMetadata(previous, grouping) {
-			return nil, fmt.Errorf("manifest: navigation group %q metadata conflict", grouping.GroupKey)
-		}
-		definitions[grouping.GroupKey] = grouping
+		byNode[presentation.NodeID] = presentation
 	}
 
 	slots := make([]sidebarSlot, 0, len(document.Navigation.Sidebar))
@@ -219,24 +279,73 @@ func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte
 		if nodeID == "" {
 			return nil, fmt.Errorf("manifest: sidebar navigation item has no NodeID-compatible identity")
 		}
-		seenSidebarNodes[nodeID] = true
-		grouping, grouped := byNode[nodeID]
-		if !grouped {
+		presentation, registered := byNode[nodeID]
+		if !registered || presentation.GroupKey == "" {
+			if registered {
+				raw, err = applyNavigationSecondary(raw, presentation.NodeSecondary)
+				if err != nil {
+					return nil, fmt.Errorf("manifest: apply navigation node %q secondary: %w", nodeID, err)
+				}
+			}
 			slots = append(slots, sidebarSlot{raw: raw, nodeID: nodeID})
 			continue
 		}
-		group := groups[grouping.GroupKey]
+		seenSidebarNodes[nodeID] = true
+		group := groups[presentation.GroupKey]
 		if group == nil {
-			group = &normalizedGroup{definition: grouping, items: make([]json.RawMessage, 0, 1)}
-			groups[grouping.GroupKey] = group
+			group = &normalizedGroup{definition: presentation, items: make([]json.RawMessage, 0, 1)}
+			groups[presentation.GroupKey] = group
+		}
+		raw, err = applyNavigationSecondary(raw, presentation.NodeSecondary)
+		if err != nil {
+			return nil, fmt.Errorf("manifest: apply navigation node %q secondary: %w", nodeID, err)
 		}
 		group.items = append(group.items, raw)
 	}
-	for nodeID := range byNode {
-		if !seenSidebarNodes[nodeID] {
-			return nil, fmt.Errorf("manifest: grouped navigation node %q is not a sidebar link", nodeID)
+	for _, presentation := range presentations {
+		if presentation.GroupKey != "" && !seenSidebarNodes[presentation.NodeID] {
+			return nil, fmt.Errorf("manifest: grouped navigation node %q is not a sidebar link", presentation.NodeID)
 		}
 	}
+
+	applySlot := func(items []json.RawMessage, slotName string) ([]json.RawMessage, error) {
+		result := make([]json.RawMessage, 0, len(items))
+		for _, raw := range items {
+			existingGroup, err := navigationItemHasItems(raw)
+			if err != nil {
+				return nil, fmt.Errorf("inspect %s navigation item: %w", slotName, err)
+			}
+			if existingGroup {
+				result = append(result, raw)
+				continue
+			}
+			nodeID := navigationNodeID(raw)
+			presentation, registered := byNode[nodeID]
+			if !registered {
+				result = append(result, raw)
+				continue
+			}
+			if presentation.GroupKey != "" {
+				return nil, fmt.Errorf("manifest: grouped navigation node %q is not a sidebar link", nodeID)
+			}
+			raw, err = applyNavigationSecondary(raw, presentation.NodeSecondary)
+			if err != nil {
+				return nil, fmt.Errorf("manifest: apply %s navigation node %q secondary: %w", slotName, nodeID, err)
+			}
+			result = append(result, raw)
+		}
+		return result, nil
+	}
+	topNavigation, err := applySlot(document.Navigation.Top, "top")
+	if err != nil {
+		return nil, fmt.Errorf("manifest: overlay top navigation presentation: %w", err)
+	}
+	userNavigation, err := applySlot(document.Navigation.User, "user")
+	if err != nil {
+		return nil, fmt.Errorf("manifest: overlay user navigation presentation: %w", err)
+	}
+	document.Navigation.Top = topNavigation
+	document.Navigation.User = userNavigation
 
 	sortedGroups := make([]*normalizedGroup, 0, len(groups))
 	for _, group := range groups {
@@ -250,15 +359,18 @@ func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte
 	})
 
 	resultSidebar := make([]json.RawMessage, 0, len(slots)+len(sortedGroups))
+	// Keep legacy, ungrouped Dashboard first for manifests that predate the
+	// explicit Workspace registration. The product Dashboard contribution now
+	// carries a Workspace Group, so this compatibility branch does not affect the
+	// new grouped output.
 	for _, slot := range slots {
-		if slot.existingGroup || slot.nodeID != "menu_dashboard" {
-			continue
+		if !slot.existingGroup && slot.nodeID == "menu_dashboard" {
+			resultSidebar = append(resultSidebar, slot.raw)
 		}
-		resultSidebar = append(resultSidebar, slot.raw)
 	}
 	for _, group := range sortedGroups {
 		encoded, err := json.Marshal(protocolNavigationGroup{
-			Label:    group.definition.GroupLabel,
+			Label:    composeNavigationLabel(group.definition.GroupLabel, group.definition.GroupSecondary),
 			LabelKey: group.definition.GroupLabelKey,
 			Icon:     group.definition.GroupIcon,
 			Items:    group.items,
@@ -269,10 +381,9 @@ func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte
 		resultSidebar = append(resultSidebar, encoded)
 	}
 	for _, slot := range slots {
-		if slot.existingGroup || slot.nodeID == "menu_dashboard" {
-			continue
+		if !slot.existingGroup && slot.nodeID != "menu_dashboard" {
+			resultSidebar = append(resultSidebar, slot.raw)
 		}
-		resultSidebar = append(resultSidebar, slot.raw)
 	}
 	for _, slot := range slots {
 		if slot.existingGroup {
@@ -285,6 +396,44 @@ func NormalizeSidebarGroups(data []byte, groupings []NavigationGrouping) ([]byte
 		return nil, fmt.Errorf("manifest: encode grouped document: %w", err)
 	}
 	return append(encoded, '\n'), nil
+}
+
+func composeNavigationLabel(label, secondary string) string {
+	if secondary == "" {
+		return label
+	}
+	return strings.TrimSpace(label) + navigationSecondarySeparator + secondary
+}
+
+func applyNavigationSecondary(raw json.RawMessage, secondary string) (json.RawMessage, error) {
+	if secondary == "" {
+		return raw, nil
+	}
+	var item map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &item); err != nil {
+		return nil, err
+	}
+	labelRaw, ok := item["label"]
+	if !ok {
+		return nil, fmt.Errorf("secondary requires a literal label fallback")
+	}
+	var label string
+	if err := json.Unmarshal(labelRaw, &label); err != nil || strings.TrimSpace(label) == "" {
+		return nil, fmt.Errorf("secondary requires a non-empty literal label fallback")
+	}
+	if separator := strings.LastIndex(label, navigationSecondarySeparator); separator > 0 {
+		existing := label[separator+len(navigationSecondarySeparator):]
+		if existing != secondary {
+			return nil, fmt.Errorf("registered secondary %q conflicts with fragment value %q", secondary, existing)
+		}
+		return raw, nil
+	}
+	encoded, err := json.Marshal(composeNavigationLabel(label, secondary))
+	if err != nil {
+		return nil, err
+	}
+	item["label"] = encoded
+	return json.Marshal(item)
 }
 
 func navigationItemHasItems(raw json.RawMessage) (bool, error) {
@@ -301,6 +450,7 @@ func sameNavigationGroupingMetadata(left, right NavigationGrouping) bool {
 		left.GroupOrder == right.GroupOrder &&
 		left.GroupLabel == right.GroupLabel &&
 		left.GroupLabelKey == right.GroupLabelKey &&
+		left.GroupSecondary == right.GroupSecondary &&
 		left.GroupIcon == right.GroupIcon
 }
 

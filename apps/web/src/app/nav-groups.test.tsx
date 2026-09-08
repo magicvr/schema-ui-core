@@ -29,11 +29,15 @@ function manifest() {
     ],
     navigation: {
       sidebar: [
-        { pageRef: "dashboard", label: "Dashboard" },
         {
-          label: "Identity & access",
+          label: "Workspace · WORKSPACE",
+          labelKey: "manifest.nav.group.workspace",
+          items: [{ pageRef: "dashboard", label: "Dashboard · 01" }],
+        },
+        {
+          label: "Identity & access · IAM",
           labelKey: GROUP_KEY,
-          items: [{ pageRef: "users", label: "Users" }],
+          items: [{ pageRef: "users", label: "Users · SQL" }],
         },
       ],
     },
@@ -116,9 +120,13 @@ describe("R3 collapsible navigation groups", () => {
       `section[data-navigation-group="${GROUP_KEY}"] button`,
     );
     expect(groupButton).not.toBeNull();
-    expect(groupButton?.className).toContain("bg-muted/30");
-    expect(groupButton?.closest("section")?.className).toContain("border-t");
+    expect(groupButton?.className).toContain("hover:bg-accent/60");
+    expect(groupButton?.closest("section")?.className).toContain("space-y-1");
     expect(container.querySelector('[id^="navigation-group-"]')?.className).toContain("border-l");
+    expect(groupButton?.textContent).toContain("IAM");
+    expect(container.querySelector('a[href="/users"]')?.textContent).toContain("SQL");
+    expect(container.querySelector('[data-navigation-secondary="SQL"]')).not.toBeNull();
+    expect(container.querySelector('[data-navigation-active-marker]')).toBeNull();
     expect(groupButton?.getAttribute("aria-expanded")).toBe("true");
     expect(container.querySelector('a[href="/users"]')).not.toBeNull();
 

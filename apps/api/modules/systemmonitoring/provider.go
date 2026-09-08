@@ -98,7 +98,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "system-monitoring",
 		Order:                5,
 		Label:                "System monitoring",
-		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations"},
+		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations", Secondary: "OPS"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "monitoring.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

@@ -105,7 +105,7 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PageID:               "scheduled-tasks",
 		Order:                6,
 		Label:                "Scheduled tasks",
-		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations"},
+		Group:                &kernel.NavigationGroup{Key: "operations", Order: 30, Label: "Operations", LabelKey: "manifest.nav.group.operations", Secondary: "OPS"},
 		Visibility:           authsessiondata.PolicyAdmin,
 		Permission:           "tasks.read",
 		SystemDataVersion:    authsessiondata.SystemDataVersion,

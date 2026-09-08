@@ -409,6 +409,7 @@ func navigationGroupMetadataEqual(left, right NavigationGroup) bool {
 		left.Order == right.Order &&
 		left.Label == right.Label &&
 		left.LabelKey == right.LabelKey &&
+		left.Secondary == right.Secondary &&
 		left.Icon == right.Icon
 }
 
