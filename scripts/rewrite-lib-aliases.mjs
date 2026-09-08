@@ -34,18 +34,18 @@ const faces = {
 // shipped source/runtime changed in the grouped-navigation release advance;
 // protocol and theme remain at their existing versions.
 const versions = {
-  renderer: "0.3.10",
-  protocol: "0.2.12",
-  lib: "0.1.12",
-  ui: "0.1.9",
+  renderer: "0.3.11",
+  protocol: "0.2.13",
+  lib: "0.1.13",
+  ui: "0.1.10",
   theme: "0.1.4",
   shell: "0.1.6",
 };
 
 const peers = {
-  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12", "@magicvr/schema-ui-lib": "^0.1.12", "@magicvr/schema-ui-ui": "^0.1.9" },
+  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.13", "@magicvr/schema-ui-lib": "^0.1.13", "@magicvr/schema-ui-ui": "^0.1.10" },
   ui: { react: "^19.0.0", "react-dom": "^19.0.0" },
-  shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12" },
+  shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.13" },
 };
 
 // 无法映射面（无对应包）计数（shell 的 host/account 面 → 残余登记）
@@ -91,8 +91,15 @@ for (const pkg of readdirSync(distRoot)) {
   walk(dir);
   if (rewritten.length > 0) console.log(`${pkg}: rewrote ${rewritten.length} d.ts`);
 
-  // package.json 定稿
-  const exported = { ".": { types, import: "./index.js" }, "./*": "./*" };
+  // package.json 定稿。tsc 产物的入口位于各包的镜像子目录，
+  // 不能把所有包都声明成根目录的 ./index.js。
+  const entryImport = {
+    lib: "./lib/index.js",
+    protocol: "./protocol/index.js",
+    ui: "./components/ui/index.js",
+  }[pkg] ?? "./index.js";
+  const entryTypes = types.startsWith("./") ? types : `./${types}`;
+  const exported = { ".": { types: entryTypes, import: entryImport }, "./*": "./*" };
   const packageKey = pkg;
   const next = {
     name: old.name || `@schema-ui/${pkg}`,
