@@ -19,7 +19,8 @@ workspace_id: workspace-035-foundation-architecture-health
 
 ```text
 GOAL-001-foundation-architecture-health [active · 1/4]
-└── GOAL-002-r1-denominator-freeze [done · 3/3]
+├── GOAL-002-r1-denominator-freeze [done · 3/3]
+└── GOAL-003-r2-as-built-matrix [active · 2/3]
 ```
 
 ## 纲领路线图
@@ -38,8 +39,10 @@ R1 对照分母 / residual 总账 / 现在修 vs 另立 [completed]
 | GOAL-001-foundation-architecture-health | 基架架构健康评估与路线图重述 | **active** | 1/4 | null | R1 completed（GOAL-002）；I-035-001/002/004/005 verified；I-035-003 仍 R3 |
 | GOAL-002-r1-denominator-freeze | R1 对照分母冻结 | **done** | 3/3 | GOAL-001-foundation-architecture-health | D-001 + 附件冻结三表；A-001 self pass；未改生产代码 |
 
+| GOAL-003-r2-as-built-matrix | R2 as-built 对照矩阵 | **active** | 2/3 | GOAL-001-foundation-architecture-health | 矩阵与验证完成；等待 independent |
+
 ## 维护说明
 
-- Root `progress: 0/4` 由 `00-meta.md` 的 4 个显式检查点派生。
+- Root `progress: 25%` 由 `00-meta.md` 的 4 个显式检查点派生。
 - 新建阶段子目标前，先在 Root 决策/路线图中冻结阶段边界；目标文件夹在本工作区根平铺。
 - status/progress/parent 或新增子目标发生变化时，必须同步本文件树与状态表。

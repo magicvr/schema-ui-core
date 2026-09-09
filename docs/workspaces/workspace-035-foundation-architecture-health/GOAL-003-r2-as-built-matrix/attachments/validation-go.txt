@@ -1,0 +1,13 @@
+ok  	github.com/magicvr/schema-ui-core/apps/api/kernel	1.533s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/cache	1.284s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit	1.321s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/eventbus	1.814s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/objectstore	1.372s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/mail	1.209s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/obs	0.280s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/auth	5.078s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/jobs	1.962s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/store	53.293s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/manifest	0.693s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/composition	27.089s
+?   	github.com/magicvr/schema-ui-core/apps/api/assembly	[no test files]

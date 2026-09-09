@@ -17,6 +17,8 @@ version: 0.2.0
 | E-001 | 2026-09-09 | 开区建立 | recorded | `02-execution/E-001-workspace-establishment.md` |
 | E-002 | 2026-09-09 | R1 分母冻结完成（GOAL-002 done） | recorded | `02-execution/E-002-r1-denominator-frozen.md` |
 
+| E-003 | 2026-09-09 | R2 推进 | recorded | [E-003](02-execution/E-003-r2-started.md) |
+
 ## 事实边界
 
-只写已经发生且有证据的事实。R1 对照分母尚未冻结，本索引不把评估结论写成已完成。
+只写已经发生且有证据的事实。R1 分母已冻结；R2 矩阵与验证已产出，独立审计待完成。
