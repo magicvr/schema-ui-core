@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-09
 parent: null
-version: 0.50.0
+version: 0.51.0
 ---
 
 # 工作区贡献图
@@ -46,6 +46,7 @@ version: 0.50.0
 | workspace-032-rate-limiter-atomic-port | docs/workspaces/workspace-032-rate-limiter-atomic-port/ | GOAL-001-rate-limiter-atomic-port | delivery | VP-032-rate-limiter-atomic-port | **done**（2026-09-03 激活开区 · 2026-09-04 全链结项：Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3（R1 合同冻结 → R2 14 处迁移+handler 回归（A-002 证伪后 D-002 令牌化 Reserve/Cancel 修复）→ R3 证据与关门）；关门双审 A-001 self `pass` + A-002 grok independent `pass`（0 required）；**VP-032 `closed` v0.3.0（2026-09-04 用户书面确认 · VRev-074 pass）**，判据 #2 失败预算口径承接由 GOAL-003 D-002 取代并登记于规划短史） |
 | workspace-033-telegram-operator-console | docs/workspaces/workspace-033-telegram-operator-console/ | GOAL-001-telegram-operator-console | delivery | VP-033-telegram-operator-console | **done**（2026-09-04 激活开区 · 2026-09-05 Root `GOAL-001-telegram-operator-console` `done · 4/4`；R4 A-001/A-002/A-003/A-004 完成，A-003 `subagent (gpt-5.6-sol · reasoning medium)` independent `pass`；A-015 IM 最终响应后 open required/recommended = 0；VRev-077 self `pass`，VP-033 `active → closed` v0.3.0） |
 | workspace-034-nav-group-collapsible | docs/workspaces/workspace-034-nav-group-collapsible/ | GOAL-001-nav-group-collapsible | delivery | VP-034-nav-group-collapsible | **done**（原始 Root `GOAL-001-nav-group-collapsible` `done 5/5`；结项后增量 GOAL-002～005 全 done；**VP-034 `closed` v0.4.0** · 2026-09-09 用户书面确认 · VRev-085 pass） |
+| workspace-035-foundation-architecture-health | docs/workspaces/workspace-035-foundation-architecture-health/ | GOAL-001-foundation-architecture-health | delivery | VP-035-foundation-architecture-health | **active**（2026-09-09 开区；Root **active** 1/4 · R1 分母冻结 done；VP-035 `active` v0.2.0 · VRev-087 pass） |
 
 ## 说明
 

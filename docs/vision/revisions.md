@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-09
 parent: null
-version: 0.4.46
+version: 0.4.48
 ---
 
 # Charter 修订台账
@@ -87,3 +87,5 @@ version: 0.4.46
 | VR-070 | 2026-09-05 | editorial | VP-031 激活 + 开区 | 用户书面确认 H-002 采用同进程模块。VRev-080 self `pass`（open required = 0）：业务域 freshness PASS（写入前 clean HEAD `bd9ed5e`，消费 VP-008 `go`）；VP-029 硬前置满足；RT-Q03/RT-Q05 均完成评估并判定本波不需要 Redis。VP-031 `planned → active` v0.2.0；lead `workspace-031-digital-offer-entitlement` / Root `GOAL-001-digital-offer-entitlement` 由 `/govern` 建立为 `active · 0/4`。I-031-001～003 保持 R1 required，未关闭前不得进入 R2；V-F119 recommended 不阻断。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-071 | 2026-09-06 | editorial | VP-010 / workspace-010 / Root Charter 0.4.0 re-align | `/govern` 扫描发现 VR-052 strategic 后的现行投影漂移：VP-010 仍引用 `@0.3.0`，workspace-010 与 Root 仍声明 `@0.2.0`。用户书面选择“对齐后建目标”：本轮将 VP-010 `vision_ref`、workspace-010 与 Root 的 Charter 声明同步到 `schema-ui-core-admin-foundation@0.4.0`，不改变 VP-010 意图、边界、status、lead 或工作区绑定；VRev-081 self `pass`（open required = 0）后解除 **workspace-010 scope** 的 strategic 宽阻断，并交 `/govern` 建立 W29 / GOAL-041。VP-009 的旧 `vision_ref` 作为独立跨 scope 对齐债务保留，不在本记录静默修正；其工作区再次推进前须单独 re-align。Charter `vision_id@version` 不变，无新 strategic。 |
 | VR-072 | 2026-09-09 | editorial | VP-034 关门投影 | 用户书面确认「OK 关 VP-034」。workspace-034 Root `GOAL-001-nav-group-collapsible` `done` 5/5，结项后 GOAL-002～005 均 done；I-034-001～005 verified；A-010 self + A-011 grok independent 双 `pass`，A-012 recommended 全 fixed；**VRev-085 self `pass`**（七条方向级判据 verified，open required = 0）。VP-034 `active → closed` v0.4.0。有界 residual = Dashboard 现行 `workspace` 组（GOAL-003），R1 顶层单例为历史基线。当前无 active 交付 VP；持续程序 VP-009/010。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
+| VR-073 | 2026-09-09 | editorial | VP-035 planned（基架架构健康评估 + 有界业界对照） | 用户确认结构选型：新 VP + 新 delivery 工作区，不塞 VP-010；业界对照作为分类输入、参照集冻死四类（模块化单体/组合根、基础设施端口、Schema 驱动 Admin、同进程基座），不得推翻 Charter 非目标。新建 **VP-035-foundation-architecture-health** `planned` v0.1.0 · 0 区 · `vision_ref` `@0.4.0`；I-035-002 verified；计划阶段 self = VRev-086 `pass`（0 required · V-F122 recommended：路线图冻结前建议 independent 对照分类）。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），**无** strategic、**无** re-align（planned 不改变 active VP 集）。 |
+| VR-074 | 2026-09-09 | editorial | VP-035 激活 + 开区 | 用户指令「OK 激活 VP-035，slug 用建议名」：**VRev-087 self `pass`**（0 required）· 架构类轻量 **freshness PASS**（`f2044cf3` → `5c341ec7`：协议 pin / 依赖锁 / 迁移台账 / Profile 默认集零变更；区间代码 = VP-034 已审结目 + v0.6.0/0.6.1 发布包装；不暂挂 `go`）。VP-035 v0.1.0 `planned → active`（v0.2.0）；lead `workspace-035-foundation-architecture-health`（Root `GOAL-001-foundation-architecture-health`）交 `/govern` 开区（P-001 纲领 R1 分母冻结 → R2 as-built 矩阵 → R3 业界对照+分类 → R4 路线图草案与关门；I-035-002 verified，001/003/004/005 collecting）。**当前组合**：active 交付 VP = **VP-035**（架构分支）；持续程序 VP-009/010。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |

@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-09
 parent: null
-version: 0.77.0
+version: 0.79.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -51,6 +51,7 @@ version: 0.77.0
 | 32 | [VP-032-rate-limiter-atomic-port](plans/VP-032-rate-limiter-atomic-port.md) | 架构 · **限流器端口原子化**（GOAL-001 A-008 R-007 residual 承接）：`kernel.RateLimiter` 新增原子 `AllowRecord` 与令牌化 `Reserve`/`Cancel`，迁移冻结 14 处使用点（4 立即消费 + 10 失败预算），消除 Allow→Record TOCTOU；`Allow`/`Record` 保留兼容；内存供应商实现；Redis 仍 RT-Q05 trigger-gated。 | 继承 VP-027 端口语义（**不重开** VP-027 关门事实）；VP-030 三桶限流直接受益；与 VP-009/010 正交 | **closed**（2026-09-04 · v0.3.0 · **用户书面确认关门** · VRev-074 self `pass` · 五判据全部 verified（E-004 矩阵）· Root A-001 self + A-002 grok independent 双 `pass` 0 required；lead workspace-032-rate-limiter-atomic-port 结项 · Root `GOAL-001-rate-limiter-atomic-port` `done` 3/3；失败预算口径承接 = GOAL-003 D-002 令牌化；Redis 实现仍 trigger-gated） |
 | 33 | [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) | Admin 功能 · **Telegram Bot 人工控制台**：连接状态（`getMe` / `setWebhook`）+ 入站模式开关（webhook \| 单实例 `getUpdates`）+ 业务占用位 + 未绑定人工 IM（代 bot 发言、无权限灰掉）。消费 VP-030 runtime，**不是**业务域。 | 硬前置 = VP-030 通道运行时已交付（不重开 030）；与 VP-031 占用位衔接；SSE/多实例 polling 仍 gated；与 VP-009/010 正交 | **closed**（2026-09-05 · v0.3.0 · VRev-077 self `pass` · lead `workspace-033-telegram-operator-console` · Root done 4/4） |
 | 34 | [VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) | Admin 功能 · **导航分组折叠体验**：Admin Shell 左侧导航引入可折叠/展开分组（Group）；分组与模块解耦（模块可将导航注册到跨模块共享分组）；当前已注册 sidebar 导航全部纳入合理分组迁移与验证（`identity-access` / `content-data` / `operations` / `communications` / `commerce`）；直接 URL 进入时对应分组自动展开；playbook 更新注册规范。 | 继承 VP-003 模块架构 + VP-004 贡献 playbook + VP-005 设计系统；无硬前置；与 VP-009/010 正交 | **closed**（2026-09-09 · v0.4.0 · 用户书面确认 · VRev-085 self `pass` · 七条判据 verified · lead `workspace-034-nav-group-collapsible` · Root done 5/5；residual = Dashboard 现行 `workspace` 组 / GOAL-003） |
+| 35 | [VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) | 架构 · **基架架构健康评估与路线图重述**：as-built 对照（内核/组合根/端口/Profile/文档）+ 有界业界对照（四类参照集，分类输入不是决策源头）+ 下一版总路线图草案交 `/vision` editorial。 | 基架交付波 VP-013～034 已收口；不替代 VP-009/010；不改 Charter；不消耗 Redis/MQ/多实例 trigger | **active**（2026-09-09 · v0.2.0 · VRev-087 self `pass` · 架构类 freshness PASS `f2044cf3`→`5c341ec7` · lead `workspace-035-foundation-architecture-health` · Root active 1/4 · R1 分母冻结 done） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -286,7 +287,7 @@ version: 0.77.0
 | RT-N04 | GraphQL 网关、CQRS/事件溯源默认化 | 无 Charter 要求 |
 | RT-N05 | 多云、服务网格、K8s Operator | 部署细节交给 fork |
 
-### 架构分支建议顺序（草案，未冻结）
+### 架构分支建议顺序（草案，未冻结；重述交 VP-035）
 
 ```text
 A0  本清单（已登记）；Store 双方言决策已冻结（RT-P03）
@@ -304,7 +305,7 @@ A7  优雅停机 / 连接排空合同（RT-D02 → VP-021 **closed** v0.3.0，20
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s、SMS。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支最近一拍：**[VP-030-telegram-channel-runtime](plans/VP-030-telegram-channel-runtime.md) `closed` v0.3.0**（2026-09-05 · VRev-076 self `pass` · 八条判据 verified · workspace-030 Root done · R-009 按 A-009 保留 bounded accepted-residual）；人工控制台 / 入站模式开关由 Admin 功能 [VP-033](plans/VP-033-telegram-operator-console.md) **`closed` v0.3.0**（2026-09-05 · VRev-077 self `pass` · workspace-033 Root done）。两条 VP 合并交付 RT-M03，**不**把人工控制台倒灌进 VP-030 分母。**此前**：[VP-017-outbound-mail](plans/VP-017-outbound-mail.md) `closed`（2026-08-24 按现行渠道分母再关门 · v0.5.0；RT-M01 delivered）。**[VP-021-graceful-shutdown-and-connection-drain](plans/VP-021-graceful-shutdown-and-connection-drain.md)（RT-D02）`closed` v0.3.0**（2026-08-27 关门 · 优雅停机 / 连接排空合同，单进程基线，不与 A3 绑定；VRev-047 self `pass` + 关闭双审闭合；RT-D02 → **delivered**；lead workspace-021 结项）。A3 余项仍 trigger-gated（多实例才评估就绪探针扩依赖 / PG 锁 vs Redis vs 队列）。
+架构分支最近一拍：**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `active` v0.2.0**（2026-09-09 · VRev-087 self `pass` · lead `workspace-035-foundation-architecture-health` · Root active 1/4 · R1 分母冻结 done；as-built 对照 + 有界业界对照 + 路线图重述草案；不消耗 A3/Redis/MQ trigger）。A0–A7 建议顺序保持草案，待本 VP 评估后再经 `/vision` editorial 冻结。A3 余项仍 trigger-gated。
 
 ---
 
@@ -388,7 +389,7 @@ Admin 功能最近一拍：**[VP-034-nav-group-collapsible](plans/VP-034-nav-gro
 
 ---
 
-**当前组合焦点**：无 active 交付 VP。[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) 已于 2026-09-09 **`closed` v0.4.0**（用户书面确认 · VRev-085 self `pass` · lead workspace-034 结项）。VP-030/031/032/033 均 `closed`。持续程序仍为 [VP-009](plans/VP-009-production-hardening.md) 与 [VP-010](plans/VP-010-design-implementation-conformance.md)。其后三分支候选待立项（Admin 体验增强为首选非门控项）。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
+**当前组合焦点**：active 交付 VP = **[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md)**（2026-09-09 激活 v0.2.0；架构分支 · 基架健康评估 + 有界业界对照 + 路线图重述；lead `workspace-035-foundation-architecture-health`；VRev-086/VRev-087 self `pass`，open required = 0）。[VP-034](plans/VP-034-nav-group-collapsible.md) 已 `closed` v0.4.0。持续程序仍为 [VP-009](plans/VP-009-production-hardening.md) 与 [VP-010](plans/VP-010-design-implementation-conformance.md)。Admin 体验增强与新业务域不插队进本评估。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
 
 ## 单主线模块化策略
 

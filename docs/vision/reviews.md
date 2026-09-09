@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-09
 parent: null
-version: 1.3.91
+version: 1.3.93
 ---
 
 # Vision Review 台账
@@ -30,6 +30,8 @@ version: 1.3.91
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-087（self · `/vision` · 2026-09-09，`pass`）**：VP-035 激活就绪——意图/判据/非目标/P-005 就绪；I-035-002 verified；架构类 freshness PASS `f2044cf3`→`5c341ec7`（pin/锁/迁移/Profile 默认集零变更；区间 = VP-034 已审结目 + 发布包装；不暂挂 `go`）；slug 用户确认；**VP-035 `planned → active` v0.2.0**，lead `workspace-035-foundation-architecture-health` 交 `/govern` 开区。V-F122 recommended 不阻断。 |
+| — | — | — | **无** | **VRev-086（self · `/vision` · 2026-09-09，`pass`）**：VP-035 计划阶段意图审视——基架架构健康评估 + 有界业界对照四类参照集 + 路线图重述草案；Charter `@0.4.0` 对齐；结构选型新 VP（不塞 VP-010）用户已确认；I-035-002 verified；0 required；V-F122 recommended（路线图冻结前建议 independent 对照分类）不阻断。**不是激活许可**——激活前须架构类 freshness + slug 确认。 |
 | — | — | — | **无** | **VRev-085（self · `/vision` · 2026-09-09，`pass`）**：VP-034 关门就绪——七条方向级退出判据全部 verified；lead workspace-034 `done`；Root `done` 5/5；A-010 self + A-011 grok independent 双 `pass`，A-012 recommended 全 fixed；I-034-001～005 verified；**2026-09-09 用户书面确认 VP-034 `active → closed` v0.4.0**。residual = Dashboard 现行 `workspace` 组（GOAL-003）。 |
 | — | — | — | **无** | **VRev-084（self · `/vision` · 2026-09-07，`pass`）**：响应用户对 VP-034 的 scope 修正——当前已注册 sidebar 导航全部纳入合理分组迁移/验证；`identity-access`、`content-data`、`operations`、`communications`、`commerce` 初始基线已写入 VP；`menu_dashboard` 保留为有意顶层单例；top/user slot 保留原语义；无 Charter/VP-008 `go` 影响；0 required。可以交 `/govern` 开区。 |
 | — | — | — | **无** | **VRev-082（self · `/vision` · 2026-09-07，`pass`）**：VP-034 计划阶段意图审视——导航分组折叠体验；Charter 对齐成立（成功边界 #3/#5 直接覆盖）；结构选型 = 新 VP（不作为 VP-010 子目标，语义不匹配）用户已确认；5 条退出判据可判定；0 required；V-F121 recommended（playbook 中明确 group key 命名空间约定，不阻断）。**不是激活许可**——激活前须 Admin 类 freshness review + 激活就绪 self Review。 |
@@ -133,3 +135,5 @@ version: 1.3.91
 | VRev-083 | 2026-09-07 | self | VP-034 激活就绪 · Admin freshness review / VRev-082 findings 状态 | pass | 0 | freshness PASS（`dd1edade`→`f2044cf3`；五域零变更；不暂挂 `go`）；required = 0；V-F121 recommended 不阻断；VP-034 planned → active v0.2.0，lead workspace-034-nav-group-collapsible | [VRev-083-vp034-nav-group-collapsible-activation.md](reviews/VRev-083-vp034-nav-group-collapsible-activation.md) |
 | VRev-084 | 2026-09-07 | self | VP-034 既有导航纳入范围修正 · v0.3.0 scope correction | pass | 0 | 用户修正：当前已注册 sidebar 导航全部纳入合理分组迁移/验证；五个初始分组基线、Dashboard 顶层单例、top/user slot 保留和 custom/demo 回归范围已写入 VP；无 Charter/VP-008 go 影响；可交 `/govern` 开区 | [VRev-084-vp034-existing-navigation-scope-correction.md](reviews/VRev-084-vp034-existing-navigation-scope-correction.md) |
 | VRev-085 | 2026-09-09 | self | VP-034 关门就绪 · 七条方向级退出判据 / workspace-034 证据 / 结项后增量 | pass | 0 | 用户书面确认；七条判据 verified；workspace-034 Root done 5/5；A-010/A-011 双 pass + A-012 recommended 全 fixed；I-034-001～005 verified；VP-034 active → closed v0.4.0；Dashboard 现行 workspace 组为 GOAL-003 residual | [VRev-085-vp034-nav-group-collapsible-close-out.md](reviews/VRev-085-vp034-nav-group-collapsible-close-out.md) |
+| VRev-086 | 2026-09-09 | self | VP-035 计划阶段意图审视 · 基架架构健康评估 / 有界业界对照 / 路线图重述 | pass | 0 | Charter 对齐；新 VP 不塞 VP-010；六条判据可判定；I-035-002 四类参照集 verified；V-F122 recommended 不阻断；不是激活许可 | [VRev-086-vp035-foundation-architecture-health-planned.md](reviews/VRev-086-vp035-foundation-architecture-health-planned.md) |
+| VRev-087 | 2026-09-09 | self | VP-035 激活就绪 · 架构类 freshness / slug 确认 / P-005 | pass | 0 | 用户指令激活；freshness PASS `f2044cf3`→`5c341ec7` 不暂挂 `go`；I-035-002 verified；R1 collecting 不阻断激活；VP-035 planned → active v0.2.0，lead workspace-035-foundation-architecture-health | [VRev-087-vp035-foundation-architecture-health-activation.md](reviews/VRev-087-vp035-foundation-architecture-health-activation.md) |
