@@ -4,14 +4,14 @@ doc: audit
 status: active
 parent: null
 created: 2026-09-07
-updated: 2026-09-08
+updated: 2026-09-09
 version: 0.1.0
 ---
 
 # 审计 · GOAL-001-nav-group-collapsible
 
 > 本文件是 Goal 审计稳定索引；Vision Review 不替代本目标的 Goal `03-audit`。
-> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended，当前 open required/recommended = 0。Root 可按本轮明确目标授权关门；VP-034 仍留给 `/vision` 单独关门。
+> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended，当前 open required/recommended = 0。Root 已 `done` 5/5。VP-034 已于 2026-09-09 经 `/vision` `closed` v0.4.0（VRev-085 self `pass`）。
 
 ## 信息就绪核对（按 scope）
 
@@ -48,4 +48,4 @@ version: 0.1.0
 
 ## 结论状态
 
-R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified，当前 open required/recommended = 0。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 仍 active，愿景层关门另走 `/vision`。
+R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified，当前 open required/recommended = 0。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 已于 2026-09-09 `closed` v0.4.0（VRev-085）。

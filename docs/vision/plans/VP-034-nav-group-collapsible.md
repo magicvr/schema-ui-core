@@ -2,16 +2,25 @@
 doc_type: vision-plan
 id: VP-034-nav-group-collapsible
 title: Admin 导航分组折叠体验
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-034-nav-group-collapsible
 created: 2026-09-07
-updated: 2026-09-07
-version: 0.3.0
+updated: 2026-09-09
+version: 0.4.0
 parent: null
 ---
 
 # VP-034 · Admin 导航分组折叠体验
+
+## 状态与激活门禁
+
+| 项 | 值 |
+|----|-----|
+| status | **`closed`**（2026-09-09 · v0.4.0 · 用户书面确认关门） |
+| lead_workspace | `workspace-034-nav-group-collapsible`（唯一 lead delivery） |
+| Vision required | 计划阶段 [VRev-082](../reviews/VRev-082-vp034-nav-group-collapsible-planned.md) self `pass`；激活就绪 [VRev-083](../reviews/VRev-083-vp034-nav-group-collapsible-activation.md) self `pass`；scope 修正 [VRev-084](../reviews/VRev-084-vp034-existing-navigation-scope-correction.md) self `pass`；关门就绪 = [VRev-085](../reviews/VRev-085-vp034-nav-group-collapsible-close-out.md) self `pass`（七条判据 verified；open required = 0） |
+| 组合位置 | **Admin 功能分支** · 导航分组折叠体验。不作为 VP-010 子目标；不改 Charter / VP-008 `go` |
 
 ## 意图
 
@@ -65,25 +74,25 @@ parent: null
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 |
 |----|--------------|------|----------|----------|------------------|------|
-| I-034-001 | 当前已注册导航的完整清单、所属 slot、默认 Profile / optional Profile 覆盖是什么？ | required | R1 分母冻结 / R4 回归 | R1 | 对照 `apps/api/kernel/profile.go`、各模块 `provider.go` 与 `manifest/fragment.json`；冻结 NodeID、PageID、slot 与 profile 矩阵 | **collecting（代码盘点已完成 2026-09-07；运行时矩阵待 R1/R4 核验）** |
-| I-034-002 | 五个初始分组的标题、组内顺序，以及 `menu_dashboard` 顶层单例是否符合实际使用语义？ | required | R1 方案冻结 | R1 | 依据本 VP 初始基线进行 Shell 实现前 UI 复核并留存用户/审计决策 | collecting（初始基线已提出，待 R1 冻结） |
-| I-034-003 | 折叠状态采用会话内状态还是浏览器持久化？ | non-blocking | R2/R3 交互实现 | R2 | 实现阶段选择并测试；不引入服务端存储 | open |
-| I-034-004 | 每个已分组 NodeID 的直接 URL、动态路径和激活态展开行为是否完整覆盖？ | required | 判据 5 / R4 验收 | R3 | 建立 sidebar NodeID → route 的 e2e 矩阵，覆盖直接 URL 与组折叠状态 | open |
-| I-034-005 | optional compiled modules（`channel.telegram`、`biz.digital-offer`、`dev.examples`）在 custom/demo profile 中的跨模块分组聚合是否成立？ | required | 判据 3/4/6 / R4 回归 | R4 | 使用 custom/demo profile manifest harness 验证可选模块启用、共组、权限和无丢失 | open |
+| I-034-001 | 当前已注册导航的完整清单、所属 slot、默认 Profile / optional Profile 覆盖是什么？ | required | R1 分母冻结 / R4 回归 | R1 | 对照 `apps/api/kernel/profile.go`、各模块 `provider.go` 与 `manifest/fragment.json`；冻结 NodeID、PageID、slot 与 profile 矩阵 | **verified**（R1 静态分母 + R4 runtime matrix） |
+| I-034-002 | 五个初始分组的标题、组内顺序，以及 `menu_dashboard` 顶层单例是否符合实际使用语义？ | required | R1 方案冻结 | R1 | 依据本 VP 初始基线进行 Shell 实现前 UI 复核并留存用户/审计决策 | **verified**（D-002；R1 顶层单例为历史基线；现行展示见 GOAL-003 `workspace` 组） |
+| I-034-003 | 折叠状态采用会话内状态还是浏览器持久化？ | non-blocking | R2/R3 交互实现 | R2 | 实现阶段选择并测试；不引入服务端存储 | **verified**（D-005 sessionStorage + R3 测试） |
+| I-034-004 | 每个已分组 NodeID 的直接 URL、动态路径和激活态展开行为是否完整覆盖？ | required | 判据 5 / R4 验收 | R3 | 建立 sidebar NodeID → route 的 e2e 矩阵，覆盖直接 URL 与组折叠状态 | **verified**（R3/R4 route matrix） |
+| I-034-005 | optional compiled modules（`channel.telegram`、`biz.digital-offer`、`dev.examples`）在 custom/demo profile 中的跨模块分组聚合是否成立？ | required | 判据 3/4/6 / R4 回归 | R4 | 使用 custom/demo profile manifest harness 验证可选模块启用、共组、权限和无丢失 | **verified**（R4 custom/demo runtime matrix） |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-034-nav-group-collapsible | GOAL-001-nav-group-collapsible | lead delivery | 2026-09-07 | `/govern` scaffold；Root active |
+| workspace-034-nav-group-collapsible | GOAL-001-nav-group-collapsible | lead delivery | 2026-09-07 | `/govern` scaffold；Root `done` 5/5；结项后 GOAL-002～005 均 `done`；工作区 `done` |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
-| date | outcome | summary | evidence_links | residuals |
-|------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+- 2026-09-09 · **`active → closed` v0.4.0**（用户书面确认；[VRev-085](../reviews/VRev-085-vp034-nav-group-collapsible-close-out.md) self `pass`；open required = 0）。
+- 七条方向级退出判据 #1～#7 全部 verified；lead [workspace-034](../../workspaces/workspace-034-nav-group-collapsible/workspace.md) `done`；Root [GOAL-001](../../workspaces/workspace-034-nav-group-collapsible/GOAL-001-nav-group-collapsible/00-meta.md) `done` 5/5。
+- Root [A-010](../../workspaces/workspace-034-nav-group-collapsible/GOAL-001-nav-group-collapsible/03-audit/A-010-r5-closeout-self.md) self `pass` + [A-011](../../workspaces/workspace-034-nav-group-collapsible/GOAL-001-nav-group-collapsible/03-audit/A-011-r5-closeout-independent.md) grok-build independent `pass`；[A-012](../../workspaces/workspace-034-nav-group-collapsible/GOAL-001-nav-group-collapsible/03-audit/A-012-a011-recommended-response.md) 将 A-011 F-001～F-003 recommended 全部 `fixed`；Goal open required/recommended = 0。
+- I-034-001～005 全部 verified（A-002 F-007 计划层 collecting 投影随本轮同步闭合）。
+- **有界 residual**：`menu_dashboard` 的 R1–R5 证据是顶层单例；现行展示由 GOAL-003 按用户指令注册到 `workspace` 组。不重开 R1 分母，不把该增量写成判据 4 未交付。
 
 ## 规划修订短史
 
@@ -93,3 +102,4 @@ parent: null
 | 2026-09-07 | v0.2.0 · 激活（VRev-083 self `pass`；Admin freshness PASS `dd1edade`→`f2044cf3`；五域零变更；VP-008 `go` 不暂挂）；lead `workspace-034-nav-group-collapsible`；交 `/govern` 开区 |
 | 2026-09-07 | v0.3.0 · 用户修正 scope：当前已注册 sidebar 导航必须纳入迁移与验证；新增 `identity-access`、`content-data`、`operations`、`communications`、`commerce` 初始分组基线；`menu_dashboard` 保留为有意的顶层单例；top/user slot 保留原语义，不再以“已有模块不迁移”作为非目标 |
 | 2026-09-07 | `/govern` 已创建 `workspace-034-nav-group-collapsible` 与 Root `GOAL-001-nav-group-collapsible`；R1-R5 路线已就位，Root active 0/5；代码实现待从 R1 开始 |
+| 2026-09-09 | 用户书面确认关门：VRev-085 self `pass`（七条判据 verified、open required = 0）；workspace-034 结项（Root done 5/5 + GOAL-002～005 done）；I-034-001～005 计划层同步为 verified；`active → closed` v0.4.0。residual = Dashboard 现行 `workspace` 组（GOAL-003），R1 顶层单例为历史基线 |

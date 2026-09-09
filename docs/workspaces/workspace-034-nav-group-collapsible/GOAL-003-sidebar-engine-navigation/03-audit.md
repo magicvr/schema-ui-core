@@ -32,5 +32,5 @@ version: 0.1.0
 
 ## 结论状态
 
-A-001 self `pass` 已覆盖 P1/P2/P3；当前无开放 required finding。Shell 既有 avatar/session smoke 观察已在 A-001/E-003 留痕，不影响本目标 scope-specific 交付；目标可按 `done 3/3` 结项。VP-034 仍保持 `active`，愿景层关门另走 `/vision`。
+A-001 self `pass` 已覆盖 P1/P2/P3；当前无开放 required finding。Shell 既有 avatar/session smoke 观察已在 A-001/E-003 留痕，不影响本目标 scope-specific 交付；目标已按 `done 3/3` 结项。VP-034 已于 2026-09-09 `closed` v0.4.0（VRev-085）。
 

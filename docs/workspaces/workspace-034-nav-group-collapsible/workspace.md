@@ -10,14 +10,14 @@ plan_refs:
   - VP-034-nav-group-collapsible
 primary_plan: VP-034-nav-group-collapsible
 created: 2026-09-07
-updated: 2026-09-08
+updated: 2026-09-09
 version: 0.1.0
 parent: null
 ---
 
 # 工作区上下文 · Admin 导航分组折叠体验
 
-本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（`active` · v0.3.0）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`）；当前 `GOAL-003-sidebar-engine-navigation` 已完成新的 Sidebar Engine 与通用详情抽屉视觉增量（`done 3/3`）；`GOAL-004-sidebar-active-indicator` 已完成组间距与页面 active 指示微调（`done 2/2`）；`GOAL-005-sidebar-tree-alignment` 已完成组内导航左翼与 active 光点语义调整（`done 2/2`）；workspace-034 恢复 done；不重开或改写父目标。VP-034 仍保持 `active`，其愿景层关门另走 `/vision`。
+本工作区是 [VP-034-nav-group-collapsible](../../vision/plans/VP-034-nav-group-collapsible.md)（**`closed` · v0.4.0** · 2026-09-09 用户书面确认 · [VRev-085](../../vision/reviews/VRev-085-vp034-nav-group-collapsible-close-out.md) self `pass`）的唯一 lead delivery workspace，承接 Admin Shell 左侧导航分组、模块注册协议、既有导航迁移与回归验证。`GOAL-001-nav-group-collapsible` 原始 Root 已于 R5 关门（`done 5/5`）；结项后增量 `GOAL-002-navigation-group-polish` 现已完成（`done 2/2`）；当前 `GOAL-003-sidebar-engine-navigation` 已完成新的 Sidebar Engine 与通用详情抽屉视觉增量（`done 3/3`）；`GOAL-004-sidebar-active-indicator` 已完成组间距与页面 active 指示微调（`done 2/2`）；`GOAL-005-sidebar-tree-alignment` 已完成组内导航左翼与 active 光点语义调整（`done 2/2`）；workspace-034 恢复 done；不重开或改写父目标。
 
 - 本区不属于 workspace-010；VP-010 继续承担长期设计意图—实现符合性程序，本区是 Admin 功能分支的有界交付。
 - 本区必须覆盖当前已注册 sidebar 导航，不以“既有模块”作为排除理由。
@@ -33,16 +33,17 @@ parent: null
 | Root Goal | `GOAL-001-nav-group-collapsible` | `parent: null`；**done 5/5**；长期 VP-034 有界交付 Root |
 | canonical 范围 | `docs/workspaces/workspace-034-nav-group-collapsible/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料 |
-| 愿景角色 | `delivery` | VP-034 lead delivery；workspace-034 已结项；不改变 Charter primary workspace |
-| 规划对齐 | `primary_plan` = `VP-034-nav-group-collapsible` | `plan_refs` 必填且已精确绑定 |
+| 愿景角色 | `delivery` | VP-034 lead delivery（VP 已 `closed` v0.4.0）；workspace-034 已结项；不改变 Charter primary workspace |
+| 规划对齐 | `primary_plan` = `VP-034-nav-group-collapsible` | `plan_refs` 必填且已精确绑定；历史绑定保留，默认不接新区 |
 
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：`VP-034-nav-group-collapsible`（`active` · v0.3.0）
+- VP：`VP-034-nav-group-collapsible`（**`closed` · v0.4.0**）
 - 激活审视：[VRev-083](../../vision/reviews/VRev-083-vp034-nav-group-collapsible-activation.md) self `pass`
 - Scope 修正审视：[VRev-084](../../vision/reviews/VRev-084-vp034-existing-navigation-scope-correction.md) self `pass`
-- Vision open required：0；V-F121 为 inherited recommended，不阻断
+- 关门审视：[VRev-085](../../vision/reviews/VRev-085-vp034-nav-group-collapsible-close-out.md) self `pass`
+- Vision open required：0；V-F121 为 inherited recommended，已由 playbook §1.3 覆盖
 
 ## 初始分组基线（R1 已冻结并由 R2/R4 验证）
 

@@ -2,7 +2,7 @@
 title: 目标树 · workspace-034-nav-group-collapsible
 status: done
 created: 2026-09-07
-updated: 2026-09-08
+updated: 2026-09-09
 parent: null
 version: 0.1.0
 workspace_id: workspace-034-nav-group-collapsible
@@ -13,7 +13,7 @@ workspace_id: workspace-034-nav-group-collapsible
 > 工作区：`workspace-034-nav-group-collapsible`
 > canonical：`docs/workspaces/workspace-034-nav-group-collapsible/`
 > Root：`GOAL-001-nav-group-collapsible`（原始有界交付容器 · done 5/5）
-> primary_plan：`VP-034-nav-group-collapsible`（active · v0.3.0）
+> primary_plan：`VP-034-nav-group-collapsible`（closed · v0.4.0）
 
 ## 目标树
 
@@ -39,7 +39,7 @@ R1 导航清单 / Profile-slot 矩阵 / 分组 IA 冻结 [completed]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **done** | 5/5 | null | 原始 R1-R5 交付已完成；后续样式/默认折叠增量由 GOAL-002 承载；VP-034 仍 active，另走 `/vision` |
+| GOAL-001-nav-group-collapsible | Admin 导航分组折叠体验交付 | **done** | 5/5 | null | 原始 R1-R5 交付已完成；后续样式/默认折叠增量由 GOAL-002～005 承载；VP-034 `closed` v0.4.0（VRev-085） |
 | GOAL-002-navigation-group-polish | 导航分组语义样式与默认折叠增量 | **done** | 2/2 | GOAL-001-nav-group-collapsible | P1/P2 完成；A-001 self `pass`；默认关闭、active 深链与语义样式已验证；Git checkpoint `fcd6fe9b` 已创建 |
 | GOAL-003-sidebar-engine-navigation | Sidebar Engine 导航与通用详情抽屉视觉优化 | **done** | 3/3 | GOAL-001-nav-group-collapsible | P1/P2/P3 完成；A-001 self `pass`；API/Web 全量回归与 scope-specific browser checks 通过；checkpoint `de71fff0` |
 | GOAL-004-sidebar-active-indicator | Sidebar 分组间距与页面激活指示微调 | **done** | 2/2 | GOAL-001-nav-group-collapsible | P1/P2 完成；A-001 self `pass`；space-y-2、左侧 active 竖线、secondary 替换光点已验证；全量 Web 回归与构建通过 |
