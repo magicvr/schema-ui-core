@@ -2,11 +2,11 @@
 id: GOAL-004-r3-industry-comparison
 title: R3 有界业界对照与缺口分类
 status: active
-created: 2026-09-09
-updated: 2026-09-09
+created: 2026-09-10
+updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.2.0
-progress: 1/4
+version: 0.3.0
+progress: 2/4
 plan_refs:
   - VP-035-foundation-architecture-health
 primary_plan: VP-035-foundation-architecture-health
@@ -19,11 +19,11 @@ primary_plan: VP-035-foundation-architecture-health
 ## 成功标准与检查点
 
 - [x] C1：R3 执行边界冻结——分类分级规则、四类参照集、逐项必需证据字段（含「影响的路线图行」与「复审触发」）写入 [D-001](01-decision/D-001-r3-execution-boundary.md)（2026-09-09 用户裁决 A/C，B 按冻结项 8 收口）。
-- [ ] C2：四类参照各至少一条对照行，每行四格齐备（业界常见做法 → 本仓现状 → 分类 → 不推翻项），业界侧必须可外部核对。
+- [x] C2：四类参照各至少一条对照行，每行四格齐备（业界常见做法 → 本仓现状 → 分类 → 不推翻项），业界侧必须可外部核对。→ [industry-comparison.md](attachments/industry-comparison.md)：13 行（3/4/3/3），业界侧 19 个来源实测 200，本仓侧锚点逐条复核。
 - [ ] C3：R1 入册 12 条 + R2 候选 4 条逐条分类，每条含证据路径、分类、影响的路线图行、复审触发或剩余风险范围。
 - [ ] C4：I-035-003 逐行判定完成（若结论要求改 Charter 非目标则**停住**并交 `/vision` strategic）；self 自审 + independent 交叉审计后无开放 required 才关门。
 
-进度由四项等权计算；当前 1/4。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+进度由四项等权计算；当前 2/4。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
 ## 信息门禁（P-005）
 

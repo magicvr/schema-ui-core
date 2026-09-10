@@ -39,8 +39,8 @@ version: 0.1.0
 
 | # | 文档锚点 | 现在写的 | 端口 as-built | 备注 |
 |---|----------|----------|---------------|------|
-| 1 | `docs/architecture/cache-redis-seam-and-track.md:68` | 端口语义：`Allow` 不注册、失败才 `Record`、`Clear` 清桶、`RetryAfterSeconds` 分母 | 现行 `kernel.RateLimiter` 同时声明旧三元组与原子三元组：`apps/api/kernel/ratelimit.go:36` 起（见矩阵行 07） | 文档未提 `AllowRecord`/`Reserve`/`Cancel`，接缝描述不足以指导现行替换 |
-| 2 | `docs/architecture/cache-redis-seam-and-track.md:73` | 原子窗口原语只写 `Record = INCR + 首次 EXPIRE`、`Allow = GET`、`Clear = DEL` | 现行还有预留/取消语义（`Reserve`/`Cancel`，`internal/ratelimit/memory.go:174,187`） | 建议「现在修（文档）」；**不得**替 owner 冻结 Redis 实现细节 |
+| 1 | `docs/architecture/cache-redis-seam-and-track.md:68` | 端口语义：`Allow` 不注册、失败才 `Record`、`Clear` 清桶、`RetryAfterSeconds` 分母 | 现行 `kernel.RateLimiter` 声明 7 个方法：`apps/api/kernel/ratelimit.go:40` `Allow`、`:44` `Record`、`:52` `AllowRecord`、`:65` `Reserve`、`:71` `Cancel`、`:76` `RetryAfterSeconds`、`:79` `Clear` | 文档未提 `AllowRecord`/`Reserve`/`Cancel` 原子三元组，接缝描述不足以指导现行替换（A-002 已复核同一事实） |
+| 2 | `docs/architecture/cache-redis-seam-and-track.md:73` | 原子窗口原语只写 `Record = INCR + 首次 EXPIRE`、`Allow = GET`、`Clear = DEL` | 现行还有预留/取消语义：`Reserve`（`kernel/ratelimit.go:65`；实现 `internal/ratelimit/memory.go:174`）、`Cancel`（`:71`；实现 `:187`） | 建议「现在修（文档）」；**不得**替 owner 冻结 Redis 实现细节 |
 
 ## 边界声明
 
