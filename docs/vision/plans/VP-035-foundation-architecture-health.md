@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-035-foundation-architecture-health
 title: 基架架构健康评估与路线图重述
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-035-foundation-architecture-health
 created: 2026-09-09
 updated: 2026-09-10
-version: 0.2.1
+version: 0.3.0
 parent: null
 ---
 
@@ -17,7 +17,7 @@ parent: null
 
 | 项 | 值 |
 |----|-----|
-| status | **`active`**（2026-09-09 · v0.2.0 · 用户指令激活 · lead `workspace-035-foundation-architecture-health`） |
+| status | **`closed`**（2026-09-10 · v0.3.0 · 六条方向级退出判据全部达成并经 A-019 independent `pass` 确认 · lead `workspace-035-foundation-architecture-health`；激活记录 2026-09-09 v0.2.0） |
 | lead_workspace | `workspace-035-foundation-architecture-health`（2026-09-09 开区） |
 | Vision required | 计划阶段 = [VRev-086](../reviews/VRev-086-vp035-foundation-architecture-health-planned.md) self `pass`；激活就绪 = [VRev-087](../reviews/VRev-087-vp035-foundation-architecture-health-activation.md) self `pass`（0 required · 架构类 freshness PASS `f2044cf3`→`5c341ec7`） |
 | 组合位置 | **架构分支** · 基架交付波收口后的有界评估。产出 = as-built 对照 + 有界业界对照分类 + 下一版总路线图草案。不替代 VP-009/VP-010 持续程序 |
@@ -124,7 +124,15 @@ R1 分母冻结：对照范围、closed-VP residual 清单、业界参照集（�
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
+| 项 | 值 |
+|----|-----|
+| 关门日期 | 2026-09-10 |
+| 依据 | [workspace-035] Root `GOAL-001-foundation-architecture-health` **`done · 4/4`**（R1 GOAL-002 3/3、R2 GOAL-003 3/3、R3 GOAL-004 4/4、R4 GOAL-005 5/5） |
+| 方向级判据 1～6 | **全部达成**：① R1 分母 + R2 as-built 矩阵；② 18 条缺口分类；③ 四类 13 行业界对照 + I-035-003 判定（不改 Charter）；④ 路线图草案交 `/vision` 并经用户采纳 10 项（VRev-088 / VR-075）；⑤ 边界保持（`apps/**` 零变更、无 trigger 行释放、Charter 未改）；⑥ 开放 required finding = 0 |
+| 关门审计 | R3：A-003 `fail` → A-004 `fail` → A-005 `pass` → A-006 响应；R4：A-002/A-004/A-006/A-008/A-010/A-012/A-014/A-016/A-018（codex `gpt-5.6-sol`·high）与 **A-019（grok build · grok 4.6 · high）`pass`**；全部 required 以 `fixed` 闭合 |
+| 产物 | 路线图重述草案与 editorial、四项文档卫生（G-001/G-002/G-003/G-005）、18 条 residual 总账、候选 C1（`timestamptz`，未立项）、可执行投影自检脚本 |
+| residual | 无新增残余；R3 分类的 4 条接受残余均为继承原 VP 留痕或用户书面接受（含 RES-016-mfa-wrap 修正前提后再裁决） |
+| 不改 | Charter 目的/边界/非目标与 `vision_id@version`（仍 `@0.4.0`）；无 strategic、无 re-align |
 
 ## 规划修订短史
 
