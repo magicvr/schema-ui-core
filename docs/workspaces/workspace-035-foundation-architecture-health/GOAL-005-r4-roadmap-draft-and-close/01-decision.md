@@ -8,4 +8,4 @@ version: 0.1.0
 
 # 决策索引
 
-（尚无决策条目；R4 开工后按 D-001 起追加。）
+- [D-001 · R4 执行边界](01-decision/D-001-r4-execution-boundary.md)

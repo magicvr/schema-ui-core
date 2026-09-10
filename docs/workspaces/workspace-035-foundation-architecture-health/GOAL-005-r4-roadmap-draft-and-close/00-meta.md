@@ -5,8 +5,8 @@ status: active
 created: 2026-09-10
 updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 plan_refs:
   - VP-035-foundation-architecture-health
 primary_plan: VP-035-foundation-architecture-health
@@ -18,13 +18,13 @@ primary_plan: VP-035-foundation-architecture-health
 
 ## 成功标准与检查点
 
-- [ ] C1：执行边界冻结——草案范围、文档卫生清单（G-001/G-002/G-003/G-005）、关门证据清单写入 D-001；`docs/vision/**` 改动与草案的先后关系按 VP-035 首波表处理。
+- [x] C1：执行边界冻结——草案范围、文档卫生清单（G-001/G-002/G-003/G-005）、关门证据清单写入 [D-001](01-decision/D-001-r4-execution-boundary.md)；草案与 `docs/vision/**` 的先后关系（草案 → `/vision` editorial → 同事务/紧随冻结）已冻结。
 - [ ] C2：路线图草案落盘（现状锚点修正版、A 序列现状、已交付 vs 下一拍、18 条 residual 总账、架构/Admin/业务三分支建议下一拍），交 `/vision` 等待用户 editorial 确认。
 - [ ] C3：文档卫生执行——`docs/architecture/overview.md`（G-001）、`docs/architecture/cache-redis-seam-and-track.md` §2.6（G-003）、`docs/vision/roadmap.md` 锚点/RT-P04/RT-D02（G-002，须与草案同一事务或紧随 `/vision` 冻结）、mfa-wrap 旧表述（G-005，`docs/vision/**` 部分随 G-002 一并处理）。
 - [ ] C4：VP-035 六条方向级退出判据逐条取证（判据 1～3 已由 R2/R3 交付；判据 4 = 草案已交 `/vision`；判据 5 = 边界未越；判据 6 = 开放 required = 0）。
 - [ ] C5：self 自审 + independent 交叉审计（provider = 本地 codex `gpt-5.6-sol`·high，I-035-006 已裁决）后无开放 required，Root `GOAL-001` 关门并在 `goal-tree.md` / `workspace.md` 同步。
 
-进度由五项等权计算；当前 0/5。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+进度由五项等权计算；当前 1/5。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
 ## 本阶段必须遵守的既有裁决
 
