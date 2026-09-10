@@ -6,8 +6,8 @@ status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-035-foundation-architecture-health
 created: 2026-09-09
-updated: 2026-09-09
-version: 0.2.0
+updated: 2026-09-10
+version: 0.2.1
 parent: null
 ---
 
@@ -111,15 +111,16 @@ R1 分母冻结：对照范围、closed-VP residual 清单、业界参照集（�
 |----|--------------|------|----------|----------|------------------|------|
 | I-035-001 | 对照分母精确覆盖哪些包、端口、Profile 与文档？ | required | 判据 1 / R2 | R1 | 列出 `apps/api/kernel`、composition/serve、各端口包、`docs/architecture/*` 与 RT-* 行的包含/排除表 | **verified**（2026-09-09 · GOAL-002 D-001 + r1-denominator-freeze.md §1） |
 | I-035-002 | 业界参照集是否冻死为会话已确认的四类？ | required | 判据 3 / R3 | R1 | 用户 2026-09-09 书面确认四类；本 VP 正文已写入 | **verified**（2026-09-09 用户书面） |
-| I-035-003 | 业界对照是否产生「必须改 Charter 非目标」的结论？ | required | 判据 3/4 / R3→R4 | R3 | 对照表逐行检查；若是则停住交 `/vision` strategic，不得在本 VP 内改 Charter | collecting |
+| I-035-003 | 业界对照是否产生「必须改 Charter 非目标」的结论？ | required | 判据 3/4 / R3→R4 | R3 | 13 行逐行检查（2026-09-10 完成）→ 结论：**否，不停住**，无需 `/vision` strategic | **verified**（2026-09-10 · [GOAL-004 判定](../../workspaces/workspace-035-foundation-architecture-health/GOAL-004-r3-industry-comparison/attachments/r3-i035-003-determination.md)；R3 A-006 响应；独立审计 A-003/A-005 未否证） |
 | I-035-004 | 各 closed VP 的 named residual 哪些进入本登记册，哪些保持原 VP 点名？ | required | 判据 2 / R1 | R1 | 扫描 VP-013～034 residual（搬运器、Redis、timestamptz、指标分母等）并分类 | **verified**（2026-09-09 · GOAL-002 D-001 + 附件 §2） |
 | I-035-005 | 「现在修」的代码整改是本 VP 内完成，还是只登记、另立 VP/波次？ | required | 判据 5 / 任何代码整改前 | R1 | 用户在 R1 冻结：默认另立；仅小范围、可闭环、不改端口公开语义的项可留在本 VP | **verified**（2026-09-09 · 默认另立；本 VP 仅文档卫生与只读断言） |
+| I-035-006 | R3/R4 independent 门禁的 provider 与模式？ | required | R3 C4 / R4 C5 交叉审计 | R3 C4 之前 | 用户裁决：本地 codex · `gpt-5.6-sol` · 思考强度 high | **verified (user decision)**（2026-09-09 · GOAL-004 D-001 裁决表 C；R3/R4 均已按此执行） |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-035-foundation-architecture-health | GOAL-001-foundation-architecture-health | lead delivery | 2026-09-09 | `/govern` scaffold；Root active 3/4；R1 分母冻结（GOAL-002）、R2 as-built 矩阵（GOAL-003）、R3 业界对照与缺口分类（GOAL-004）均 done；R4 路线图重述与文档卫生进行中（GOAL-005 · 1/5） |
+| workspace-035-foundation-architecture-health | GOAL-001-foundation-architecture-health | lead delivery | 2026-09-09 | `/govern` scaffold；Root active 3/4；R1 分母冻结（GOAL-002）、R2 as-built 矩阵（GOAL-003）、R3 业界对照与缺口分类（GOAL-004）均 done；R4 路线图重述与文档卫生（GOAL-005）`active · 3/5`，C4 判据 1～5 达成、C5 待 independent 复核 |
 
 ## 关门记录
 

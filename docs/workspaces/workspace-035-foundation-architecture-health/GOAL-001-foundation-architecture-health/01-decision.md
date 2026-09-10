@@ -4,8 +4,8 @@ doc: decision
 status: active
 parent: null
 created: 2026-09-09
-updated: 2026-09-09
-version: 0.4.0
+updated: 2026-09-10
+version: 0.4.1
 ---
 
 # 决策记录 · GOAL-001-foundation-architecture-health

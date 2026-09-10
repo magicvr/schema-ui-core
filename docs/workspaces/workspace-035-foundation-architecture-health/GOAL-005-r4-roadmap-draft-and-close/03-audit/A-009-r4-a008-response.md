@@ -25,6 +25,8 @@ version: 0.1.0
 - **verdict**：pass（响应侧；三项以 `fixed` 修正）
 - **前置**：A-008 independent **`fail`**（F-006/F-007 判 open + 新增 F-008）
 
+> **编号更正（2026-09-10，A-010 发现）**：本条 v0.1.0 原先把「下一次独立复核」误写为 A-009（自指），并据此写入 GOAL-005 索引与 Root 投影。真实链路为：**A-008 independent `fail` → A-009（本条 self 响应）→ A-010 independent `fail`**（A-010 确认 F-006/F-008 `fixed`、F-007 仍 open，并新增 F-009/F-010）。索引与 Root 投影已按 [A-011](A-011-r4-a010-response.md) 更正；本条正文的历史措辞保留，不回改 finding 与 verdict。
+
 ## 1. 事实确认：A-008 的三项均成立
 
 | finding | A-008 判定 | 本条确认 |

@@ -18,10 +18,12 @@ version: 0.2.0
 | A-006 | independent | codex-cli（gpt-5.6-sol · high） | A-004 F-004/F-005 闭合复审 + Root 关门终判 | **conditional** | **2**（F-006、F-007） | [报告](03-audit/A-006-r4-f004-f005-closure-independent.md) |
 | A-007 | self | 编排器响应节 | A-006 F-006/F-007 响应（索引与 Root 审计投影同步） | pass（响应侧；产物同步经 A-009 复核） | — | [响应](03-audit/A-007-r4-a006-response.md) |
 | A-008 | independent | codex-cli（gpt-5.6-sol · high） | A-006 F-006/F-007 闭合复审 + GOAL-005/Root 关门终判 | **fail** | **3**（F-006/F-007 仍 open + 新增 F-008） | [报告](03-audit/A-008-r4-f006-f007-closure-independent.md) |
-| A-009 | self | 编排器响应节 | A-008 F-006/F-007/F-008 响应（索引、Root 投影与 frontmatter 同步） | pass（响应侧；产物同步经 A-010 复核） | — | [响应](03-audit/A-009-r4-a008-response.md) |
-| A-010 | independent | codex-cli（gpt-5.6-sol · high） | A-008 F-006/F-007/F-008 与关门投影闭合复审 | 待落盘 | — | 待写入 `03-audit/A-010-*` |
+| A-009 | self | 编排器响应节 | A-008 F-006/F-007/F-008 响应（索引、Root 投影与 frontmatter 同步） | pass（响应侧；F-006/F-008 经 A-010 确认，F-007 未成立并已由 A-011 重做） | — | [响应](03-audit/A-009-r4-a008-response.md) |
+| A-010 | independent | codex-cli（gpt-5.6-sol · high） | A-008 F-006/F-007/F-008 闭合复审 + 关门投影一致性 + GOAL-005/Root 关门终判 | **fail** | **3**（F-007 仍 open + 新增 F-009/F-010） | [报告](03-audit/A-010-r4-closeout-final-independent.md) |
+| A-011 | self | 编排器响应节 | A-010 F-007/F-009/F-010 响应（含编号链更正） | pass（响应侧；产物同步待 A-012 复核） | — | [响应](03-audit/A-011-r4-a010-response.md) |
+| A-012 | independent | codex-cli（gpt-5.6-sol · high） | A-010 F-007/F-009/F-010 与 close-out projection 闭合复审 | 待落盘 | — | 待写入 `03-audit/A-012-*` |
 
-**open required 汇总（截至 A-009，2026-09-10）**：A-002 F-001～F-003 `fixed`；A-004 F-004/F-005 `fixed`；A-006 F-006/F-007 与 A-008 F-008（Root 审计 frontmatter 未随内容更新）已由 A-009 响应以 `fixed` 修正，**其闭环证据待 A-010 独立复核**。在 A-010 判定 `pass` 之前，GOAL-005 不得标 `done`、Root 不得关门。
+**open required 汇总（截至 A-011，2026-09-10）**：A-002 F-001～F-003 `fixed`；A-004 F-004/F-005 `fixed`；A-006 F-006（A-010 确认 `fixed`）与 F-007（A-009 声明未成立，A-011 重新修正）；A-008 F-008 `fixed`（A-010 确认）；A-010 F-009/F-010 由 A-011 修正。**F-007/F-009/F-010 的闭环证据待 A-012 独立复核**；在 A-012 判定 `pass` 之前，GOAL-005 不得标 `done`、Root 不得关门。
 
 > A-002 原始会话记录：[attachments/audit-A-002-r4-codex-session.log](attachments/audit-A-002-r4-codex-session.log)（由独立会话直接写入）。
 
