@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-09-09
+updated: 2026-09-10
 parent: null
-version: 0.52.0
+version: 0.53.0
 ---
 
 # 工作区贡献图

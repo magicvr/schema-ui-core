@@ -1,4 +1,4 @@
-﻿﻿﻿# projection-selfcheck.ps1 · workspace-035 投影一致性自检（只读）
+﻿# projection-selfcheck.ps1 · workspace-035 投影一致性自检（只读）
 #
 # 用途：在声明任何 finding `fixed`、请求独立复核、或关闭目标之前运行。
 #       把「同一事实的其它投影是否同步」从人肉记忆改为可重复执行的检查。
