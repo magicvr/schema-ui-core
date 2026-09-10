@@ -3,7 +3,7 @@ status: active
 created: 2026-09-10
 updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计索引
@@ -12,9 +12,12 @@ version: 0.3.0
 |---|---|---|---|---|---|---|
 | A-001 | self | 编排器（/govern） | R3 C1/C2：边界冻结 + 13 行四类对照 | pass | 0 | [报告](03-audit/A-001-r3-c2-self.md) |
 | A-002 | self | 编排器（/govern） | R3 C3：18 条缺口分类 + I-035-003 判定 | pass | 0（自审未发现 F-001～F-004，独立性有限） | [报告](03-audit/A-002-r3-c3-self.md) |
-| A-003 | independent | codex-cli 0.153.4（gpt-5.6-sol · high） | R3 C2/C3 对照表、分类表与 I-035-003 判定（含 36 锚点复核、来源比对、P-005 与边界核账） | **fail** | **4**（F-001～F-004） | [报告](03-audit/A-003-r3-industry-comparison-independent.md) |
+| A-003 | independent | codex-cli 0.153.4（gpt-5.6-sol · high） | R3 C2/C3 对照表、分类表与 I-035-003 判定（含 36 锚点复核、来源比对、P-005 与边界核账） | **fail** | 4（F-001～F-004） | [报告](03-audit/A-003-r3-industry-comparison-independent.md) |
+| A-004 | independent | codex-cli（gpt-5.6-sol · high） | A-003 F-001～F-005 闭合复审 + 有界新缺陷扫描 | **fail** | 1（F-002 未完全闭合） | [报告](03-audit/A-004-r3-finding-closure-independent.md) |
+| A-005 | independent | codex-cli（gpt-5.6-sol · high） | A-003 F-002（分类列四值纯度）闭合复审 | **pass** | 0 | [报告](03-audit/A-005-r3-f002-closure-independent.md) |
+| A-006 | self | 编排器响应节 | A-003/A-004/A-005 合并响应与 C4 关门检查 | pass（响应侧） | 0 | [响应](03-audit/A-006-r3-a003-a005-response.md) |
 
-> A-003 原始会话记录：[attachments/audit-A-003-codex-session.log](attachments/audit-A-003-codex-session.log)。独立会话在只读沙箱内完成核验但无法写盘，故 A-003 由编排器按会话记录转贴（`source: independent` 保留）；响应与是否放行由 `/govern` 处理。
+> 会话原始记录：A-003 → [attachments/audit-A-003-codex-session.log](attachments/audit-A-003-codex-session.log)；A-004 → [audit-A-004-codex-session.log](attachments/audit-A-004-codex-session.log)；A-005 → [audit-A-005-codex-session.log](attachments/audit-A-005-codex-session.log)。A-003 因只读沙箱无法写盘，由编排器按会话记录转贴（`source: independent` 保留）；A-004/A-005 由独立会话直接写入。
 
 ## A-001 · R3 C1/C2 自审（2026-09-10）
 
@@ -31,8 +34,23 @@ version: 0.3.0
 
 ## A-003 · R3 业界对照与缺口分类独立审计（2026-09-10）
 
-- **source**：independent（本地 codex `gpt-5.6-sol` · high）；**verdict**：**fail**；**open required = 4**
-- **必改项**：F-001 计数 18 vs 19；F-002 分类列出现第五值/语义混写；F-003 `RES-016-revoke` 无合法书面接受却记「接受残余」；F-004 independent A-ID 冲突（应为 A-003）
-- **recommended**：F-005 `module.go:290` 应为 `:291`–`:298`（已在对照表行 1.1 校正）
+- **source**：independent；**verdict**：**fail**；**open required = 4**
+- **必改项**：F-001 计数 18 vs 19；F-002 分类列第五值/语义混写；F-003 `RES-016-revoke` 无合法书面接受却记「接受残余」；F-004 independent A-ID 冲突（应为 A-003）
 - **核验通过项**：36 锚点中 35 个成立、13 行业界来源比对、I-035-003 判定、I-035-006 裁决链、git 边界
 - **完整意见**：[03-audit/A-003-r3-industry-comparison-independent.md](03-audit/A-003-r3-industry-comparison-independent.md)
+
+## A-004 · A-003 闭合复审（2026-09-10）
+
+- **source**：independent；**verdict**：**fail**；F-001/F-003/F-004/F-005 判 `fixed`，**F-002 仍 open**
+- **完整意见**：[03-audit/A-004-r3-finding-closure-independent.md](03-audit/A-004-r3-finding-closure-independent.md)
+
+## A-005 · F-002 闭合复审（2026-09-10）
+
+- **source**：independent；**verdict**：**pass**；13/13 分类格严格为冻结四值，去向列承接移出文字，无新增 required/recommended
+- **过程提示**：指出 F-002 重排 diff 同时带入 R2 矩阵引用与 G-006 锚点校正，建议单独注明（已由 A-006 §3 采纳）
+- **完整意见**：[03-audit/A-005-r3-f002-closure-independent.md](03-audit/A-005-r3-f002-closure-independent.md)
+
+## A-006 · 合并响应与 C4 关门（2026-09-10）
+
+- **source**：self（编排器响应节）；**verdict**：pass（响应侧）；全部 required 以 `fixed` 合法闭合，**开放 required = 0**
+- **完整响应**：[03-audit/A-006-r3-a003-a005-response.md](03-audit/A-006-r3-a003-a005-response.md)

@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-09
 updated: 2026-09-09
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策记录 · GOAL-001-foundation-architecture-health
@@ -16,7 +16,7 @@ version: 0.3.0
 |----|------|-----------------|----------|--------------|------------------|------|-------------|-------------|
 | I-035-001 | required | 对照分母覆盖哪些包、端口、Profile 与文档 | R2 | R1 | 包含/排除表 | **verified** | — | GOAL-002 D-001 + 附件 §1 |
 | I-035-002 | required | 业界参照集四类 | R3 | R1 | 用户书面 | **verified** | — | VP-035 正文；VRev-086 |
-| I-035-003 | required | 对照是否迫使改 Charter 非目标 | R3→R4 | R3 | 逐行检查 | collecting | — | 待 R3（GOAL-004 C4 前） |
+| I-035-003 | required | 对照是否迫使改 Charter 非目标 | R3→R4 | R3 | 13 行逐行检查 | **verified（否，不停住）** | — | [GOAL-004 判定](../GOAL-004-r3-industry-comparison/attachments/r3-i035-003-determination.md) |
 | I-035-004 | required | closed VP residual 入册范围 | 分类完成 | R1 | 扫描 VP-013～034 | **verified** | — | GOAL-002 D-001 + 附件 §2 |
 | I-035-005 | required | 现在修 vs 另立 | 任何代码整改前 | R1 | 用户 R1 冻结；默认另立 | **verified** | — | GOAL-002 D-001 + 附件 §3 |
 | I-035-006 | required | R3/R4 independent 门禁的 provider 与模式（会话指令 = 本地 codex `gpt-5.6-sol`·high；项目级默认 = grok build 4.6） | R3 C4 交叉审计 / R4 关门 | R3 C4 之前 | 用户 2026-09-09 书面裁决 | **verified (user decision)** | — | [GOAL-004 D-001](../GOAL-004-r3-industry-comparison/01-decision/D-001-r3-execution-boundary.md) 裁决表 C |
@@ -29,3 +29,4 @@ version: 0.3.0
 | D-002 | 2026-09-09 | R1 分母冻结（由 GOAL-002 承载） | accepted | `../GOAL-002-r1-denominator-freeze/01-decision/D-001-r1-denominator-freeze.md` |
 | D-003 | 2026-09-09 | R2 as-built 矩阵与关门（由 GOAL-003 承载；A-002 F-001 `fixed`） | accepted | `../GOAL-003-r2-as-built-matrix/00-meta.md` 关门记录 + `../GOAL-003-r2-as-built-matrix/03-audit/A-003-r2-a002-response.md` |
 | D-004 | 2026-09-09 | R3 执行边界与分类规则（由 GOAL-004 承载；用户裁决 A 一律另立 / B residual 收口 / C provider = 本地 codex `gpt-5.6-sol`·high） | accepted | `../GOAL-004-r3-industry-comparison/01-decision/D-001-r3-execution-boundary.md` |
+| D-005 | 2026-09-10 | R3 缺口分类裁决（G-004 明确不做、搬运器维持非目标、RES-T03-tz 登记下一拍、RES-016-mfa-wrap 修正前提后再裁决接受残余） | accepted | `../GOAL-004-r3-industry-comparison/attachments/r3-gap-classification.md` §3/§6 + `03-audit/A-006-r3-a003-a005-response.md` |
