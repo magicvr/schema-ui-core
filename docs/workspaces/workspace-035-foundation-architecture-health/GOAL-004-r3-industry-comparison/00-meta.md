@@ -5,8 +5,8 @@ status: active
 created: 2026-09-10
 updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.3.0
-progress: 2/4
+version: 0.4.0
+progress: 3/4
 plan_refs:
   - VP-035-foundation-architecture-health
 primary_plan: VP-035-foundation-architecture-health
@@ -20,16 +20,16 @@ primary_plan: VP-035-foundation-architecture-health
 
 - [x] C1：R3 执行边界冻结——分类分级规则、四类参照集、逐项必需证据字段（含「影响的路线图行」与「复审触发」）写入 [D-001](01-decision/D-001-r3-execution-boundary.md)（2026-09-09 用户裁决 A/C，B 按冻结项 8 收口）。
 - [x] C2：四类参照各至少一条对照行，每行四格齐备（业界常见做法 → 本仓现状 → 分类 → 不推翻项），业界侧必须可外部核对。→ [industry-comparison.md](attachments/industry-comparison.md)：13 行（3/4/3/3），业界侧 19 个来源实测 200，本仓侧锚点逐条复核。
-- [ ] C3：R1 入册 12 条 + R2 候选 4 条逐条分类，每条含证据路径、分类、影响的路线图行、复审触发或剩余风险范围。
-- [ ] C4：I-035-003 逐行判定完成（若结论要求改 Charter 非目标则**停住**并交 `/vision` strategic）；self 自审 + independent 交叉审计后无开放 required 才关门。
+- [x] C3：R1 入册 12 条 + R2 候选 4 条逐条分类，每条含证据路径、分类、影响的路线图行、复审触发或剩余风险范围。→ [r3-gap-classification.md](attachments/r3-gap-classification.md)：19 条（含本轮新发现 G-005/G-006），用户 2026-09-10 裁决 4 项 + 1 项修正前提后再裁决。
+- [ ] C4：I-035-003 逐行判定完成（若结论要求改 Charter 非目标则**停住**并交 `/vision` strategic）；self 自审 + independent 交叉审计后无开放 required 才关门。判定已落盘（结论 = 否，不停住），待独立审计。
 
-进度由四项等权计算；当前 2/4。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+进度由四项等权计算；当前 3/4。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
 ## 信息门禁（P-005）
 
 | ID | 级别 | 需要回答 | 影响门禁 | 最晚需要阶段 | 收集动作 | 状态 |
 |----|------|----------|----------|--------------|----------|------|
-| I-035-003 | required | 业界对照是否产生「必须改 Charter 非目标」的结论 | C4 / R4 判据 3、4 | R3 | 对照表逐行检查；若是则停住交 `/vision` strategic | collecting |
+| I-035-003 | required | 业界对照是否产生「必须改 Charter 非目标」的结论 | C4 / R4 判据 3、4 | R3 | 13 行逐行检查 → **结论：否，不停住** | **verified**（[判定](attachments/r3-i035-003-determination.md)） |
 | I-035-006 | required | 本阶段 independent 门禁的 provider 与模式 | C4 交叉审计门禁 | C4 之前 | 用户 2026-09-09 书面裁决：**本地 codex · `gpt-5.6-sol` · 思考强度 high**（已实测 `reasoning effort: high`） | **verified (user decision)** |
 
 R1 的 I-035-001/002/004/005 已 `verified`，本阶段直接消费其冻结结论。
