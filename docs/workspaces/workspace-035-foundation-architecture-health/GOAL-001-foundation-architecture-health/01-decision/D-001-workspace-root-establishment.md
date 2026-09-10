@@ -1,9 +1,13 @@
 ---
 doc_type: goal-decision
+doc: decision-entry
+record_id: D-001
 id: D-001-workspace-root-establishment
+status: accepted
 parent: GOAL-001-foundation-architecture-health
 date: 2026-09-09
-status: accepted
+created: 2026-09-09
+updated: 2026-09-09
 version: 0.1.0
 ---
 

@@ -1,9 +1,13 @@
 ---
 doc_type: goal-execution
+record_id: E-002
 id: E-002-r2-closeout
+doc: execution-entry
+status: recorded
 parent: GOAL-003-r2-as-built-matrix
 date: 2026-09-09
-status: recorded
+created: 2026-09-09
+updated: 2026-09-09
 version: 0.1.0
 ---
 

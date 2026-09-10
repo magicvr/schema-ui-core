@@ -1,9 +1,13 @@
 ---
 doc_type: goal-execution
+doc: execution-entry
+record_id: E-002
 id: E-002-r1-denominator-frozen
+status: recorded
 parent: GOAL-001-foundation-architecture-health
 date: 2026-09-09
-status: recorded
+created: 2026-09-09
+updated: 2026-09-09
 version: 0.1.0
 ---
 

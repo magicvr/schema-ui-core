@@ -17,7 +17,7 @@ version: 0.3.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| 影响本 scope 的 I-035-001～006 | 001/002/004/005 verified；003 collecting（R3）；006 待用户裁决（provider） | GOAL-002 D-001；GOAL-004 D-001 待确认项 C |
+| 影响本 scope 的 I-035-001～006 | 001/002/004/005 verified；006 verified（用户 2026-09-09 裁决 provider）；003 collecting（R3） | GOAL-002 D-001；GOAL-004 D-001 裁决表 C |
 | 到期 required 是否已 verified / residual | R1 到期项已冻结；R2 未引入新 required；I-035-003 不阻断 R2 | I-035-006 在 R3 C4 前到期 |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 

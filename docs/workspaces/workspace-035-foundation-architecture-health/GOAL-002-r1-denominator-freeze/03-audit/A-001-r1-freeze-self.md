@@ -1,13 +1,17 @@
 ---
+doc_type: goal-audit
+record_id: A-001
 id: A-001-r1-freeze-self
 doc: audit-entry
 parent_goal: GOAL-002-r1-denominator-freeze
+parent: GOAL-002-r1-denominator-freeze
 source: self
 auditor: /govern
 type: stage
 scope: R1 对照分母冻结（I-035-001/004/005）
 date: 2026-09-09
 verdict: pass
+status: recorded
 created: 2026-09-09
 updated: 2026-09-09
 version: 0.1.0

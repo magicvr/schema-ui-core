@@ -1,9 +1,13 @@
 ---
 doc_type: goal-execution
+doc: execution-entry
+record_id: E-001
 id: E-001-workspace-establishment
+status: recorded
 parent: GOAL-001-foundation-architecture-health
 date: 2026-09-09
-status: recorded
+created: 2026-09-09
+updated: 2026-09-09
 version: 0.1.0
 ---
 

@@ -1,6 +1,8 @@
 ---
+doc_type: goal-audit
+record_id: A-003
 id: A-003-r2-a002-response
-doc: audit-response
+doc: audit-entry
 parent_goal: GOAL-003-r2-as-built-matrix
 source: self
 auditor: 编排器（/govern 响应节）
