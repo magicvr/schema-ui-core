@@ -13,7 +13,8 @@ version: 0.2.0
 | A-001 | self | 编排器（/govern） | R4 C1～C4：边界、草案与 editorial、四项文档卫生、判据取证 | pass | 0 | [报告](03-audit/A-001-r4-self.md) |
 | A-002 | independent | codex-cli（gpt-5.6-sol · high） | R4 C2/C3/C4 与 Root 关门就绪（editorial 分类、卫生准确性、判据矩阵、边界与治理链核账） | **fail** | **3**（F-001～F-003） | [报告](03-audit/A-002-r4-independent.md) |
 | A-003 | self | 编排器响应节 | A-001/A-002 合并响应：F-001～F-003 全部 `fixed` | pass（响应侧） | 0（响应后） | [响应](03-audit/A-003-r4-a002-response.md) |
-| A-004 | independent | 待 provider 复审 | A-002 F-001～F-003 闭合复审（focused close-out re-audit） | 待落盘 | — | 待写入 `03-audit/A-004-*` |
+| A-004 | independent | codex-cli（gpt-5.6-sol · high） | A-002 F-001～F-003 闭合复审 + 投影/信息门禁复扫 + Root 关门复判 | **fail** | **2**（F-004、F-005） | [报告](03-audit/A-004-r4-closeout-reaudit-independent.md) |
+| A-005 | self | 编排器响应节 | A-004 F-004/F-005 响应 | 待落盘 | — | 待写入 `03-audit/A-005-*` |
 
 > A-002 原始会话记录：[attachments/audit-A-002-r4-codex-session.log](attachments/audit-A-002-r4-codex-session.log)（由独立会话直接写入）。
 

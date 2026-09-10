@@ -60,6 +60,7 @@ serves_summary: 对照内核/组合根/已交付端口/Profile 与 architecture 
 | I-035-003 | required | 业界对照是否产生必须改 Charter 非目标的结论 | 判据 3/4 / R3→R4 | R3 | 13 行逐行检查（2026-09-10 完成）→ 结论：**否，不停住** | **verified** | — | [GOAL-004 判定](../GOAL-004-r3-industry-comparison/attachments/r3-i035-003-determination.md)；GOAL-004 A-006 响应 |
 | I-035-004 | required | 各 closed VP named residual 哪些进入本登记册 | 判据 2 / R1 | R1 | 扫描 VP-013～034 residual 并分类 | **verified** | — | GOAL-002 D-001；附件 §2 |
 | I-035-005 | required | 「现在修」是本 VP 内完成还是另立 | 判据 5 / 任何代码整改前 | R1 | 用户在 R1 冻结；默认另立 | **verified** | — | GOAL-002 D-001；附件 §3：默认另立；本 VP 仅文档卫生与只读断言 |
+| I-035-006 | required | R3/R4 independent 门禁的 provider 与模式 | R3 C4 / R4 C5 交叉审计 | R3 C4 之前 | 用户 2026-09-09 书面裁决 | **verified (user decision)** | — | [GOAL-004 D-001 裁决表 C](../GOAL-004-r3-industry-comparison/01-decision/D-001-r3-execution-boundary.md)：本地 codex · `gpt-5.6-sol` · 思考强度 high |
 
 R1 required 信息项已冻结（I-035-001/004/005）。I-035-003 已于 2026-09-10 在 R3 内由证据关闭（判定「否」，不停住）；I-035-006 由用户 2026-09-09 裁决关闭。**当前无开放 required 信息项。**
 
@@ -79,5 +80,5 @@ R1 required 信息项已冻结（I-035-001/004/005）。I-035-003 已于 2026-09
 - **R3（2026-09-10）**：GOAL-004 `done` 4/4；13 行四格对照 + 18 条缺口分类 + I-035-003 判定 = 否（不停住）；independent 交叉审计 A-003 `fail`（4 required）→ A-004 `fail`（F-002 未闭合）→ A-005 `pass`，A-006 响应关门，**open required = 0**；用户裁决 5 项（含 1 项修正前提后再裁决）；未改生产代码。独立性观察：4 项 required 全部由 independent 发现。
 - **R4 开工（2026-09-10）**：建立 `GOAL-005-r4-roadmap-draft-and-close`（0/5）；本 VP 只做文档卫生（用户裁决 A）。
 - 审计模式见 D-001：阶段关门 default self；R4 关门与路线图冻结前建议 independent（V-F122）。
-- **本会话独立审计 provider（2026-09-09 · 用户目标指令）**：需要交叉审计时调用本地 codex（`gpt-5.6-sol` · 思考强度 high），先 self 再 independent 并合并响应；与项目级 `independent-audit-execution.md`（grok build 默认）并存时，本会话指令优先——已在 R3 目标 D-001 记录，R3/R4 门禁的 provider 归属待用户确认。
+- **本会话独立审计 provider（2026-09-09 · 用户目标指令；已裁决）**：需要交叉审计时调用本地 codex（`gpt-5.6-sol` · 思考强度 high），先 self 再 independent 并合并响应；与项目级 `independent-audit-execution.md`（grok build 默认）并存时，本会话指令优先。**provider 归属已由用户 2026-09-09 裁决并由 R3 D-001 裁决表 C 落盘（I-035-006 `verified`）**；R3/R4 均已按此执行，无待确认项。
 - freshness 三字段见 D-001：消费候选 = HEAD `5c341ec7`。
