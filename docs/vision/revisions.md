@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-09
+updated: 2026-09-10
 parent: null
-version: 0.4.48
+version: 0.4.49
 ---
 
 # Charter 修订台账
@@ -89,3 +89,4 @@ version: 0.4.48
 | VR-072 | 2026-09-09 | editorial | VP-034 关门投影 | 用户书面确认「OK 关 VP-034」。workspace-034 Root `GOAL-001-nav-group-collapsible` `done` 5/5，结项后 GOAL-002～005 均 done；I-034-001～005 verified；A-010 self + A-011 grok independent 双 `pass`，A-012 recommended 全 fixed；**VRev-085 self `pass`**（七条方向级判据 verified，open required = 0）。VP-034 `active → closed` v0.4.0。有界 residual = Dashboard 现行 `workspace` 组（GOAL-003），R1 顶层单例为历史基线。当前无 active 交付 VP；持续程序 VP-009/010。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-073 | 2026-09-09 | editorial | VP-035 planned（基架架构健康评估 + 有界业界对照） | 用户确认结构选型：新 VP + 新 delivery 工作区，不塞 VP-010；业界对照作为分类输入、参照集冻死四类（模块化单体/组合根、基础设施端口、Schema 驱动 Admin、同进程基座），不得推翻 Charter 非目标。新建 **VP-035-foundation-architecture-health** `planned` v0.1.0 · 0 区 · `vision_ref` `@0.4.0`；I-035-002 verified；计划阶段 self = VRev-086 `pass`（0 required · V-F122 recommended：路线图冻结前建议 independent 对照分类）。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），**无** strategic、**无** re-align（planned 不改变 active VP 集）。 |
 | VR-074 | 2026-09-09 | editorial | VP-035 激活 + 开区 | 用户指令「OK 激活 VP-035，slug 用建议名」：**VRev-087 self `pass`**（0 required）· 架构类轻量 **freshness PASS**（`f2044cf3` → `5c341ec7`：协议 pin / 依赖锁 / 迁移台账 / Profile 默认集零变更；区间代码 = VP-034 已审结目 + v0.6.0/0.6.1 发布包装；不暂挂 `go`）。VP-035 v0.1.0 `planned → active`（v0.2.0）；lead `workspace-035-foundation-architecture-health`（Root `GOAL-001-foundation-architecture-health`）交 `/govern` 开区（P-001 纲领 R1 分母冻结 → R2 as-built 矩阵 → R3 业界对照+分类 → R4 路线图草案与关门；I-035-002 verified，001/003/004/005 collecting）。**当前组合**：active 交付 VP = **VP-035**（架构分支）；持续程序 VP-009/010。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
+| VR-075 | 2026-09-10 | editorial | VP-035 R4 路线图重述 editorial（架构分支） | **用户书面采纳草案全部 10 项改动**（草案 = `[workspace-035] GOAL-005-r4-roadmap-draft-and-close/attachments/roadmap-restatement-draft.md`；R3 判据 4 交付物）。本轮执行：① `docs/vision/roadmap.md:104` 现状锚点由「SQLite `MaxOpenConns=1`」修正为「SQLite 文件库小连接池（默认 4）/PG 双方言 + S3 适配器 + 进程内 Job/事件总线 + 内存限流 + 可选指标/traces + JWT 轮换合同」；② RT-P04 现状锚点同步（池化已交付、读写分离/replica 仍 trigger-gated）；③ RT-D02 行内「无明确 drain 合同」自相矛盾表述删除（保持 delivered）；④ **A0–A7「未冻结建议顺序」重述为「已交付序列 + 唯一未触发项 A3」**，并新增未立项候选 **C1**（DB `timestamptz` 持久化合同，RES-T03-tz；本 VP 红线禁止改 schema，仅登记）；⑤ RT-K03 与 `charter.md:73`、`workspaces.md:16/58 行附近`、`plans/VP-016-*.md` 的 `admin.mfa` wrapping 表述按现行代码（W11 F-004 惰性重包）更新，VP-016 历史原文**不回改**并加 2026-09-10 注记；⑥ 组合投影同步（workspace-035 `active` 3/4、Admin 分支最近一拍、当前组合焦点 VP-035 进展）。依据 = R2 as-built 矩阵 v0.3.0（A-002 independent `pass`）与 R3 业界对照/缺口分类（A-003 `fail` → A-004 `fail` → A-005 `pass`，open required = 0）。**无** Charter `vision_id@version` 变更、**无** strategic、**无** re-align（本改为 editorial：不动目的/边界/非目标，不解除任何 trigger-gated 行）。 |

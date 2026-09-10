@@ -119,7 +119,7 @@ R1 分母冻结：对照范围、closed-VP residual 清单、业界参照集（�
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-035-foundation-architecture-health | GOAL-001-foundation-architecture-health | lead delivery | 2026-09-09 | `/govern` scaffold；Root active 1/4；R1 分母冻结 done（GOAL-002） |
+| workspace-035-foundation-architecture-health | GOAL-001-foundation-architecture-health | lead delivery | 2026-09-09 | `/govern` scaffold；Root active 3/4；R1 分母冻结（GOAL-002）、R2 as-built 矩阵（GOAL-003）、R3 业界对照与缺口分类（GOAL-004）均 done；R4 路线图重述与文档卫生进行中（GOAL-005 · 1/5） |
 
 ## 关门记录
 
@@ -132,3 +132,6 @@ R1 分母冻结：对照范围、closed-VP residual 清单、业界参照集（�
 | 2026-09-09 | 初创（v0.1.0）；用户确认结构选型（新 VP + 新区，不作为 VP-010 波次）+ 有界业界对照四类参照集；I-035-002 verified；其余 I 项 R1 冻结；0 区 `planned` |
 | 2026-09-09 | v0.2.0 · 激活（VRev-087 self `pass`；架构类 freshness PASS `f2044cf3`→`5c341ec7`；五域 pin/锁/迁移/Profile 默认集零变更；区间 = VP-034 已审结目 + 发布包装；不暂挂 `go`）；lead `workspace-035-foundation-architecture-health`；交 `/govern` 开区 |
 | 2026-09-09 | R1 分母冻结（GOAL-002 done）：I-035-001/004/005 verified；默认另立；未改生产代码 |
+| 2026-09-09 | R2 as-built 对照矩阵（GOAL-003 done 3/3）：17 面 + W1 逐行取证；A-001 self `pass` + A-002 grok independent `pass`，F-001 行锚点精度 `fixed`（矩阵 v0.2.0） |
+| 2026-09-10 | R3 有界业界对照 + 缺口分类（GOAL-004 done 4/4）：13 行四格业界对照（19 来源实测）、18 条缺口分类、I-035-003 判定 = 否（不停住）；用户裁决 5 项；independent A-003 `fail`（4 required）→ A-004 `fail`（F-002 未闭合）→ A-005 `pass`，A-006 响应，open required = 0；矩阵锚点校正（G-006，v0.3.0） |
+| 2026-09-10 | **R4 editorial 冻结**（VRev-088 self `pass` · VR-075）：用户书面采纳路线图重述草案全部 10 项；A0–A7 重述为「已交付序列 + 唯一未触发 A3」，新增未立项候选 C1（`timestamptz`）；现状锚点/RT-P04/RT-D02/RT-K03/mfa-wrap 表述按证据更新；不改 Charter `vision_id@version`，无 strategic、无 re-align |

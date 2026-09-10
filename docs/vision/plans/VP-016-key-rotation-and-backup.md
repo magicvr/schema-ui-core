@@ -132,3 +132,4 @@ parent: null
 | 2026-08-22 | 初创 `planned`：用户确认按路线图主路径新建本 VP 承接架构 A5；退出分母 = JWT current+previous 轮换 + 既有备份上的轮换后恢复；不重做 dump；A3 / KMS / PITR / 热加载 / `/readyz` 再扩 / Admin 页 / 业务域不进分母。未激活、未开区 |
 | 2026-08-22 | VRev-035 self `pass`（0 required）；用户确认激活并开区。v0.2.0 `planned → active`；lead = `workspace-016-key-rotation-and-backup`；退出 1 editorial 收口为 previous 默认可验；Root 承接 P-001 与 I-00N（V-F067）及架构类 freshness（V-F068） |
 | 2026-08-22 | VRev-036 self `pass`：组合层关门就绪；核验 = 本轮独立源码/测试/live，不以 Goal 台账为充分条件。用户确认有界组合层关门（v0.3.0）：关门记录含 exit↔证据映射 + I-016-005 / `admin.mfa` wrapping residual 点名；组合索引原子同步（VR-039） |
+| 2026-09-10 | 注记（VP-035 R4 文档卫生 · VR-075）：本文件历史小节中「`admin.mfa` wrapping 不随 JWT previous 重包」为 **2026-08-22 关门时点**的表述，**不回改**；现行代码（W11 F-004：`apps/api/modules/mfa/service.go:57-60,72,151,165,246,259,335,353`）已支持 previous 解密 + 成功 TOTP 后惰性重包，残余收窄为「仅凭恢复码完成的路径不重包 + 无启动批量重包 + 无主动轮换重包」（用户 2026-09-10 接受）。I-016-005（访问令牌立即失效未选）仍为 `collecting`，**无用户书面残余接受**，按未选设计后果记录。 |

@@ -3,9 +3,9 @@ doc_type: vision-roadmap
 title: 愿景组合编排
 status: active
 created: 2026-07-31
-updated: 2026-09-09
+updated: 2026-09-10
 parent: null
-version: 0.79.0
+version: 0.80.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -31,7 +31,7 @@ version: 0.79.0
 | 13 | [VP-013-store-dialects](plans/VP-013-store-dialects.md) | 架构 A1：内核持久化端口 + PostgreSQL 实现 + 现有迁移台账对写；SQLite 保留为内嵌默认；无 ORM。 | RT-P03 已冻结（VR-027）；继承 VP-003 模块化内核与全局台账；与 VP-009/010 正交；不进 A2+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A1；lead: workspace-013-store-dialects；Root done 5/5；residual：无产品 SQLite→PG 搬运器，见 GOAL-006 D-002） |
 | 14 | [VP-014-object-storage](plans/VP-014-object-storage.md) | 架构 A2：内核对象存储端口 + S3 兼容实现；本地盘保留为内嵌默认。 | VP-013 A1 已 closed；RT-S01 delivered；与 VP-009/010 正交；不进签名 URL / 分片 / 扫描 / CDN / 搬运器，不进 A3+ 与 Admin/业务域 | **closed**（2026-08-21 有界关门 · 架构 A2；lead: workspace-014-object-storage；Root done 5/5；VRev-032 `pass`；residual：无产品本地盘→对象存储搬运器，见 I-014-004） |
 | 15 | [VP-015-observability](plans/VP-015-observability.md) | 架构 A4：Prometheus 类指标导出 + OpenTelemetry traces；无收集器仍为内嵌默认。 | VP-014 A2 已 closed；RT-O01/O02 delivered；与 VP-009/010 正交；不进 A3 / A5 / Sentry / 剖析 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A4；lead: workspace-015-observability；Root done 5/5；VRev-034 `pass`；residual：otlp-sink 不解析 + Store/对象/Job 指标不进分母） |
-| 16 | [VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) | 架构 A5：JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥仍为内嵌默认。 | VP-015 A4 已 closed；RT-K01 delivered；VP-013 方言级 dump 已交付；与 VP-009/010 正交；不进 A3 / KMS / PITR / 热加载 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A5；lead: workspace-016-key-rotation-and-backup；Root done 5/5；VRev-036 `pass`；residual：I-016-005 立即失效未选 + `admin.mfa` wrapping 不随 JWT previous 重包） |
+| 16 | [VP-016-key-rotation-and-backup](plans/VP-016-key-rotation-and-backup.md) | 架构 A5：JWT current+previous 轮换合同 + 既有备份上的轮换后恢复；单密钥仍为内嵌默认。 | VP-015 A4 已 closed；RT-K01 delivered；VP-013 方言级 dump 已交付；与 VP-009/010 正交；不进 A3 / KMS / PITR / 热加载 / Admin 页 / 业务域 | **closed**（2026-08-22 有界关门 · 架构 A5；lead: workspace-016-key-rotation-and-backup；Root done 5/5；VRev-036 `pass`；residual：I-016-005 立即失效未选 + `admin.mfa` wrapping 残余**已收窄**（现行代码支持 previous 解密 + 成功 TOTP 后惰性重包，W11 F-004；残余 = 仅凭恢复码路径不重包 / 无启动批量重包 / 无主动轮换重包，用户 2026-09-10 接受）） |
 | 17 | [VP-017-outbound-mail](plans/VP-017-outbound-mail.md) | 架构 A6 升级：内核发送端口 + 可切换渠道（默认 mock 站内出站记录 + 生产 Resend；SMTP 适配器保留不删）+ 管理设置/试发。 | 用户 2026-08-24 否决同日 SMTP 专用有界关门（实施史不回退）。不进账号 email / 邀请 / 恢复状态机 / 模板 / 用户站内通知 / SMS / A3 | **closed**（2026-08-24 按**现行渠道分母**再关门 · v0.5.0；lead: workspace-017-outbound-mail；Root `done` 8/8；R5～R8 = GOAL-006～009 done；live 投递实跑 PASS；VRev-042） |
 | 18 | [VP-018-account-email-identity](plans/VP-018-account-email-identity.md) | Admin 功能：账号邮箱身份（`users` email 可空 + 绑定/校验状态机 + 换绑）；消费 VP-017 `MailSender`。 | 硬前置 = VP-017 **再次** `closed`（现行渠道分母）。不进 IAM 恢复 / 邀请 / 密码策略 / SMS / 模板 / A3 | **closed**（2026-08-24 解冻当日关门 · v1.0.0；lead: workspace-018-account-email-identity；Root `done` 4/4；VRev-040 pass；A-002 independent 归零） |
 | 19 | [VP-019-iam-recovery](plans/VP-019-iam-recovery.md) | Admin 功能 · IAM：密码策略 / 邀请入职 / 自助恢复状态机（忘密全链消费 VP-018 已校验邮箱 + VP-017 `MailSender`）。 | 硬前置 = VP-018 邮箱身份 + VP-017 运输（均已 `closed`）。不进 SMS / 模板中心 / 多邮箱 / 组织权限 / OIDC / 业务域 / A3；不改 Profile 默认集 | **closed**（2026-08-26 交付后关门 v0.3.0 · 用户书面确认；实现 2026-08-25 同日全链交付，Root done 4/4；关后 A-001 independent `pass` + A-002 recommended ×2 闭合；lead: workspace-019-iam-recovery） |
@@ -101,7 +101,9 @@ version: 0.79.0
 
 > 性质：P-005 有界清单。整波退出分母尚未立项冻结。  
 > **已冻结（2026-08-20 用户确认）**：Store 双方言决策，见下节。  
-> 现状锚点：单进程 + SQLite（`MaxOpenConns=1`）+ 本地盘上传 + 进程内 Job + 内存限流。Compose 已声明非目标含 TLS 终止与多实例（`compose.yaml`）。
+> 现状锚点（2026-09-10 经 VP-035 R2/R3 复核修正）：**单进程** + **SQLite 文件库（小连接池，默认 4；内存库 1）/ PostgreSQL 双方言** + 本地盘上传（S3 兼容适配器已交付） + 进程内 Job（六态） + 内存限流（原子窗口） + 进程内事件总线 + 可选 Prometheus 指标与 OTLP traces（缺省关闭） + JWT current/previous 轮换合同。Compose 已声明非目标含 TLS 终止与多实例（`compose.yaml`）。
+>
+> 修正依据：[VP-035](plans/VP-035-foundation-architecture-health.md) as-built 矩阵（`apps/api/internal/store/store.go:29` `sqlitePoolDefault = 4`、`:104`–`113` 内存库 1）与 A2/A4/A5/A6/A7 交付事实。
 
 ### 已冻结：Store 双方言（RT-P03）
 
@@ -135,7 +137,7 @@ version: 0.79.0
 | RT-P01 | SQLite 文件库 + 全局迁移台账 + 升级前快照 | `modernc.org/sqlite`；`VACUUM INTO`；模块 Persistence 贡献 | **delivered** | 内嵌默认；合同上与 PG 平等，不得残缺 |
 | RT-P02 | PostgreSQL 方言实现 | VP-013（A1）已交付 | **delivered** | 生产权威实现；迁移方言 + 备份合同随 A1 收口（`pg_dump`/`pg_restore`、共事务、`readyz`） |
 | RT-P03 | Store 双方言端口（无 ORM） | 内核持久化端口 + SQLite/PG 双方言实现（VP-013 交付） | **delivered** | A1 已 closed（2026-08-21）；全局 checksum 台账双 apply、公共面无 `*sql.Tx` |
-| RT-P04 | 连接池 / 读写分离 / replica | `MaxOpenConns=1` | **trigger-gated** | 多实例或 PG 之后才有意义 |
+| RT-P04 | 连接池 / 读写分离 / replica | 小连接池（SQLite 文件库默认 4、内存库 1；`sqlitePoolDefault`）；**读写分离 / replica 未实现** | **trigger-gated** | 池化本身已交付；多实例或 PG 之后才有意义。**不得**把已有池化扩写成读写分离 / replica 已交付 |
 | RT-P05 | 备份 / 恢复 / PITR | SQLite `VACUUM INTO`；PG 逻辑备份 `pg_dump`/`pg_restore`（VP-013 I-004） | **registered**（方言级 dump = **delivered**；轮换后恢复 = **delivered**（VP-016）；PITR 仍 gated） | A1 已交付方言级恢复；A5 已补密钥轮换后的恢复语义，不重做 dump |
 | RT-P06 | 加密静止数据 / 表级密钥 | 无 | **trigger-gated** | 合规触发；密钥见 RT-K\* |
 | RT-P07 | 文档库（MongoDB 等） | 无 | **default-non-goal** | 第二数据模型；无具名 fork 需求则不做 |
@@ -206,7 +208,7 @@ version: 0.79.0
 | id | 项 | 现状 | 状态 | 备注 |
 |----|----|------|------|------|
 | RT-D01 | 本地双进程 + Compose 一键 | VP-002 | **delivered** | 单 API 容器 + SQLite 卷 |
-| RT-D02 | 优雅停机 / 连接排空 | 进程生命周期有，无明确 drain 合同 | **delivered**（VP-021 `closed` v0.3.0 · 2026-08-27） | 2026-08-26 立项 → 2026-08-27 交付：停机顺序 / HTTP drain / Job 语义（中断标记重跑）/ 双方言 Store 排空；单进程基线；与 Job 租约相关部分仍随 A3 |
+| RT-D02 | 优雅停机 / 连接排空 | 停机顺序 / HTTP drain / Job 语义 / 双方言 Store 排空均已交付 | **delivered**（VP-021 `closed` v0.3.0 · 2026-08-27） | 2026-08-26 立项 → 2026-08-27 交付；单进程基线；与 Job 租约相关部分仍随 A3 |
 | RT-D03 | API 与 worker 进程分离 | Job 跑在 API 进程内 | **trigger-gated** | 长任务与 HTTP 隔离时 |
 | RT-D04 | 多实例 / 水平扩展 | Compose 非目标 | **trigger-gated** | 拉动 RT-P02/P04、RT-Q\*、RT-S02、RT-Q05 |
 | RT-D05 | TLS 终止 / 证书 | 无；API 不直接暴露 | **trigger-gated** | fork 生产反向代理可外置 |
@@ -220,7 +222,7 @@ version: 0.79.0
 |----|----|------|------|------|
 | RT-K01 | YAML + env 插值；密钥 fail-closed | VP-002/W7 | **delivered** | |
 | RT-K02 | 外部 Secret Provider / KMS / HSM | 无 | **trigger-gated** | VP-012 API Token 推迟 HSM |
-| RT-K03 | JWT/数据密钥轮换合同 | VP-016 已交付 current+previous；签发只用 current；校验允许重叠窗；缺 previous = 今日单密钥 | **delivered** | 有界 residual：立即失效未选（I-016-005）；`admin.mfa` wrapping 不随 JWT previous 重包。KMS/HSM 仍 gated |
+| RT-K03 | JWT/数据密钥轮换合同 | VP-016 已交付 current+previous；签发只用 current；校验允许重叠窗；缺 previous = 今日单密钥 | **delivered** | 有界 residual：**立即失效未选**（I-016-005，无用户书面残余接受，按未选设计后果记录）；`admin.mfa` wrapping **已支持** previous 解密 + 成功 TOTP 后惰性重包（W11 F-004），残余收窄为「仅凭恢复码完成的路径不重包 + 无启动批量重包 + 无主动轮换重包」（用户 2026-09-10 接受）。KMS/HSM 仍 gated |
 | RT-K04 | 传输中加密（TLS） | 依赖外置代理 | **trigger-gated** | 同 RT-D05 |
 
 ### 已冻结：密钥轮换与恢复 A5 退出分母（VP-016）
@@ -287,25 +289,35 @@ version: 0.79.0
 | RT-N04 | GraphQL 网关、CQRS/事件溯源默认化 | 无 Charter 要求 |
 | RT-N05 | 多云、服务网格、K8s Operator | 部署细节交给 fork |
 
-### 架构分支建议顺序（草案，未冻结；重述交 VP-035）
+### 架构分支序列（2026-09-10 经 VP-035 R4 重述；已交付序列 + 唯一未触发项）
 
 ```text
-A0  本清单（已登记）；Store 双方言决策已冻结（RT-P03）
-A1  内核持久化端口 + PostgreSQL 实现 + 现有台账对写/翻译；
+A0  本清单（已登记）；Store 双方言决策已冻结（RT-P03）                      [done]
+A1  内核持久化端口 + PostgreSQL 实现 + 现有台账对写/翻译；                  [delivered · VP-013 closed v0.3.0]
     SQLite 保留为 dev/mvp/快测默认；生产 CI 以 PG 为权威
-A2  对象存储适配器；本地盘保留为默认
-A3  仅当需要多实例：就绪探针扩依赖、再评估 PG 锁/SKIP LOCKED
+A2  对象存储适配器；本地盘保留为默认                                        [delivered · VP-014 closed v0.3.0]
+A3  仅当需要多实例：就绪探针扩依赖、再评估 PG 锁/SKIP LOCKED                 [trigger-gated · 唯一未触发项]
     vs Redis vs 外部队列（优雅停机/排空已拆为 A7）
-A4  指标 + OpenTelemetry（可与 A1 部分并行）
-A5  密钥轮换 / 备份恢复合同（随 A1 或紧随其后）
-A6  出站邮件：内核发送端口 + 可切换渠道（mock 默认 + Resend 生产）；SMTP 适配器保留；SMS 不进
-A7  优雅停机 / 连接排空合同（RT-D02 → VP-021 **closed** v0.3.0，2026-08-27；
+A4  指标 + OpenTelemetry                                                    [delivered · VP-015 closed v0.3.0]
+A5  密钥轮换 / 备份恢复合同                                                  [delivered · VP-016 closed v0.3.0]
+A6  出站邮件：内核发送端口 + 可切换渠道（mock 默认 + Resend 生产）；         [delivered · VP-017 closed v0.5.0]
+    SMTP 适配器保留；SMS 不进
+A7  优雅停机 / 连接排空合同（RT-D02 → VP-021 closed v0.3.0，2026-08-27；      [delivered]
     单进程基线先行，不与 A3 绑定）
+```
+
+**新增候选（未立项；2026-09-10 VP-035 R3 登记）**：
+
+```text
+C1  DB 时间列 timestamptz 持久化合同（RES-T03-tz）
+    — 现状：`apps/api` 内 `*.sql` 中 `timestamptz` 命中 0，时间列仍 INTEGER；
+      属真实技术债但涉及 schema 迁移，本 VP 红线禁止改 schema，故只登记
+    — 触发/去向：由 `/vision` 在路线图 editorial 时决定是否立项
 ```
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s、SMS。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支最近一拍：**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `active` v0.2.0**（2026-09-09 · VRev-087 self `pass` · lead `workspace-035-foundation-architecture-health` · Root active 1/4 · R1 分母冻结 done；as-built 对照 + 有界业界对照 + 路线图重述草案；不消耗 A3/Redis/MQ trigger）。A0–A7 建议顺序保持草案，待本 VP 评估后再经 `/vision` editorial 冻结。A3 余项仍 trigger-gated。
+架构分支最近一拍：**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `active` v0.2.0**（2026-09-09 激活 · VRev-087 self `pass` · lead `workspace-035-foundation-architecture-health`；R1 分母冻结、R2 as-built 矩阵、R3 业界对照 + 缺口分类均已完成；R4 路线图重述与文档卫生进行中；不消耗 A3/Redis/MQ trigger）。上表已按本 VP 的评估结果从「未冻结建议顺序」重述为「已交付序列 + 唯一未触发项 A3」，不再保留草案字样。A3 余项仍 trigger-gated。
 
 ---
 
@@ -350,7 +362,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3 · **已由 [VP-025](plans/VP-025-config-export-diff-dryrun-import.md) 交付并 `closed`**）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
 
-Admin 功能最近一拍：**[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) `closed` v0.4.0**（2026-09-09 · 用户书面确认 · VRev-085 self `pass` · workspace-034 Root `done` 5/5 · 七条判据 verified；residual = Dashboard 现行 `workspace` 组 / GOAL-003）。上一拍 [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) 已 `closed` v0.3.0。VP-031 已 `closed`。其后非门控未立项 = 体验增强（全局搜索 / Command Palette、Saved Views、未保存保护、统一 Toast 等）与基架能力剩余 #4（文件扫描 / 隔离策略）；组织/部门/岗位仍 trigger-gated。
+Admin 功能最近一拍：**[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) `closed` v0.4.0**（2026-09-09 · 用户书面确认 · VRev-085 self `pass` · workspace-034 Root `done` 5/5 · 七条判据 verified；residual = Dashboard 现行 `workspace` 组 / GOAL-003）。**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `active` v0.2.0**（2026-09-09 激活；架构分支评估，不属 Admin 功能交付）。上一拍 [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) 已 `closed` v0.3.0。VP-031 已 `closed`。其后非门控未立项 = 体验增强（全局搜索 / Command Palette、Saved Views、未保存保护、统一 Toast 等）与基架能力剩余 #4（文件扫描 / 隔离策略）；组织/部门/岗位仍 trigger-gated。
 
 ---
 
@@ -389,7 +401,7 @@ Admin 功能最近一拍：**[VP-034-nav-group-collapsible](plans/VP-034-nav-gro
 
 ---
 
-**当前组合焦点**：active 交付 VP = **[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md)**（2026-09-09 激活 v0.2.0；架构分支 · 基架健康评估 + 有界业界对照 + 路线图重述；lead `workspace-035-foundation-architecture-health`；VRev-086/VRev-087 self `pass`，open required = 0）。[VP-034](plans/VP-034-nav-group-collapsible.md) 已 `closed` v0.4.0。持续程序仍为 [VP-009](plans/VP-009-production-hardening.md) 与 [VP-010](plans/VP-010-design-implementation-conformance.md)。Admin 体验增强与新业务域不插队进本评估。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
+**当前组合焦点**：active 交付 VP = **[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md)**（2026-09-09 激活 v0.2.0；架构分支 · 基架健康评估 + 有界业界对照 + 路线图重述；lead `workspace-035-foundation-architecture-health`；VRev-086/VRev-087 self `pass`，open required = 0）。**进展（2026-09-10）**：R1 分母冻结、R2 as-built 对照矩阵（independent `pass`）、R3 有界业界对照 + 缺口分类（independent A-003 `fail` → A-005 `pass`，open required = 0）均已完成；骨架 A0–A7 已按评估重述为「已交付序列 + 唯一未触发 A3」，新增候选 C1（`timestamptz`）登记为未立项；R4 路线图重述 editorial 与文档卫生进行中。[VP-034](plans/VP-034-nav-group-collapsible.md) 已 `closed` v0.4.0。持续程序仍为 [VP-009](plans/VP-009-production-hardening.md) 与 [VP-010](plans/VP-010-design-implementation-conformance.md)。Admin 体验增强与新业务域不插队进本评估。其余已关闭 VP 与历史证据继续以各计划和工作区台账为准。
 
 ## 单主线模块化策略
 
