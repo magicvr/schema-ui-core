@@ -78,7 +78,7 @@ R1 required 信息项已冻结（I-035-001/004/005）。I-035-003 已于 2026-09
 - **R1（2026-09-09）**：GOAL-002 分母冻结 `done` 3/3；I-035-001/004/005 verified。
 - **R2（2026-09-09）**：GOAL-003 矩阵 + 限定验证 `done` 3/3；A-001 self `pass`、A-002 independent `pass`（open required = 0）；A-002 F-001（行锚点精度）由 A-003 以 `fixed` 闭合（矩阵 v0.2.0）；未改生产代码、未冻结 G-001～G-004 分类。
 - **R3（2026-09-10）**：GOAL-004 `done` 4/4；13 行四格对照 + 18 条缺口分类 + I-035-003 判定 = 否（不停住）；independent 交叉审计 A-003 `fail`（4 required）→ A-004 `fail`（F-002 未闭合）→ A-005 `pass`，A-006 响应关门，**open required = 0**；用户裁决 5 项（含 1 项修正前提后再裁决）；未改生产代码。独立性观察：4 项 required 全部由 independent 发现。
-- **R4 开工（2026-09-10）**：建立 `GOAL-005-r4-roadmap-draft-and-close`（0/5）；本 VP 只做文档卫生（用户裁决 A）。
+- **R4 开工（2026-09-10 · 时点记录）**：建立 `GOAL-005-r4-roadmap-draft-and-close`（开工当日 0/5）；本 VP 只做文档卫生（用户裁决 A）。R4 的当前进度见 `goal-tree.md` 与 GOAL-005 `00-meta.md`（现行 `active · 3/5`）。
 - 审计模式见 D-001：阶段关门 default self；R4 关门与路线图冻结前建议 independent（V-F122）。
 - **本会话独立审计 provider（2026-09-09 · 用户目标指令；已裁决）**：需要交叉审计时调用本地 codex（`gpt-5.6-sol` · 思考强度 high），先 self 再 independent 并合并响应；与项目级 `independent-audit-execution.md`（grok build 默认）并存时，本会话指令优先。**provider 归属已由用户 2026-09-09 裁决并由 R3 D-001 裁决表 C 落盘（I-035-006 `verified`）**；R3/R4 均已按此执行，无待确认项。
 - freshness 三字段见 D-001：消费候选 = HEAD `5c341ec7`。

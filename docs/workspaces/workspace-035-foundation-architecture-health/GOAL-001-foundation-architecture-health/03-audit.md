@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-09-09
-updated: 2026-09-09
-version: 0.3.0
+updated: 2026-09-10
+version: 0.4.0
 ---
 
 # 审计 · GOAL-001-foundation-architecture-health
@@ -34,7 +34,7 @@ version: 0.3.0
 | R1（GOAL-002） | A-001 self | `pass`，open required = 0 |
 | R2（GOAL-003） | A-001 self `pass`；A-002 independent `pass`（0 required，F-001 recommended）；A-003 响应 | F-001 `fixed`；R2 关门 |
 | R3（GOAL-004） | A-001/A-002 self `pass`；A-003 independent **fail**（4 required）；A-004 independent **fail**（1 未闭合）；A-005 independent **pass**；A-006 响应 | 全部 required `fixed`；R3 关门，open required = 0 |
-| R4（GOAL-005） | A-001 self `pass`；A-002 independent **fail**（3 required：F-001～F-003）；A-003 响应（全部 `fixed`）；A-004 independent **fail**（A-002 三项 `fixed`，另提 F-004/F-005 required）；A-005 响应（F-004/F-005 `fixed`）；A-006 independent `conditional`（F-004/F-005 判定 `fixed`；另提 F-006/F-007 索引投影 required） | A-002 F-001～F-003、A-004 F-004/F-005 均已 `fixed`；F-006/F-007 见下 |
+| R4（GOAL-005） | A-001 self `pass`；A-002 independent **fail**（3 required：F-001～F-003）；A-003 响应（全部 `fixed`）；A-004 independent **fail**（A-002 三项 `fixed`，另提 F-004/F-005 required）；A-005 响应（F-004/F-005 `fixed`）；A-006 independent `conditional`（F-004/F-005 `fixed`；另提 F-006/F-007）；A-007 响应；A-008 independent **fail**（F-006/F-007 判 open + 新增 F-008：Root 审计 frontmatter 未更新） | A-002 F-001～F-003、A-004 F-004/F-005 均已 `fixed` 并经独立复核；**F-006/F-007/F-008 已由本条响应（2026-09-10）以 `fixed` 修正**（索引登记 A-001～A-009；Root 审计投影与 frontmatter 同步），其闭环证据待 **A-009** 独立复核 |
 
 ## 愿景层意见（仅作上下文）
 
