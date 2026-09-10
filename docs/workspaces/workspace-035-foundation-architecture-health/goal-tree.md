@@ -42,7 +42,7 @@ R1 对照分母 / residual 总账 / 现在修 vs 另立 [completed]
 | GOAL-002-r1-denominator-freeze | R1 对照分母冻结 | **done** | 3/3 | GOAL-001-foundation-architecture-health | D-001 + 附件冻结三表；A-001 self pass；未改生产代码 |
 | GOAL-003-r2-as-built-matrix | R2 as-built 对照矩阵 | **done** | 3/3 | GOAL-001-foundation-architecture-health | A-001 self pass、A-002 independent pass（grok-4.6 high）；A-003 响应 F-001 `fixed`（矩阵 v0.2.0）；未改生产代码 |
 | GOAL-004-r3-industry-comparison | R3 有界业界对照与缺口分类 | **done** | 4/4 | GOAL-001-foundation-architecture-health | D-001 已冻结（用户裁决 A/B/C）；13 行对照 + 18 条分类 + I-035-003 判定=否；independent A-003 fail→A-004 fail→A-005 pass，A-006 响应关门，open required = 0 |
-| GOAL-005-r4-roadmap-draft-and-close | R4 路线图草案、文档卫生与关门 | **active** | 1/5 | GOAL-001-foundation-architecture-health | C1 完成（D-001 冻结边界/卫生清单/顺序）；C2～C5 未完成；C5 为 independent 门禁（codex gpt-5.6-sol·high） |
+| GOAL-005-r4-roadmap-draft-and-close | R4 路线图草案、文档卫生与关门 | **active** | 3/5 | GOAL-001-foundation-architecture-health | C1～C3 完成（D-001 边界；草案 + 用户采纳 10 项 / VRev-088 + VR-075；G-001/G-002/G-003/G-005 卫生执行）；C4 判据 1～5 达成；C5 待 independent 审计后 Root 关门 |
 
 ## 维护说明
 
