@@ -34,17 +34,18 @@ version: 0.3.0
 | R1（GOAL-002） | A-001 self | `pass`，open required = 0 |
 | R2（GOAL-003） | A-001 self `pass`；A-002 independent `pass`（0 required，F-001 recommended）；A-003 响应 | F-001 `fixed`；R2 关门 |
 | R3（GOAL-004） | A-001/A-002 self `pass`；A-003 independent **fail**（4 required）；A-004 independent **fail**（1 未闭合）；A-005 independent **pass**；A-006 响应 | 全部 required `fixed`；R3 关门，open required = 0 |
-| R4（GOAL-005） | 尚无 | C5 为 independent 门禁（provider = 本地 codex `gpt-5.6-sol`·high） |
+| R4（GOAL-005） | A-001 self `pass`；A-002 independent **fail**（3 required：F-001～F-003）；A-003 响应（全部 `fixed`）；A-004 independent **fail**（A-002 三项 `fixed`，另提 F-004/F-005 required）；A-005 响应（F-004/F-005 `fixed`）；A-006 independent `conditional`（F-004/F-005 判定 `fixed`；另提 F-006/F-007 索引投影 required） | A-002 F-001～F-003、A-004 F-004/F-005 均已 `fixed`；F-006/F-007 见下 |
 
 ## 愿景层意见（仅作上下文）
 
 - VRev-086 self `pass`：计划阶段；0 required；V-F122 recommended。
 - VRev-087 self `pass`：激活就绪；架构类 freshness PASS；0 required。
+- VRev-088 self `pass`：R4 路线图重述 editorial（用户采纳 10 项；editorial 分类；0 required）。
 
-## 结论状态
+## 结论状态（2026-09-10 同步）
 
-Root `active` 3/4。R1、R2、R3 完成并各自关门；R4 active（0/5）。跨阶段 open required = 0。
+Root `active` 3/4。R1、R2、R3 完成并各自关门；**R4（GOAL-005）`active · 3/5`**（C1～C3 完成、C4 判据 1～5 达成、C5 待闭合）。跨阶段 required 状态：R1～R3 全部 `fixed`（open required = 0）；R4 的 A-002 F-001～F-003 与 A-004 F-004/F-005 已 `fixed`，**A-006 提出的 F-006/F-007（审计索引与 Root 审计投影同步）由 `/govern` 响应闭合后方可宣称全阶段 open required = 0**。
 
 ## 独立审计有效性观察（供后续阶段）
 
-R3 的 4 项 required finding（计数错误、分类词表越界、`RES-016-revoke` 无据记为接受残余、independent A-ID 冲突）**全部由 independent 审计发现**；同一阶段的两次 self 审计（A-001/A-002）均判 `pass` 且未发现其中任何一项。后续阶段评估 self 审计强度时应参考此事实（见 `GOAL-004/03-audit/A-006` §4）。
+R3 的 4 项 required、R4 的 3 项（A-002）+ 2 项（A-004）+ 2 项（A-006）**全部由 independent 审计发现**；同阶段的 self 审计（R3 A-001/A-002、R4 A-001）均判 `pass` 且未发现其中任何一项（累计漏检 9/9 项 required，F-006/F-007 为第 10/11 项）。后续阶段评估 self 审计强度、以及是否把默认审计模式从 `self` 提高到 `independent` 时，应参考此事实（另见 `GOAL-004/03-audit/A-006` §4 与 `GOAL-005/03-audit/A-005` §4）。

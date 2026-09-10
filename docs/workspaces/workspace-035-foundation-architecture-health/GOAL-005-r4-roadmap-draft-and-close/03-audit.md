@@ -14,7 +14,11 @@ version: 0.2.0
 | A-002 | independent | codex-cli（gpt-5.6-sol · high） | R4 C2/C3/C4 与 Root 关门就绪（editorial 分类、卫生准确性、判据矩阵、边界与治理链核账） | **fail** | **3**（F-001～F-003） | [报告](03-audit/A-002-r4-independent.md) |
 | A-003 | self | 编排器响应节 | A-001/A-002 合并响应：F-001～F-003 全部 `fixed` | pass（响应侧） | 0（响应后） | [响应](03-audit/A-003-r4-a002-response.md) |
 | A-004 | independent | codex-cli（gpt-5.6-sol · high） | A-002 F-001～F-003 闭合复审 + 投影/信息门禁复扫 + Root 关门复判 | **fail** | **2**（F-004、F-005） | [报告](03-audit/A-004-r4-closeout-reaudit-independent.md) |
-| A-005 | self | 编排器响应节 | A-004 F-004/F-005 响应 | 待落盘 | — | 待写入 `03-audit/A-005-*` |
+| A-005 | self | 编排器响应节 | A-004 F-004/F-005 响应 | pass（响应侧） | 0（响应后） | [响应](03-audit/A-005-r4-a004-response.md) |
+| A-006 | independent | codex-cli（gpt-5.6-sol · high） | A-004 F-004/F-005 闭合复审 + Root 关门终判 | **conditional** | **2**（F-006、F-007） | [报告](03-audit/A-006-r4-f004-f005-closure-independent.md) |
+| A-007 | self | 编排器响应节 | A-006 F-006/F-007 响应（索引与 Root 审计投影同步） | 待落盘 | — | 待写入 `03-audit/A-007-*` |
+
+**open required 汇总（截至 A-006）**：A-002 F-001～F-003 `fixed`（A-004 复核）；A-004 F-004/F-005 `fixed`（A-006 复核）；**F-006/F-007 待 `/govern` 响应闭合**——在闭合前 GOAL-005 不得标 `done`、Root 不得关门。
 
 > A-002 原始会话记录：[attachments/audit-A-002-r4-codex-session.log](attachments/audit-A-002-r4-codex-session.log)（由独立会话直接写入）。
 
