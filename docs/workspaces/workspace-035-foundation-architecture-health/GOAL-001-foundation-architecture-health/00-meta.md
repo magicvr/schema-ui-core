@@ -57,11 +57,11 @@ serves_summary: 对照内核/组合根/已交付端口/Profile 与 architecture 
 |----|------|-----------------|----------|--------------|------------------|------|-------------|-------------|
 | I-035-001 | required | 对照分母精确覆盖哪些包、端口、Profile 与文档 | 判据 1 / R2 | R1 | 列出包含/排除表 | **verified** | — | GOAL-002 D-001；[r1-denominator-freeze.md](../GOAL-002-r1-denominator-freeze/attachments/r1-denominator-freeze.md) §1 |
 | I-035-002 | required | 业界参照集是否冻死为四类 | 判据 3 / R3 | R1 | 用户 2026-09-09 书面确认 | **verified** | — | VP-035 正文四类表；VRev-086 |
-| I-035-003 | required | 业界对照是否产生必须改 Charter 非目标的结论 | 判据 3/4 / R3→R4 | R3 | 对照表逐行检查；若是则停住交 `/vision` strategic | collecting | — | 待 R3 |
+| I-035-003 | required | 业界对照是否产生必须改 Charter 非目标的结论 | 判据 3/4 / R3→R4 | R3 | 13 行逐行检查（2026-09-10 完成）→ 结论：**否，不停住** | **verified** | — | [GOAL-004 判定](../GOAL-004-r3-industry-comparison/attachments/r3-i035-003-determination.md)；GOAL-004 A-006 响应 |
 | I-035-004 | required | 各 closed VP named residual 哪些进入本登记册 | 判据 2 / R1 | R1 | 扫描 VP-013～034 residual 并分类 | **verified** | — | GOAL-002 D-001；附件 §2 |
 | I-035-005 | required | 「现在修」是本 VP 内完成还是另立 | 判据 5 / 任何代码整改前 | R1 | 用户在 R1 冻结；默认另立 | **verified** | — | GOAL-002 D-001；附件 §3：默认另立；本 VP 仅文档卫生与只读断言 |
 
-R1 required 信息项已冻结。I-035-003 仍 collecting，最晚 R3。进入 R2 须按包含行取证。
+R1 required 信息项已冻结（I-035-001/004/005）。I-035-003 已于 2026-09-10 在 R3 内由证据关闭（判定「否」，不停住）；I-035-006 由用户 2026-09-09 裁决关闭。**当前无开放 required 信息项。**
 
 ## 父目标
 

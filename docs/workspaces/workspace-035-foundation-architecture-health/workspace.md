@@ -50,8 +50,7 @@ parent: null
 | R1 | 对照分母、closed-VP residual 清单、「现在修 vs 另立」规则冻结 | completed |
 | R2 | as-built 对照矩阵 | completed（`GOAL-003-r2-as-built-matrix` done · 3/3；A-001 self `pass`、A-002 independent `pass`、A-003 响应 F-001 `fixed`） |
 | R3 | 有界业界对照 + 缺口分类（触及 Charter 非目标则停住） | completed（`GOAL-004-r3-industry-comparison` done · 4/4；13 行对照 + 18 条分类 + I-035-003 判定=否；independent A-003 `fail` → A-004 `fail` → A-005 `pass` → A-006 响应，open required = 0） |
-| R4 | 路线图草案 + 文档卫生 + 证据与关门 | active（`GOAL-005-r4-roadmap-draft-and-close` · 0/5；C1～C5 未完成；本 VP 只做文档卫生） |
-| R4 | 路线图草案 + 文档卫生 + 证据与关门 | pending |
+| R4 | 路线图草案 + 文档卫生 + 证据与关门 | active（`GOAL-005-r4-roadmap-draft-and-close` · 3/5；C1～C3 完成、C4 判据 1～5 达成、C5 待 independent 审计；本 VP 只做文档卫生） |
 
 纲领阶段按 R1 → R2 → R3 → R4 串行；同一阶段内的细粒度子目标须在 R1 冻结后按证据与并行价值创建。
 

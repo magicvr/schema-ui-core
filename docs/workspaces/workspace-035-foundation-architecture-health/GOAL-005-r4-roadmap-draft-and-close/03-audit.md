@@ -3,13 +3,39 @@ status: active
 created: 2026-09-10
 updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 审计索引
 
 | A-ID | source | auditor | scope | verdict | open required | 文件 |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | 尚无（R4 自审与交叉审计后追加） |
+| A-001 | self | 编排器（/govern） | R4 C1～C4：边界、草案与 editorial、四项文档卫生、判据取证 | pass | 0 | [报告](03-audit/A-001-r4-self.md) |
+| A-002 | independent | codex-cli（gpt-5.6-sol · high） | R4 C2/C3/C4 与 Root 关门就绪（editorial 分类、卫生准确性、判据矩阵、边界与治理链核账） | **fail** | **3**（F-001～F-003） | [报告](03-audit/A-002-r4-independent.md) |
+| A-003 | self | 编排器响应节 | A-001/A-002 合并响应：F-001～F-003 全部 `fixed` | pass（响应侧） | 0（响应后） | [响应](03-audit/A-003-r4-a002-response.md) |
+| A-004 | independent | 待 provider 复审 | A-002 F-001～F-003 闭合复审（focused close-out re-audit） | 待落盘 | — | 待写入 `03-audit/A-004-*` |
 
-R4 审计模式：阶段关门 default `self`；C5（Root 关门 + 路线图草案冻结前）为 independent 门禁，provider = 本地 codex `gpt-5.6-sol` · 思考强度 high（I-035-006 已由用户裁决）。
+> A-002 原始会话记录：[attachments/audit-A-002-r4-codex-session.log](attachments/audit-A-002-r4-codex-session.log)（由独立会话直接写入）。
+
+R4 审计模式：阶段关门 default `self`；C5（Root 关门 + 路线图草案冻结前）为 independent 门禁，provider = 本地 codex `gpt-5.6-sol` · 思考强度 high（I-035-006 已由用户裁决）。**A-002 `fail` 的 required 未合法闭合前不得关闭 R4 或 Root。**
+
+## A-001 · R4 C1～C4 自审（2026-09-10）
+
+- **source**：self；**verdict**：pass；**范围**：D-001 边界、草案与 `/vision` editorial 交付、四项文档卫生、VP-035 判据矩阵
+- **发现**：无 required（F-001 为自我确认项）
+- **局限**：未发现 A-002 的 F-001～F-003（治理投影矛盾、required 信息状态未统一、审计索引未登记）
+- **完整意见**：[03-audit/A-001-r4-self.md](03-audit/A-001-r4-self.md)
+
+## A-002 · R4 与 Root 关门就绪独立审计（2026-09-10）
+
+- **source**：independent；**verdict**：**fail**；**open required = 3**
+- **核验通过**：production 代码零变更（`git diff --name-only ebe6013c..HEAD -- apps` 为空）、现状锚点与代码一致、RT-P04/RT-D02/RT-K03 未把 gated 伪写成 delivered、A 序列与 C1 边界正确、18 项 residual 与 R3 分类一致、VP-016 历史文本保留且 `I-016-005` 未被伪记为残余接受、架构卫生与源码一致、六条判据中 1～5 达成
+- **必改项**：F-001 治理投影矛盾（goal-tree `0/4` vs `3/5`；workspace R4 行重复 `0/5`/`pending`）；F-002 required 信息 `I-035-003` 状态未统一（Root meta 仍 `collecting`）；F-003 正式审计意见未登记入本索引
+- **结论**：Root 不能关闭；须先响应并落盘三项，再做 focused close-out re-audit
+- **完整意见**：[03-audit/A-002-r4-independent.md](03-audit/A-002-r4-independent.md)
+
+## A-003 · R4 意见合并响应（2026-09-10）
+
+- **source**：self（编排器响应节）；**verdict**：pass（响应侧）；F-001～F-003 均以 `fixed` 闭合
+- **独立性观察**：R4 三项 required 全部由 independent 发现；本 VP 内 self 累计漏检 7/7 项 required
+- **完整响应**：[03-audit/A-003-r4-a002-response.md](03-audit/A-003-r4-a002-response.md)

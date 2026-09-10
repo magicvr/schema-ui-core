@@ -22,7 +22,7 @@ GOAL-001-foundation-architecture-health [active · 3/4]
 ├── GOAL-002-r1-denominator-freeze [done · 3/3]
 ├── GOAL-003-r2-as-built-matrix [done · 3/3]
 ├── GOAL-004-r3-industry-comparison [done · 4/4]
-└── GOAL-005-r4-roadmap-draft-and-close [active · 0/4]
+└── GOAL-005-r4-roadmap-draft-and-close [active · 3/5]
 ```
 
 ## 纲领路线图
@@ -46,6 +46,7 @@ R1 对照分母 / residual 总账 / 现在修 vs 另立 [completed]
 
 ## 维护说明
 
-- Root `progress: 3/4` 由 `00-meta.md` 的 4 个显式检查点派生（R1、R2、R3 completed）。
+- Root `progress: 3/4` 由 `00-meta.md` 的 4 个纲领检查点派生（R1、R2、R3 completed）。
+- 阶段子目标使用各自的检查点分母（GOAL-002 `3/3`、GOAL-003 `3/3`、GOAL-004 `4/4`、GOAL-005 `5` 项检查点中的 `3/5`）；两者分母不同，不得互相换算。
 - 新建阶段子目标前，先在 Root 决策/路线图中冻结阶段边界；目标文件夹在本工作区根平铺。
 - status/progress/parent 或新增子目标发生变化时，必须同步本文件树与状态表。
