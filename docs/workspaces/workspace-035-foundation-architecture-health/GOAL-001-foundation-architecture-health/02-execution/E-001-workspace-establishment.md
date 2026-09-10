@@ -7,8 +7,8 @@ status: recorded
 parent: GOAL-001-foundation-architecture-health
 date: 2026-09-09
 created: 2026-09-09
-updated: 2026-09-09
-version: 0.2.0
+updated: 2026-09-10
+version: 0.3.0
 ---
 
 # E-001 · 开区建立

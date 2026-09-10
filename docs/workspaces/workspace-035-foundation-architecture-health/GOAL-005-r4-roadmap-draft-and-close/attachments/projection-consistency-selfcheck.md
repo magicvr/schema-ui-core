@@ -5,7 +5,7 @@ parent: GOAL-005-r4-roadmap-draft-and-close
 status: recorded
 created: 2026-09-10
 updated: 2026-09-10
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 投影一致性自检（R4 关门前置）
@@ -21,7 +21,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File docs/workspaces/workspace-03
 
 - 脚本：[projection-selfcheck.ps1](projection-selfcheck.ps1)（**只读**；带 UTF-8 BOM，Windows PowerShell 5.1 依赖 BOM 解析中文，请勿去 BOM）
 - 退出码：`0` = 全部通过；`1` = 存在失败项
-- 覆盖检查：
+- 脚本 v0.2.0（子句级版本判定 + 脚本化 version/updated 核账）覆盖检查：
 
 | # | 检查 | 判定方式 |
 |---|------|----------|

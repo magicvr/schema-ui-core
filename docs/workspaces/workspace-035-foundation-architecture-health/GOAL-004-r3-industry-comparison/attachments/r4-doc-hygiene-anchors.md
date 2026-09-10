@@ -4,8 +4,8 @@ id: r4-doc-hygiene-anchors
 parent: GOAL-004-r3-industry-comparison
 status: staged
 created: 2026-09-09
-updated: 2026-09-09
-version: 0.2.0
+updated: 2026-09-10
+version: 0.3.0
 ---
 
 # R4 文档卫生取证草稿

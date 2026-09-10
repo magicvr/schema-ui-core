@@ -47,10 +47,11 @@ version: 0.5.0
 Root `active` 3/4。R1、R2、R3 完成并各自关门；**R4（GOAL-005）`active · 3/5`**（C1～C3 完成、C4 判据 1～5 达成、C5 待闭合）。
 
 - **R1～R3**：全部 required `fixed`，open required = 0（R3 经 A-003 `fail` → A-004 `fail` → A-005 `pass` → A-006 响应）。
-- **R4（GOAL-005）审计链与现状**：A-002 `fail` → A-003 响应 → A-004 `fail` → A-005 响应 → A-006 `conditional` → A-007 响应 → A-008 `fail` → A-009 响应（self）→ A-010 `fail` → A-011 响应 → A-012 `fail`。已确认 `fixed` 并闭环：A-002 F-001～F-003、A-004 F-004/F-005、A-006 F-006、A-008 F-008、A-010 F-009/F-010。
-- **当前开放 required**：A-010 F-007（Root 结论语态）与 A-012 F-011（VP v0.2.1 当前投影）、F-012（四处 version 未 bump）——均已在 **2026-09-10 的 A-013 响应**中按 `fixed` 修正，闭环证据待下一次 focused independent re-audit（**A-014**）。
+- **R4（GOAL-005）审计链**：A-002 `fail` → A-003 响应 → A-004 `fail` → A-005 响应 → A-006 `conditional` → A-007 响应 → A-008 `fail` → A-009 响应（self）→ A-010 `fail` → A-011 响应 → A-012 `fail` → A-013 响应 → A-014 `fail` → A-015 响应 → A-016 `fail` → A-017 响应。
+- **已确认 `fixed` 并闭环**：A-002 F-001～F-003、A-004 F-004/F-005、A-006 F-006、A-008 F-008、A-010 F-009/F-010、A-010 F-007（A-014 确认）；A-012 F-011/F-012 与 A-014 F-013 亦经 A-016 确认（其遗留投影缺口由 A-017 修正）。
+- **A-016 新开放 required**：F-014（Root 审计投影链停在 A-012）——已在 **2026-09-10 的 A-017 响应**中按 `fixed` 修正；随同修正的 A-016 F-011（`workspaces.md` 当前版本）、F-012（`updated`/version 核账）、F-013（自检脚本子句级判定 + 新增第 6 项脚本化核账）。闭环证据待下一次 focused independent re-audit（**A-018**）。
 - 因此**当前不得宣称「全阶段 open required = 0」**，R4 与 Root 均保持 `active`、不关门。
 
 ## 独立审计有效性观察（供后续阶段）
 
-R3 的 4 项 required、R4 的 A-002（3）+ A-004（2）+ A-006（2）+ A-008（1）+ A-010（2）+ A-012（2）**全部由 independent 审计发现**；同阶段的 self 审计（R3 A-001/A-002、R4 A-001）均判 `pass` 且未发现其中任何一项。累计漏检 **16/16** 项 required。失效模式高度集中：**修改某一事实时漏改同一事实的其它投影、编号自指、以及内容变更未 bump version**（详见 `GOAL-005/03-audit/A-011` §4 与 `A-013`）。后续阶段评估 self 审计强度、以及是否把默认审计模式从 `self` 提高到 `independent` 时，应参考此事实。
+R3 的 4 项、R4 的 A-002（3）+ A-004（2）+ A-006（2）+ A-008（1）+ A-010（2）+ A-012（2）+ A-014（1）+ A-016（4）required **全部由 independent 审计发现**；同阶段的 self 审计（R3 A-001/A-002、R4 A-001）均判 `pass` 且未发现其中任何一项。累计漏检 **21/21** 项 required。失效模式高度集中：**修改某一事实时漏改同一事实的其它投影、编号自指、内容变更未 bump version/updated、以及自检脚本的判定粒度过粗**（处置见 `GOAL-005/attachments/projection-selfcheck.ps1` 与 `projection-consistency-selfcheck.md`）。后续阶段评估 self 审计强度、以及是否把默认审计模式从 `self` 提高到 `independent` 时，应参考此事实。

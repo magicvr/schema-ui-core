@@ -1,4 +1,4 @@
-﻿# projection-selfcheck.ps1 · workspace-035 投影一致性自检（只读）
+﻿﻿﻿# projection-selfcheck.ps1 · workspace-035 投影一致性自检（只读）
 #
 # 用途：在声明任何 finding `fixed`、请求独立复核、或关闭目标之前运行。
 #       把「同一事实的其它投影是否同步」从人肉记忆改为可重复执行的检查。
@@ -45,9 +45,9 @@ Get-ChildItem $goal5 -Recurse -Filter 'A-0*.md' | ForEach-Object {
 }
 Report '1 审计编号自指' $p1
 
-# ---- 检查 2：未来式语态（不得把已发生的响应写成未来条件）----
+# ---- 检查 2：未来式语态（不得把已发生的响应写成未来条件；03-audit/ 台账属历史，排除）----
 $p2 = @()
-Get-ChildItem $ws -Recurse -Filter '*.md' -File | ForEach-Object {
+Get-ChildItem $ws -Recurse -Filter '*.md' -File | Where-Object { $_.DirectoryName -notmatch '\\03-audit($|\\)' } | ForEach-Object {
   $lines = (Read-Text $_.FullName) -split "`r?`n"
   for ($i = 0; $i -lt $lines.Count; $i++) {
     if ($lines[$i] -match '待\s*/?govern\s*响应闭合后方可宣称' -and $lines[$i] -notmatch '历史|原文') {
@@ -57,7 +57,11 @@ Get-ChildItem $ws -Recurse -Filter '*.md' -File | ForEach-Object {
 }
 Report '2 未来式语态' $p2
 
-# ---- 检查 3：VP-035 当前版本投影一致（覆盖 roadmap 全部命中；显式历史记录允许旧版本）----
+# ---- 检查 3：VP-035 当前版本投影一致（子句级：只检查「VP-035 的当前状态子句」内的版本）----
+# 判定规则（A-016 F-013 反例驱动）：
+#   - 一行可含多个 VP/多个版本；只取「显式状态标记」（`active` vX / active vX / 激活记录 vX / 激活 vX）关联的版本。
+#   - 若该版本 token 前 10 字符内含「激活/历史/时点」，视为历史记录，跳过。
+#   - 与 VP-035 的距离：任一 VP-035 token 之后 400 字符内视为同一描述子句。
 $p3 = @()
 $vpPath = Join-Path $repo 'docs/vision/plans/VP-035-foundation-architecture-health.md'
 $vpVer = (Get-Front $vpPath)['version']
@@ -74,11 +78,18 @@ else {
     for ($i = 0; $i -lt $lines.Count; $i++) {
       $line = $lines[$i]
       if ($line -notmatch 'VP-035') { continue }
-      # 显式历史/激活时点记录允许保留旧版本号
-      if ($line -match '激活记录|历史|时点记录|2026-09-0\d 激活|activation|VRev-08[0-9]') { continue }
-      foreach ($m in [regex]::Matches($line, 'v(\d+\.\d+\.\d+)')) {
-        if ($m.Groups[1].Value -eq $vpVer) { continue }
-        $p3 += "$($f.Name):$($i+1) 当前投影出现 v$($m.Groups[1].Value)（VP 当前 v$vpVer，且未标为历史）"
+      # VP-035 出现位置（最后一个即可覆盖「同一子句内随后出现版本」的常见写法）
+      $vpHits = [regex]::Matches($line, 'VP-035') | ForEach-Object { $_.Index }
+      $statusRe = [regex]'(?:`active`|(?<![\w`])active|激活记录?|时点记录)\s*`?v(\d+\.\d+\.\d+)'
+      foreach ($m in $statusRe.Matches($line)) {
+        $ver = $m.Groups[1].Value
+        if ($ver -eq $vpVer) { continue }
+        $pre = $line.Substring([Math]::Max(0, $m.Index - 10), [Math]::Min(10, $m.Index))
+        if ($pre -match '激活|历史|时点') { continue }   # 形如「2026-09-09 激活 v0.2.0」
+        $near = $false
+        foreach ($h in $vpHits) { if ($m.Index -ge $h -and ($m.Index - $h) -le 400) { $near = $true } }
+        if (-not $near) { continue }                      # 属其它 VP 的描述子句
+        $p3 += "$($f.Name):$($i+1) VP-035 当前子句出现 v$ver（VP 当前 v$vpVer）"
       }
     }
   }
@@ -108,6 +119,36 @@ $base = (git show 'ebe6013c:docs/vision/roadmap.md' | Select-String -Pattern 'tr
 $now = (Select-String -Path (Join-Path $repo 'docs/vision/roadmap.md') -Pattern 'trigger-gated' -AllMatches | Measure-Object).Count
 Write-Output "      trigger-gated 基线=$base 现=$now"
 if ($now -lt $base) { $p5 += "trigger-gated 计数下降: $base -> $now" }
+# 更强的断言：基线中每个 trigger-gated 的 RT-* 行 ID 必须仍为 trigger-gated（防「释放一行 + 新增一行」抵消计数）
+$gatedNow = @()
+Select-String -Path (Join-Path $repo 'docs/vision/roadmap.md') -Pattern '^\|\s*(RT-[A-Z0-9]+)\s*\|.*trigger-gated' | ForEach-Object { $gatedNow += $matches[1] }
+$gatedBase = @()
+(git show 'ebe6013c:docs/vision/roadmap.md') | Select-String -Pattern '^\|\s*(RT-[A-Z0-9]+)\s*\|.*trigger-gated' | ForEach-Object { $gatedBase += $matches[1] }
+$lost = $gatedBase | Where-Object { $gatedNow -notcontains $_ }
+Write-Output "      trigger-gated RT-* ID: 基线=$($gatedBase.Count) 现=$($gatedNow.Count) 丢失=$($lost.Count)"
+if ($lost.Count -gt 0) { $p5 += "基线 trigger-gated 行被释放: $($lost -join ', ')" }
 Report '5 边界守恒' $p5
+
+# ---- 检查 6：最近提交的 version/updated 核账（脚本化，输出逐文件结论）----
+$p6 = @()
+$commits = (git log --format=%H -6)
+$rootPath = $repo
+$seen = @{}
+foreach ($c in $commits) {
+  $files = (git show --name-only --format= --diff-filter=AM $c) | Where-Object { $_ -match '\.md$' }
+  foreach ($rel in $files) {
+    if ($seen.ContainsKey($rel)) { continue }
+    $seen[$rel] = $true
+    $abs = Join-Path $rootPath $rel
+    if (-not (Test-Path $abs)) { continue }          # 已删除/重命名
+    $h = Get-Front $abs
+    if ($h.Count -eq 0) { continue }                  # 非治理 md（无 frontmatter）
+    $commitDate = (git show -s --format=%ad --date=short $c)
+    if ($h['updated'] -ne $commitDate) {
+      $p6 += "${rel} -> updated=$($h['updated']) 但内容变更于 $commitDate（$($c.Substring(0,8))）"
+    }
+  }
+}
+Report '6 最近提交 version/updated 核账' $p6
 
 if ($script:fail -eq 0) { Write-Output 'ALL CHECKS PASS'; exit 0 } else { Write-Output "$script:fail CHECK(S) FAILED"; exit 1 }

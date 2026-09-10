@@ -5,7 +5,7 @@ parent: GOAL-005-r4-roadmap-draft-and-close
 status: recorded
 created: 2026-09-10
 updated: 2026-09-10
-version: 0.1.0
+version: 0.2.0
 ---
 
 # R4 文档卫生执行记录（G-001 / G-003 + G-002 / G-005 归属）
@@ -34,7 +34,8 @@ version: 0.1.0
 | 真相源 | 「含 `workspace-001`～`004`」 | 「现行 `workspace-001`～`035`」 |
 | 愿景 | Charter `@0.2.0` | Charter `@0.4.0`（仍唯一 active） |
 | 组合编排 | 「VP-001～VP-004 均 closed」 | 指向 `roadmap.md`（现行 v0.80.0）；补一行「架构骨架 A0–A7 已由 VP-013/014/015/016/017/021 交付，唯一未触发项 = A3」 |
-| 当前交付 VP | VP-005 `active` v0.4.1（lead workspace-006） | VP-035 `active` v0.2.1（lead workspace-035；激活记录 v0.2.0） |
+| 当前交付 VP | VP-005 `active` v0.4.1（lead workspace-006） | VP-035（lead workspace-035；计划文件见 `docs/vision/plans/VP-035-*.md`，激活于 2026-09-09） |
+| 当前交付 VP（现行计划版本） | — | `active` v0.2.1 |
 | 工作区清单 | 逐个复述 `workspace-001`～`006`（含 workspace-006 `active / 0/5` 等陈旧状态） | 删除逐条复述，改为指向 [vision/workspaces.md](../vision/workspaces.md) |
 | frontmatter | `updated: 2026-08-08` / `version: 0.10.0` | `updated: 2026-09-10` / `version: 0.11.0` |
 
