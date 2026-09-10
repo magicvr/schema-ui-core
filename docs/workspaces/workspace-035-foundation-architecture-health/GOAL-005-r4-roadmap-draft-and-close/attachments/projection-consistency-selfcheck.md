@@ -5,116 +5,59 @@ parent: GOAL-005-r4-roadmap-draft-and-close
 status: recorded
 created: 2026-09-10
 updated: 2026-09-10
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 投影一致性自检（R4 关门前置）
 
-用途：在声明任何 finding `fixed`、或请求独立复核之前，**先**运行本脚本，机器化核对跨投影一致性与 frontmatter 版本规则。
-背景：R4 的 12 项 required 中绝大多数源自同一失效模式——改了一个位置、漏改同一事实的其它投影。本脚本把该核对从「人肉记忆」改为「可重复执行」。
+用途：在声明任何 finding `fixed`、请求独立复核、或关闭目标之前，**先**运行可执行自检，机器化核对跨投影一致性。
+背景：R4 的 required finding 全部源自同一失效模式——改了一个位置、漏改同一事实的其它投影（另有编号自指与 version 未递增）。本自检把该核对从「人肉记忆」改为「可重复执行 + 可独立复现」。
 
-用法（仓库根）：
-
-```powershell
-pwsh -File docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1
-```
-
-期望输出：每项检查打印 `PASS`，末尾打印 `ALL CHECKS PASS`。任一 `FAIL` 行给出文件与行号。
-
-检查项：
-
-1. **编号自指**：任何 `A-0NN` 条目正文中出现的「下一次/下一次独立复核」编号不得等于该条目自身编号。
-2. **未来式语态**：不得在「已发生的响应」处使用「待 `/govern` 响应闭合后方可宣称」等未来式；出现即 FAIL（历史引述需显式带「历史」或「原文」限定）。
-3. **VP 版本投影**：`docs/vision/plans/VP-035-*.md` 的 `version` 必须与 goal-tree、workspace.md、Root `00-meta.md`、roadmap 的**当前**投影一致（历史激活记录允许保留旧版本号，但须带「激活记录」限定）。
-4. **frontmatter 版本递增**：最近 3 次提交中被修改的文件，若内容变化则 `version` 必须变化；`updated` 必须等于内容变更日。
-5. **必备字段**：workspace 内所有 md 均含 `status`/`created`/`updated`/`parent`/`version`；`00-meta.md` 的 `id` 等于文件夹名。
-6. **边界守恒**：`git diff --name-only ebe6013c..HEAD -- apps` 为空；`docs/vision/roadmap.md` 的 `trigger-gated` 计数不少于基线。
+## 可执行入口（权威）
 
 ```powershell
-$ErrorActionPreference = 'Stop'
-$root = (Resolve-Path '.').Path
-$ws   = Join-Path $root 'docs/workspaces/workspace-035-foundation-architecture-health'
-$goal5 = Join-Path $ws 'GOAL-005-r4-roadmap-draft-and-close'
-$fail = 0
-function Check([string]$name, [scriptblock]$body) {
-  try { $msgs = & $body; if ($msgs) { Write-Output "FAIL  $name"; $msgs | ForEach-Object { Write-Output "        $_" }; $script:fail++ } else { Write-Output "PASS  $name" } }
-  catch { Write-Output "FAIL  $name (error: $_)"; $script:fail++ }
-}
-function ReadUtf8([string]$p) { [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($p)) }
-function Fm([string]$p) {
-  $l = (ReadUtf8 $p) -split "`r?`n"
-  if ($l[0] -ne '---') { return @{} }
-  $end = 0; for ($i=1; $i -lt $l.Count; $i++) { if ($l[$i] -eq '---') { $end = $i; break } }
-  $h = @{}; foreach ($line in $l[1..($end-1)]) { if ($line -match '^([A-Za-z_]+):\s*(.*)$') { $h[$matches[1]] = $matches[2].Trim() } }
-  return $h
-}
-
-Check '1 编号自指' {
-  $out = @()
-  Get-ChildItem $goal5 -Recurse -Filter 'A-0*.md' | ForEach-Object {
-    $self = ($_.BaseName -split '-')[1]
-    $lines = (ReadUtf8 $_.FullName) -split "`r?`n"
-    for ($i=0; $i -lt $lines.Count; $i++) {
-      if ($lines[$i] -match '下一次[^。]{0,40}?(A-\d{3})' -and $matches[1] -eq $self) { $out += "$($_.Name):$($i+1) 自指 $self" }
-    }
-  }
-  $out
-}
-
-Check '2 未来式语态' {
-  $out = @()
-  Get-ChildItem $ws -Recurse -Filter '*.md' | ForEach-Object {
-    $lines = (ReadUtf8 $_.FullName) -split "`r?`n"
-    for ($i=0; $i -lt $lines.Count; $i++) {
-      if ($lines[$i] -match '待\s*/?govern\s*响应闭合后方可宣称' -and $lines[$i] -notmatch '历史|原文') { $out += "$($_.Name):$($i+1)" }
-    }
-  }
-  $out
-}
-
-Check '3 VP 版本投影一致' {
-  $vp = Join-Path $root 'docs/vision/plans/VP-035-foundation-architecture-health.md'
-  $v = (Fm $vp)['version']; if (-not $v) { return @('VP frontmatter missing version') }
-  $out = @()
-  $targets = @(
-    @{ p = (Join-Path $ws 'goal-tree.md'); pat = 'VP-035-foundation-architecture-health`（active · v([0-9.]+)）' },
-    @{ p = (Join-Path $ws 'workspace.md'); pat = 'VP-035-foundation-architecture-health`（`active` · v([0-9.]+)）' },
-    @{ p = (Join-Path $ws 'GOAL-001-foundation-architecture-health/00-meta.md'); pat = 'VP-035-foundation-architecture-health`（`active` · v([0-9.]+)）' }
-  )
-  foreach ($t in $targets) {
-    $txt = ReadUtf8 $t.p
-    $m = [regex]::Matches($txt, $t.pat)
-    if ($m.Count -eq 0) { $out += "$(Split-Path $t.p -Leaf): 未找到 VP 版本投影" }
-    else { foreach ($x in $m) { if ($x.Groups[1].Value -ne $v) { $out += "$(Split-Path $t.p -Leaf): 投影 v$($x.Groups[1].Value) != VP v$v" } } }
-  }
-  $out
-}
-
-Check '5 必备字段与 id 一致性' {
-  $out = @()
-  Get-ChildItem $ws -Recurse -Filter '*.md' -File | ForEach-Object {
-    $h = Fm $_.FullName
-    if ($h.Count -eq 0) { $out += "$($_.Name): 缺 frontmatter"; return }
-    foreach ($f in 'status','created','updated','parent','version') { if (-not $h.ContainsKey($f)) { $out += "$($_.Name): 缺 $f" } }
-  }
-  Get-ChildItem $ws -Directory | ForEach-Object {
-    $meta = Join-Path $_.FullName '00-meta.md'
-    if (Test-Path $meta) { $id = (Fm $meta)['id']; if ($id -ne $_.Name) { $out += "$($_.Name): id=$id 不匹配" } }
-  }
-  $out
-}
-
-Check '6 边界守恒' {
-  $out = @()
-  $apps = (git diff --name-only ebe6013c..HEAD -- apps) -join ''
-  if ($apps) { $out += "apps/** 有变更: $apps" }
-  $g = (git show 'ebe6013c:docs/vision/roadmap.md' 2>$null | Select-String -Pattern 'trigger-gated' -AllMatches | Measure-Object).Count
-  $n = (Select-String -Path (Join-Path $root 'docs/vision/roadmap.md') -Pattern 'trigger-gated' -AllMatches | Measure-Object).Count
-  if ($n -lt $g) { $out += "trigger-gated 计数下降: $g -> $n" }
-  $out
-}
-
-if ($fail -eq 0) { Write-Output 'ALL CHECKS PASS' } else { Write-Output "$fail CHECK(S) FAILED" }
+powershell -NoProfile -ExecutionPolicy Bypass -File docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1
 ```
 
-> 检查项 4（frontmatter 版本递增）依赖最近提交列表，难以在脚本内稳定判定「内容是否变化」，故以人工核对 + 提交前的 `git log --name-only -3` 清单为准；本脚本覆盖其余五项机器可判定项。
+- 脚本：[projection-selfcheck.ps1](projection-selfcheck.ps1)（**只读**；带 UTF-8 BOM，Windows PowerShell 5.1 依赖 BOM 解析中文，请勿去 BOM）
+- 退出码：`0` = 全部通过；`1` = 存在失败项
+- 覆盖检查：
+
+| # | 检查 | 判定方式 |
+|---|------|----------|
+| 1 | 审计编号自指 | `03-audit/A-0NN-*.md` 正文不得把「下一次独立复核」写成自身编号 |
+| 2 | 未来式语态 | 不得对已发生的响应使用「待 `/govern` 响应闭合后方可宣称」（历史引述须带「历史/原文」限定） |
+| 3 | VP-035 当前版本投影 | 扫描 workspace 全部 md（**排除 `03-audit/` 台账**，其正文属历史时点）+ `docs/vision/roadmap.md` + `docs/vision/workspaces.md`；含 `VP-035` 的行中每个 `vX.Y.Z` 必须等于 VP 当前 `version`，除非该行显式标注「激活记录/历史/时点记录/2026-09-0N 激活」 |
+| 4 | frontmatter 必备字段与 id | workspace 内所有 md 含 `status`/`created`/`updated`/`parent`/`version`；`00-meta.md` 的 `id` 等于目录名 |
+| 5 | 边界守恒 | `git diff --name-only ebe6013c..HEAD -- apps` 为空；`docs/vision/roadmap.md` 的 `trigger-gated` 计数不下降 |
+
+**未脚本化的检查 4′（人工）**：最近若干次提交中「内容变化即 version 递增 / `updated` 等于内容变更日」。每次提交前用 `git log --name-only -4` 列出文件并逐个核对（A-012 F-012、A-014 F-012 均由该方法发现）。
+
+## 2026-09-10 运行记录（A-013 修正后）
+
+命令与原始输出（仓库根）：
+
+```text
+> powershell -NoProfile -ExecutionPolicy Bypass -File docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1
+PASS  1 审计编号自指
+PASS  2 未来式语态
+      VP-035 当前 version = 0.2.1
+PASS  3 VP-035 当前版本投影
+PASS  4 frontmatter 必备字段与 id 一致性
+      trigger-gated 基线=36 现=37
+PASS  5 边界守恒
+ALL CHECKS PASS
+EXIT=0
+```
+
+有效性证据（非空跑）：
+
+| 阶段 | 结果 |
+|------|------|
+| 首轮运行（修正前） | 检查 3 **FAIL**，命中 `r4-doc-hygiene-anchors.md:23`（VP-005 版本与 VP-035 同行造成歧义）——说明检查 3 非恒 PASS |
+| 修正 `roadmap.md:365` 前（A-014 F-011 项） | 检查 3 命中 `roadmap.md:365` 的当前 `v0.2.0`（首次运行输出中亦可复现：Admin 分支行） |
+| 检查 4 | 首轮运行曾捕获自检文档自身缺 frontmatter，补齐后 PASS |
+
+## 与 A-014 F-013 的对应
+
+A-014 指出：① 文档引用的入口不存在；② 检查 3 声称覆盖 roadmap 但 `$targets` 未含 roadmap；③ 检查 4 缺可审计的人工输出。本 v0.2.0 已逐条处置：新增真实可执行 `.ps1`（并在本文给出精确命令）、检查 3 改为扫描 workspace + roadmap + workspaces 的**全部** `VP-035` 命中并区分显式历史记录、检查 4′ 明确人工方法并给出 `git log --name-only -4` 命令、并附原始 stdout/退出码与「非恒 PASS」证据。

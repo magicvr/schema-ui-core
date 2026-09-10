@@ -8,7 +8,7 @@ parent: GOAL-001-foundation-architecture-health
 date: 2026-09-09
 created: 2026-09-09
 updated: 2026-09-09
-version: 0.1.0
+version: 0.2.0
 ---
 
 # E-001 · 开区建立
@@ -16,7 +16,7 @@ version: 0.1.0
 ## 事实时间线
 
 - 2026-09-09：用户指令「OK 激活 VP-035，slug 用建议名」；slug = `workspace-035-foundation-architecture-health` / Root `GOAL-001-foundation-architecture-health`。
-- 2026-09-09：VRev-087 self `pass`（激活就绪 · 架构类 freshness PASS `f2044cf3`→`5c341ec7` · 区间代码 = VP-034 已审结目 + 发布包装）→ VP-035 `planned → active`（v0.2.0）。
+- 2026-09-09：VRev-087 self `pass`（激活就绪 · 架构类 freshness PASS `f2044cf3`→`5c341ec7` · 区间代码 = VP-034 已审结目 + 发布包装）→ VP-035 `planned → active`（v0.2.0，**历史激活记录**；现行 v0.2.1）。
 - 2026-09-09：scaffold `docs/workspaces/workspace-035-foundation-architecture-health/`（workspace.md + goal-tree.md）+ Root 五件套与三个 ledger 目录 + attachments。
 
 ## 产物

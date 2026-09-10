@@ -4,7 +4,7 @@ status: active
 created: 2026-09-09
 updated: 2026-09-10
 parent: null
-version: 0.5.0
+version: 0.6.0
 workspace_id: workspace-035-foundation-architecture-health
 ---
 

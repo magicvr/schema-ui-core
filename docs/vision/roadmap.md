@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-10
 parent: null
-version: 0.80.0
+version: 0.81.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -362,7 +362,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3 · **已由 [VP-025](plans/VP-025-config-export-diff-dryrun-import.md) 交付并 `closed`**）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
 
-Admin 功能最近一拍：**[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) `closed` v0.4.0**（2026-09-09 · 用户书面确认 · VRev-085 self `pass` · workspace-034 Root `done` 5/5 · 七条判据 verified；residual = Dashboard 现行 `workspace` 组 / GOAL-003）。**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `active` v0.2.0**（2026-09-09 激活；架构分支评估，不属 Admin 功能交付）。上一拍 [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) 已 `closed` v0.3.0。VP-031 已 `closed`。其后非门控未立项 = 体验增强（全局搜索 / Command Palette、Saved Views、未保存保护、统一 Toast 等）与基架能力剩余 #4（文件扫描 / 隔离策略）；组织/部门/岗位仍 trigger-gated。
+Admin 功能最近一拍：**[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) `closed` v0.4.0**（2026-09-09 · 用户书面确认 · VRev-085 self `pass` · workspace-034 Root `done` 5/5 · 七条判据 verified；residual = Dashboard 现行 `workspace` 组 / GOAL-003）。**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `active` v0.2.1**（2026-09-09 激活 v0.2.0；架构分支评估，不属 Admin 功能交付）。上一拍 [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) 已 `closed` v0.3.0。VP-031 已 `closed`。其后非门控未立项 = 体验增强（全局搜索 / Command Palette、Saved Views、未保存保护、统一 Toast 等）与基架能力剩余 #4（文件扫描 / 隔离策略）；组织/部门/岗位仍 trigger-gated。
 
 ---
 

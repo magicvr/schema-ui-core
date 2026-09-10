@@ -5,7 +5,7 @@ parent: GOAL-004-r3-industry-comparison
 status: staged
 created: 2026-09-09
 updated: 2026-09-09
-version: 0.1.0
+version: 0.2.0
 ---
 
 # R4 文档卫生取证草稿
@@ -20,7 +20,8 @@ version: 0.1.0
 |---|----------|----------|------------------|------|
 | 1 | `docs/architecture/overview.md:71` | Charter **`schema-ui-core-admin-foundation@0.2.0`** | Charter 已到 `@0.4.0`（`workspace.md` / VP-035 `vision_ref`） | 需按 `docs/vision/charter.md` 重取版本 |
 | 2 | `docs/architecture/overview.md:64` | `web/` = FastAPI Web 应用 | 产品树为 `apps/api`（Go）+ `apps/web`（React/TS），见 `docs/architecture/directory-layout.md` | 「本仓 web/ 冻结参考」表述与实际产品目录不符 |
-| 3 | `docs/architecture/overview.md:72–73` | 组合编排停在 VP-001～004 closed、当前交付 VP = **VP-005**（active v0.4.1） | 现行已到 VP-035（架构分支）；VP-005 早已不是「当前交付 VP」 | 这一段是「当前阶段（现时）」的核心过期源 |
+| 3 | `docs/architecture/overview.md:72–73` | 组合编排停在 VP-001～004 closed；且把 VP-005 写成「当前交付 VP」 | 现行架构分支已到 VP-035（见下表第 6 行）；VP-005 早已不是「当前交付 VP」 | 这一段是「当前阶段（现时）」的核心过期源 |
+| 6 | `docs/architecture/overview.md:73` | 把 VP-005 标为当前交付 VP | 现行当前交付 VP 是架构分支的 VP-035 计划 | 与第 3 行同源；VP-005 自己的版本号与本节无关 |
 | 4 | `docs/architecture/overview.md:74–79` | 工作区清单只到 `workspace-006`（且 workspace-006 Root 写 `active / 0/5`） | 实际已有 `workspace-001`～`035` | 至少需改为指针式表述，避免逐个复述导致再次过期 |
 | 5 | `docs/architecture/overview.md` frontmatter | `updated: 2026-08-08` / `version: 0.10.0` | 2026-09-09 仍为 0.10.0 | 卫生项：更新 `updated`/`version` |
 

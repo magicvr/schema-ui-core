@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-035-foundation-architecture-health
 created: 2026-09-09
 updated: 2026-09-10
-version: 0.3.0
+version: 0.4.0
 parent: null
 ---
 
