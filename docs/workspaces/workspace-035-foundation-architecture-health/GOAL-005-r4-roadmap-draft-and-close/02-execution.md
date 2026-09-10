@@ -8,4 +8,4 @@ version: 0.1.0
 
 # 执行索引
 
-（尚无执行条目；R4 开工后按 E-NNN 追加。）
+- [E-001 · R4 路线图草案落盘与交 `/vision`](02-execution/E-001-r4-draft-and-handoff.md)
