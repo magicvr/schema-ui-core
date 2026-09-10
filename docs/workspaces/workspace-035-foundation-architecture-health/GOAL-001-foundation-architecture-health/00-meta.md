@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-09
 updated: 2026-09-09
-version: 0.2.0
-progress: 25%
+version: 0.3.0
+progress: 2/4
 plan_refs:
   - VP-035-foundation-architecture-health
 primary_plan: VP-035-foundation-architecture-health
@@ -45,11 +45,11 @@ serves_summary: 对照内核/组合根/已交付端口/Profile 与 architecture 
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
 | R1 | 对照分母、closed-VP residual 清单、「现在修 vs 另立」规则冻结 | completed |
-| R2 | as-built 对照矩阵 | pending |
+| R2 | as-built 对照矩阵 | completed |
 | R3 | 有界业界对照 + 缺口分类 | pending |
 | R4 | 路线图草案、文档卫生、证据与关门 | pending |
 
-`progress: 25%` = 1/4 个检查点完成。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+`progress: 2/4` = 2/4 个检查点完成（R1、R2）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
 ## 信息就绪与未知项（P-005）
 
@@ -75,5 +75,7 @@ R1 required 信息项已冻结。I-035-003 仍 collecting，最晚 R3。进入 R
 
 - **开区（2026-09-09 · 用户指令）**：VP-035 `planned → active` v0.2.0（VRev-087 self `pass` · 架构类 freshness PASS `f2044cf3`→`5c341ec7` · 不暂挂 `go`）；lead `workspace-035-foundation-architecture-health`。
 - **R1（2026-09-09）**：GOAL-002 分母冻结 `done` 3/3；I-035-001/004/005 verified。
+- **R2（2026-09-09）**：GOAL-003 矩阵 + 限定验证 `done` 3/3；A-001 self `pass`、A-002 independent `pass`（open required = 0）；A-002 F-001（行锚点精度）由 A-003 以 `fixed` 闭合（矩阵 v0.2.0）；未改生产代码、未冻结 G-001～G-004 分类。
 - 审计模式见 D-001：阶段关门 default self；R4 关门与路线图冻结前建议 independent（V-F122）。
+- **本会话独立审计 provider（2026-09-09 · 用户目标指令）**：需要交叉审计时调用本地 codex（`gpt-5.6-sol` · 思考强度 high），先 self 再 independent 并合并响应；与项目级 `independent-audit-execution.md`（grok build 默认）并存时，本会话指令优先——已在 R3 目标 D-001 记录，R3/R4 门禁的 provider 归属待用户确认。
 - freshness 三字段见 D-001：消费候选 = HEAD `5c341ec7`。

@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-035-foundation-architecture-health
 created: 2026-09-09
 updated: 2026-09-09
-version: 0.1.0
+version: 0.2.0
 parent: null
 ---
 
@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-035-foundation-architecture-health](../../vision/plans/VP-035-foundation-architecture-health.md)（`active` · v0.2.0）的唯一 lead delivery workspace。架构分支：as-built 对照 + 有界业界对照 + 总路线图重述草案。不替代 VP-009/VP-010，不改变 Charter `primary_workspace`。
 
-- Root `GOAL-001-foundation-architecture-health`：`active` · 1/4（R1 分母冻结已完成）。
+- Root `GOAL-001-foundation-architecture-health`：`active` · 2/4（R1 分母冻结、R2 as-built 矩阵已完成）。
 - 激活门禁已满足（2026-09-09）：[VRev-087](../../vision/reviews/VRev-087-vp035-foundation-architecture-health-activation.md) self `pass`；架构类 freshness PASS（`f2044cf3` → `5c341ec7`），不暂挂 `go`。
 - slug 由用户书面确认（建议名）。
 - 红线：不实现 Redis/MQ/K8s/ORM；不消耗 trigger-gated 行；不改 Profile 默认集；对照若要动 Charter 非目标则停住。
@@ -29,7 +29,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-035-foundation-architecture-health` | 与本区目标及资料引用的 `workspace_id` 一致 |
-| Root Goal | `GOAL-001-foundation-architecture-health` | `parent: null`；active · 1/4 |
+| Root Goal | `GOAL-001-foundation-architecture-health` | `parent: null`；active · 2/4 |
 | canonical 范围 | `docs/workspaces/workspace-035-foundation-architecture-health/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料 |
 | 愿景角色 | `delivery` | VP-035 lead；不改变 Charter primary workspace |
@@ -48,8 +48,8 @@ parent: null
 | 阶段 | 目的 | 状态 |
 |------|------|------|
 | R1 | 对照分母、closed-VP residual 清单、「现在修 vs 另立」规则冻结 | completed |
-| R2 | as-built 对照矩阵 | pending |
-| R3 | 有界业界对照 + 缺口分类（触及 Charter 非目标则停住） | pending |
+| R2 | as-built 对照矩阵 | completed（`GOAL-003-r2-as-built-matrix` done · 3/3；A-001 self `pass`、A-002 independent `pass`、A-003 响应 F-001 `fixed`） |
+| R3 | 有界业界对照 + 缺口分类（触及 Charter 非目标则停住） | active（`GOAL-004-r3-industry-comparison` · 0/4；D-001 提议边界，含 3 项待用户确认） |
 | R4 | 路线图草案 + 文档卫生 + 证据与关门 | pending |
 
 纲领阶段按 R1 → R2 → R3 → R4 串行；同一阶段内的细粒度子目标须在 R1 冻结后按证据与并行价值创建。
