@@ -3,7 +3,7 @@ status: active
 created: 2026-09-10
 updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计索引
@@ -27,9 +27,11 @@ version: 0.5.0
 | A-015 | self | 编排器响应节 | A-014 F-011/F-012/F-013 响应（真实可执行自检 + 全量 version 核账） | pass（响应侧；产物同步待 A-016 复核） | — | [响应](03-audit/A-015-r4-a014-response.md) |
 | A-016 | independent | codex-cli（gpt-5.6-sol · high） | A-014 F-011/F-012/F-013 闭合复审 + 自检脚本独立复现 + 关门终判 | **fail** | **4**（F-011/F-012/F-013 仍 open + 新增 F-014） | [报告](03-audit/A-016-r4-convergence-independent.md) |
 | A-017 | self | 编排器响应节 | A-016 F-011/F-012/F-013/F-014 响应（子句级自检 + 脚本化 version 核账） | pass（响应侧；产物同步待 A-018 复核） | — | [响应](03-audit/A-017-r4-a016-response.md) |
-| A-018 | independent | codex-cli（gpt-5.6-sol · high） | A-016 F-011/F-012/F-013/F-014 与 close-out projection 闭合复审（须自行复现自检并尝试反例） | 待落盘 | — | 待写入 `03-audit/A-018-*` |
+| A-018 | independent | codex-cli（gpt-5.6-sol · high） | A-016 F-011/F-012/F-013/F-014 与 close-out projection 闭合复审（须自行复现自检并尝试反例） | **fail** | **3**（F-012/F-013/F-014 仍 open；F-011 确认 fixed） | [报告](03-audit/A-018-r4-final-convergence-independent.md) |
+| A-019 | independent | **grok-build（grok-4.6 · reasoning effort high）** | A-018 F-012/F-013/F-014 闭合复审 + 自检独立复现 + GOAL-005/Root/判据 6 终判（用户 2026-09-10 指定 provider） | **pass** | **0** | [报告](03-audit/A-019-r4-final-review-grok.md) |
+| A-020 | self | 编排器响应节 | A-019 响应与 R4 / Root 关门检查 | pass（响应侧） | 0 | [响应](03-audit/A-020-r4-a019-response.md) |
 
-**open required 汇总（截至 A-017，2026-09-10）**：R3 与 R4 的历史 required 均已按 `fixed` 闭环并逐项经独立确认（R3：A-003 F-001～F-004；R4：A-002 F-001～F-003、A-004 F-004/F-005、A-006 F-006、A-008 F-008、A-010 F-007/F-009/F-010、A-012 F-011/F-012、A-014 F-013）。**A-016 新开放 required F-011/F-012/F-013/F-014 由 A-017 以 `fixed` 修正，闭环证据待 A-018 独立复核**（A-018 须自行运行 `attachments/projection-selfcheck.ps1` 并尝试构造反例）。在 A-018 判定 `pass` 之前，GOAL-005 不得标 `done`、Root 不得关门、VP-035 判据 6 不得宣称成立。
+**open required 汇总（截至 A-020，2026-09-10）**：全 VP-035 的 required finding 均已按 `fixed` 合法闭合并经独立确认；**A-019（grok build · grok 4.6 · high）判 `pass`、开放 required = 0、六条方向级判据全部满足**。门禁已解除：`GOAL-005` 与 Root `GOAL-001` 由 A-020 响应后关门。
 
 > A-002 原始会话记录：[attachments/audit-A-002-r4-codex-session.log](attachments/audit-A-002-r4-codex-session.log)（由独立会话直接写入）。
 

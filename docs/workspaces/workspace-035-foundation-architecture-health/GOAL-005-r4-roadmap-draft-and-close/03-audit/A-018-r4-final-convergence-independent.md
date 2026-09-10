@@ -14,7 +14,7 @@ verdict: fail
 status: recorded
 created: 2026-09-10
 updated: 2026-09-10
-version: 0.1.0
+version: 0.2.0
 ---
 
 # A-018 · 最终收敛终审（2026-09-10）
@@ -87,10 +87,10 @@ EXIT_CODE=1
 
 | commit | 逐提交结论 | 失败项 |
 |---|---|---|
-| `2a1954a6` | **fail** | `docs/vision/workspaces.md:6-8,49`：内容变更且 version 0.51.0→0.52.0，但 `updated` 仍 2026-09-09；Root `.../GOAL-001-foundation-architecture-health/03-audit.md:7-8,45-57`：内容变更但 version 0.5.0→0.5.0。 |
+| `2a1954a6` | **fail** | `docs/vision/workspaces.md:6-8,49`：内容变更且 version 0.51.0→0.52.0，但 `updated` 仍 2026-09-09；`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/03-audit.md:7-8,45-57`：内容变更但 version 0.5.0→0.5.0。 |
 | `a21e29ff` | **pass** | GOAL-005 `02-execution.md` 0.1.0→0.2.0；新增 E-003 为 0.1.0，日期正确。 |
-| `5bd59f06` | **fail（随后由 2a1954a6 修正当前值）** | Root `.../02-execution/E-001-workspace-establishment.md:10-11,18-19` 与 GOAL-004 `.../attachments/r4-doc-hygiene-anchors.md:7-8,21-27` 在该提交内容变更、version 均 bump，但当时 `updated` 仍 2026-09-09。 |
-| `a6e566b8` | **fail（随后提交补偿 version）** | `docs/vision/roadmap.md:6-8` 0.80.0→0.80.0；`.../goal-tree.md:6-7` 0.5.0→0.5.0；`.../workspace.md:13-14` 0.3.0→0.3.0；GOAL-005 `.../attachments/doc-hygiene-record.md:7-8` 0.1.0→0.1.0。 |
+| `5bd59f06` | **fail（随后由 2a1954a6 修正当前值）** | `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/02-execution/E-001-workspace-establishment.md:10-11,18-19` 与 `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-004-r3-industry-comparison/attachments/r4-doc-hygiene-anchors.md:7-8,21-27` 在该提交内容变更、version 均 bump，但当时 `updated` 仍 2026-09-09。 |
+| `a6e566b8` | **fail（随后提交补偿 version）** | `docs/vision/roadmap.md:6-8` 0.80.0→0.80.0；`docs/workspaces/workspace-035-foundation-architecture-health/goal-tree.md:6-7` 0.5.0→0.5.0；`docs/workspaces/workspace-035-foundation-architecture-health/workspace.md:13-14` 0.3.0→0.3.0；`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/doc-hygiene-record.md:7-8` 0.1.0→0.1.0。 |
 | `4e921680` | **fail（随后提交补偿 version）** | Root `03-audit.md:7-8` 0.4.0→0.4.0；GOAL-005 `03-audit.md:4-6` 0.2.0→0.2.0；GOAL-005 `03-audit/A-009-r4-a008-response.md:16-17` 0.1.0→0.1.0。 |
 | `6d84a916` | **fail（随后提交补偿 version）** | Root `00-meta.md:7-8` 0.4.0→0.4.0；GOAL-005 `03-audit.md:4-6` 0.2.0→0.2.0。 |
 
@@ -119,10 +119,10 @@ EXIT_CODE=1
 | R4 A-010 | F-010 | `fixed` | A-012 `fail`（逐项 fixed） | **closed**：`R4/A-012-r4-final-closeout-independent.md:30,125` |
 | R4 A-012 | F-011 | `fixed` | A-018 `fail`（逐项 fixed） | **closed**：`R4/A-014-r4-closeout-decisive-independent.md:144-148`；当前 `docs/vision/workspaces.md:49` 与 VP `:5-10` 一致 |
 | R4 A-012 | F-012 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:196-200`；`docs/vision/workspaces.md:6-8,49`；Root `03-audit.md:7-8,45-57` |
-| R4 A-014 | F-013 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:202-206`；`R4/../attachments/projection-selfcheck.ps1:1,132-152`；A-017 `R4/A-017-r4-a016-response.md:39-56` |
+| R4 A-014 | F-013 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:202-206`；`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1:1,132-152`；A-017 `R4/A-017-r4-a016-response.md:39-56` |
 | R4 A-016 | F-011 | `fixed` | A-018 `fail`（逐项 fixed） | **closed**：`R4/A-016-r4-convergence-independent.md:190-194`；`docs/vision/workspaces.md:49`；VP `docs/vision/plans/VP-035-foundation-architecture-health.md:5-10` |
 | R4 A-016 | F-012 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:196-200`；`docs/vision/workspaces.md:6-8,49`；Root `03-audit.md:7-8,45-57` |
-| R4 A-016 | F-013 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:202-206`；`R4/../attachments/projection-selfcheck.ps1:1,60-97,132-152` |
+| R4 A-016 | F-013 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:202-206`；`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1:1,60-97,132-152` |
 | R4 A-016 | F-014 | `fixed` claimed，未成立 | A-018 `fail` | **open / required**：`R4/A-016-r4-convergence-independent.md:208-218`；Root `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/03-audit.md:50-57` |
 
 最终开放集合为 **F-012、F-013、F-014**；同号在 A-012/A-014/A-016 中表示同一缺陷主题的连续复发/复审，不重复计算为不同风险，但每个原意见条目均保留。`open required = 0` 不成立。
@@ -131,10 +131,10 @@ EXIT_CODE=1
 
 | 判据 | 终判 | 独立依据 |
 |---|---|---|
-| 1 · 对照矩阵 | **满足** | R1 分母与 R2 17 面 + W1 as-built 证据已落盘：`.../GOAL-002-r1-denominator-freeze/attachments/r1-denominator-freeze.md:13-35`；`.../GOAL-003-r2-as-built-matrix/attachments/as-built-matrix.md:10-14,22-43`。 |
-| 2 · 缺口分类 | **满足** | 18 个唯一条目及四值分类可枚举：`.../GOAL-004-r3-industry-comparison/attachments/r3-gap-classification.md:11-17,23-45`；R3 required 已在上表闭合。 |
-| 3 · 业界对照 | **满足** | 四类 13 行、每行四格，且 I-035-003 结论为否：`.../GOAL-004-r3-industry-comparison/attachments/industry-comparison.md:13-20,22-35`；VP 信息表 `docs/vision/plans/VP-035-foundation-architecture-health.md:110-117`。 |
-| 4 · 路线图草案 | **满足** | 草案含现状/A 序列/三分支/residual 并交 `/vision`：`.../GOAL-005-r4-roadmap-draft-and-close/attachments/roadmap-restatement-draft.md:11-16,26-39`；用户采纳与 editorial 记录：`docs/vision/reviews/VRev-088-vp035-roadmap-restatement-editorial.md:18-38`。 |
+| 1 · 对照矩阵 | **满足** | R1 分母与 R2 17 面 + W1 as-built 证据已落盘：`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-002-r1-denominator-freeze/attachments/r1-denominator-freeze.md:13-35`；`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-003-r2-as-built-matrix/attachments/as-built-matrix.md:10-14,22-43`。 |
+| 2 · 缺口分类 | **满足** | 18 个唯一条目及四值分类可枚举：`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-004-r3-industry-comparison/attachments/r3-gap-classification.md:11-17,23-45`；R3 required 已在上表闭合。 |
+| 3 · 业界对照 | **满足** | 四类 13 行、每行四格，且 I-035-003 结论为否：`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-004-r3-industry-comparison/attachments/industry-comparison.md:13-20,22-35`；VP 信息表 `docs/vision/plans/VP-035-foundation-architecture-health.md:110-117`。 |
+| 4 · 路线图草案 | **满足** | 草案含现状/A 序列/三分支/residual 并交 `/vision`：`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/roadmap-restatement-draft.md:11-16,26-39`；用户采纳与 editorial 记录：`docs/vision/reviews/VRev-088-vp035-roadmap-restatement-editorial.md:18-38`。 |
 | 5 · 边界保持 | **满足** | `git diff --name-only ebe6013c..HEAD -- apps` 原始输出为空；trigger-gated RT-* 集合相等；Charter/VP 精确对齐，详见下节。 |
 | 6 · 审计闭合 | **不满足** | 判据要求 open required = 0（`docs/vision/plans/VP-035-foundation-architecture-health.md:86-95`）；本审确认 F-012/F-013/F-014 仍开放。 |
 
@@ -156,15 +156,15 @@ EXIT_CODE=1
 
 ### F-012 · required · high · open：关闭事务再次留下 version/updated 失配
 
-当前 `docs/vision/workspaces.md:6-8,49` 的 `updated` 与 `2a1954a6` 内容变更日不一致；Root `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/03-audit.md:7-8,45-57` 内容改变但 version 未 bump，且 A-017 在 `.../GOAL-005-r4-roadmap-draft-and-close/03-audit/A-017-r4-a016-response.md:35` 声称它已从 0.5.0 变为 0.6.0。A-016 的同事务核账要求没有满足（`.../03-audit/A-016-r4-convergence-independent.md:196-200`）。
+当前 `docs/vision/workspaces.md:6-8,49` 的 `updated` 与 `2a1954a6` 内容变更日不一致；`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/03-audit.md:7-8,45-57` 内容改变但 version 未 bump，且 A-017 在 `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/03-audit/A-017-r4-a016-response.md:35` 声称它已从 0.5.0 变为 0.6.0。A-016 的同事务核账要求没有满足（同目录 `A-016-r4-convergence-independent.md:196-200`）。
 
 ### F-013 · required · high · open：当前自检不能复现 claimed PASS，且未核 version
 
-精确命令在 `.../GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1:1` 报三重 BOM 引起的解释器错误，并在 `:132-152` 的检查 6 报真实日期失配，最终 exit 1；A-017 记录的 PASS/0 位于 `.../03-audit/A-017-r4-a016-response.md:39-56`，与当前 HEAD 不可复现。检查 6 未比较 version，不能满足 A-016 `:202-206` 的 version/updated 可审计核账要求。
+精确命令在 `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/attachments/projection-selfcheck.ps1:1` 报三重 BOM 引起的解释器错误，并在 `:132-152` 的检查 6 报真实日期失配，最终 exit 1；A-017 记录的 PASS/0 位于 `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/03-audit/A-017-r4-a016-response.md:39-56`，与当前 HEAD 不可复现。检查 6 未比较 version，不能满足同目录 `A-016-r4-convergence-independent.md:202-206` 的 version/updated 可审计核账要求。
 
 ### F-014 · required · medium · open：Root 链已延伸，但当前结论仍自相矛盾
 
-Root `.../GOAL-001-foundation-architecture-health/03-audit.md:50-52` 同时声称 A-016 已确认 F-011/F-012/F-013，又称 A-016 的这些 finding 等待 A-018；A-016 实际在 `.../GOAL-005-r4-roadmap-draft-and-close/03-audit/A-016-r4-convergence-independent.md:156-160` 判三项 open。Root frontmatter version 仍为 0.5.0（`:7-8`），也与 A-017 `:35` 的 0.6.0 声明矛盾。F-014 要求的“当前 open required 与现时语态 + version”没有完整修复。
+`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/03-audit.md:50-52` 同时声称 A-016 已确认 F-011/F-012/F-013，又称 A-016 的这些 finding 等待 A-018；A-016 实际在 `docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/03-audit/A-016-r4-convergence-independent.md:156-160` 判三项 open。Root frontmatter version 仍为 0.5.0（`:7-8`），也与同目录 `A-017-r4-a016-response.md:35` 的 0.6.0 声明矛盾。F-014 要求的“当前 open required 与现时语态 + version”没有完整修复。
 
 ## 必改项汇总
 
@@ -175,8 +175,8 @@ Root `.../GOAL-001-foundation-architecture-health/03-audit.md:50-52` 同时声�
 
 ## GOAL-005 / Root / VP-035 关门终判
 
-- **GOAL-005 不可关闭**：F-012/F-013/F-014 仍为开放 required；C4/C5 不得据本次审计勾选，保持 `active · 3/5`（`.../GOAL-005-r4-roadmap-draft-and-close/00-meta.md:4-10,19-27`）。
-- **Root `GOAL-001-foundation-architecture-health` 不可关闭**：R4 未通过关门门禁，Root 保持 `active · 3/4`；Root 当前审计投影仍不一致（`.../GOAL-001-foundation-architecture-health/03-audit.md:45-57`）。
+- **GOAL-005 不可关闭**：F-012/F-013/F-014 仍为开放 required；C4/C5 不得据本次审计勾选，保持 `active · 3/5`（`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-005-r4-roadmap-draft-and-close/00-meta.md:4-10,19-27`）。
+- **Root `GOAL-001-foundation-architecture-health` 不可关闭**：R4 未通过关门门禁，Root 保持 `active · 3/4`；Root 当前审计投影仍不一致（`docs/workspaces/workspace-035-foundation-architecture-health/GOAL-001-foundation-architecture-health/03-audit.md:45-57`）。
 - **VP-035 不可关闭**：判据 1～5 满足，判据 6 不满足；保持 `active` v0.2.1（`docs/vision/plans/VP-035-foundation-architecture-health.md:5-10,86-95`）。
 
 ## 结论 + 建议给编排器/用户的下一步
@@ -188,6 +188,8 @@ Root `.../GOAL-001-foundation-architecture-health/03-audit.md:50-52` 同时声�
 建议的下一句：
 
 `/govern 响应 A-018：保留 verdict=fail 与 F-011=fixed；以 fixed 路径修正 F-012/F-013/F-014，补齐 workspaces updated、Root audit version/现时语义与自检的单 BOM + commit-before/after version 核账，修复后请求 focused independent re-audit。`
+
+> **编排器注记（2026-09-10，A-020 响应）**：本文件正文在 A-019 复审前被 `/govern` 追加过该注记，故 `version` 由 0.1.0 递增为 0.2.0；原 verdict `fail` 与 F-011/F-012/F-013/F-014 原文未改。
 
 ## 声明
 
