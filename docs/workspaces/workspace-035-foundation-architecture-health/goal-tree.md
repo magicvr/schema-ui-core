@@ -13,7 +13,7 @@ workspace_id: workspace-035-foundation-architecture-health
 > 工作区：`workspace-035-foundation-architecture-health`
 > canonical：`docs/workspaces/workspace-035-foundation-architecture-health/`
 > Root：`GOAL-001-foundation-architecture-health`（active · 3/4）
-> primary_plan：`VP-035-foundation-architecture-health`（active · v0.2.0）
+> primary_plan：`VP-035-foundation-architecture-health`（active · v0.2.1）
 
 ## 目标树
 

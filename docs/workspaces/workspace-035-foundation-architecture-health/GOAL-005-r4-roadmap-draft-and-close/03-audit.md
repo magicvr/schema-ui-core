@@ -3,7 +3,7 @@ status: active
 created: 2026-09-10
 updated: 2026-09-10
 parent: GOAL-001-foundation-architecture-health
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计索引
@@ -21,9 +21,11 @@ version: 0.2.0
 | A-009 | self | 编排器响应节 | A-008 F-006/F-007/F-008 响应（索引、Root 投影与 frontmatter 同步） | pass（响应侧；F-006/F-008 经 A-010 确认，F-007 未成立并已由 A-011 重做） | — | [响应](03-audit/A-009-r4-a008-response.md) |
 | A-010 | independent | codex-cli（gpt-5.6-sol · high） | A-008 F-006/F-007/F-008 闭合复审 + 关门投影一致性 + GOAL-005/Root 关门终判 | **fail** | **3**（F-007 仍 open + 新增 F-009/F-010） | [报告](03-audit/A-010-r4-closeout-final-independent.md) |
 | A-011 | self | 编排器响应节 | A-010 F-007/F-009/F-010 响应（含编号链更正） | pass（响应侧；产物同步待 A-012 复核） | — | [响应](03-audit/A-011-r4-a010-response.md) |
-| A-012 | independent | codex-cli（gpt-5.6-sol · high） | A-010 F-007/F-009/F-010 与 close-out projection 闭合复审 | 待落盘 | — | 待写入 `03-audit/A-012-*` |
+| A-012 | independent | codex-cli（gpt-5.6-sol · high） | A-010 F-007/F-009/F-010 与 close-out projection 闭合复审 | **fail** | **3**（F-007 仍 open + 新增 F-011/F-012） | [报告](03-audit/A-012-r4-final-closeout-independent.md) |
+| A-013 | self | 编排器响应节 | A-012 F-007/F-011/F-012 响应（含新增投影一致性自检） | pass（响应侧；产物同步待 A-014 复核） | — | [响应](03-audit/A-013-r4-a012-response.md) |
+| A-014 | independent | codex-cli（gpt-5.6-sol · high） | A-012 F-007/F-011/F-012 与 close-out projection 闭合复审 | 待落盘 | — | 待写入 `03-audit/A-014-*` |
 
-**open required 汇总（截至 A-011，2026-09-10）**：A-002 F-001～F-003 `fixed`；A-004 F-004/F-005 `fixed`；A-006 F-006（A-010 确认 `fixed`）与 F-007（A-009 声明未成立，A-011 重新修正）；A-008 F-008 `fixed`（A-010 确认）；A-010 F-009/F-010 由 A-011 修正。**F-007/F-009/F-010 的闭环证据待 A-012 独立复核**；在 A-012 判定 `pass` 之前，GOAL-005 不得标 `done`、Root 不得关门。
+**open required 汇总（截至 A-013，2026-09-10）**：A-002 F-001～F-003、A-004 F-004/F-005、A-006 F-006、A-008 F-008、A-010 F-009/F-010 均已 `fixed` 并经独立确认；**A-010 F-007 与 A-012 F-011/F-012 由 A-013 以 `fixed` 修正，闭环证据待 A-014 独立复核**。在 A-014 判定 `pass` 之前，GOAL-005 不得标 `done`、Root 不得关门、VP-035 判据 6 不得宣称成立。
 
 > A-002 原始会话记录：[attachments/audit-A-002-r4-codex-session.log](attachments/audit-A-002-r4-codex-session.log)（由独立会话直接写入）。
 

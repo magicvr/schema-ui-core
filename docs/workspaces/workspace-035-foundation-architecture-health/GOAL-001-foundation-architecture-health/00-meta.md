@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-09
 updated: 2026-09-10
-version: 0.4.0
+version: 0.4.2
 progress: 3/4
 plan_refs:
   - VP-035-foundation-architecture-health
@@ -17,7 +17,7 @@ serves_summary: 对照内核/组合根/已交付端口/Profile 与 architecture 
 
 ## 概述
 
-承接 [VP-035-foundation-architecture-health](../../../vision/plans/VP-035-foundation-architecture-health.md)（active v0.2.0 · [VRev-087](../../../vision/reviews/VRev-087-vp035-foundation-architecture-health-activation.md) self `pass` · 架构类 freshness PASS `f2044cf3`→`5c341ec7`）。本 Root 是本工作区唯一总目标，`parent: null`。它是有界评估目标，不是 VP-010 长期符合性程序的子目标。
+承接 [VP-035-foundation-architecture-health](../../../vision/plans/VP-035-foundation-architecture-health.md)（active v0.2.1 · 激活记录 v0.2.0 · [VRev-087](../../../vision/reviews/VRev-087-vp035-foundation-architecture-health-activation.md) self `pass` · 架构类 freshness PASS `f2044cf3`→`5c341ec7`）。本 Root 是本工作区唯一总目标，`parent: null`。它是有界评估目标，不是 VP-010 长期符合性程序的子目标。
 
 **对象面**：as-built 对照矩阵 + 四类业界对照分类表 + 路线图重述草案。  
 **红线（激活即生效）**：不实现 Redis/MQ/K8s/ORM/第三库；不消耗 RT-Q02/Q03/Q05 或 A3 trigger；不改 Profile 默认集 / 模块矩阵；不重开已 closed VP；对照若要动 Charter 非目标则停住。
@@ -25,7 +25,7 @@ serves_summary: 对照内核/组合根/已交付端口/Profile 与 architecture 
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：`VP-035-foundation-architecture-health`（`active` · v0.2.0）
+- VP：`VP-035-foundation-architecture-health`（`active` · v0.2.1）
 - 工作区：`workspace-035-foundation-architecture-health`（`delivery`）
 - 依据：[VRev-086](../../../vision/reviews/VRev-086-vp035-foundation-architecture-health-planned.md) planned `pass`、[VRev-087](../../../vision/reviews/VRev-087-vp035-foundation-architecture-health-activation.md) activation `pass`
 

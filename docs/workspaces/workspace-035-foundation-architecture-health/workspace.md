@@ -17,7 +17,7 @@ parent: null
 
 # 工作区上下文 · 基架架构健康评估与路线图重述
 
-本工作区是 [VP-035-foundation-architecture-health](../../vision/plans/VP-035-foundation-architecture-health.md)（`active` · v0.2.0）的唯一 lead delivery workspace。架构分支：as-built 对照 + 有界业界对照 + 总路线图重述草案。不替代 VP-009/VP-010，不改变 Charter `primary_workspace`。
+本工作区是 [VP-035-foundation-architecture-health](../../vision/plans/VP-035-foundation-architecture-health.md)（`active` · v0.2.1）的唯一 lead delivery workspace。架构分支：as-built 对照 + 有界业界对照 + 总路线图重述草案。不替代 VP-009/VP-010，不改变 Charter `primary_workspace`。
 
 - Root `GOAL-001-foundation-architecture-health`：`active` · 3/4（R1 分母冻结、R2 as-built 矩阵、R3 业界对照与缺口分类已完成）。
 - 激活门禁已满足（2026-09-09）：[VRev-087](../../vision/reviews/VRev-087-vp035-foundation-architecture-health-activation.md) self `pass`；架构类 freshness PASS（`f2044cf3` → `5c341ec7`），不暂挂 `go`。
@@ -38,7 +38,7 @@ parent: null
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：`VP-035-foundation-architecture-health`（`active` · v0.2.0）
+- VP：`VP-035-foundation-architecture-health`（`active` · v0.2.1）
 - 计划审视：[VRev-086](../../vision/reviews/VRev-086-vp035-foundation-architecture-health-planned.md) self `pass`
 - 激活审视：[VRev-087](../../vision/reviews/VRev-087-vp035-foundation-architecture-health-activation.md) self `pass`
 - Vision open required：0；V-F122 recommended 不阻断开区
