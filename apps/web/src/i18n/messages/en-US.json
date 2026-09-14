@@ -1123,5 +1123,22 @@
   "schema.digitaloffer.submit.status": "Change status",
   "schema.digitaloffer.void.title": "Void entitlement",
   "schema.digitaloffer.void.message": "Voiding is final; the entitlement becomes invalid for the subject.",
-  "schema.digitaloffer.void.confirm": "Void"
+  "schema.digitaloffer.void.confirm": "Void",
+  "commandPalette.open": "Search",
+  "commandPalette.title": "Command palette",
+  "commandPalette.input": "Search pages and commands",
+  "commandPalette.placeholder": "Search pages and commands…",
+  "commandPalette.close": "Close command palette",
+  "commandPalette.loading": "Loading commands…",
+  "commandPalette.partialError": "Some commands are temporarily unavailable.",
+  "commandPalette.results": "Search results",
+  "commandPalette.empty": "No matching pages or commands.",
+  "commandPalette.move": "to move",
+  "commandPalette.select": "to select",
+  "commandPalette.resultCount": "{count} results",
+  "commandPalette.openAction": "Run",
+  "commandPalette.openPage": "Open",
+  "commandPalette.kind.page": "Page",
+  "commandPalette.kind.navigation": "Link",
+  "commandPalette.kind.action": "Command"
 }

@@ -1123,5 +1123,22 @@
   "schema.digitaloffer.submit.status": "变更状态",
   "schema.digitaloffer.void.title": "作废权益",
   "schema.digitaloffer.void.message": "作废不可恢复；该主体将失去此权益。",
-  "schema.digitaloffer.void.confirm": "作废"
+  "schema.digitaloffer.void.confirm": "作废",
+  "commandPalette.open": "搜索",
+  "commandPalette.title": "命令面板",
+  "commandPalette.input": "搜索页面和命令",
+  "commandPalette.placeholder": "搜索页面和命令…",
+  "commandPalette.close": "关闭命令面板",
+  "commandPalette.loading": "正在加载命令…",
+  "commandPalette.partialError": "部分命令暂时不可用。",
+  "commandPalette.results": "搜索结果",
+  "commandPalette.empty": "没有匹配的页面或命令。",
+  "commandPalette.move": "移动选择",
+  "commandPalette.select": "选择",
+  "commandPalette.resultCount": "{count} 个结果",
+  "commandPalette.openAction": "执行",
+  "commandPalette.openPage": "打开",
+  "commandPalette.kind.page": "页面",
+  "commandPalette.kind.navigation": "链接",
+  "commandPalette.kind.action": "命令"
 }

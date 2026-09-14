@@ -122,6 +122,10 @@ export interface RendererComponentProps {
   dataRenderer?: (node: RenderStatCardNode | RenderChartNode) => ReactNode;
   /** Invoked when an actionButton node is activated. */
   onAction?: (node: RenderActionButtonNode) => void;
+  /** Host-triggered page-level command selected by the global palette. */
+  initialAction?: { id: string; pageId: string; trigger: Record<string, unknown> };
+  /** Clears a consumed page-level command. */
+  onInitialActionConsumed?: (id: string) => void;
   /**
    * Session-internal navigation hook (ADR-0021 navigate actions; GOAL-015
    * F-001): the host pushes the target onto its own history/visit stack so
@@ -483,16 +487,6 @@ async function runRequest(
   if (action === undefined) {
     return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } };
   }
-  // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
-  // CustomAction extension point (action.schema.json): a schema action may
-  // reference a whitelisted handler name; the renderer resolves it locally.
-  // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND).
-  if (action.type === "custom") {
-    return runCustomAction(action, fetcher, opts.row ?? null);
-  }
-  if (action.type !== "request") {
-    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
-  }
   if (opts.gateTargetId !== undefined) {
     // Absent target = no declared permission entry (engine default is allow):
     // only gate when the page actually declares a permission for this target,
@@ -522,6 +516,17 @@ async function runRequest(
         };
       }
     }
+  }
+  // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
+  // CustomAction extension point (action.schema.json): a schema action may
+  // reference a whitelisted handler name; the renderer resolves it locally.
+  // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND). Permission
+  // gating intentionally happens above, before this branch.
+  if (action.type === "custom") {
+    return runCustomAction(action, fetcher, opts.row ?? null);
+  }
+  if (action.type !== "request") {
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
 
   const formProvided = opts.formValues !== undefined;
@@ -952,6 +957,46 @@ function SchemaCrudProvider({
         setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } });
         return;
       }
+      // Re-run permission and gate checks for every programmatic invocation,
+      // including modal/navigate/custom actions. A disabled HTML control is not
+      // an authorization boundary; the global palette enters here directly.
+      const targetId =
+        stringOf(item.key) || stringOf(item.actionRef) || stringOf(item.actionId) || actionRef;
+      const declaredPermission =
+        item.permissionIntent !== undefined ||
+        (isRecord(item.permissions) && Object.keys(item.permissions).length > 0);
+      const matchingTargets = permissionTargets.filter((target) => target.targetId === targetId);
+      const denyInvocation = (reason: string) => {
+        setFeedback({
+          kind: "error",
+          code: "ACTION_NOT_EXECUTED",
+          message: `action "${actionRef}" was not executed (${reason})`,
+          messageKey: "error.actionNotExecuted",
+          params: { action: actionRef, reason },
+        });
+      };
+      if (
+        (declaredPermission && (targetId === "" || matchingTargets.length === 0)) ||
+        matchingTargets.some((target) => !target.effectivePermission) ||
+        (permissionStructureInvalid && (declaredPermission || matchingTargets.length > 0))
+      ) {
+        denyInvocation("PERMISSION_DENIED");
+        return;
+      }
+      // Row actions have row-specific disabledWhen/visibleField semantics in
+      // SchemaTable. Rowless page commands use the generic $context gate here;
+      // selection-dependent/batch candidates are excluded by the provider.
+      if (row === null) {
+        const gate = tableActionGate(item, context);
+        if (gate.errors.length > 0 || !gate.visible) {
+          denyInvocation("NOT_VISIBLE");
+          return;
+        }
+        if (gate.disabled) {
+          denyInvocation("DISABLED");
+          return;
+        }
+      }
       // Row actions carry the row in modal/confirm/request payloads. Do NOT call
       // setSelectedRow here — that opens the recordView Drawer and is wrong for
       // Edit / Delete / any toolbar-row action (user gap 2026-08-09).
@@ -985,13 +1030,34 @@ function SchemaCrudProvider({
           return;
         }
         const navigateMapping = isRecord(item.navigateMapping) ? item.navigateMapping : undefined;
-        if (navigateMapping !== undefined) {
-          const constructed = constructRequest({
-            kind: "rowNavigate",
-            action: action as JsonRecord,
-            navigateMapping,
-            row: row ?? {},
+        if (navigateMapping === undefined && url.includes("{")) {
+          setFeedback({
+            kind: "error",
+            code: "INVALID_NAVIGATE_URL",
+            message: `${actionRef} has an unbound url template`,
+            messageKey: "error.invalidNavigateUrl",
+            params: { action: actionRef },
           });
+          return;
+        }
+        if (navigateMapping !== undefined) {
+          let constructed: RequestConstructionResult;
+          try {
+            constructed = constructRequest({
+              kind: "rowNavigate",
+              action: action as JsonRecord,
+              navigateMapping,
+              row: row ?? {},
+            });
+          } catch (error) {
+            setFeedback({
+              kind: "error",
+              code: "ROW_NAVIGATION_FAILED",
+              message: error instanceof Error ? error.message : "row navigation construction failed",
+              messageKey: "error.rowNavigationFailed",
+            });
+            return;
+          }
           if (!constructed.ok) {
             setFeedback({
               kind: "error",
@@ -1047,7 +1113,7 @@ function SchemaCrudProvider({
         setFeedback(errorFeedback({ code: "ROW_ACTION_FAILED", message: String(error) }));
       });
     },
-    [document, runRowAction],
+    [document, runRowAction, permissionTargets, permissionStructureInvalid, context, t, onNavigate],
   );
 
   // ADR-0022 D4: batch toolbar trigger — confirm first, then run the batch.
@@ -3091,13 +3157,42 @@ function RenderPageSurface({
   tableRenderer,
   onAction,
   formComponent,
+  initialAction,
+  onInitialActionConsumed,
 }: RendererComponentProps) {
   const crud = useSchemaCrud()!;
+  const consumedInitialActionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialAction === undefined) {
+      consumedInitialActionRef.current = null;
+      return;
+    }
+    const documentPageId =
+      isRecord(document.meta) && typeof document.meta.pageId === "string"
+        ? document.meta.pageId
+        : undefined;
+    if (documentPageId !== initialAction.pageId) {
+      // Route transitions keep the previous page document for one render while
+      // the new Schema loads. Wait for the owner page instead of consuming the
+      // command against stale page actions.
+      return;
+    }
+    if (consumedInitialActionRef.current === initialAction.id) {
+      return;
+    }
+    consumedInitialActionRef.current = initialAction.id;
+    crud.invokeAction(initialAction.trigger, null);
+    onInitialActionConsumed?.(initialAction.id);
+  }, [initialAction?.id, initialAction?.pageId, document, crud, onInitialActionConsumed]);
   // VP-007 S3: actionButton nodes are first-class page actions in the default
   // app path — dispatch through the frozen Schema CRUD executor (gate →
   // confirm → request) unless the host overrides onAction.
   const resolvedOnAction = onAction ?? ((node: RenderActionButtonNode) => {
-    crud.invokeAction(node.props as unknown as Record<string, unknown>, null);
+    const trigger = { ...(node.props as unknown as Record<string, unknown>) };
+    if (typeof trigger.key !== "string" && typeof node.id === "string" && node.id !== "") {
+      trigger.key = node.id;
+    }
+    crud.invokeAction(trigger, null);
   });
   const modalAction =
     crud.activeModal !== null ? actionOf(document, crud.activeModal.actionRef) : undefined;
@@ -3159,6 +3254,8 @@ export function RenderPage({
   onAction,
   onNavigate,
   formComponent,
+  initialAction,
+  onInitialActionConsumed,
 }: RendererComponentProps & { dataFetcher?: typeof fetch }) {
   return (
     <SchemaCrudProvider
@@ -3173,6 +3270,8 @@ export function RenderPage({
         tableRenderer={tableRenderer}
         onAction={onAction}
         formComponent={formComponent}
+        initialAction={initialAction}
+        onInitialActionConsumed={onInitialActionConsumed}
       />
     </SchemaCrudProvider>
   );

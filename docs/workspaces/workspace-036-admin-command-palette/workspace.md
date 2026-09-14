@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-036-admin-command-palette](../../vision/plans/VP-036-admin-command-palette.md)（**`active` · v0.2.0**）的唯一 delivery workspace，承接已注册页面、导航项与声明式动作的权限安全检索、Command Palette、跨模块 provider 聚合、键盘可访问性与导航分组联动。不重开 VP-034，不替代 VP-009/VP-010，不承载实体全文搜索或新的业务域。
 
-- Root `GOAL-001-admin-command-palette`：**`active · 1/4`**；R1 已完成，R2～R4 按序承接 VP-036。
+- Root `GOAL-001-admin-command-palette`：**`active · 2/4`**；R1/R2 已完成，R3～R4 按序承接 VP-036。
 - 激活门禁已满足（2026-09-14）：[VRev-092](../../vision/reviews/VRev-092-vp036-admin-command-palette-activation.md) self `pass`；Admin freshness `5c341ec7` → `97aefe8c` PASS；I-036-006 verified。
 - 用户已确认工作区 slug = `workspace-036-admin-command-palette`；Root = `GOAL-001-admin-command-palette`。
 - Vision open required：0；V-F123 为 inherited recommended，由 R1 的可机器核对矩阵承接。
@@ -30,7 +30,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-036-admin-command-palette` | 与本区目标及资料引用的 `workspace_id` 一致；当前无固定共享资料 |
-| Root Goal | `GOAL-001-admin-command-palette` | `parent: null`；**active · 1/4** |
+| Root Goal | `GOAL-001-admin-command-palette` | `parent: null`；**active · 2/4** |
 | canonical 范围 | `docs/workspaces/workspace-036-admin-command-palette/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料；不得声明共享资料引用 |
 | 愿景角色 | `delivery` | VP-036 唯一 delivery workspace；不改变 Charter primary workspace |
@@ -49,8 +49,8 @@ parent: null
 | 阶段 | 目的 | 状态 |
 |------|------|------|
 | R1 | 页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除冻结 | completed；矩阵与 item-level oracle 已落盘，A-001 self `pass` + A-002 grok `conditional` 已由 A-003 响应，I-036-001～003 verified |
-| R2 | `SearchableItem` 契约与跨模块 provider 聚合 | in progress；依赖 R1，先完成 provider v1 纯函数与聚合测试 |
-| R3 | Admin Shell Command Palette、键盘可访问、i18n/theme、直接路由与分组联动 | not started；依赖 R1/R2 |
+| R2 | `SearchableItem` 契约与跨模块 provider 聚合 | completed；provider v1、Manifest projection、冲突/匹配/cap 与测试已落盘，A-004 self `pass` |
+| R3 | Admin Shell Command Palette、键盘可访问、i18n/theme、直接路由与分组联动 | in progress；UI WIP 已接线，待完整交互与 cross 审核 |
 | R4 | Profile×权限×路由回归、证据矩阵、边界复核与关门 | not started；依赖 R1～R3 |
 
 纲领阶段按 R1 → R2 → R3 → R4 串行推进；同一阶段内的细粒度子目标须在 R1 边界冻结后按证据与并行价值创建。工作区建立本身不代表任何实现阶段完成。

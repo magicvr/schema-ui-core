@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-14
 updated: 2026-09-14
-version: 0.3.0
-progress: 1/4
+version: 0.4.0
+progress: 2/4
 plan_refs:
   - VP-036-admin-command-palette
 primary_plan: VP-036-admin-command-palette
@@ -49,7 +49,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 以下 4 个检查点构成 Root 的派生 progress 来源；纲领阶段按顺序推进。
 
 - [x] **R1 范围与信息冻结**：页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除有可核对决策与矩阵；self A-001 `pass`，grok independent A-002 `conditional` 的 F-001/F-002 已由 A-003 `fixed` 响应。
-- [ ] **R2 契约与聚合**：`SearchableItem` / provider 版本化语义冻结，现有及可选模块可稳定聚合、去重和排序，不增加 Shell 中央业务注册分支。
+- [x] **R2 契约与聚合**：`SearchableItem` / provider v1 已实现；Manifest provider 与注入 provider 可稳定聚合、去重和排序，不增加 Shell 中央业务注册分支；A-004 self `pass`，完整 Web Vitest 1355/1355。
 - [ ] **R3 Palette 实现与体验**：Command Palette、键盘/ARIA、焦点、i18n/theme、直接 URL 与导航分组联动按既有语义可用。
 - [ ] **R4 回归与关门准备**：Profile×权限×路由矩阵、浏览器/自动化回归、边界复核、Goal 审计与必要的独立意见落盘；开放 required = 0 后再提议关门。
 
@@ -75,4 +75,4 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 ## 备注
 
 - 工作区建立与 Root 设立是已发生事实；R1～R4 尚未宣称完成。
-- `progress: 1/4` 只由上方 4 个显式检查点派生；R1 已完成，R2～R4 未完成；不得用它替代信息门禁、审计意见或 status 结论。
+- `progress: 2/4` 只由上方 4 个显式检查点派生；R1/R2 已完成，R3/R4 未完成；不得用它替代信息门禁、审计意见或 status 结论。
