@@ -12,20 +12,20 @@ workspace_id: workspace-036-admin-command-palette
 
 > 工作区：`workspace-036-admin-command-palette`
 > canonical：`docs/workspaces/workspace-036-admin-command-palette/`
-> Root：`GOAL-001-admin-command-palette`（**active · 0/4**）
+> Root：`GOAL-001-admin-command-palette`（**active · 1/4**）
 > primary_plan：`VP-036-admin-command-palette`（active · v0.2.0）
 
 ## 目标树
 
 ```text
-GOAL-001-admin-command-palette [active · 0/4]
+GOAL-001-admin-command-palette [active · 1/4]
 ```
 
 ## 纲领路线图
 
 ```text
-R1 范围与信息冻结 [not started]
-  → R2 SearchableItem 契约与 provider 聚合 [not started]
+R1 范围与信息冻结 [completed]
+  → R2 SearchableItem 契约与 provider 聚合 [in progress]
   → R3 Command Palette / 可访问性 / i18n-theme / 分组联动 [not started]
   → R4 权限×Profile×路由回归 / 证据 / 关门 [not started]
 ```
@@ -34,7 +34,7 @@ R1 范围与信息冻结 [not started]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-admin-command-palette | Admin 全局检索与 Command Palette 交付 | **active** | 0/4 | null | R1～R4 尚未开始；I-036-001～003 collecting；I-036-004 verified；I-036-005 deferred non-blocking；I-036-006 verified；Vision open required = 0 |
+| GOAL-001-admin-command-palette | Admin 全局检索与 Command Palette 交付 | **active** | 1/4 | null | R1 已完成；R2 provider v1 实现进行中；I-036-001～003 verified；I-036-004 verified；I-036-005 deferred non-blocking；I-036-006 verified；A-001/A-002/A-003 R1 审计链当前 open required = 0；Vision open required = 0 |
 
 ## 维护说明
 

@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-14
 updated: 2026-09-14
-version: 0.1.0
-progress: 0/4
+version: 0.3.0
+progress: 1/4
 plan_refs:
   - VP-036-admin-command-palette
 primary_plan: VP-036-admin-command-palette
@@ -48,7 +48,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 以下 4 个检查点构成 Root 的派生 progress 来源；纲领阶段按顺序推进。
 
-- [ ] **R1 范围与信息冻结**：页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除有可核对决策与矩阵。
+- [x] **R1 范围与信息冻结**：页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除有可核对决策与矩阵；self A-001 `pass`，grok independent A-002 `conditional` 的 F-001/F-002 已由 A-003 `fixed` 响应。
 - [ ] **R2 契约与聚合**：`SearchableItem` / provider 版本化语义冻结，现有及可选模块可稳定聚合、去重和排序，不增加 Shell 中央业务注册分支。
 - [ ] **R3 Palette 实现与体验**：Command Palette、键盘/ARIA、焦点、i18n/theme、直接 URL 与导航分组联动按既有语义可用。
 - [ ] **R4 回归与关门准备**：Profile×权限×路由矩阵、浏览器/自动化回归、边界复核、Goal 审计与必要的独立意见落盘；开放 required = 0 后再提议关门。
@@ -57,9 +57,9 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-036-001 | required | 当前所有可检索页面、导航项和声明式动作的精确分母与 Profile/optional module 覆盖是什么？ | R1 范围冻结、R2 聚合、R4 回归 | R1 | 扫描 provider、Manifest fragment、导航/动作注册，建立 item→module→profile 矩阵 | collecting | R1 冻结前复核 | 首波只承诺注册页面/导航/声明式动作；实体记录不进分母 |
-| I-036-002 | required | Palette 结果的权限、Profile、直接 URL 与动作守卫如何保持现有语义？ | R1 方案冻结、R3 实施、R4 回归 | R1 | 对照权限过滤、路由守卫、Profile 装配与 action binding，建立允许/拒绝矩阵 | collecting | R1 方案冻结前复核 | 不新增权限绕过；具体实现待 R1 冻结 |
-| I-036-003 | required | 结果字段、标签本地化、排序/去重、快捷键、结果上限和焦点/ARIA 语义是什么？ | R1 方案冻结、R3 实施、R4 验收 | R1 | UX 方案 + 设计系统/locale 约定 + 浏览器可访问性验证 | collecting | R1 方案冻结前复核 | 不将 UX 偏好伪装成已冻结实现细节 |
+| I-036-001 | required | 当前所有可检索页面、导航项和声明式动作的精确分母与 Profile/optional module 覆盖是什么？ | R1 范围冻结、R2 聚合、R4 回归 | R1 | 扫描 provider、Manifest fragment、导航/动作注册，建立 item→module→profile 矩阵 | verified | R1 冻结前复核已完成 | `attachments/r1-searchable-item-matrix.md`；首波只承诺注册页面/导航/声明式动作，实体记录不进分母 |
+| I-036-002 | required | Palette 结果的权限、Profile、直接 URL 与动作守卫如何保持现有语义？ | R1 方案冻结、R3 实施、R4 回归 | R1 | 对照权限过滤、路由守卫、Profile 装配与 action binding，建立允许/拒绝矩阵 | verified | R1 语义冻结；R2/R3 复核实现证据 | D-002；不得新增权限绕过，程序化 gate 修正仍待实现 |
+| I-036-003 | required | 结果字段、标签本地化、排序/去重、快捷键、结果上限和焦点/ARIA 语义是什么？ | R1 方案冻结、R3 实施、R4 验收 | R1 | UX 方案 + 设计系统/locale 约定 + 浏览器可访问性验证 | verified | R1 口径冻结；R3/R4 收集可用性证据 | D-002 与矩阵 §3；双语/主题与浏览器行为仍待验证 |
 | I-036-004 | required | 首波是否承诺实体级全局搜索，以及是否触发 `RT-X01` / `RT-X02`？ | VP 范围与基础设施门禁 | R1 | 用户书面确认的 VP-036 边界；新增实体搜索须另行 `/vision` 复核 | verified | 实体搜索需求或规模证据出现时复核 | 首波不承诺实体全文搜索；`RT-X01` / `RT-X02` 保持 gated；见 VRev-090/VRev-092 |
 | I-036-005 | non-blocking | 最近搜索、固定项或持久化偏好是否进入首波？ | R3 体验扩展 | R3 | 实现前评估；如需要，另立 UX VP 或追加有界范围决策 | deferred | 不进入首波；下一 UX VP 规划时复核 | Saved Views / 最近项不作为本 VP 退出条件 |
 | I-036-006 | required | 激活时当前代码候选是否仍满足 Admin 类 freshness 与 VP-008 `go` 消费有效性？ | 激活 | 激活前 | 复核协议 pin、依赖锁、迁移、Profile 默认集、provenance 与区间变更 | verified | 下次涉及 Admin 类基线/默认集/协议身份的区间变更时复核 | `5c341ec7`→`97aefe8c`；`apps/**` 无差异；五域 freshness PASS；见 VRev-092 |
@@ -75,4 +75,4 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 ## 备注
 
 - 工作区建立与 Root 设立是已发生事实；R1～R4 尚未宣称完成。
-- `progress: 0/4` 只由上方 4 个显式检查点派生；不得用它替代信息门禁、审计意见或 status 结论。
+- `progress: 1/4` 只由上方 4 个显式检查点派生；R1 已完成，R2～R4 未完成；不得用它替代信息门禁、审计意见或 status 结论。
