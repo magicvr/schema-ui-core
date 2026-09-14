@@ -179,6 +179,37 @@ describe("App command palette integration", () => {
     expect(container.querySelector('[role="dialog"][aria-label="Create user"]')).not.toBeNull();
   });
 
+  it("opens a visible page and focuses its heading, while ignoring Ctrl+K in the search input", async () => {
+    const container = await renderApp(["users.write"]);
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-command-palette-trigger]")?.click();
+    });
+    await flush();
+    const pageOption = [...container.querySelectorAll('[role="option"]')].find((option) =>
+      option.textContent?.trim().startsWith("Users"),
+    ) as HTMLButtonElement | undefined;
+    expect(pageOption).not.toBeUndefined();
+    await act(async () => {
+      pageOption?.click();
+    });
+    await flush();
+    expect(window.location.pathname).toBe("/users");
+    expect(document.activeElement).toBe(container.querySelector("#page-title"));
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>("[data-command-palette-trigger]")?.click();
+    });
+    await flush();
+    const input = container.querySelector<HTMLInputElement>('[role="combobox"]')!;
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+    });
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+  });
+
   it("does not expose a denied action while retaining the visible page result", async () => {
     const container = await renderApp([]);
     await act(async () => {

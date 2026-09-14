@@ -46,6 +46,11 @@ func Evaluate(expr string, user User, features map[string]bool) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// An absent context path is unknown, not a successful inequality. Returning
+	// false here keeps every operator fail-closed for undeclared fields.
+	if len(actual) == 0 || string(actual) == "null" {
+		return false, nil
+	}
 
 	switch operator {
 	case "==":

@@ -18,6 +18,8 @@ func TestEvaluate(t *testing.T) {
 		{"features boolean", `$context.features.beta == true`, true},
 		{"features false", `$context.features.beta == false`, false},
 		{"nested user path", `$context.user.profile.admin == true`, false},
+		{"missing inequality fails closed", `$context.user.profile.admin != true`, false},
+		{"missing feature inequality fails closed", `$context.features.missing != true`, false},
 		{"undeclared path fails closed", `$context.user.roles contains "x"`, false},
 	}
 	for _, tc := range cases {

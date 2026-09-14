@@ -349,6 +349,16 @@ describe("manifest loading and expression boundaries", () => {
         features: { beta: true },
       }),
     ).toBe(true);
+    expect(
+      evaluateExpression("$context.features.missing != true", {
+        features: {},
+      }),
+    ).toBe(false);
+    expect(
+      evaluateExpression(String.raw`$context.features.beta == "\q"`, {
+        features: { beta: true },
+      }),
+    ).toBe(false);
     expect(evaluateExpression("$deps.admin == true", {})).toBe(false);
     expect(ManifestError).toBeDefined();
   });

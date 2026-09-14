@@ -173,18 +173,14 @@ function pageForRef(manifest: AppManifest, pageRef: string | undefined): PageEnt
 
 function flattenProjected(
   items: ProjectedItem[],
-  slot: "top" | "sidebar" | "user",
   into: Array<{ link: ProjectedLink; group?: string }>,
   group?: string,
 ): void {
   for (const item of items) {
     if (item.type === "group") {
-      flattenProjected(item.items, slot, into, item.label);
+      flattenProjected(item.items, into, item.label);
       continue;
     }
-    // Keep the slot in the stable order even though it is currently only useful
-    // as a keyword. This also makes the traversal explicit for future providers.
-    void slot;
     into.push({ link: item, ...(group === undefined ? {} : { group }) });
   }
 }
@@ -312,25 +308,30 @@ function collectDirectTriggers(
 function actionCanBeInvokedGlobally(
   manifest: AppManifest,
   action: Record<string, unknown>,
-  trigger: Record<string, unknown>,
 ): boolean {
   const type = stringValue(action.type);
   if (type === "upload") {
     return false;
   }
-  if (type === "request" || type === "custom") {
-    // Requests/custom handlers with a row placeholder would otherwise execute
-    // with an empty row and are therefore not global page commands.
-    return !stringValue(action.url).includes("{") && !stringValue(action.handler).includes("{");
+  if (type === "request") {
+    // Requests with a row placeholder would otherwise execute with an empty row
+    // and are therefore not global page commands.
+    return !stringValue(action.url).includes("{");
+  }
+  if (type === "custom") {
+    // The renderer only has a small allowlist of rowless custom handlers. Do
+    // not advertise an unknown handler or a row-scoped file operation globally.
+    return new Set(["export.users", "export.roles"]).has(stringValue(action.handler));
   }
   if (type === "modal") {
-    return isRecord(action.content) || stringValue(action.modalId) !== "";
+    // `modalId` is a protocol shape, but this host has no modal registry; a
+    // modal without inline content would otherwise select into a blank state.
+    return isRecord(action.content);
   }
   if (type === "navigate") {
     const url = stringValue(action.url);
     return safeRoute(url) && matchRoute(manifest.pages, url) !== undefined;
   }
-  void trigger;
   return false;
 }
 
@@ -344,9 +345,9 @@ function manifestDestinationItems(
     context.t,
   );
   const links: Array<{ link: ProjectedLink; group?: string }> = [];
-  flattenProjected(projection.top, "top", links);
-  flattenProjected(projection.sidebar, "sidebar", links);
-  flattenProjected(projection.user, "user", links);
+  flattenProjected(projection.top, links);
+  flattenProjected(projection.sidebar, links);
+  flattenProjected(projection.user, links);
 
   const items: SearchableItem[] = [];
   const pages = new Map<string, { page: PageEntry; destination: SearchableItem }>();
@@ -477,7 +478,7 @@ export function createManifestSearchProvider(): SearchableProvider {
           if (!triggerPermissionAllowed(document, candidate.trigger, context.navigationContext)) {
             continue;
           }
-          if (!actionCanBeInvokedGlobally(context.manifest, action, candidate.trigger)) {
+          if (!actionCanBeInvokedGlobally(context.manifest, action)) {
             continue;
           }
           const label = resolveTextProp(

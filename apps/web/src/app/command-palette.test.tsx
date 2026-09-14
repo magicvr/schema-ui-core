@@ -104,6 +104,52 @@ describe("CommandPalette", () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "action:create" }));
   });
 
+  it("traps Tab focus inside the dialog", async () => {
+    const container = render(
+      <I18nProvider stored="en-US">
+        <CommandPalette
+          open
+          providers={[provider]}
+          context={context()}
+          onClose={vi.fn()}
+          onSelect={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    await flush();
+    const input = container.querySelector<HTMLInputElement>('[role="combobox"]')!;
+    const lastOption = container.querySelectorAll<HTMLButtonElement>('[role="option"]')[2]!;
+
+    await act(async () => {
+      lastOption.focus();
+      lastOption.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+    });
+    expect(document.activeElement).toBe(input);
+
+    await act(async () => {
+      input.focus();
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true }));
+    });
+    expect(document.activeElement).toBe(lastOption);
+  });
+
+  it("renders the command chrome in the active Chinese locale", async () => {
+    const container = render(
+      <I18nProvider stored="zh-CN">
+        <CommandPalette
+          open
+          providers={[provider]}
+          context={context()}
+          onClose={vi.fn()}
+          onSelect={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+    await flush();
+    expect(container.querySelector<HTMLInputElement>('[role="combobox"]')?.getAttribute("aria-label")).toBe("搜索页面和命令");
+    expect(container.querySelector("#command-palette-title")?.textContent).toBe("命令面板");
+  });
+
   it("matches localized keywords and closes on Escape while restoring the trigger focus", async () => {
     function Harness() {
       const [open, setOpen] = useState(false);

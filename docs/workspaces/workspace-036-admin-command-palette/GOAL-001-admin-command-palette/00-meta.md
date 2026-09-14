@@ -50,7 +50,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 - [x] **R1 范围与信息冻结**：页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除有可核对决策与矩阵；self A-001 `pass`，grok independent A-002 `conditional` 的 F-001/F-002 已由 A-003 `fixed` 响应。
 - [x] **R2 契约与聚合**：`SearchableItem` / provider v1 已实现；Manifest provider 与注入 provider 可稳定聚合、去重和排序，不增加 Shell 中央业务注册分支；A-004 self `pass`，完整 Web Vitest 1355/1355。
-- [ ] **R3 Palette 实现与体验**：Command Palette、键盘/ARIA、焦点、i18n/theme、直接 URL 与导航分组联动按既有语义可用。
+- [ ] **R3 Palette 实现与体验**：Command Palette、键盘/ARIA、焦点、i18n/theme、直接 URL 与导航分组联动按既有语义可用；self A-005 `pass`，mvp/admin SQLite browser smoke 已通过，grok cross-audit 待响应。
 - [ ] **R4 回归与关门准备**：Profile×权限×路由矩阵、浏览器/自动化回归、边界复核、Goal 审计与必要的独立意见落盘；开放 required = 0 后再提议关门。
 
 ## 信息就绪与未知项（P-005）

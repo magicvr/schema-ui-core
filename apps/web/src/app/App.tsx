@@ -1151,6 +1151,13 @@ export function App({
     [manifest, path],
   );
   const isTelegramOperatorPage = activePageId === "telegram-operator";
+  useEffect(() => {
+    if (pendingPaletteAction !== null && activePageId !== pendingPaletteAction.pageId) {
+      // If the user navigates away before the owner Schema consumes the command,
+      // discard it. A later visit must never unexpectedly replay an old action.
+      setPendingPaletteAction(null);
+    }
+  }, [activePageId, pendingPaletteAction]);
   const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
   const handleCommandPaletteClose = useCallback(() => {
     setCommandPaletteOpen(false);
@@ -1179,7 +1186,13 @@ export function App({
       }
       setPendingPaletteAction(null);
       focusPageTitleAfterNavigationRef.current = true;
+      const targetPageId = matchRoute(manifest.pages, stripPathQuery(item.href))?.page.pageId;
       onNavigate(item.href);
+      if (targetPageId !== undefined && targetPageId === activePageId) {
+        // A same-page selection does not change React's `path` state, so the
+        // normal path effect cannot move focus for us.
+        document.getElementById("page-title")?.focus();
+      }
     },
     [activePageId, onNavigate],
   );

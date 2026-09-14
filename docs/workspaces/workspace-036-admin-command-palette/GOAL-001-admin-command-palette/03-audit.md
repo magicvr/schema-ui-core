@@ -20,6 +20,7 @@ version: 0.2.0
 | A-002 | 2026-09-14 | independent | R1 范围、分母、provider/UX 冻结 | conditional | 1（F-001，已响应） | [A-002-r1-freeze-independent.md](03-audit/A-002-r1-freeze-independent.md) |
 | A-003 | 2026-09-14 | self | 响应 A-002 F-001/F-002 · R1 分母与 item-level oracle | pass | 0 | [A-003-r1-independent-response.md](03-audit/A-003-r1-independent-response.md) |
 | A-004 | 2026-09-14 | self | R2 provider v1、聚合与 programmatic gate 预备修正 | pass | 0 | [A-004-r2-provider-self.md](03-audit/A-004-r2-provider-self.md) |
+| A-005 | 2026-09-14 | self | R3 Palette 实现、动作 handoff、ARIA/focus 与 browser smoke | pass | 0 | [A-005-r3-palette-self.md](03-audit/A-005-r3-palette-self.md) |
 
 ## 当前状态
 

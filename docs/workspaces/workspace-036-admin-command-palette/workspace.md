@@ -50,7 +50,7 @@ parent: null
 |------|------|------|
 | R1 | 页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除冻结 | completed；矩阵与 item-level oracle 已落盘，A-001 self `pass` + A-002 grok `conditional` 已由 A-003 响应，I-036-001～003 verified |
 | R2 | `SearchableItem` 契约与跨模块 provider 聚合 | completed；provider v1、Manifest projection、冲突/匹配/cap 与测试已落盘，A-004 self `pass` |
-| R3 | Admin Shell Command Palette、键盘可访问、i18n/theme、直接路由与分组联动 | in progress；UI WIP 已接线，待完整交互与 cross 审核 |
+| R3 | Admin Shell Command Palette、键盘可访问、i18n/theme、直接路由与分组联动 | in progress；实现与 mvp/admin SQLite smoke 已通过，A-005 self `pass`，grok cross-audit 待响应 |
 | R4 | Profile×权限×路由回归、证据矩阵、边界复核与关门 | not started；依赖 R1～R3 |
 
 纲领阶段按 R1 → R2 → R3 → R4 串行推进；同一阶段内的细粒度子目标须在 R1 边界冻结后按证据与并行价值创建。工作区建立本身不代表任何实现阶段完成。
