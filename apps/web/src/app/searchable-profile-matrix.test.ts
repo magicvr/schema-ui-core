@@ -206,26 +206,103 @@ function providerContext(manifest: AppManifest, documents: Record<string, unknow
   };
 }
 
+const MVP_PAGE_IDS = [
+  "page:dashboard",
+  "page:users",
+  "page:roles",
+  "page:account",
+  "page:notifications",
+];
+const MVP_ACTION_IDS = [
+  "action:users:create",
+  "action:users:invites",
+  "action:users:export",
+  "action:users:import",
+  "action:roles:export",
+  "action:roles:create",
+];
+const ADMIN_PAGE_IDS = [
+  "page:dashboard",
+  "page:users",
+  "page:roles",
+  "page:file-library",
+  "page:data-dictionary",
+  "page:system-monitoring",
+  "page:scheduled-tasks",
+  "page:recycle-bin",
+  "page:data-permission",
+  "page:activity",
+  "page:mail",
+  "page:mail-outbox",
+  "page:wallet",
+  "page:wallet-vouchers",
+  "page:my-wallet",
+  "page:settings",
+  "page:account",
+  "page:notifications",
+];
+const ADMIN_ACTION_IDS = [
+  "action:users:create",
+  "action:users:invites",
+  "action:users:export",
+  "action:users:import",
+  "action:roles:export",
+  "action:roles:create",
+  "action:settings:reset",
+  "action:file-library:upload",
+  "action:data-dictionary:create",
+  "action:scheduled-tasks:create",
+  "action:recycle-bin:purgeAll",
+  "action:data-permission:register",
+  "action:my-wallet:redeem",
+  "action:wallet-vouchers:generate",
+  "action:wallet:create",
+  "action:wallet:reconcile",
+];
+const DEMO_PAGE_IDS = [
+  ...MVP_PAGE_IDS,
+  "page:overview",
+  "page:data-table",
+  "page:admin-list-batch",
+  "page:data-display",
+  "page:search-form-table",
+  "page:form-controls",
+  "page:form-with-reactions",
+  "page:form-with-upload",
+];
+const CUSTOM_PAGE_IDS = [
+  ...ADMIN_PAGE_IDS,
+  "page:telegram-settings",
+  "page:digitaloffer-offers",
+  "page:digitaloffer-entitlements",
+  "page:digitaloffer-purchases",
+];
+const CUSTOM_ACTION_IDS = [
+  ...ADMIN_ACTION_IDS,
+  "action:telegram-settings:telegram-operator-entry-button",
+  "action:digitaloffer-offers:create",
+];
+
 describe("VP-036 profile denominator matrix", () => {
   const documents = schemaDocuments();
   const cases = [
-    { name: "mvp" as const, pages: 5, actions: 6 },
-    { name: "admin" as const, pages: 18, actions: 16 },
-    { name: "demo" as const, pages: 13, actions: 6 },
-    { name: "custom" as const, pages: 22, actions: 18 },
+    { name: "mvp" as const, pageIds: MVP_PAGE_IDS, actionIds: MVP_ACTION_IDS },
+    { name: "admin" as const, pageIds: ADMIN_PAGE_IDS, actionIds: ADMIN_ACTION_IDS },
+    { name: "demo" as const, pageIds: DEMO_PAGE_IDS, actionIds: MVP_ACTION_IDS },
+    { name: "custom" as const, pageIds: CUSTOM_PAGE_IDS, actionIds: CUSTOM_ACTION_IDS },
   ];
 
   for (const testCase of cases) {
-    it(`${testCase.name} exposes only the corrected page/action denominator`, async () => {
+    it(`${testCase.name} exposes exactly the corrected R1 §2.1 page/action IDs`, async () => {
       const result = await createManifestSearchProvider().getItems(
         providerContext(profileManifest(testCase.name), documents),
       );
       const pageItems = result.items.filter((item) => item.kind === "page" || item.kind === "navigation");
       const actionItems = result.items.filter((item) => item.kind === "action");
-      expect(pageItems).toHaveLength(testCase.pages);
-      expect(actionItems).toHaveLength(testCase.actions);
-      expect(pageItems.some((item) => item.id.includes("dictionary-entries"))).toBe(false);
-      expect(pageItems.some((item) => item.id.includes("wallet-entries"))).toBe(false);
+      // Exact stable-ID oracle (R1 matrix §2.1): a future trigger that keeps the
+      // same count but changes the id would fail here.
+      expect(pageItems.map((item) => item.id).sort()).toEqual([...testCase.pageIds].sort());
+      expect(actionItems.map((item) => item.id).sort()).toEqual([...testCase.actionIds].sort());
       expect(actionItems.every((item) => item.action?.trigger.requiresSelection !== true)).toBe(true);
       expect(result.errors ?? []).toEqual([]);
     });

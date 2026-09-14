@@ -5,7 +5,7 @@ status: active
 created: 2026-09-14
 updated: 2026-09-14
 parent: null
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-001-admin-command-palette
@@ -24,10 +24,13 @@ version: 0.3.0
 | A-006 | 2026-09-14 | independent | R2/R3 实现、16/18 分母、fail-closed、无协议加宽、可否进入 R4 | pass | 0（4 recommended） | [A-006-r2-r3-implementation-independent.md](03-audit/A-006-r2-r3-implementation-independent.md) |
 | A-007 | 2026-09-14 | self | 响应 A-006 F-001～F-004 · R4 entry readiness | pass | 0 | [A-007-r2-r3-independent-response.md](03-audit/A-007-r2-r3-independent-response.md) |
 | A-008 | 2026-09-14 | self | R4 Profile×permission×route 回归与关门准备 | pass | 0 | [A-008-r4-closeout-self.md](03-audit/A-008-r4-closeout-self.md) |
+| A-009 | 2026-09-14 | independent | R4 最终关门 / VP-036 全部退出判据 | pass | 0（2 recommended） | [A-009-r4-closeout-independent.md](03-audit/A-009-r4-closeout-independent.md) |
+| A-010 | 2026-09-14 | self | 响应 A-009 F-001/F-002 · ID oracle 与 confirm 分支闭合 | pass | 0 | [A-010-r4-closeout-response.md](03-audit/A-010-r4-closeout-response.md) |
 
 ## 当前状态
 
 - A-002 原始 `conditional` 与 finding 原文保留；A-003 已用修正矩阵 §2/§2.1 关闭其 required F-001（并处理 F-002），当前 R1 scope open required = 0。
 - A-001 F-001 与 A-002 F-003 的程序化 gate 缺口已由 A-004 以代码/测试证据 `fixed` 响应；A-006 independent 复核同意该 gate 与 R3 实施可进入 R4。
 - A-006（`source: independent` · grok-build · grok-4.6 · reasoning high）`pass`，open required = 0；4 条 recommended 已由 A-007 以测试、代码与证据索引处理，不阻断进入 R4。独立意见不修改 `status` / `progress` / goal-tree；响应由 `/govern` 记录。
-- A-007 response `pass`，R2/R3 相关 open required = 0；A-008 R4 self close-out readiness `pass`，已形成四 Profile matrix、四组合浏览器证据与红线核对；最终 independent close-out 仍待执行。
+- A-007 response `pass`，R2/R3 相关 open required = 0；A-008 R4 self close-out readiness `pass` 保留。
+- A-009（`source: independent` · grok-build · grok-4.6 · reasoning high）R4 close-out `pass`，open required = 0；2 条 recommended 已由 A-010 以 ID oracle 测试与 confirm 分支测试 `fixed` 闭合。独立意见不修改 `status` / `progress` / goal-tree；响应与是否将 Root 标为 `done` 由 `/govern` 与用户确认处理。

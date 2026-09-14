@@ -44,6 +44,7 @@ function renderPage(
   context: Record<string, unknown>,
   onNavigate?: (url: string) => void,
   row: Record<string, unknown> | null = null,
+  dataFetcher?: typeof fetch,
 ): HTMLDivElement {
   registerCustomComponent("invoke-on-mount", invokeOnMount(pageDocument.__trigger as Record<string, unknown>, row));
   const container = globalThis.document.createElement("div");
@@ -53,7 +54,7 @@ function renderPage(
   act(() => {
     root.render(
       <I18nProvider stored="en-US">
-        <RenderPage document={pageDocument as never} context={context} onNavigate={onNavigate} />
+        <RenderPage document={pageDocument as never} context={context} onNavigate={onNavigate} dataFetcher={dataFetcher} />
       </I18nProvider>,
     );
   });
@@ -168,6 +169,52 @@ describe("programmatic action gate", () => {
 
     expect(onNavigate).not.toHaveBeenCalled();
     expect(container.querySelector('[data-feedback-code="INVALID_NAVIGATE_URL"]')).not.toBeNull();
+  });
+
+  it("shows the existing ConfirmDialog for a confirm-declaring page action and only fires after confirmation", async () => {
+    const fetcher = vi.fn(async () => new Response("{}", { status: 200 })) as unknown as typeof fetch;
+    const page = {
+      __trigger: {
+        actionId: "resetSettings",
+        key: "reset",
+        label: "Restore defaults",
+        confirm: "Restore all settings to their defaults?",
+      },
+      meta: {
+        pageId: "settings",
+        title: "Settings",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["actions.page.trigger"],
+      },
+      actions: {
+        resetSettings: { type: "request", method: "POST", url: "/api/settings/default/reset" },
+      },
+      body: {
+        type: "section",
+        children: [
+          { type: "actionButton", id: "settings-reset", props: { actionId: "resetSettings", key: "reset", label: "Restore defaults", confirm: "Restore all settings to their defaults?" } },
+          { type: "custom", component: "invoke-on-mount" },
+        ],
+      },
+    };
+    const container = renderPage(page, { user: { permissions: [] }, features: {} }, undefined, null, fetcher);
+    await flush();
+
+    // The existing confirm channel must be used; no request may fire pre-confirm.
+    expect(container.querySelector('[data-feedback-code="ACTION_NOT_EXECUTED"]')).toBeNull();
+    expect(container.querySelector('[role="dialog"][aria-label="Confirm action"]')).not.toBeNull();
+    expect(fetcher).not.toHaveBeenCalled();
+
+    const confirmButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+      button.textContent?.trim() === "Confirm",
+    )!;
+    expect(confirmButton).toBeDefined();
+    await act(async () => {
+      confirmButton.click();
+    });
+    await flush();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/settings/default/reset"), expect.anything());
   });
 
   it("reports a malformed row navigation mapping without calling the host", async () => {
