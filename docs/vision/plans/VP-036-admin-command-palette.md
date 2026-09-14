@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-036-admin-command-palette
 title: Admin 全局检索与 Command Palette
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace:
+lead_workspace: workspace-036-admin-command-palette
 created: 2026-09-10
-updated: 2026-09-10
-version: 0.1.0
+updated: 2026-09-14
+version: 0.2.0
 parent: null
 ---
 
@@ -17,10 +17,10 @@ parent: null
 
 | 项 | 值 |
 |-----|-----|
-| status | **`planned`**（2026-09-10 · 0 区） |
+| status | **`active`**（2026-09-14 · v0.2.0；用户指令激活；lead `workspace-036-admin-command-palette`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-034 导航分组后的跨模块发现能力 |
-| Vision Review | 计划阶段 [VRev-090](../reviews/VRev-090-vp036-admin-command-palette-planned.md) self `pass`；本条不是激活许可 |
-| 激活前置 | Admin 类 freshness review + 激活就绪 self Review；之后由 `/govern` scaffold delivery 工作区 |
+| Vision Review | 计划阶段 [VRev-090](../reviews/VRev-090-vp036-admin-command-palette-planned.md) self `pass`；激活就绪 [VRev-092](../reviews/VRev-092-vp036-admin-command-palette-activation.md) self `pass`；两条报告 open required = 0 |
+| 激活前置 | 已完成 Admin 类 freshness review；I-036-006 已 verified；用户确认工作区 `workspace-036-admin-command-palette` 与 Root `GOAL-001-admin-command-palette`；已交 `/govern` scaffold delivery 工作区 |
 | 基础设施边界 | 首波不消耗 `RT-X01` 搜索引擎、Redis、MQ 或多实例 trigger |
 
 ## 意图
@@ -81,15 +81,15 @@ R1 范围与信息冻结：页面/导航/动作分母、权限/Profile 语义、
 | I-036-001 | 当前所有可检索页面、导航项和声明式动作的精确分母是什么？需覆盖哪些 Profile / optional module？ | required | R1 范围冻结、R2 聚合、R4 回归 | R1 | 扫描模块 provider、Manifest fragment、现有导航/动作注册，建立 item→module→profile 矩阵 | collecting | R1 冻结前复核 | 首波只承诺注册页面/导航/声明式动作；实体记录不进分母 |
 | I-036-002 | Palette 结果的权限、Profile、直接 URL 与动作守卫如何与现有语义保持一致？ | required | R1/R3/R4 安全与回归 | R1 | 对照现有权限过滤、路由守卫、Profile 装配和 action binding；建立允许/拒绝矩阵 | collecting | R1 方案冻结前复核 | 不新增权限绕过；具体实现待 R1 冻结 |
 | I-036-003 | 结果字段、标签本地化、排序/去重、快捷键、结果上限和焦点/ARIA 语义是什么？ | required | R1/R3/R4 体验验收 | R1 | 用户体验方案 + 既有设计系统/locale 约定 + 浏览器可访问性验证 | collecting | R1 方案冻结前复核 | 需避免将 UX 偏好伪装成已冻结实现细节 |
-| I-036-004 | 首波是否承诺实体级全局搜索，以及是否触发 `RT-X01` / `RT-X02`？ | required | VP 范围与基础设施门禁 | R1 | 用户书面确认的本 VP 边界；若后续新增实体搜索，另行 `/vision` 复核 | **verified (user decision)** | 实体搜索需求或规模证据出现时复核 | 首波不承诺实体全文搜索；`RT-X01` / `RT-X02` 保持 trigger-gated |
+| I-036-004 | 首波是否承诺实体级全局搜索，以及是否触发 `RT-X01` / `RT-X02`？ | required | VP 范围与基础设施门禁 | R1 | 用户书面确认的本 VP 边界；若后续新增实体搜索，另行 `/vision` 复核 | **verified (user decision)** | 实体搜索需求或规模证据出现时复核 | 首波不承诺实体全文搜索；`RT-X01` / `RT-X02` 保持 gated |
 | I-036-005 | 最近搜索、固定项或持久化偏好是否需要进入首波？ | non-blocking | R3 体验扩展 | R3 | 实现前评估；若需要，另立体验 VP 或追加有界范围决策 | deferred | 不进入首波；下一 UX VP 规划时复核 | Saved Views / 最近项不作为本 VP 退出条件 |
-| I-036-006 | 激活时当前代码候选是否仍满足 Admin 类 freshness 与 VP-008 `go` 消费有效性？ | required | 激活 | 激活前 | `/vision` 复核协议 pin、依赖锁、迁移、Profile 默认集、provenance 与区间变更 | open | 激活前复核 | 计划阶段不宣称已通过 freshness |
+| I-036-006 | 激活时当前代码候选是否仍满足 Admin 类 freshness 与 VP-008 `go` 消费有效性？ | required | 激活 | 激活前 | `/vision` 复核协议 pin、依赖锁、迁移、Profile 默认集、provenance 与区间变更 | **verified (activation review)** | 下次涉及 Admin 类基线/默认集/协议身份的区间变更时复核 | `5c341ec7` → `97aefe8c`：`apps/**` 无差异；五域 freshness PASS；见 [VRev-092](../reviews/VRev-092-vp036-admin-command-palette-activation.md) |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | — | — | `planned` 可为 0 区；激活后由用户确认 workspace slug，再交 `/govern` scaffold |
+| workspace-036-admin-command-palette | GOAL-001-admin-command-palette | delivery | 2026-09-14 | `/govern` scaffold；Root `active · 0/4`；I-036-001～003 collecting；I-036-006 verified |
 
 ## 关门记录
 
@@ -104,6 +104,7 @@ R1 范围与信息冻结：页面/导航/动作分母、权限/Profile 语义、
 | date | change |
 |------|--------|
 | 2026-09-10 | 初创 `planned`；用户确认下一拍采用 Admin 功能体验增强方向，首波冻结为权限安全的 Command Palette + 模块/导航/声明式动作检索；实体级全文搜索、RT-X01/RT-X02、Saved Views、批量中心、未保存保护与 Toast 全局重做不进首波；不改 Charter、不新开工作区、不消耗 gated trigger。 |
+| 2026-09-14 | 用户指令激活 `planned → active`（v0.2.0）。Admin 类 freshness `5c341ec7 → 97aefe8c` PASS；I-036-006 verified；用户确认 `workspace-036-admin-command-palette` / `GOAL-001-admin-command-palette`，交 `/govern` 建立 delivery 工作区。VRev-092 self `pass`，open required = 0；V-F123 recommended 继续由 R1 矩阵承接。 |
 
 ## 声明
 

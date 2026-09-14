@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-09-10
+updated: 2026-09-14
 parent: null
-version: 1.3.97
+version: 1.3.98
 ---
 
 # Vision Review 台账
@@ -30,6 +30,7 @@ version: 1.3.97
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-092（self · `/vision` · 2026-09-14，`pass`）**：VP-036 激活就绪——Admin freshness `5c341ec7`→`97aefe8c` PASS（`apps/**` 无差异）；I-036-006 verified；用户确认 workspace-036 / Root 命名；VP-036 `planned → active` v0.2.0，lead workspace-036-admin-command-palette 交 `/govern` 开区。V-F123 recommended 继续由 R1 矩阵承接。 |
 | — | — | — | **无** | **VRev-087（self · `/vision` · 2026-09-09，`pass`）**：VP-035 激活就绪——意图/判据/非目标/P-005 就绪；I-035-002 verified；架构类 freshness PASS `f2044cf3`→`5c341ec7`（pin/锁/迁移/Profile 默认集零变更；区间 = VP-034 已审结目 + 发布包装；不暂挂 `go`）；slug 用户确认；**VP-035 `planned → active` v0.2.0**，lead `workspace-035-foundation-architecture-health` 交 `/govern` 开区。V-F122 recommended 不阻断。 |
 | — | — | — | **无** | **VRev-086（self · `/vision` · 2026-09-09，`pass`）**：VP-035 计划阶段意图审视——基架架构健康评估 + 有界业界对照四类参照集 + 路线图重述草案；Charter `@0.4.0` 对齐；结构选型新 VP（不塞 VP-010）用户已确认；I-035-002 verified；0 required；V-F122 recommended（路线图冻结前建议 independent 对照分类）不阻断。**不是激活许可**——激活前须架构类 freshness + slug 确认。 |
 | — | — | — | **无** | **VRev-085（self · `/vision` · 2026-09-09，`pass`）**：VP-034 关门就绪——七条方向级退出判据全部 verified；lead workspace-034 `done`；Root `done` 5/5；A-010 self + A-011 grok independent 双 `pass`，A-012 recommended 全 fixed；I-034-001～005 verified；**2026-09-09 用户书面确认 VP-034 `active → closed` v0.4.0**。residual = Dashboard 现行 `workspace` 组（GOAL-003）。 |
@@ -141,3 +142,4 @@ version: 1.3.97
 | VRev-089 | 2026-09-10 | self | VP-035 关门就绪 · 六条方向级退出判据 / workspace-035 Root 证据 / A-019 grok 关门复审 | pass | 0 | 用户指令授权（最终复审改用 grok build 4.6 high）；判据 1～6 全部达成；Root `done · 4/4`；A-019 independent `pass`、开放 required = 0；VP-035 `active → closed` v0.3.0；VR-076 | [VRev-089-vp035-close-out.md](reviews/VRev-089-vp035-close-out.md) |
 | VRev-090 | 2026-09-10 | self | VP-036 Admin 全局检索与 Command Palette · 计划阶段意图审视 | pass | 0 | Charter `@0.4.0` 对齐；新 VP + 新 delivery 工作区结构成立；首波仅承诺已注册页面/导航/声明式动作检索；实体全文搜索与 RT-X01/RT-X02 保持 gated；V-F123 recommended，不阻断 planned | [VRev-090-vp036-admin-command-palette-planned.md](reviews/VRev-090-vp036-admin-command-palette-planned.md) |
 | VRev-091 | 2026-09-10 | self | VP-009 / workspace-009 / Root Charter 0.4.0 re-align | pass | 0 | 用户指令授权；需对齐的当前范围为 active VP-009、workspace-009 与 active Root；VP `vision_ref`、workspace/Root Charter 声明已同步至 `@0.4.0`；V-F120 → fixed；已关闭 VP/Goal 历史引用保留 | [VRev-091-vp009-charter-0-4-0-realign.md](reviews/VRev-091-vp009-charter-0-4-0-realign.md) |
+| VRev-092 | 2026-09-14 | self | VP-036 Admin 全局检索与 Command Palette · 激活就绪 / Admin freshness / P-005 / 开区绑定 | pass | 0 | 用户确认激活与命名；Admin freshness `5c341ec7`→`97aefe8c` PASS；I-036-006 verified；VP-036 `planned → active` v0.2.0；V-F123 recommended 不阻断；lead workspace-036 交 `/govern` scaffold | [VRev-092-vp036-admin-command-palette-activation.md](reviews/VRev-092-vp036-admin-command-palette-activation.md) |

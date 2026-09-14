@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-10
+updated: 2026-09-14
 parent: null
-version: 0.4.52
+version: 0.4.53
 ---
 
 # Charter 修订台账
@@ -93,3 +93,4 @@ version: 0.4.52
 | VR-076 | 2026-09-10 | editorial | VP-035 关门投影 | workspace-035 Root `GOAL-001-foundation-architecture-health` **`done · 4/4`**（R1 GOAL-002 `3/3`、R2 GOAL-003 `3/3`、R3 GOAL-004 `4/4`、R4 GOAL-005 `5/5`）。六条方向级退出判据全部达成：判据 1～3 由 R2/R3 交付，判据 4 = 路线图草案交 `/vision` 并经用户书面采纳 10 项（VRev-088 / VR-075），判据 5 = 边界保持（`apps/**` 零变更、无 trigger-gated 行释放、Charter 未改），判据 6 = 开放 required finding = 0。关门审计链：R3 A-003 `fail`→A-004 `fail`→A-005 `pass`→A-006 响应；R4 A-002～A-018（codex `gpt-5.6-sol`·high，含 8 次 `fail`/`conditional`）全部 required 以 `fixed` 闭合，**最终关门复审 A-019 改用 grok build（grok 4.6 · high）判 `pass`**（用户 2026-09-10 指令）。VP-035 `active → closed` v0.3.0。有界评估 residual 无新增：4 条接受残余均继承原 VP 留痕或用户书面接受。不改 Charter `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。当前 active 交付 VP = 无（持续程序 VP-009/010）。 |
 | VR-077 | 2026-09-10 | editorial | VP-036 planned · Admin 全局检索与 Command Palette | 用户确认采用路线图推荐的 Admin 功能体验增强方向，首波收窄为权限安全的 Command Palette + 已注册模块/页面/导航/声明式动作检索；实体级全文搜索与 `RT-X01`/`RT-X02` 保持 gated，Saved Views、批量结果中心、未保存保护与 Toast 全局重做不进首波。新建 **VP-036-admin-command-palette** `planned` v0.1.0 · 0 区 · `vision_ref` = `schema-ui-core-admin-foundation@0.4.0`；计划阶段 self = VRev-090 `pass`（0 required，V-F123 recommended）；激活前须 Admin freshness + 激活就绪 self Review，随后交 `/govern` scaffold；不改 Charter、不消耗 gated trigger。 |
 | VR-078 | 2026-09-10 | editorial | VP-009 / workspace-009 / Root Charter 0.4.0 re-align | 用户明确要求集体升级需对齐的当前范围。扫描判定仅 active VP-009、workspace-009 与 active Root 仍有现行 Charter 引用漂移；VP-010 与 VP-036 已为 `@0.4.0`。本轮同步 VP-009 `vision_ref`、workspace-009 Charter 声明与 Root Charter 声明至 `schema-ui-core-admin-foundation@0.4.0`，不改变 status、意图、progress、波次或历史证据；已关闭 VP/Goal 的验收时点引用保留。VRev-091 `pass`；V-F120 → fixed；无新 strategic、无代码变更。 |
+| VR-079 | 2026-09-14 | editorial | VP-036 激活 + workspace-036 开区 | 用户指令「/vision 走流程激活 vp-036，然后交给 /govern 开设工作区」；激活就绪 self = **VRev-092 `pass`**（0 required），Admin freshness `5c341ec7 → 97aefe8c` PASS（`apps/**` 无差异），I-036-006 verified；用户确认 `workspace-036-admin-command-palette` / Root `GOAL-001-admin-command-palette`。VP-036 `planned → active` v0.2.0；lead delivery workspace 已由 `/govern` scaffold，Root `active · 0/4`；V-F123 recommended 继续由 R1 矩阵承接。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
