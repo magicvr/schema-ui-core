@@ -2,7 +2,7 @@
 
 import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { registerCustomComponent, resetCustomComponentsForTests } from "@/renderer/custom-components";
 import { RenderPage, useSchemaCrud } from "@/renderer/render.tsx";
@@ -26,11 +26,11 @@ afterEach(async () => {
   }
 });
 
-function invokeOnMount(trigger: Record<string, unknown>) {
+function invokeOnMount(trigger: Record<string, unknown>, row: Record<string, unknown> | null = null) {
   return function InvokeOnMount() {
     const crud = useSchemaCrud();
     useEffect(() => {
-      crud?.invokeAction(trigger, null);
+      crud?.invokeAction(trigger, row);
       // This test component intentionally invokes once; depending on the
       // context object would repeat after feedback/modal state updates.
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,8 +39,13 @@ function invokeOnMount(trigger: Record<string, unknown>) {
   };
 }
 
-function renderPage(pageDocument: Record<string, unknown>, context: Record<string, unknown>): HTMLDivElement {
-  registerCustomComponent("invoke-on-mount", invokeOnMount(pageDocument.__trigger as Record<string, unknown>));
+function renderPage(
+  pageDocument: Record<string, unknown>,
+  context: Record<string, unknown>,
+  onNavigate?: (url: string) => void,
+  row: Record<string, unknown> | null = null,
+): HTMLDivElement {
+  registerCustomComponent("invoke-on-mount", invokeOnMount(pageDocument.__trigger as Record<string, unknown>, row));
   const container = globalThis.document.createElement("div");
   document.body.appendChild(container);
   const root = createRoot(container);
@@ -48,7 +53,7 @@ function renderPage(pageDocument: Record<string, unknown>, context: Record<strin
   act(() => {
     root.render(
       <I18nProvider stored="en-US">
-        <RenderPage document={pageDocument as never} context={context} />
+        <RenderPage document={pageDocument as never} context={context} onNavigate={onNavigate} />
       </I18nProvider>,
     );
   });
@@ -137,6 +142,71 @@ describe("programmatic action gate", () => {
     await flush();
 
     expect(container.querySelector('[role="dialog"][aria-label="Create user"]')).not.toBeNull();
+  });
+
+  it("rejects an unbound navigate template instead of calling the host", async () => {
+    const onNavigate = vi.fn();
+    const page = {
+      __trigger: { actionId: "openDetail", key: "open-detail", label: "Open detail" },
+      meta: {
+        pageId: "users",
+        title: "Users",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["actions.page.trigger"],
+      },
+      actions: { openDetail: { type: "navigate", url: "/users/{id}" } },
+      body: {
+        type: "section",
+        children: [
+          { type: "actionButton", id: "open-detail", props: { actionId: "openDetail", label: "Open detail" } },
+          { type: "custom", component: "invoke-on-mount" },
+        ],
+      },
+    };
+    const container = renderPage(page, { user: { permissions: [] }, features: {} }, onNavigate);
+    await flush();
+
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-feedback-code="INVALID_NAVIGATE_URL"]')).not.toBeNull();
+  });
+
+  it("reports a malformed row navigation mapping without calling the host", async () => {
+    const onNavigate = vi.fn();
+    const page = {
+      __trigger: {
+        actionRef: "openDetail",
+        key: "open-detail",
+        label: "Open detail",
+        navigateMapping: {
+          path: { id: "$row.id" },
+          query: { filter: "$row.object" },
+        },
+      },
+      meta: {
+        pageId: "users",
+        title: "Users",
+        protocolVersion: "2.7",
+        requiredCapabilities: ["actions.page.trigger"],
+      },
+      actions: { openDetail: { type: "navigate", url: "/users/{id}" } },
+      body: {
+        type: "section",
+        children: [
+          { type: "actionButton", id: "open-detail", props: { actionId: "openDetail", label: "Open detail" } },
+          { type: "custom", component: "invoke-on-mount" },
+        ],
+      },
+    };
+    const container = renderPage(
+      page,
+      { user: { permissions: [] }, features: {} },
+      onNavigate,
+      { id: "user-1", object: { nested: true } },
+    );
+    await flush();
+
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-feedback-code="INVALID_ROW_VALUE"]')).not.toBeNull();
   });
 
   it("checks local toolbar permissions before a custom export handler", async () => {

@@ -26,6 +26,14 @@ function focusableElements(root: HTMLElement): HTMLElement[] {
   );
 }
 
+/** Platform-aware visual shortcut label; behavior accepts both modifiers. */
+export function commandPaletteShortcutLabel(): string {
+  if (typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)) {
+    return "⌘K";
+  }
+  return "Ctrl+K";
+}
+
 export interface CommandPaletteProps {
   open: boolean;
   providers: readonly SearchableProvider[];
@@ -173,9 +181,15 @@ export function CommandPalette({
       event.preventDefault();
       moveSelection(-1);
     } else if (event.key === "Home") {
+      if (event.target === inputRef.current) {
+        return;
+      }
       event.preventDefault();
       setSelectedIndex(0);
     } else if (event.key === "End") {
+      if (event.target === inputRef.current) {
+        return;
+      }
       event.preventDefault();
       setSelectedIndex(Math.max(visibleItems.length - 1, 0));
     } else if (event.key === "Enter") {
@@ -256,26 +270,26 @@ export function CommandPalette({
           </p>
         ) : null}
 
-        {!loading ? (
-          <div
-            id={PALETTE_RESULTS_ID}
-            role="listbox"
-            aria-label={t("commandPalette.results")}
-            className="max-h-[min(60vh,28rem)] overflow-y-auto p-2"
-          >
-            {visibleItems.length > 0 ? (
-              visibleItems.map((item, index) => {
+        <div
+          id={PALETTE_RESULTS_ID}
+          role="listbox"
+          aria-busy={loading}
+          aria-label={t("commandPalette.results")}
+          className="max-h-[min(60vh,28rem)] overflow-y-auto p-2"
+        >
+          {!loading && visibleItems.length > 0
+            ? visibleItems.map((item, index) => {
                 const selected = index === selectedIndex;
                 return (
-                  <button
+                  <div
                     key={item.id}
                     id={optionId(item)}
-                    type="button"
                     role="option"
                     aria-selected={selected}
+                    tabIndex={-1}
                     onMouseEnter={() => setSelectedIndex(index)}
                     onClick={() => selectItem(item)}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
                       selected ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent/70"
                     }`}
                   >
@@ -306,16 +320,16 @@ export function CommandPalette({
                     <span className="hidden shrink-0 font-mono text-[10px] text-muted-foreground/70 sm:inline">
                       {item.kind === "action" ? t("commandPalette.openAction") : t("commandPalette.openPage")}
                     </span>
-                  </button>
+                  </div>
                 );
               })
-            ) : (
-              <p role="status" className="px-3 py-8 text-center text-sm text-muted-foreground">
-                {t("commandPalette.empty")}
-              </p>
-            )}
-          </div>
-        ) : null}
+            : null}
+          {!loading && visibleItems.length === 0 ? (
+            <p role="status" className="px-3 py-8 text-center text-sm text-muted-foreground">
+              {t("commandPalette.empty")}
+            </p>
+          ) : null}
+        </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
           <span>

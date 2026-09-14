@@ -195,6 +195,10 @@ describe("App command palette integration", () => {
     await flush();
     expect(window.location.pathname).toBe("/users");
     expect(document.activeElement).toBe(container.querySelector("#page-title"));
+    const adminGroupButton = container.querySelector<HTMLButtonElement>(
+      'section[data-navigation-group="Admin"] button',
+    );
+    expect(adminGroupButton?.getAttribute("aria-expanded")).toBe("true");
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>("[data-command-palette-trigger]")?.click();
@@ -208,6 +212,15 @@ describe("App command palette integration", () => {
     await act(async () => {
       input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });
+  });
+
+  it("opens from Meta+K outside editable targets", async () => {
+    const container = await renderApp(["users.write"]);
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }));
+    });
+    await flush();
+    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
   });
 
   it("does not expose a denied action while retaining the visible page result", async () => {

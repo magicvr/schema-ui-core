@@ -5,7 +5,7 @@ status: recorded
 created: 2026-09-14
 updated: 2026-09-14
 parent: GOAL-001-admin-command-palette
-version: 0.1.0
+version: 0.2.0
 ---
 
 # R1 · SearchableItem 分母与 Profile 覆盖矩阵
@@ -55,7 +55,8 @@ version: 0.1.0
 - 冲突：provider/item 重复稳定 id 不静默覆盖；冲突 id 的全部候选从结果中排除并报告非敏感 provider 错误。
 - 证据：用户 2026-09-14 书面确认本附件所述推荐范围、契约和 UX 口径，决策见同目标 `D-002`。
 
-## 4. 已知实现缺口（进入 R2/R3）
+## 4. R2/R3 实现响应
 
 - 当前 Manifest 协议没有 module/profile/provider/action 字段；不得扩展 pinned AppManifest envelope。内置 provider 从已验证 Manifest + authenticated page Schema 组装，外部 provider 通过前端注入 seam 接入。
-- 当前 `SchemaCrudProvider.invokeAction` 需要补齐 programmatic modal/navigate/custom/request 的统一权限复核，并修正 actionButton 无显式 `props.key` 时的 node id 目标传递；否则 palette 可能绕过页面 UI 入口的既有 gating。该缺口是实现任务，不是对现有权限语义的静默放宽。
+- `SchemaCrudProvider.invokeAction` 的 programmatic modal/navigate/custom/request 权限复核、actionButton node id fallback、未绑定 navigate template 拒绝与 row navigation 异常反馈已实现；证据为 `apps/web/src/renderer/render.tsx`、`programmatic-action-gate.test.tsx`、A-004/A-005/A-006。
+- R4 仍需复核 live Profile/route 矩阵与浏览器证据；R1 分母不因 R3 实现而改变。

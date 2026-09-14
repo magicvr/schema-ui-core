@@ -39,7 +39,7 @@ import {
   projectNavigation,
   type ProjectedItem,
 } from "@/app/navigation";
-import { CommandPalette } from "@/app/CommandPalette";
+import { CommandPalette, commandPaletteShortcutLabel } from "@/app/CommandPalette";
 import {
   createManifestSearchProvider,
   createPageSchemaLoader,
@@ -1285,7 +1285,7 @@ export function App({
             >
               <Search aria-hidden="true" className="size-3.5" />
               <span className="hidden sm:inline">{t("commandPalette.open")}</span>
-              <kbd className="hidden font-mono text-[10px] text-muted-foreground/70 md:inline">⌘K</kbd>
+              <kbd className="hidden font-mono text-[10px] text-muted-foreground/70 md:inline">{commandPaletteShortcutLabel()}</kbd>
             </button>
             {/* W13 T-04: theme toggle on the left, language switcher on the right;
                 workspace-020 R2: timezone switcher shares the header locale channel. */}

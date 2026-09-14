@@ -40,6 +40,7 @@ func TestEvaluateInvalid(t *testing.T) {
 		`$deps.user.roles contains "admin"`,
 		`$context.user.roles`,
 		`$context.user.roles > 3`,
+		`$context.user.name == "\q"`,
 		"",
 	} {
 		if _, err := Evaluate(expr, User{}, nil); err == nil {

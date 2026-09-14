@@ -118,11 +118,11 @@ describe("CommandPalette", () => {
     );
     await flush();
     const input = container.querySelector<HTMLInputElement>('[role="combobox"]')!;
-    const lastOption = container.querySelectorAll<HTMLButtonElement>('[role="option"]')[2]!;
+    const close = container.querySelector<HTMLButtonElement>('button[aria-label="Close command palette"]')!;
 
     await act(async () => {
-      lastOption.focus();
-      lastOption.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+      close.focus();
+      close.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
     });
     expect(document.activeElement).toBe(input);
 
@@ -130,7 +130,7 @@ describe("CommandPalette", () => {
       input.focus();
       input.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true }));
     });
-    expect(document.activeElement).toBe(lastOption);
+    expect(document.activeElement).toBe(close);
   });
 
   it("renders the command chrome in the active Chinese locale", async () => {
@@ -148,6 +148,44 @@ describe("CommandPalette", () => {
     await flush();
     expect(container.querySelector<HTMLInputElement>('[role="combobox"]')?.getAttribute("aria-label")).toBe("搜索页面和命令");
     expect(container.querySelector("#command-palette-title")?.textContent).toBe("命令面板");
+  });
+
+  it("closes on an outside click while restoring the trigger focus", async () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" data-trigger onClick={() => setOpen(true)}>
+            Trigger
+          </button>
+          <CommandPalette
+            open={open}
+            providers={[provider]}
+            context={context()}
+            onClose={() => setOpen(false)}
+            onSelect={vi.fn()}
+          />
+        </>
+      );
+    }
+
+    const container = render(
+      <I18nProvider stored="en-US">
+        <Harness />
+      </I18nProvider>,
+    );
+    const trigger = container.querySelector<HTMLButtonElement>("[data-trigger]")!;
+    await act(async () => {
+      trigger.focus();
+      trigger.click();
+    });
+    await flush();
+    const backdrop = container.querySelector<HTMLElement>("[data-command-palette-backdrop]")!;
+    await act(async () => {
+      backdrop.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    });
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 
   it("matches localized keywords and closes on Escape while restoring the trigger focus", async () => {
