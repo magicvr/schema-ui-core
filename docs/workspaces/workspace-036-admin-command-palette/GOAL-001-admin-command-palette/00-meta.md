@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-admin-command-palette
 title: Admin 全局检索与 Command Palette 交付
-status: active
+status: done
 parent: null
 created: 2026-09-14
 updated: 2026-09-14
-version: 0.6.0
+version: 0.7.0
 progress: 4/4
 plan_refs:
   - VP-036-admin-command-palette
@@ -74,5 +74,5 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 备注
 
-- 工作区建立与 Root 设立是已发生事实；R1～R4 全部完成，Root 待用户确认后由 `active` 关门为 `done`。
-- `progress: 4/4` 只由上方 4 个显式检查点派生；它不放行关门——status `done` 仍须用户书面确认与审计链闭合。
+- 工作区建立与 Root 设立是已发生事实；R1～R4 全部完成，Root 已由用户书面确认（2026-09-14）关门为 `done`；VP-036 `closed` 记录由 `/vision` 另行执行。
+- `progress: 4/4` 只由上方 4 个显式检查点派生；`status: done` 由审计链（A-001～A-010，open required = 0）与用户确认放行。

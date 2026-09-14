@@ -12,13 +12,13 @@ workspace_id: workspace-036-admin-command-palette
 
 > 工作区：`workspace-036-admin-command-palette`
 > canonical：`docs/workspaces/workspace-036-admin-command-palette/`
-> Root：`GOAL-001-admin-command-palette`（**active · 4/4**，待用户确认关门）
+> Root：`GOAL-001-admin-command-palette`（**done · 4/4**）
 > primary_plan：`VP-036-admin-command-palette`（active · v0.2.0）
 
 ## 目标树
 
 ```text
-GOAL-001-admin-command-palette [active · 4/4 · 待用户确认关门]
+GOAL-001-admin-command-palette [done · 4/4]
 ```
 
 ## 纲领路线图
@@ -27,14 +27,14 @@ GOAL-001-admin-command-palette [active · 4/4 · 待用户确认关门]
 R1 范围与信息冻结 [completed]
   → R2 SearchableItem 契约与 provider 聚合 [completed]
   → R3 Command Palette / 可访问性 / i18n-theme / 分组联动 [completed]
-  → R4 权限×Profile×路由回归 / 证据 / 关门 [completed · 待用户确认 done]
+  → R4 权限×Profile×路由回归 / 证据 / 关门 [completed]
 ```
 
 ## 状态表
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-admin-command-palette | Admin 全局检索与 Command Palette 交付 | **active** | 4/4 | null | R1～R4 全部完成；A-008 self `pass` + A-009 grok independent `pass`，A-010 已闭合 2 条 recommended；I-036-001～006 verified（I-036-005 deferred non-blocking）；A-001～A-010 当前 open required = 0；Vision open required = 0；Root 待用户确认后 `done` |
+| GOAL-001-admin-command-palette | Admin 全局检索与 Command Palette 交付 | **done** | 4/4 | null | R1～R4 全部完成；A-001～A-010 审计链 open required = 0（self + grok independent 均 pass）；I-036-001～006 verified（I-036-005 deferred non-blocking）；2026-09-14 用户书面确认关门；Vision open required = 0；VP-036 closed 由 /vision 执行 |
 
 ## 维护说明
 
