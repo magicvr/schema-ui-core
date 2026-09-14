@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-09-14
 updated: 2026-09-14
-version: 0.7.0
+version: 0.8.0
 progress: 4/4
 plan_refs:
   - VP-036-admin-command-palette
@@ -51,7 +51,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **R1 范围与信息冻结**：页面/导航/动作分母、Profile/权限语义、排序/去重、快捷键与实体搜索排除有可核对决策与矩阵；self A-001 `pass`，grok independent A-002 `conditional` 的 F-001/F-002 已由 A-003 `fixed` 响应。
 - [x] **R2 契约与聚合**：`SearchableItem` / provider v1 已实现；Manifest provider 与注入 provider 可稳定聚合、去重和排序，不增加 Shell 中央业务注册分支；A-004 self `pass`，完整 Web Vitest 1355/1355。
 - [x] **R3 Palette 实现与体验**：Command Palette、键盘/ARIA、焦点、i18n/theme、直接 URL 与导航分组联动按既有语义可用；A-005 self `pass`，A-006 grok independent `pass`，A-007 已响应 4 条 recommended，mvp/admin SQLite/Postgres browser smoke 已通过。
-- [x] **R4 回归与关门准备**：Profile×权限×路由矩阵、浏览器/自动化回归、边界复核、Goal 审计与必要的独立意见落盘；A-008 self `pass` + A-009 grok independent `pass`，A-010 已闭合 2 条 recommended（ID oracle 与 confirm 分支），四 Profile matrix 与 mvp/admin SQLite/Postgres smoke 已通过；开放 required = 0，等待用户确认 Root 关门。
+- [x] **R4 回归与关门准备**：Profile×权限×路由矩阵、浏览器/自动化回归、边界复核、Goal 审计与必要的独立意见落盘；A-008 self `pass` + A-009 grok independent `pass`，A-010 已闭合 2 条 recommended（ID oracle 与 confirm 分支），四 Profile matrix 与 mvp/admin SQLite/Postgres smoke 已通过；开放 required = 0，Root 已由用户确认关门为 `done`。
 
 ## 信息就绪与未知项（P-005）
 
@@ -74,5 +74,5 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 备注
 
-- 工作区建立与 Root 设立是已发生事实；R1～R4 全部完成，Root 已由用户书面确认（2026-09-14）关门为 `done`；VP-036 `closed` 记录由 `/vision` 另行执行。
+- 工作区建立与 Root 设立是已发生事实；R1～R4 全部完成，Root 已由用户书面确认（2026-09-14）关门为 `done`；VP-036 已由 `/vision` 以 VRev-093 `pass` 关门为 `closed · v0.3.0`。
 - `progress: 4/4` 只由上方 4 个显式检查点派生；`status: done` 由审计链（A-001～A-010，open required = 0）与用户确认放行。

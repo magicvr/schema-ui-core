@@ -1,10 +1,10 @@
 ---
 title: 目标树 · workspace-036-admin-command-palette
-status: active
+status: done
 created: 2026-09-14
 updated: 2026-09-14
 parent: null
-version: 0.1.0
+version: 0.2.0
 workspace_id: workspace-036-admin-command-palette
 ---
 
@@ -13,7 +13,7 @@ workspace_id: workspace-036-admin-command-palette
 > 工作区：`workspace-036-admin-command-palette`
 > canonical：`docs/workspaces/workspace-036-admin-command-palette/`
 > Root：`GOAL-001-admin-command-palette`（**done · 4/4**）
-> primary_plan：`VP-036-admin-command-palette`（active · v0.2.0）
+> primary_plan：`VP-036-admin-command-palette`（closed · v0.3.0）
 
 ## 目标树
 
@@ -34,7 +34,7 @@ R1 范围与信息冻结 [completed]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-admin-command-palette | Admin 全局检索与 Command Palette 交付 | **done** | 4/4 | null | R1～R4 全部完成；A-001～A-010 审计链 open required = 0（self + grok independent 均 pass）；I-036-001～006 verified（I-036-005 deferred non-blocking）；2026-09-14 用户书面确认关门；Vision open required = 0；VP-036 closed 由 /vision 执行 |
+| GOAL-001-admin-command-palette | Admin 全局检索与 Command Palette 交付 | **done** | 4/4 | null | R1～R4 全部完成；A-001～A-010 审计链 open required = 0（self + grok independent 均 pass）；I-036-001～004、I-036-006 verified；I-036-005 deferred non-blocking；2026-09-14 用户书面确认关门；Vision open required = 0；VP-036 已由 VRev-093 关门为 closed v0.3.0 |
 
 ## 维护说明
 

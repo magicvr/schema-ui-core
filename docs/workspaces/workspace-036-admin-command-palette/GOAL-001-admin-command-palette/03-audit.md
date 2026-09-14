@@ -5,12 +5,12 @@ status: active
 created: 2026-09-14
 updated: 2026-09-14
 parent: null
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计台账 · GOAL-001-admin-command-palette
 
-本索引与 `03-audit/A-NNN-*.md` 平铺条目共同构成 Root 的 Goal 审计台账。Vision Review `VRev-090`/`VRev-092` 属愿景层，不替代本区 `03-audit`。
+本索引与 `03-audit/A-NNN-*.md` 平铺条目共同构成 Root 的 Goal 审计台账。Vision Review `VRev-090`/`VRev-092`/`VRev-093` 属愿景层，不替代本区 `03-audit`。
 
 ## 条目索引
 
@@ -34,4 +34,4 @@ version: 0.5.0
 - A-006（`source: independent` · grok-build · grok-4.6 · reasoning high）`pass`，open required = 0；4 条 recommended 已由 A-007 以测试、代码与证据索引处理，不阻断进入 R4。独立意见不修改 `status` / `progress` / goal-tree；响应由 `/govern` 记录。
 - A-007 response `pass`，R2/R3 相关 open required = 0；A-008 R4 self close-out readiness `pass` 保留。
 - A-009（`source: independent` · grok-build · grok-4.6 · reasoning high）R4 close-out `pass`，open required = 0；2 条 recommended 已由 A-010 以 ID oracle 测试与 confirm 分支测试 `fixed` 闭合。独立意见不修改 `status` / `progress` / goal-tree；响应由 `/govern` 记录。
-- **关门**：用户 2026-09-14 书面确认后，Root `GOAL-001-admin-command-palette` 已标为 `done`（E-006）。审计链 A-001～A-010 全部落盘，open required = 0；VP-036 `closed` 由 `/vision` 执行。
+- **关门**：用户 2026-09-14 书面确认后，Root `GOAL-001-admin-command-palette` 已标为 `done`（E-006）。审计链 A-001～A-010 全部落盘，open required = 0；VP-036 已由 `/vision` 以 VRev-093 `pass` 关门为 `closed · v0.3.0`。

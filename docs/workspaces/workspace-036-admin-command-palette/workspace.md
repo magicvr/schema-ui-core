@@ -1,7 +1,7 @@
 ---
 id: workspace-036-admin-command-palette
 title: Admin 全局检索与 Command Palette 工作区
-status: active
+status: done
 root_goal: GOAL-001-admin-command-palette
 canonical_scope: docs/workspaces/workspace-036-admin-command-palette/
 shared_materials_catalog: none
@@ -11,18 +11,18 @@ plan_refs:
 primary_plan: VP-036-admin-command-palette
 created: 2026-09-14
 updated: 2026-09-14
-version: 0.1.0
+version: 0.2.0
 parent: null
 ---
 
 # 工作区上下文 · Admin 全局检索与 Command Palette
 
-本工作区是 [VP-036-admin-command-palette](../../vision/plans/VP-036-admin-command-palette.md)（**`active` · v0.2.0**）的唯一 delivery workspace，承接已注册页面、导航项与声明式动作的权限安全检索、Command Palette、跨模块 provider 聚合、键盘可访问性与导航分组联动。不重开 VP-034，不替代 VP-009/VP-010，不承载实体全文搜索或新的业务域。
+本工作区是 [VP-036-admin-command-palette](../../vision/plans/VP-036-admin-command-palette.md)（**`closed` · v0.3.0**）的唯一 delivery workspace，已完成已注册页面、导航项与声明式动作的权限安全检索、Command Palette、跨模块 provider 聚合、键盘可访问性与导航分组联动。不重开 VP-034，不替代 VP-009/VP-010，不承载实体全文搜索或新的业务域。
 
-- Root `GOAL-001-admin-command-palette`：**`done · 4/4`**；2026-09-14 用户书面确认关门，VP-036 `closed` 由 `/vision` 另行执行。
+- Root `GOAL-001-admin-command-palette`：**`done · 4/4`**；2026-09-14 用户书面确认关门；VP-036 已由 `/vision` 以 VRev-093 `pass` 关门为 `closed · v0.3.0`。
 - 激活门禁已满足（2026-09-14）：[VRev-092](../../vision/reviews/VRev-092-vp036-admin-command-palette-activation.md) self `pass`；Admin freshness `5c341ec7` → `97aefe8c` PASS；I-036-006 verified。
 - 用户已确认工作区 slug = `workspace-036-admin-command-palette`；Root = `GOAL-001-admin-command-palette`。
-- Vision open required：0；V-F123 为 inherited recommended，由 R1 的可机器核对矩阵承接。
+- Vision open required：0；V-F123 已由 R1 的可机器核对矩阵与 A-010 精确 ID oracle `fixed`；I-036-005 保持 `deferred · non-blocking`。
 - 红线：不实现或解除 `RT-X01` / `RT-X02`、Redis、MQ、多实例、跨进程索引；不把实体记录全文搜索、Saved Views、批量结果中心、未保存保护或 Toast 全局重做混入首波。
 
 ## 绑定
@@ -39,10 +39,11 @@ parent: null
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：`VP-036-admin-command-palette`（**`active` · v0.2.0**）
+- VP：`VP-036-admin-command-palette`（**`closed` · v0.3.0**）
 - 计划审视：[VRev-090](../../vision/reviews/VRev-090-vp036-admin-command-palette-planned.md) self `pass`
 - 激活审视：[VRev-092](../../vision/reviews/VRev-092-vp036-admin-command-palette-activation.md) self `pass`
-- Vision open required：0；V-F123 recommended 不阻断开区，但须在 R1 矩阵承接
+- 关门审视：[VRev-093](../../vision/reviews/VRev-093-vp036-admin-command-palette-close-out.md) self `pass`
+- Vision open required：0；V-F123 `fixed`；I-036-005 `deferred · non-blocking`，后续 UX VP 或明确产品需求出现时复核
 
 ## 纲领阶段
 

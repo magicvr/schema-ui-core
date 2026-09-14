@@ -5,7 +5,7 @@ status: active
 created: 2026-09-14
 updated: 2026-09-14
 parent: null
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策台账 · GOAL-001-admin-command-palette
@@ -23,4 +23,4 @@ version: 0.1.0
 ## 当前投影
 
 - 当前已确认决策：D-001（工作区/Root 边界）、D-002（R1 分母/provider/UX）与 D-003（R2 provider v1 与 R3 gate 承接）。
-- `I-036-001`～`I-036-003` 已由用户决策、代码盘点与 A-003 响应回答；R3/R4 仍须用实现/浏览器事实核对 Palette 行为与 profile×permission×route。
+- `I-036-001`～`I-036-003` 已由用户决策、代码盘点、实现/浏览器事实与 A-003/A-010 响应闭合；R1～R4 的 Palette 行为与 profile×permission×route 已完成核验，Root 与 VP-036 均已按各自层级关门。

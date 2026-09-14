@@ -12,7 +12,7 @@ auditor: /vision
 created: 2026-09-14
 updated: 2026-09-14
 parent: null
-version: 0.1.0
+version: 0.2.0
 ---
 
 # VRev-092 · VP-036 Admin 全局检索与 Command Palette · 激活就绪
@@ -84,3 +84,8 @@ I-036-001～003 保持 collecting 是计划执行的阶段门禁，不是激活�
 ## 声明
 
 本意见为 `/vision` self Review，不冒充 independent。用户当前指令授权 VP-036 激活；状态、lead 与工作区绑定由本轮愿景记录写入，Goal 五件套与 `goal-tree.md` 由 `/govern` 在已确认命名下建立。Vision open required = 0。
+
+## `/vision` 响应（2026-09-14）
+
+- **V-F123（recommended）→ `fixed`**：workspace-036 R1 已落盘可机器核对的 [SearchableItem 分母矩阵](../../workspaces/workspace-036-admin-command-palette/GOAL-001-admin-command-palette/attachments/r1-searchable-item-matrix.md)，覆盖四 Profile 的精确 page/action ID、排除项、排序/去重与权限/Profile 过滤；A-010 又将矩阵测试固定为精确数组 oracle。该推荐项已由 R1/R4 证据承接，不再阻断或保持开放。
+- 本响应不改写本报告原始 verdict 或 V-F123 原文；只追加响应事实。VP-036 的正式关门结论另见 [VRev-093](VRev-093-vp036-admin-command-palette-close-out.md)。

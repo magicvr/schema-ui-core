@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-14
 parent: null
-version: 0.4.53
+version: 0.4.54
 ---
 
 # Charter 修订台账
@@ -94,3 +94,4 @@ version: 0.4.53
 | VR-077 | 2026-09-10 | editorial | VP-036 planned · Admin 全局检索与 Command Palette | 用户确认采用路线图推荐的 Admin 功能体验增强方向，首波收窄为权限安全的 Command Palette + 已注册模块/页面/导航/声明式动作检索；实体级全文搜索与 `RT-X01`/`RT-X02` 保持 gated，Saved Views、批量结果中心、未保存保护与 Toast 全局重做不进首波。新建 **VP-036-admin-command-palette** `planned` v0.1.0 · 0 区 · `vision_ref` = `schema-ui-core-admin-foundation@0.4.0`；计划阶段 self = VRev-090 `pass`（0 required，V-F123 recommended）；激活前须 Admin freshness + 激活就绪 self Review，随后交 `/govern` scaffold；不改 Charter、不消耗 gated trigger。 |
 | VR-078 | 2026-09-10 | editorial | VP-009 / workspace-009 / Root Charter 0.4.0 re-align | 用户明确要求集体升级需对齐的当前范围。扫描判定仅 active VP-009、workspace-009 与 active Root 仍有现行 Charter 引用漂移；VP-010 与 VP-036 已为 `@0.4.0`。本轮同步 VP-009 `vision_ref`、workspace-009 Charter 声明与 Root Charter 声明至 `schema-ui-core-admin-foundation@0.4.0`，不改变 status、意图、progress、波次或历史证据；已关闭 VP/Goal 的验收时点引用保留。VRev-091 `pass`；V-F120 → fixed；无新 strategic、无代码变更。 |
 | VR-079 | 2026-09-14 | editorial | VP-036 激活 + workspace-036 开区 | 用户指令「/vision 走流程激活 vp-036，然后交给 /govern 开设工作区」；激活就绪 self = **VRev-092 `pass`**（0 required），Admin freshness `5c341ec7 → 97aefe8c` PASS（`apps/**` 无差异），I-036-006 verified；用户确认 `workspace-036-admin-command-palette` / Root `GOAL-001-admin-command-palette`。VP-036 `planned → active` v0.2.0；lead delivery workspace 已由 `/govern` scaffold，Root `active · 0/4`；V-F123 recommended 继续由 R1 矩阵承接。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
+| VR-080 | 2026-09-14 | editorial | VP-036 关门与愿景投影同步 | 用户指令「完成 VP-036 关门与愿景投影同步」；workspace-036 Root `GOAL-001-admin-command-palette` `done · 4/4`，R1～R4 与 A-001～A-010 审计链闭合，open required = 0；**VRev-093 self `pass`** 核对七条方向级退出判据，I-036-001～004、I-036-006 verified，I-036-005 deferred non-blocking；V-F123 已由 VRev-092 响应为 `fixed`。VP-036 `active → closed` v0.3.0；`roadmap.md`、`workspaces.md`、Charter 当前组合投影、VP 关门记录与 workspace 上下文已同步。Charter `vision_id@version` 仍 `@0.4.0`，无 strategic、无 re-align。 |
