@@ -25,3 +25,9 @@ version: 0.1.0
 ## 下一步（计划）
 
 - 进入 R1：扫描 provider、Manifest fragment、导航/动作注册，形成分母与 Profile 覆盖矩阵，并记录对应决策/事实/自审。
+
+## Git checkpoint
+
+- **commit**：`629059e6b8fa69ee878bc225e27d20aefc2164b3`
+- **scope**：VP-036 激活投影、VRev-092、workspace-036 上下文、Root 五件套与目标树。
+- **验证**：`git diff --cached --check` 通过；工作区/Root/VP 对齐校验通过；Admin freshness 区间 `5c341ec7..97aefe8c` 的 `apps/**` diff 为空。
