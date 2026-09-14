@@ -4,8 +4,8 @@ title: 生产加固（共享基架持续安全与健壮性）
 status: active
 parent: null
 created: 2026-08-10
-updated: 2026-09-01
-version: 0.14.0
+updated: 2026-09-10
+version: 0.15.0
 plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
@@ -33,11 +33,13 @@ vp008_go_last_resume: 2026-09-01 (W16 S6 独立审计通过，F-001/F-002 genuin
 
 | 字段 | 值 |
 |------|-----|
-| Charter | `schema-ui-core-admin-foundation@0.2.0` |
+| Charter | `schema-ui-core-admin-foundation@0.4.0` |
 | `plan_refs` / `primary_plan` | `VP-009-production-hardening`（`active` 长期程序） |
 | 工作区 | `workspace-009-production-hardening` (`vision_role: delivery`, VP lead) |
 | independent provider | **`grok build` · 模型 `grok-4.5` · 思考强度 high · 执行 `audit` 命令**（沿用 workspace-008 D-002） |
 | 审计模式 | 波次含 security 高影响时默认 `cross`（self + independent）；低风险波次可 `self`（P-004） |
+
+本次 re-align（2026-09-10）仅刷新 Root 的现行 Charter 声明至 `schema-ui-core-admin-foundation@0.4.0`；不改变 Root 的 status、parent、progress 语义、波次事实或 `plan_refs`/`primary_plan`。依据 [VRev-091](../../../vision/reviews/VRev-091-vp009-charter-0-4-0-realign.md)。
 
 ## 成功标准（程序能力 · 非「修完即 done」）
 
