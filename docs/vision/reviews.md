@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-10
 parent: null
-version: 1.3.95
+version: 1.3.96
 ---
 
 # Vision Review 台账
@@ -139,3 +139,4 @@ version: 1.3.95
 | VRev-087 | 2026-09-09 | self | VP-035 激活就绪 · 架构类 freshness / slug 确认 / P-005 | pass | 0 | 用户指令激活；freshness PASS `f2044cf3`→`5c341ec7` 不暂挂 `go`；I-035-002 verified；R1 collecting 不阻断激活；VP-035 planned → active v0.2.0，lead workspace-035-foundation-architecture-health | [VRev-087-vp035-foundation-architecture-health-activation.md](reviews/VRev-087-vp035-foundation-architecture-health-activation.md) |
 | VRev-088 | 2026-09-10 | self | VP-035 R4 路线图重述 editorial（10 项改动 / A0–A7 重述 / 投影一致性） | pass | 0 | 用户书面采纳草案全部 10 项；判定为 **editorial**（不动 Charter 目的/边界/非目标与 `vision_id@version`，不解除 gated 行）；现状锚点/RT-P04/RT-D02/RT-K03/mfa-wrap 表述按 R2/R3 证据更新，VP-016 历史原文不回改；A 序列重述为「已交付 + 唯一未触发 A3」并新增未立项候选 C1；组合投影同步 workspace-035 3/4；VR-075 | [VRev-088-vp035-roadmap-restatement-editorial.md](reviews/VRev-088-vp035-roadmap-restatement-editorial.md) |
 | VRev-089 | 2026-09-10 | self | VP-035 关门就绪 · 六条方向级退出判据 / workspace-035 Root 证据 / A-019 grok 关门复审 | pass | 0 | 用户指令授权（最终复审改用 grok build 4.6 high）；判据 1～6 全部达成；Root `done · 4/4`；A-019 independent `pass`、开放 required = 0；VP-035 `active → closed` v0.3.0；VR-076 | [VRev-089-vp035-close-out.md](reviews/VRev-089-vp035-close-out.md) |
+| VRev-090 | 2026-09-10 | self | VP-036 Admin 全局检索与 Command Palette · 计划阶段意图审视 | pass | 0 | Charter `@0.4.0` 对齐；新 VP + 新 delivery 工作区结构成立；首波仅承诺已注册页面/导航/声明式动作检索；实体全文搜索与 RT-X01/RT-X02 保持 gated；V-F123 recommended，不阻断 planned | [VRev-090-vp036-admin-command-palette-planned.md](reviews/VRev-090-vp036-admin-command-palette-planned.md) |
