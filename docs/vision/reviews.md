@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-09-14
+updated: 2026-09-16
 parent: null
-version: 1.3.99
+version: 1.4.1
 ---
 
 # Vision Review 台账
@@ -30,6 +30,8 @@ version: 1.3.99
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-095（self · `/vision` · 2026-09-16，`pass`）**：VP-037 激活就绪——Charter `@0.4.0`、VP/Workspace/Root 绑定一致；Admin freshness PASS；I-037-006 verified；Root 初始 `active · 0/5`；V-F124 继续为 recommended，不阻断激活。 |
+| — | — | — | **无** | **VRev-094（self · `/vision` · 2026-09-16，`pass`）**：VP-037 计划阶段意图审视——Charter `@0.4.0` 对齐；Saved Views、未保存变更保护、统一 Toast/错误恢复的首波边界与方向级退出判据可判定；实体全文检索、批量结果中心、组织/权限域、新业务域保持排除；0 required；V-F124 recommended（激活/R1 前形成页面/状态/权限/持久化矩阵）不阻断 `planned`。**不是激活许可**。 |
 | — | — | — | **无** | **VRev-093（self · `/vision` · 2026-09-14，`pass`）**：VP-036 关门——七条方向级退出判据 verified；workspace-036 Root `done · 4/4`；A-008 self + A-009 grok independent + A-010 response，Goal/Vision open required = 0；VP-036 `active → closed` v0.3.0；V-F123 fixed；I-036-005 deferred non-blocking。 |
 | — | — | — | **无** | **VRev-092（self · `/vision` · 2026-09-14，`pass`）**：VP-036 激活就绪——Admin freshness `5c341ec7`→`97aefe8c` PASS（`apps/**` 无差异）；I-036-006 verified；用户确认 workspace-036 / Root 命名；VP-036 `planned → active` v0.2.0，lead workspace-036-admin-command-palette 交 `/govern` 开区。V-F123 已由本报告追加响应为 `fixed`。 |
 | — | — | — | **无** | **VRev-087（self · `/vision` · 2026-09-09，`pass`）**：VP-035 激活就绪——意图/判据/非目标/P-005 就绪；I-035-002 verified；架构类 freshness PASS `f2044cf3`→`5c341ec7`（pin/锁/迁移/Profile 默认集零变更；区间 = VP-034 已审结目 + 发布包装；不暂挂 `go`）；slug 用户确认；**VP-035 `planned → active` v0.2.0**，lead `workspace-035-foundation-architecture-health` 交 `/govern` 开区。V-F122 recommended 不阻断。 |
@@ -48,6 +50,8 @@ version: 1.3.99
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-095 | 2026-09-16 | self | VP-037 激活就绪 · Admin freshness / Workspace-Root 绑定 / P-005 | pass | 0 | 用户确认 workspace/Root slug；Admin freshness PASS；I-037-006 verified；Root active · 0/5；V-F124 recommended，不阻断激活 | [VRev-095-vp037-admin-workflow-continuity-activation.md](reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) |
+| VRev-094 | 2026-09-16 | self | VP-037 planned · Admin 工作流连续性与安全反馈 | pass | 0 | Charter `@0.4.0` 对齐；首波范围/退出判据/P-005 信息门禁成立；V-F124 recommended，不阻断 planned；不是激活许可 | [VRev-094-vp037-admin-workflow-continuity-planned.md](reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) |
 | VRev-001 | 2026-07-31 | self | Charter 初建与 VP-001 | conditional | 0 | Charter/VP-001 初建 conditional；F-V001/F-V002 fixed | [VRev-001-charter-init-vp001.md](reviews/VRev-001-charter-init-vp001.md) |
 | VRev-002 | 2026-07-31 | independent | 对齐链 / Charter / VP-001 / 完整安装 | conditional | 0 | 独立对齐链/冷启动 conditional；findings 已响应 | [VRev-002-alignment-chain-cold-start.md](reviews/VRev-002-alignment-chain-cold-start.md) |
 | VRev-003 | 2026-07-31 | independent | 闭合后复审 · Charter / VP-001 / 对齐链 / 完整安装 MUST | pass | 0 | 闭合后复审 pass；F-V006 fixed；F-V007 accepted-residual | [VRev-003-post-closure-reaudit.md](reviews/VRev-003-post-closure-reaudit.md) |

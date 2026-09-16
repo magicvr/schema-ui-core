@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-14
+updated: 2026-09-16
 parent: null
-version: 0.4.54
+version: 0.4.56
 ---
 
 # Charter 修订台账
@@ -95,3 +95,5 @@ version: 0.4.54
 | VR-078 | 2026-09-10 | editorial | VP-009 / workspace-009 / Root Charter 0.4.0 re-align | 用户明确要求集体升级需对齐的当前范围。扫描判定仅 active VP-009、workspace-009 与 active Root 仍有现行 Charter 引用漂移；VP-010 与 VP-036 已为 `@0.4.0`。本轮同步 VP-009 `vision_ref`、workspace-009 Charter 声明与 Root Charter 声明至 `schema-ui-core-admin-foundation@0.4.0`，不改变 status、意图、progress、波次或历史证据；已关闭 VP/Goal 的验收时点引用保留。VRev-091 `pass`；V-F120 → fixed；无新 strategic、无代码变更。 |
 | VR-079 | 2026-09-14 | editorial | VP-036 激活 + workspace-036 开区 | 用户指令「/vision 走流程激活 vp-036，然后交给 /govern 开设工作区」；激活就绪 self = **VRev-092 `pass`**（0 required），Admin freshness `5c341ec7 → 97aefe8c` PASS（`apps/**` 无差异），I-036-006 verified；用户确认 `workspace-036-admin-command-palette` / Root `GOAL-001-admin-command-palette`。VP-036 `planned → active` v0.2.0；lead delivery workspace 已由 `/govern` scaffold，Root `active · 0/4`；V-F123 recommended 继续由 R1 矩阵承接。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-080 | 2026-09-14 | editorial | VP-036 关门与愿景投影同步 | 用户指令「完成 VP-036 关门与愿景投影同步」；workspace-036 Root `GOAL-001-admin-command-palette` `done · 4/4`，R1～R4 与 A-001～A-010 审计链闭合，open required = 0；**VRev-093 self `pass`** 核对七条方向级退出判据，I-036-001～004、I-036-006 verified，I-036-005 deferred non-blocking；V-F123 已由 VRev-092 响应为 `fixed`。VP-036 `active → closed` v0.3.0；`roadmap.md`、`workspaces.md`、Charter 当前组合投影、VP 关门记录与 workspace 上下文已同步。Charter `vision_id@version` 仍 `@0.4.0`，无 strategic、无 re-align。 |
+| VR-081 | 2026-09-16 | editorial | VP-037 planned · Admin 工作流连续性与安全反馈 | 用户确认沿用总路线图推荐的 Admin 体验增强下一拍：新建 **VP-037-admin-workflow-continuity** `planned` v0.1.0 · 0 区 · `vision_ref` = `schema-ui-core-admin-foundation@0.4.0`；首波收窄为用户级 Saved Views、未保存变更保护、统一 Toast/错误恢复；实体全文检索、批量结果中心、组织/权限域、新业务域不进本波。计划阶段 self = **VRev-094 `pass`**（0 required；V-F124 recommended，不阻断 planned）。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），不激活、不创建工作区、无 strategic、无 re-align；后续须 `/vision` 激活就绪，再交 `/govern` 开区。 |
+| VR-082 | 2026-09-16 | editorial | VP-037 激活 + workspace-037 开区 | 用户确认 workspace slug = `workspace-037-admin-workflow-continuity`、Root slug = `GOAL-001-admin-workflow-continuity`，授权按流程激活并开区。**VRev-095 self `pass`**（0 required）；Admin freshness PASS（当前 HEAD `0c29c08`，`apps/**` 无 staged/unstaged 区间变更）；I-037-006 verified，V-F124 recommended 保持开放但不阻断。VP-037 `planned → active` v0.2.0；lead = workspace-037-admin-workflow-continuity；Root `GOAL-001-admin-workflow-continuity` active · 0/5；`/govern` 已创建 delivery workspace、goal-tree、Root 五件套与三个 ledger 目录。Charter `@0.4.0` 不变；无 strategic、无 re-align。 |
