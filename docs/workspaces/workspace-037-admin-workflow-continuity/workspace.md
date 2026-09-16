@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
-version: 1.0.0
+version: 1.2.0
 parent: null
 ---
 
@@ -20,7 +20,7 @@ parent: null
 本工作区是 [VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md) 的唯一 `delivery` workspace，承接 Saved Views、未保存变更保护、统一 Toast/错误恢复三项首波能力。它不重开 VP-036，不属于 VP-010 符合性整改，不承载实体全文搜索、批量结果中心、组织/数据权限、新业务域或 Redis/MQ/多实例。
 
 - VP-037 已于 2026-09-16 经用户确认从 `planned` 激活为 `active` v0.2.0。
-- Root `[workspace-037-admin-workflow-continuity] GOAL-001-admin-workflow-continuity`：**`active · 3/5`**；R1、R2、R3 已完成，R4 已完成 C1～C3（`active · 3/4`），R5 仍待 R4 关门后推进。
+- Root `[workspace-037-admin-workflow-continuity] GOAL-001-admin-workflow-continuity`：**`active · 4/5`**；R1、R2、R3、R4 已完成，R5 进入组合验收阶段，Root/VP 尚未关门。
 - R1 子目标 `GOAL-002-r1-scope-semantics-freeze` 已完成 **`done · 3/3`**；C1 矩阵、C2 语义决策、C3 self/independent audit 与响应均已记录。
 - R2 子目标 `GOAL-003-r2-saved-views` 已完成 **`done · 4/4`**；C1～C3 实现/回归、C4 self/independent audit 响应与 Git checkpoint `39c744ef` 均已记录。
 - R3 子目标 `GOAL-004-r3-unsaved-change-protection` 已完成 **`done · 4/4`**；C1～C4 实现/回归、A-003 independent recheck、A-004 self close-out 与 Git checkpoint `d2b39189` 均已记录。
@@ -33,7 +33,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-037-admin-workflow-continuity` | 与本区目标及资料引用的 `workspace_id` 一致；当前无固定共享资料 |
-| Root Goal | `GOAL-001-admin-workflow-continuity` | `parent: null`；**active · 3/5** |
+| Root Goal | `GOAL-001-admin-workflow-continuity` | `parent: null`；**active · 4/5** |
 | canonical 范围 | `docs/workspaces/workspace-037-admin-workflow-continuity/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料；不得声明共享资料引用 |
 | 愿景角色 | `delivery` | VP-037 唯一 delivery workspace；不改变 Charter primary workspace |
@@ -54,8 +54,8 @@ parent: null
 | R1 | 列表页分母、Saved View 所有权/持久化、dirty-state 与反馈/权限语义冻结 | **done via `GOAL-002-r1-scope-semantics-freeze` · 3/3**；I-037-001～004 verified，A-001/A-002 pass，A-003 已响应 |
 | R2 | 用户级 Saved Views 保存、选择、恢复、更新、删除与失效边界 | **done via `GOAL-003-r2-saved-views` · 4/4**；A-001/A-002/A-003 pass，checkpoint `39c744ef` 已记录 |
 | R3 | 未保存变更保护与离开确认状态机 | **done via `GOAL-004-r3-unsaved-change-protection` · 4/4**；C1～C4 回归、A-003 independent recheck、A-004 self close-out 与 checkpoint `d2b39189` 已记录 |
-| R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | **active via `GOAL-005-r4-unified-feedback-recovery` · 3/4**；C1～C3 已完成，C4 待 Grok independent、意见响应与 checkpoint |
-| R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | pending；须 R2～R4 证据闭合并经用户确认 |
+| R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | **done via `GOAL-005-r4-unified-feedback-recovery` · 4/4**；A-001 self、A-002 conditional/F-001 fixed、A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已闭合 |
+| R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | **active via `GOAL-006-r5-composition-acceptance` · 3/4**；C1～C3 已完成，仍须完成审计与用户确认后才可关 Root/VP |
 
 纲领阶段按 R1 →（R2/R3/R4 可在 R1 后并行）→ R5 推进。工作区建立本身不代表任何实现阶段完成。
 

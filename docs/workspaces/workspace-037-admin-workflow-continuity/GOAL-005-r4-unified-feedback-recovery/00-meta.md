@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-unified-feedback-recovery
 title: R4 统一反馈与恢复
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.3.0
-progress: 3/4
+version: 0.4.0
+progress: 4/4
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -39,7 +39,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] C1：错误分类、catalog 文案、诊断 code/correlation 和恢复策略形成可核对合同；required 信息 R4-I-001 已 verified。
 - [x] C2：共享反馈表面覆盖成功/错误、dismiss/retry、role/status/alert 与键盘路径；R4-I-002～003 已 verified。
 - [x] C3：schema page 的读重试、写失败保留、maintenance/unavailable/offline/timeout 分类与 Host 边界有列表/指标/图表/表单回归及既有 Host fixtures 证据；R4-I-004 已 verified。
-- [ ] C4：self + 必要 independent audit、required finding 响应与 Git checkpoint 完成；R4 关闭并投影 Root。
+- [x] C4：self + independent audit、required finding 响应与 Git checkpoint 完成；R4 关闭并投影 Root。
 
 ## 信息需求与阶段门禁
 
@@ -53,7 +53,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 父目标
 
-- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 3/5`；R1/R2/R3 已完成，本目标承载 R4 当前阶段）。
+- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 4/5`；R1/R2/R3/R4 已完成，本目标承载 R4 阶段）。
 
 ## 台账布局
 

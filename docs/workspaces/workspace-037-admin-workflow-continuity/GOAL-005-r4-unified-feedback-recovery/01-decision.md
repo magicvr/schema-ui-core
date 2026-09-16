@@ -1,11 +1,11 @@
 ---
 id: GOAL-005-r4-unified-feedback-recovery
 doc: decision
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策台账 · GOAL-005 R4

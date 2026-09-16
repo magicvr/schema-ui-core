@@ -1,11 +1,11 @@
 ---
 id: GOAL-005-r4-unified-feedback-recovery
 doc: audit
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计台账 · GOAL-005 R4
@@ -28,6 +28,7 @@ version: 0.5.0
 | A-001 | 2026-09-17 | self | R4 C1-C3 implementation, C4 readiness | pass | 无 | [A-001-r4-feedback-self.md](03-audit/A-001-r4-feedback-self.md) |
 | A-002 | 2026-09-17 | independent | R4 C1-C3 implementation, regression, info gates, C4 readiness | conditional | F-001（已由 A-003 确认为 fixed） | [A-002-r4-feedback-independent.md](03-audit/A-002-r4-feedback-independent.md) |
 | A-003 | 2026-09-17 | independent | A-002 F-001 finding-closure recheck | pass | 无 | [A-003-r4-f001-recheck.md](03-audit/A-003-r4-f001-recheck.md) |
+| A-004 | 2026-09-17 | self | R4 C4 close-out after independent recheck and Git checkpoint | pass | 无 | [A-004-r4-close-out.md](03-audit/A-004-r4-close-out.md) |
 
 ## Required finding 响应
 
@@ -45,4 +46,4 @@ version: 0.5.0
 
 ## 结论状态
 
-R4 C1～C3 已有实现与回归证据，A-001 self `pass`。A-002 grok independent 原 verdict 为 `conditional`；其 required F-001 已由 E-004 按 `fixed` 路径响应，并由 A-003 independent recheck 确认为合法闭合。当前开放 required = 0；F-003/F-004 已响应，F-002 的 Host/resource 直接对照仍为不阻断 recommended。C4 剩余工作为 `/govern` 响应本意见、建立 Git checkpoint、完成 close-out self 并投影 Root R4；本索引不修改 `00-meta` status/progress。
+R4 C1～C3 已有实现与回归证据，A-001 self `pass`。A-002 grok independent 原 verdict 为 `conditional`；其 required F-001 已由 E-004 按 `fixed` 路径响应，并由 A-003 independent recheck 确认为合法闭合。F-003/F-004 已响应，F-002 的 Host/resource 直接对照仍为不阻断 recommended。A-004 self close-out 核对 checkpoint `89666e5c`、全量 110/1408 与 tsc/diff check，当前开放 required = 0；R4 已 `done · 4/4`，下一阶段为 R5，Root R4 投影另记于 Root 台账。

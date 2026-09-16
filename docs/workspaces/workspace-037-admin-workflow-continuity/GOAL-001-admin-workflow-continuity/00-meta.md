@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.7.0
-progress: 3/5
+version: 1.0.0
+progress: 4/5
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -19,7 +19,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 在现有 Admin 导航、发现入口、设计系统、locale/settings 与横切契约之上，交付 VP-037 首波：用户级 Saved Views、未保存变更保护、统一 Toast/错误恢复。Root 只承接 VP-037 的实现层路线图，不把实体全文搜索、批量结果中心、组织/数据权限、新业务域或架构 gated 项写入本目标。
 
-工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护已完成并通过各自 self/independent Goal 审计，当前 `progress: 3/5` 是显式检查点的派生展示，R4～R5 仍未完成。
+工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护和 R4 统一反馈与恢复已完成并通过各自 self/independent Goal 审计，当前 `progress: 4/5` 是显式检查点的派生展示，R5 组合验收与 Root/VP 关门仍未完成。
 
 ## 愿景对齐
 
@@ -52,8 +52,8 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **R1 分母与语义冻结**：列表页、Saved View 所有权/持久化、dirty-state、反馈分类与 Profile/权限覆盖形成可核对矩阵；由 `GOAL-002-r1-scope-semantics-freeze` 承载并以 `done · 3/3` 完成，I-037-001～004 verified，A-001 self + A-002 independent pass，A-003 已响应。
 - [x] **R2 Saved Views**：在首波分母内完成保存、选择、恢复、更新、删除、空态/错误态与无效/越权 fail-closed 闭环；由 `GOAL-003-r2-saved-views` 承载并以 `done · 4/4` 完成，A-001/A-002/A-003 pass，Git checkpoint `39c744ef` 已记录。
 - [x] **R3 未保存变更保护**：内部导航、浏览器离开/刷新、提交成功、重置和取消路径可验证，确认不会丢失修改或绕过提交结果；由 `GOAL-004-r3-unsaved-change-protection` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录。
-- [ ] **R4 统一反馈与恢复**：成功/失败/重试/维护反馈统一、可访问且不重复提交、不吞服务端错误、不泄露敏感信息；当前由 `GOAL-005-r4-unified-feedback-recovery` 承载（`active · 0/4`）。
-- [ ] **R5 组合验收与关门准备**：非目标边界、阶段事实、Goal 审计、必要独立意见与 VP 投影闭合；用户确认后才可将 Root/VP 关门。
+- [x] **R4 统一反馈与恢复**：成功/失败/重试/维护反馈统一、可访问且不重复提交、不吞服务端错误、不泄露敏感信息；由 `GOAL-005-r4-unified-feedback-recovery` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已记录。
+- [ ] **R5 组合验收与关门准备**：非目标边界、阶段事实、Goal 审计、必要独立意见与 VP 投影闭合；当前由 `GOAL-006-r5-composition-acceptance` 承载（`active · 3/4`，C1～C3 已完成），用户确认后才可将 Root/VP 关门。
 
 ## 信息就绪与未知项（P-005）
 
@@ -62,11 +62,11 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 | I-037-001 | required | 当前列表页、状态字段、Profile/权限覆盖的精确分母是什么？ | R1 范围冻结、R2/R5 验收 | R1 | 扫描页面/路由/列表注册表，建立机器可核对矩阵 | verified | 2026-09-17 已完成矩阵核对 | `GOAL-002.../attachments/r1-denominator-matrix.json`、`r1-form-matrix.json` |
 | I-037-002 | required | Saved View 所有权、持久化/序列化、权限变化后的失效语义是什么？ | R1 方案冻结、R2 实施/验收 | R1 | 用户确认 localStorage 方案 A；矩阵与 D-003 冻结 allowlist/失效边界 | verified | 2026-09-17；R2 已复核实现/回归证据 | `GOAL-002.../01-decision/D-003-saved-view-localstorage-accepted.md` + GOAL-003 A-003 |
 | I-037-003 | required | dirty-state 在内部路由、浏览器离开、提交、重置、取消中的统一语义是什么？ | R1 方案冻结、R3 实施/验收 | R1 | 盘点表单与路由守卫，D-004 冻结状态机 | verified | 2026-09-17；R3 已完成浏览器/自动化证据 | `GOAL-002.../01-decision/D-004-workflow-semantics-frozen.md` + GOAL-004 A-004 |
-| I-037-004 | required | Toast、API 错误、重试、维护/不可用反馈如何分类并可访问呈现？ | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope 与 FeedbackRegion，D-005 冻结映射 | verified | 2026-09-17；R4 另留跨页面回归证据 | `GOAL-002.../01-decision/D-005-feedback-recovery-semantics-frozen.md` + matrix |
+| I-037-004 | required | Toast、API 错误、重试、维护/不可用反馈如何分类并可访问呈现？ | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope 与 FeedbackRegion，D-005 冻结映射 | verified | 2026-09-17；R4 E-002～E-006、A-003/A-004 已闭合阶段实现/回归与审计证据 | `GOAL-002.../01-decision/D-005-feedback-recovery-semantics-frozen.md` + GOAL-005 R4 `03-audit` |
 | I-037-005 | non-blocking | 跨用户共享视图、最近使用/收藏与协作权限是否进入后续波次？ | 后续 UX 波次边界 | 关门后或出现协作触发 | 不纳入首波；真实协作需求出现时由 `/vision` 复核 | deferred | 理由：首波聚焦个人工作流；责任人：`/vision`；复核触发：真实协作需求 | 待确认 |
 | I-037-006 | required | 激活前 Admin freshness 与 VP-008 `go` 消费有效性是否仍成立？ | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，并核对当前 Charter/VP 引用与区间变更 | verified | 2026-09-16 已核对 | VRev-095；激活基线 HEAD `0c29c08`，后续治理提交 `d9440e12`、`1e823416` 未修改 `apps/**` |
 
-I-037-001～004 的 R1 信息冻结已关闭；R2 与 R3 已分别以实现/回归与 Goal 审计证据关闭，R4 仍须以实现/回归证据关闭其对应阶段门禁。I-037-005 是有界延期，不代表已验证或承诺后续实现；I-037-006 已 verified，不再阻断本次激活与开区。
+I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/回归与 Goal 审计证据关闭阶段门禁。I-037-005 是有界延期，不代表已验证或承诺后续实现；I-037-006 已 verified，不再阻断本次激活与开区。R5 仍需组合验收、Root 审计与用户确认后才能关门。
 
 ## 父目标
 
@@ -78,6 +78,6 @@ I-037-001～004 的 R1 信息冻结已关闭；R2 与 R3 已分别以实现/回�
 
 ## 备注
 
-- workspace/Root scaffold、R1、R2 与 R3 子目标已完成是已发生事实；R4～R5 尚未完成。
-- `progress: 3/5` 只由上方 5 个显式检查点派生；它不放行阶段、不关闭 finding、不覆盖 status。
+- workspace/Root scaffold、R1、R2、R3 与 R4 子目标已完成是已发生事实；R5 尚未完成。
+- `progress: 4/5` 只由上方 5 个显式检查点派生；它不放行阶段、不关闭 finding、不覆盖 status。
 - Vision Review `VRev-094`/`VRev-095` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。
