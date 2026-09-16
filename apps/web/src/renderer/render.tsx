@@ -30,6 +30,7 @@ import {
   type UploadableFile,
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
+import { confirmDiscard, equalDirtyValues, registerDirtyStateSource } from "@/renderer/dirty-state";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { getCustomComponent } from "@/renderer/custom-components";
 import {
@@ -164,6 +165,8 @@ export interface SchemaCrudFeedback {
   messageKey?: string;
   /** VP-007 S4: interpolation params for messageKey. */
   params?: Record<string, unknown>;
+  /** Optional user-triggered recovery action rendered by the shared toast. */
+  retry?: () => void;
 }
 
 export interface SchemaCrudConfirm {
@@ -197,6 +200,16 @@ export type ActionResult =
     };
 
 export interface SchemaCrudValue {
+  /** Authenticated user boundary used by user-scoped browser state. */
+  userId: string | null;
+  /** Registry page id used in the Saved View storage namespace. */
+  pageId: string;
+  /** Search-form fields that may be serialized as table filters. */
+  tableFilterFields: (tableId: string) => string[];
+  /** Publishes a page-level message through the shared feedback region. */
+  notifyFeedback: (feedback: SchemaCrudFeedback) => void;
+  /** Registers a form/page dirty predicate for navigation and unload guards. */
+  registerDirtySource: (source: () => boolean) => () => void;
   selectedRow: Record<string, unknown> | null;
   selectRow: (row: Record<string, unknown> | null) => void;
   tableQuery: (id: string) => ResourceQuery | undefined;
@@ -738,6 +751,27 @@ async function runBatchRequest(
   return { ok: true };
 }
 
+function collectSearchFilterFields(
+  node: RenderNode,
+  byTable: Map<string, Set<string>>,
+): void {
+  if (node.type === "form" && node.props.mode === "search") {
+    const targetTable = typeof node.props.targetTable === "string" ? node.props.targetTable : "";
+    if (targetTable !== "") {
+      const fields = byTable.get(targetTable) ?? new Set<string>();
+      for (const field of node.props.fields) {
+        if (isRecord(field) && typeof field.id === "string" && field.id !== "" && field.id !== "q") {
+          fields.add(field.id);
+        }
+      }
+      byTable.set(targetTable, fields);
+    }
+  }
+  for (const child of node.children ?? []) {
+    collectSearchFilterFields(child, byTable);
+  }
+}
+
 function SchemaCrudProvider({
   document,
   context,
@@ -772,6 +806,33 @@ function SchemaCrudProvider({
   const [feedback, setFeedback] = useState<SchemaCrudFeedback | null>(null);
   const [fetcher, setFetcher] = useState<typeof fetch>(() => initialFetcher ?? globalThis.fetch);
   const t = useTranslate();
+
+  const userId = useMemo(() => {
+    const user = isRecord(context.user) ? context.user : undefined;
+    return typeof user?.id === "string" && user.id !== "" ? user.id : null;
+  }, [context]);
+  const pageId = useMemo(() => {
+    const meta = document.meta as unknown as JsonRecord;
+    const declared = stringOf(meta.pageId);
+    const contextual = stringOf(context.pageId);
+    return declared !== "" ? declared : contextual;
+  }, [document, context]);
+  const searchFilterFieldMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    collectSearchFilterFields(document.body, map);
+    return map;
+  }, [document]);
+  const tableFilterFields = useCallback(
+    (tableId: string) => [...(searchFilterFieldMap.get(tableId) ?? new Set<string>())],
+    [searchFilterFieldMap],
+  );
+  const notifyFeedback = useCallback((next: SchemaCrudFeedback) => {
+    setFeedback(next);
+  }, []);
+  const registerDirtySource = useCallback(
+    (source: () => boolean) => registerDirtyStateSource(source),
+    [],
+  );
 
   // Route snapshot from the render context (App injects route: {params, query});
   // hostless renderers (tests) fall back to an empty snapshot.
@@ -924,7 +985,12 @@ function SchemaCrudProvider({
     },
     [],
   );
-  const closeModal = useCallback(() => setActiveModal(null), []);
+  const closeModal = useCallback(() => {
+    if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
+      return;
+    }
+    setActiveModal(null);
+  }, [t]);
 
   const runRequestCallback = useCallback(
     (actionRef: string, opts: RunRequestOptions) =>
@@ -1396,6 +1462,11 @@ function SchemaCrudProvider({
 
   const value = useMemo<SchemaCrudValue>(
     () => ({
+      userId,
+      pageId,
+      tableFilterFields,
+      notifyFeedback,
+      registerDirtySource,
       selectedRow,
       selectRow: setSelectedRow,
       tableQuery,
@@ -1428,6 +1499,11 @@ function SchemaCrudProvider({
       route,
     }),
     [
+      userId,
+      pageId,
+      tableFilterFields,
+      notifyFeedback,
+      registerDirtySource,
       selectedRow,
       tableQuery,
       setTableQuery,
@@ -1791,6 +1867,8 @@ function FormInner({
   // Baseline snapshot for the full $deps engine (02 §14: baseline = the
   // field's value at first mount unless explicitly overridden).
   const mountBaselines = useRef(values);
+  const latestValues = useRef(values);
+  latestValues.current = values;
   // Full engine (upstream per-field reactions) runs on every value change and
   // converges; the frozen $context engine remains the fallback.
   const fullReaction = useMemo(
@@ -1844,6 +1922,17 @@ function FormInner({
   >([]);
 
   const isSearch = node.props.mode === "search";
+  const registerDirtySource = crud?.registerDirtySource;
+  const isDirty = !isSearch && !equalDirtyValues(latestValues.current, mountBaselines.current);
+  useEffect(() => {
+    // Search forms change list query state, not business data; they must not
+    // block navigation. Default-mode forms register only a predicate, so the
+    // shell never stores draft values in the global registry.
+    if (isSearch || registerDirtySource === undefined) {
+      return;
+    }
+    return registerDirtySource(() => !equalDirtyValues(latestValues.current, mountBaselines.current));
+  }, [isSearch, registerDirtySource]);
   const submitAction = node.props.submitAction;
   const canSubmit = isSearch || typeof submitAction === "string";
   const hasBlockingErrors = gate.errors.length > 0 || reactionErrors.length > 0;
@@ -1930,6 +2019,11 @@ function FormInner({
           message: t("importErrors.title"),
         });
         return;
+      } else {
+        // A successful write establishes a new clean baseline. Keeping the
+        // baseline in the form instance also makes inline forms clear the
+        // global dirty guard without relying on an unmount/remount cycle.
+        mountBaselines.current = values;
       }
     } catch (error) {
       // Defensive: a throwing submit (unexpected fetch/transport failure) must
@@ -2018,6 +2112,7 @@ function FormInner({
 
   return (
     <form
+      data-form-dirty={isDirty ? "true" : "false"}
       className={isSearch ? "space-y-3.5 rounded-xl border border-border/70 bg-card/85 p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.03),0_1px_2px_-1px_rgba(0,0,0,0.03)] dark:border-border/60 dark:bg-card/70 dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.2)]" : "space-y-3"}
       onSubmit={(event) => {
         event.preventDefault();

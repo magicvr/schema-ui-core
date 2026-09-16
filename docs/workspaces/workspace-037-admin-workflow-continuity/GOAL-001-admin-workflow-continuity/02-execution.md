@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 执行台账 · GOAL-001-admin-workflow-continuity
@@ -20,6 +20,7 @@ version: 0.4.0
 | E-002 | 2026-09-17 | 开设 R1 子目标并记录分母矩阵 | recorded | [E-002-open-r1-scope-freeze.md](02-execution/E-002-open-r1-scope-freeze.md) |
 | E-003 | 2026-09-17 | 记录用户确认 Saved View 使用 localStorage | recorded | [E-003-user-saved-view-choice.md](02-execution/E-003-user-saved-view-choice.md) |
 | E-004 | 2026-09-17 | R1 审计响应并投影 Root 检查点 | recorded | [E-004-r1-audit-response-and-projection.md](02-execution/E-004-r1-audit-response-and-projection.md) |
+| E-005 | 2026-09-17 | 开设 R2 Saved Views | recorded | [E-005-open-r2-saved-views.md](02-execution/E-005-open-r2-saved-views.md) |
 
 ## 当前事实
 
@@ -29,6 +30,7 @@ version: 0.4.0
 - 已开设 `GOAL-002-r1-scope-semantics-freeze`，并记录 24 个列表表面、58 个表单节点、状态/反馈基线矩阵和 D-003～D-005 语义决策；R1 审计已关闭，R2～R4 实现证据待补。
 - 2026-09-17 用户确认 Saved View 采用浏览器 `localStorage`，按 `user.id + pageId + tableId` 隔离；工作树另有语义记录后形成的未提交 Saved Views/dirty-state 实现切片，由 R2/R3 目标承接，不在 R1 投影中计为完成。
 - Admin freshness 继承当前 HEAD 基线并通过。
+- R2 `GOAL-003-r2-saved-views` 已开设，当前 `active · 3/4`；C1～C3 实现与回归事实由该阶段目标承接，C4 checkpoint 待完成。
 
 ## 事实边界
 

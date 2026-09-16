@@ -1,6 +1,7 @@
 {
-  "matrixVersion": "0.1.0",
+  "matrixVersion": "0.2.0",
   "captured": "2026-09-16",
+  "revised": "2026-09-17",
   "sources": [
     "apps/web/src/app/searchable-profile-matrix.test.ts",
     "apps/api/internal/manifest/manifest.go",
@@ -37,7 +38,7 @@
       "mvp": {"registeredPages": 6, "discoverablePages": 5, "hiddenRoutePages": 1, "discoverableActions": 6},
       "admin": {"registeredPages": 22, "discoverablePages": 18, "hiddenRoutePages": 4, "discoverableActions": 16},
       "demo": {"registeredPages": 14, "discoverablePages": 13, "hiddenRoutePages": 1, "discoverableActions": 6},
-      "custom": {"registeredPages": 27, "discoverablePages": 22, "hiddenRoutePages": 4, "discoverableActions": 18}
+      "custom": {"registeredPages": 27, "discoverablePages": 22, "hiddenRoutePages": 5, "discoverableActions": 18}
     },
     "listSurfaces": 24,
     "forms": 58
@@ -113,7 +114,7 @@
         "wallet", "wallet-vouchers", "my-wallet", "settings", "account", "notifications",
         "telegram-settings", "digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"
       ],
-      "hiddenRoutePageIds": ["users-invites", "dictionary-entries", "task-runs", "wallet-entries"],
+      "hiddenRoutePageIds": ["users-invites", "dictionary-entries", "task-runs", "wallet-entries", "telegram-operator"],
       "discoverableActionIds": [
         "users:create", "users:invites", "users:export", "users:import",
         "roles:export", "roles:create", "settings:reset", "file-library:upload",
@@ -129,7 +130,7 @@
     {"pageId":"activity","tableId":"operations-table","dataSource":"/api/operations","rowKey":"id","columns":["createdAt","event","actorName","recordId","detail"],"sortableFields":["createdAt","event","actorName"],"tableFilterFields":[],"routeBindingParams":[]},
     {"pageId":"data-dictionary","tableId":"dict-types-table","dataSource":"/api/data-dictionary/types","rowKey":"id","columns":["key","name","enabled","sort","updatedAt"],"sortableFields":["key","name","sort","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
     {"pageId":"dictionary-entries","tableId":"dict-entries-table","dataSource":"/api/data-dictionary/entries","rowKey":"id","columns":["dictTypeName","entryKey","label","enabled","sort","updatedAt"],"sortableFields":["dictTypeName","entryKey","label","sort","updatedAt"],"tableFilterFields":[],"routeBindingParams":["dictKey"]},
-    {"pageId":"data-permission","tableId":"policies","dataSource":"/api/data-permission/policies","rowKey":"resource","columns":["resource","ownerColumn","defaultScope","enabled"],"sortableFields":[],"tableFilterFields":["resource"],"routeBindingParams":[]},
+    {"pageId":"data-permission","tableId":"policies","dataSource":"/api/data-permission/policies","rowKey":"resource","columns":["resource","ownerColumn","defaultScope","enabled"],"sortableFields":[],"tableFilterFields":[],"routeBindingParams":[]},
     {"pageId":"admin-list-batch","tableId":"users-batch-table","dataSource":"/api/users","rowKey":"id","columns":["id","username","name"],"sortableFields":["username"],"tableFilterFields":[],"routeBindingParams":[]},
     {"pageId":"data-table","tableId":"users-table","dataSource":"/api/users","rowKey":"id","columns":["id","username","name","updatedAt"],"sortableFields":["username","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
     {"pageId":"search-form-table","tableId":"search-results","dataSource":"/api/roles","rowKey":"id","columns":["id","key","name","updatedAt"],"sortableFields":["key","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},

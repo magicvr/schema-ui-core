@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.4.0
+version: 0.5.0
 parent: null
 ---
 
@@ -50,7 +50,7 @@ parent: null
 | 阶段 | 目的 | 状态 |
 |------|------|------|
 | R1 | 列表页分母、Saved View 所有权/持久化、dirty-state 与反馈/权限语义冻结 | **done via `GOAL-002-r1-scope-semantics-freeze` · 3/3**；I-037-001～004 verified，A-001/A-002 pass，A-003 已响应 |
-| R2 | 用户级 Saved Views 保存、选择、恢复、更新、删除与失效边界 | pending；R1 后可与 R3/R4 按并行价值安排 |
+| R2 | 用户级 Saved Views 保存、选择、恢复、更新、删除与失效边界 | **active via `GOAL-003-r2-saved-views` · 3/4**；C1～C3 实现/回归已完成，C4 审计响应与 checkpoint 待完成 |
 | R3 | 未保存变更保护与离开确认状态机 | pending；R1 后可与 R2/R4 按并行价值安排 |
 | R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | pending；R1 后可与 R2/R3 按并行价值安排 |
 | R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | pending；须 R2～R4 证据闭合并经用户确认 |

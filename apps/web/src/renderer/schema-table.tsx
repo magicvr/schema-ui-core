@@ -16,6 +16,18 @@ import {
 } from "@/renderer/resource";
 import type { RenderTableNode } from "@/renderer/render.types";
 import { useSchemaCrud } from "@/renderer/render.tsx";
+import {
+  createSavedViewRecord,
+  getBrowserSavedViewStorage,
+  normalizeSavedViewState,
+  readSavedViews,
+  savedViewStorageKey,
+  updateSavedViewRecord,
+  writeSavedViews,
+  type SavedViewRecord,
+  type SavedViewState,
+  type SavedViewTableConfig,
+} from "@/renderer/saved-views";
 
 /**
  * Default schema-driven table surface (R1 · GOAL-004 / D-004) + S4 CRUD wiring
@@ -504,7 +516,7 @@ function RowActionsMenu({
 }
 
 export function SchemaTable({ node, fetcher }: SchemaTableProps) {
-  const columns = schemaTableColumns(node);
+  const columns = useMemo(() => schemaTableColumns(node), [node]);
   const dataSource = schemaTableDataSource(node);
   const dataParams = schemaTableDataParams(node);
   const rowKeyField = schemaTableRowKey(node);
@@ -513,13 +525,41 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const tableId = node.id ?? "default";
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
   const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
-  const filters = schemaTableFilters(node);
+  const filters = useMemo(() => schemaTableFilters(node), [node]);
   const title = resolveTextProp(
     node.props as unknown as Record<string, unknown>,
     "titleKey",
     "title",
     t,
     "",
+  );
+
+  const formFilterFields = useMemo(
+    () => (crud?.tableFilterFields !== undefined ? crud.tableFilterFields(tableId) : []),
+    [crud?.tableFilterFields, tableId],
+  );
+  const savedViewConfig = useMemo<SavedViewTableConfig>(
+    () => ({
+      columnFields: columns.map((column) => column.field),
+      sortableFields: columns
+        .filter((column) => column.sortable === true)
+        .map((column) => column.field),
+      filterFields: [...new Set([...filters.map((filter) => filter.field), ...formFilterFields])],
+    }),
+    [columns, filters, formFilterFields],
+  );
+  const savedViewConfigSignature = useMemo(() => JSON.stringify(savedViewConfig), [savedViewConfig]);
+  const savedViewEnabled = crud !== null && crud.userId !== null && crud.pageId !== "";
+  const savedViewKey = useMemo(
+    () =>
+      savedViewEnabled && crud !== null && crud.userId !== null
+        ? savedViewStorageKey(crud.userId, crud.pageId, tableId)
+        : "",
+    [crud?.pageId, crud?.userId, savedViewEnabled, tableId],
+  );
+  const savedViewStorage = useMemo(
+    () => (savedViewEnabled ? getBrowserSavedViewStorage() : null),
+    [savedViewEnabled, savedViewKey],
   );
 
   // Register the injected transport with the page's Schema CRUD provider so
@@ -540,6 +580,227 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
       crud.setTableQuery(tableId, next);
     } else {
       setLocalQuery(next);
+    }
+  };
+
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
+    columns.map((column) => column.field),
+  );
+  const [savedViewLoad, setSavedViewLoad] = useState<{
+    status: "disabled" | "loading" | "ready" | "error";
+    views: SavedViewRecord[];
+    activeViewId?: string;
+  }>({ status: savedViewEnabled ? "loading" : "disabled", views: [] });
+  const savedViewReportedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const allowed = new Set(columns.map((column) => column.field));
+    setVisibleColumns((current) => {
+      const next = current.filter((field) => allowed.has(field));
+      if (next.length > 0 || columns.length === 0) return next;
+      return columns.map((column) => column.field);
+    });
+  }, [columns]);
+
+  const reportSavedViewFailure = useCallback(
+    (failure: { code: string; message: string }) => {
+      crud?.notifyFeedback({
+        kind: "error",
+        code: failure.code,
+        message: failure.message,
+        messageKey: "feedback.savedViewError",
+      });
+    },
+    [crud?.notifyFeedback],
+  );
+
+  useEffect(() => {
+    if (!savedViewEnabled || savedViewKey === "") {
+      setSavedViewLoad({ status: "disabled", views: [] });
+      return;
+    }
+    setSavedViewLoad({ status: "loading", views: [] });
+    const result = readSavedViews(savedViewStorage, savedViewKey, savedViewConfig);
+    if (!result.ok) {
+      setSavedViewLoad({ status: "error", views: [] });
+      const reportKey = `${savedViewKey}:${result.code}`;
+      if (savedViewReportedRef.current !== reportKey) {
+        savedViewReportedRef.current = reportKey;
+        reportSavedViewFailure(result);
+      }
+      return;
+    }
+    setSavedViewLoad({
+      status: "ready",
+      views: result.views,
+      ...(result.activeViewId === undefined ? {} : { activeViewId: result.activeViewId }),
+    });
+    if (result.droppedCount > 0) {
+      const reportKey = `${savedViewKey}:dropped:${result.droppedCount}`;
+      if (savedViewReportedRef.current !== reportKey) {
+        savedViewReportedRef.current = reportKey;
+        reportSavedViewFailure({
+          code: "SAVED_VIEW_STORAGE_INVALID",
+          message: `${result.droppedCount} Saved View(s) were ignored because they no longer match the current Schema.`,
+        });
+      }
+    }
+    const active = result.activeViewId === undefined
+      ? undefined
+      : result.views.find((view) => view.id === result.activeViewId);
+    if (active !== undefined) {
+      const state = normalizeSavedViewState(active.query, active.visibleColumns, savedViewConfig);
+      if (state.ok) {
+        setVisibleColumns(state.state.visibleColumns);
+        setQuery({ ...state.state.query, page: 1 });
+      }
+    }
+  }, [
+    reportSavedViewFailure,
+    savedViewConfigSignature,
+    savedViewEnabled,
+    savedViewKey,
+  ]);
+
+  const currentSavedViewState = useMemo<SavedViewState>(
+    () => ({
+      query: {
+        ...(query.q === undefined ? {} : { q: query.q }),
+        ...(query.filters === undefined ? {} : { filters: { ...query.filters } }),
+        ...(query.sort === undefined ? {} : { sort: query.sort }),
+        ...(query.order === undefined ? {} : { order: query.order }),
+        ...(query.pageSize === undefined ? {} : { pageSize: query.pageSize }),
+      },
+      visibleColumns: [...visibleColumns],
+    }),
+    [query, visibleColumns],
+  );
+  const selectedSavedView = savedViewLoad.views.find((view) => view.id === savedViewLoad.activeViewId);
+  const persistSavedViews = useCallback(
+    (views: SavedViewRecord[], activeViewId?: string): boolean => {
+      if (!savedViewEnabled || savedViewKey === "") return false;
+      const result = writeSavedViews(
+        savedViewStorage,
+        savedViewKey,
+        views,
+        savedViewConfig,
+        activeViewId,
+      );
+      if (!result.ok) {
+        reportSavedViewFailure(result);
+        return false;
+      }
+      setSavedViewLoad({
+        status: "ready",
+        views,
+        ...(activeViewId === undefined ? {} : { activeViewId }),
+      });
+      return true;
+    },
+    [
+      reportSavedViewFailure,
+      savedViewConfig,
+      savedViewEnabled,
+      savedViewKey,
+      savedViewStorage,
+    ],
+  );
+  const [saveViewOpen, setSaveViewOpen] = useState(false);
+  const [saveViewName, setSaveViewName] = useState("");
+
+  const saveNewView = () => {
+    const result = createSavedViewRecord(
+      saveViewName,
+      currentSavedViewState.query,
+      currentSavedViewState.visibleColumns,
+      savedViewConfig,
+    );
+    if (!result.ok) {
+      reportSavedViewFailure(result);
+      return;
+    }
+    if (savedViewLoad.views.length >= 50) {
+      reportSavedViewFailure({
+        code: "SAVED_VIEW_LIMIT_REACHED",
+        message: "Saved View limit reached.",
+      });
+      return;
+    }
+    if (persistSavedViews([...savedViewLoad.views, result.view], result.view.id)) {
+      setSaveViewName("");
+      setSaveViewOpen(false);
+      crud?.notifyFeedback({
+        kind: "success",
+        code: "SAVED_VIEW_SAVED",
+        message: t("feedback.savedViewSaved"),
+        messageKey: "feedback.savedViewSaved",
+      });
+    }
+  };
+
+  const updateSelectedView = () => {
+    if (selectedSavedView === undefined) return;
+    const result = updateSavedViewRecord(
+      selectedSavedView,
+      currentSavedViewState.query,
+      currentSavedViewState.visibleColumns,
+      savedViewConfig,
+    );
+    if (!result.ok) {
+      reportSavedViewFailure(result);
+      return;
+    }
+    const next = savedViewLoad.views.map((view) =>
+      view.id === result.view.id ? result.view : view,
+    );
+    if (persistSavedViews(next, result.view.id)) {
+      crud?.notifyFeedback({
+        kind: "success",
+        code: "SAVED_VIEW_UPDATED",
+        message: t("feedback.savedViewUpdated"),
+        messageKey: "feedback.savedViewUpdated",
+      });
+    }
+  };
+
+  const selectSavedView = (viewId: string) => {
+    if (viewId === "") {
+      setSavedViewLoad((current) => ({ status: current.status, views: current.views }));
+      if (persistSavedViews(savedViewLoad.views)) {
+        setSavedViewLoad((current) => ({ status: current.status, views: current.views }));
+      }
+      return;
+    }
+    const view = savedViewLoad.views.find((entry) => entry.id === viewId);
+    if (view === undefined) return;
+    const state = normalizeSavedViewState(view.query, view.visibleColumns, savedViewConfig);
+    if (!state.ok) {
+      reportSavedViewFailure(state);
+      persistSavedViews(savedViewLoad.views.filter((entry) => entry.id !== viewId));
+      return;
+    }
+    setVisibleColumns(state.state.visibleColumns);
+    setQuery({ ...state.state.query, page: 1 });
+    crud?.clearSelection(tableId);
+    persistSavedViews(savedViewLoad.views, viewId);
+  };
+
+  const deleteSelectedView = () => {
+    if (selectedSavedView === undefined) return;
+    if (typeof window !== "undefined" && !window.confirm(t("feedback.savedViewDeleteConfirm"))) {
+      return;
+    }
+    const next = savedViewLoad.views.filter((view) => view.id !== selectedSavedView.id);
+    const activeViewId = savedViewLoad.activeViewId === selectedSavedView.id
+      ? undefined
+      : savedViewLoad.activeViewId;
+    if (persistSavedViews(next, activeViewId)) {
+      crud?.notifyFeedback({
+        kind: "success",
+        code: "SAVED_VIEW_DELETED",
+        message: t("feedback.savedViewDeleted"),
+        messageKey: "feedback.savedViewDeleted",
+      });
     }
   };
 
@@ -746,6 +1007,9 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     crud.setSelection(tableId, [...next].map(selectionTokenOf));
   };
 
+  const visibleColumnSet = new Set(visibleColumns);
+  const displayColumns = columns.filter((column) => visibleColumnSet.has(column.field));
+
   const dataColumns: DataTableColumn<ResourceItem>[] = [
     ...(selectionEnabled
       ? [
@@ -776,7 +1040,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
           },
         ]
       : []),
-    ...columns.map((column) => ({
+    ...displayColumns.map((column) => ({
       key: column.field,
       label: resolveTextProp(
         column as unknown as Record<string, unknown>,
@@ -921,6 +1185,147 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               </label>
             );
           })}
+        </div>
+      ) : null}
+      {savedViewEnabled && savedViewLoad.status !== "disabled" ? (
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-md border border-border/70 bg-card/60 p-2"
+          data-saved-views
+        >
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{t("feedback.savedViews")}</span>
+            <select
+              data-saved-view-select
+              aria-label={t("feedback.savedViews")}
+              value={savedViewLoad.activeViewId ?? ""}
+              disabled={savedViewLoad.status !== "ready"}
+              onChange={(event) => selectSavedView(event.target.value)}
+              className="h-8 min-w-40 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+            >
+              <option value="">{t("feedback.savedViewCurrent")}</option>
+              {savedViewLoad.views.map((view) => (
+                <option key={view.id} value={view.id}>
+                  {view.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            data-saved-view-action="save"
+            disabled={savedViewLoad.status !== "ready"}
+            onClick={() => {
+              setSaveViewName("");
+              setSaveViewOpen(true);
+            }}
+            className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent disabled:opacity-50"
+          >
+            {t("feedback.savedViewSave")}
+          </button>
+          {selectedSavedView !== undefined ? (
+            <>
+              <button
+                type="button"
+                data-saved-view-action="update"
+                disabled={savedViewLoad.status !== "ready"}
+                onClick={updateSelectedView}
+                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent disabled:opacity-50"
+              >
+                {t("feedback.savedViewUpdate")}
+              </button>
+              <button
+                type="button"
+                data-saved-view-action="delete"
+                disabled={savedViewLoad.status !== "ready"}
+                onClick={deleteSelectedView}
+                className="h-8 rounded-md border border-destructive/40 bg-background px-2.5 text-xs font-medium text-destructive shadow-sm hover:bg-destructive/10 disabled:opacity-50"
+              >
+                {t("feedback.savedViewDelete")}
+              </button>
+            </>
+          ) : null}
+          <details className="relative">
+            <summary className="cursor-pointer list-none rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent">
+              {t("feedback.savedViewColumns")}
+            </summary>
+            <div
+              role="group"
+              aria-label={t("feedback.savedViewColumns")}
+              className="absolute right-0 top-9 z-20 grid min-w-44 gap-2 rounded-md border border-border bg-card p-3 shadow-lg"
+            >
+              {columns.map((column) => {
+                const checked = visibleColumnSet.has(column.field);
+                const label = resolveTextProp(
+                  column as unknown as Record<string, unknown>,
+                  "labelKey",
+                  "label",
+                  t,
+                  column.field,
+                );
+                return (
+                  <label key={column.field} className="flex items-center gap-2 text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={checked && visibleColumns.length <= 1}
+                      onChange={() =>
+                        setVisibleColumns((current) => {
+                          if (current.includes(column.field)) {
+                            return current.length <= 1
+                              ? current
+                              : current.filter((field) => field !== column.field);
+                          }
+                          return [...current, column.field];
+                        })
+                      }
+                    />
+                    <span>{t("feedback.savedViewColumns")}: {label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </details>
+          {saveViewOpen ? (
+            <form
+              className="flex basis-full flex-wrap items-center gap-2 pt-1"
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveNewView();
+              }}
+            >
+              <label className="sr-only" htmlFor={`${tableId}-saved-view-name`}>
+                {t("feedback.savedViewName")}
+              </label>
+              <input
+                id={`${tableId}-saved-view-name`}
+                autoFocus
+                value={saveViewName}
+                onChange={(event) => setSaveViewName(event.target.value)}
+                placeholder={t("feedback.savedViewName")}
+                maxLength={80}
+                className="h-8 min-w-52 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+              />
+              <button
+                type="submit"
+                data-saved-view-action="confirm-save"
+                className="h-8 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground shadow-sm hover:opacity-90"
+              >
+                {t("feedback.savedViewConfirmSave")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSaveViewOpen(false)}
+                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+              >
+                {t("feedback.cancel")}
+              </button>
+            </form>
+          ) : null}
+          {savedViewLoad.status === "error" ? (
+            <span role="alert" className="basis-full text-xs text-destructive">
+              {t("feedback.savedViewUnavailable")}
+            </span>
+          ) : null}
         </div>
       ) : null}
       {toolbar.length > 0 ? (

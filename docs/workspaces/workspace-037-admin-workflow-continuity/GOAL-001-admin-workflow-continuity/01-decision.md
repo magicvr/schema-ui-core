@@ -31,9 +31,11 @@ version: 0.4.0
 | D-002 | 2026-09-17 | 建立 R1 分母与语义冻结子目标 | accepted | [D-002-open-r1-scope-freeze.md](01-decision/D-002-open-r1-scope-freeze.md) |
 | D-003 | 2026-09-17 | 用户确认 R1 Saved View 使用 localStorage | accepted | [D-003-r1-saved-view-localstorage-choice.md](01-decision/D-003-r1-saved-view-localstorage-choice.md) |
 | D-004 | 2026-09-17 | R1 审计响应与 Root 投影 | accepted | [D-004-r1-audit-response-and-projection.md](01-decision/D-004-r1-audit-response-and-projection.md) |
+| D-005 | 2026-09-17 | 开设 R2 Saved Views | accepted | [D-005-open-r2-saved-views.md](01-decision/D-005-open-r2-saved-views.md) |
 
 ## 当前投影
 
 - D-001 已确认 workspace slug、Root slug、VP-037 `planned → active`、`delivery` 角色与 Root `parent: null`。
 - D-002 已确认按 R1 阶段开设 `GOAL-002-r1-scope-semantics-freeze`；D-003 已记录用户选择 localStorage，但不替代 Saved View 序列化、失效和异常路径的实现证据。
 - R1 已完成信息收集与语义冻结；GOAL-002 的 C3 已由 A-001 self、A-002 independent 与 A-003 响应闭合，Root R1 检查点已投影完成并放行 R2/R3/R4 的阶段开设。R2～R4 仍须各自实现与回归证据。
+- R2 已开设 `GOAL-003-r2-saved-views`（`active · 3/4`），R1 recommended 精度项与 C1～C3 实现/回归已记录；C4 审计响应与 checkpoint 待完成。

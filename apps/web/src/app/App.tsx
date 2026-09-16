@@ -63,6 +63,7 @@ import {
   stripPathQuery,
 } from "@/protocol/app-manifest";
 import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
+import { confirmDiscard, hasDirtyState } from "@/renderer/dirty-state";
 import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
@@ -967,6 +968,7 @@ export function App({
   const [routeQuery, setRouteQuery] = useState<Record<string, string>>(() =>
     parseLocationQuery(),
   );
+  const committedLocationRef = useRef(currentLocationPath());
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [pendingPaletteAction, setPendingPaletteAction] = useState<PendingPaletteAction | null>(null);
@@ -1059,17 +1061,39 @@ export function App({
   useEffect(() => {
     const handlePopState = () => {
       const requested = currentLocationPath();
+      if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
+        // popstate already moved the browser URL; restore the last committed
+        // route when the user keeps the draft. The current page remains
+        // mounted and its dirty source continues to protect the next attempt.
+        window.history.pushState({}, "", committedLocationRef.current);
+        return;
+      }
       const initial = resolveInitialRoute(manifest, requested);
       if (initial?.source === "home" && requested !== initial.path) {
         window.history.replaceState({}, "", initial.path);
       }
       const resolved = initial?.path ?? requested;
+      committedLocationRef.current = currentLocationPath();
       setPath(resolved);
       setRouteQuery(initial?.query ?? parseLocationQuery());
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [manifest]);
+  }, [manifest, t]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasDirtyState()) {
+        return;
+      }
+      event.preventDefault();
+      // Browsers intentionally replace custom text with their native warning;
+      // setting returnValue is still required for the unload prompt contract.
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     if (!focusPageTitleAfterNavigationRef.current) {
@@ -1133,14 +1157,18 @@ export function App({
     if (!href.startsWith("/")) {
       return;
     }
+    if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
+      return;
+    }
     window.history.pushState({}, "", href);
+    committedLocationRef.current = currentLocationPath();
     // Keep the path free of the query string (matchRoute expects a clean path);
     // the query lives in routeQuery and reaches the render context (C8).
     const nextPath = stripPathQuery(currentLocationPath());
     setPath(nextPath);
     setRouteQuery(parseLocationQuery());
     setMobileDrawerOpen(false);
-  }, []);
+  }, [t]);
 
   const projection = useMemo(
     () => projectNavigation(manifest, path, navigationContext, t),
