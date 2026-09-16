@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 审计 · GOAL-002 R1
@@ -15,7 +15,7 @@ version: 0.2.0
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | I-037-001 | verified | `r1-denominator-matrix.json` + `r1-form-matrix.json` 已形成并可解析核对 |
-| I-037-002 | open | Saved View 关键持久化取舍尚未取得用户确认 |
+| I-037-002 | collecting | 用户已确认 localStorage 方案 A；序列化、Schema/权限失效与异常处理待 R2 证据 |
 | I-037-003 | collecting | 已确认当前无内部/浏览器 dirty guard，场景矩阵待冻结 |
 | I-037-004 | collecting | 已确认反馈分层和 API envelope，统一映射待冻结 |
 | 到期 required 是否已 verified / residual | pending | R1 尚未到审计节点 |

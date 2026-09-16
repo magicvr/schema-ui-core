@@ -4,7 +4,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.2.0
+version: 0.3.0
 workspace_id: workspace-037-admin-workflow-continuity
 ---
 
@@ -38,8 +38,8 @@ R1 分母与语义冻结 [active · GOAL-002 · 1/3]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-admin-workflow-continuity | Admin 工作流连续性与安全反馈交付 | **active** | 0/5 | null | R1 子目标已建立；I-037-001 verified，I-037-002 open required，I-037-003～004 collecting required，I-037-006 verified；Vision open required = 0 |
-| GOAL-002-r1-scope-semantics-freeze | R1 列表分母与工作流语义冻结 | **active** | 1/3 | GOAL-001-admin-workflow-continuity | C1 矩阵已记录；C2/C3 未完成；I-037-002 open、I-037-003/004 collecting |
+| GOAL-001-admin-workflow-continuity | Admin 工作流连续性与安全反馈交付 | **active** | 0/5 | null | R1 子目标已建立；I-037-001 verified，I-037-002 collecting（方案 A 已确认、实现证据待补），I-037-003～004 collecting required，I-037-006 verified；Vision open required = 0 |
+| GOAL-002-r1-scope-semantics-freeze | R1 列表分母与工作流语义冻结 | **active** | 1/3 | GOAL-001-admin-workflow-continuity | C1 矩阵已记录；用户确认 Saved View 方案 A，C2/C3 未完成；I-037-002 collecting、I-037-003/004 collecting |
 
 ## 维护说明
 

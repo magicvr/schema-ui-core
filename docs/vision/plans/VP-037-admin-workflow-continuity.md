@@ -6,9 +6,9 @@ status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 parent: null
-version: 0.2.0
+version: 0.3.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
@@ -52,7 +52,7 @@ version: 0.2.0
 
 | 阶段 | 目的 | 进入条件 / 产物 |
 |------|------|-----------------|
-| R1 · 分母与语义冻结 | 盘点列表页、筛选/排序/列配置、表单 dirty-state、反馈类型与权限/Profile 覆盖 | I-037-001～004 达到可冻结状态；矩阵与取舍决策落盘 |
+| R1 · 分母与语义冻结 | 盘点列表页、筛选/排序/列配置、表单 dirty-state、反馈类型与权限/Profile 覆盖 | I-037-001～004 达到可冻结状态；矩阵与取舍决策落盘；Saved View 方案 A 已由用户确认，仍待实现证据 |
 | R2 · Saved Views | 实现用户级保存/恢复与失效边界 | R1 冻结；退出判据 1～2 的证据矩阵与回归 |
 | R3 · 未保存保护 | 实现并验证 dirty-state 与离开确认 | R1 冻结；退出判据 3 的浏览器/自动化证据 |
 | R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；退出判据 4 的跨页面回归 |
@@ -62,10 +62,10 @@ version: 0.2.0
 
 | 编号 | 所需信息 | 级别 | 影响 | 最晚需要 | 收集/验证动作 | 状态 | 延期/复核与证据 |
 |------|----------|------|------|----------|----------------|------|------------------|
-| I-037-001 | 现有列表页、状态字段、Profile/权限覆盖的精确分母 | required | R1 范围冻结、R2/R5 验收 | R1 | 扫描页面/路由/列表注册表，形成机器可核对矩阵 | open | 待 R1；证据待补 |
-| I-037-002 | Saved View 所有权、持久化/序列化、权限变化后的失效语义 | required | R1 方案冻结、R2 实施/验收 | R1 | 对照列表查询状态、用户边界、API/存储合同并由方案记录冻结 | open | 待 R1；证据待补 |
-| I-037-003 | dirty-state 在内部路由、浏览器离开、提交、重置、取消中的统一语义 | required | R1 方案冻结、R3 实施/验收 | R1 | 盘点表单与路由守卫，补浏览器/自动化场景矩阵 | open | 待 R1；证据待补 |
-| I-037-004 | Toast、API 错误、重试、维护/不可用反馈的分类与可访问呈现 | required | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope、反馈组件与 maintenance 门控，冻结映射 | open | 待 R1；证据待补 |
+| I-037-001 | 现有列表页、状态字段、Profile/权限覆盖的精确分母 | required | R1 范围冻结、R2/R5 验收 | R1 | 扫描页面/路由/列表注册表，形成机器可核对矩阵 | verified | 2026-09-17：`GOAL-002.../attachments/r1-denominator-matrix.json`、`r1-form-matrix.json` |
+| I-037-002 | Saved View 所有权、持久化/序列化、权限变化后的失效语义 | required | R1 方案冻结、R2 实施/验收 | R1 | 用户确认方案 A；R2 验证 localStorage 序列化、Schema/权限失效与异常反馈 | collecting | 2026-09-17 已确认；R2 完成实现与测试后复核；D-003 |
+| I-037-003 | dirty-state 在内部路由、浏览器离开、提交、重置、取消中的统一语义 | required | R1 方案冻结、R3 实施/验收 | R1 | 盘点表单与路由守卫，补浏览器/自动化场景矩阵 | collecting | 2026-09-17：基线矩阵已记录，语义待 R1 冻结 |
+| I-037-004 | Toast、API 错误、重试、维护/不可用反馈的分类与可访问呈现 | required | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope、反馈组件与 maintenance 门控，冻结映射 | collecting | 2026-09-17：基线矩阵已记录，语义待 R1 冻结 |
 | I-037-005 | 跨用户共享视图、最近使用/收藏与协作权限是否进入后续波次 | non-blocking | 后续 UX 波次边界 | 关门后或出现协作触发 | 不纳入首波；出现明确多用户协作需求时由 `/vision` 复核 | deferred | 延期理由：首波聚焦个人工作流；责任人：`/vision`；复核触发：真实协作需求出现 |
 | I-037-006 | 激活前 Admin freshness 与 VP-008 `go` 消费有效性 | required | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，并核对当前 Charter/VP 引用与区间变更 | verified | 2026-09-16：当前 HEAD `0c29c08`；`apps/**` 无 staged/unstaged 区间变更；VRev-095 |
 

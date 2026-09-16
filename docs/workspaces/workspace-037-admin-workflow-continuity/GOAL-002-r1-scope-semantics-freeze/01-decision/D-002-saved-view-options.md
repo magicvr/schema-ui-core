@@ -6,7 +6,7 @@ status: draft
 created: 2026-09-17
 updated: 2026-09-17
 parent: GOAL-002-r1-scope-semantics-freeze
-version: 0.1.0
+version: 0.2.0
 ---
 
 # D-002 · Saved View 持久化与失效候选方案
@@ -25,8 +25,8 @@ version: 0.1.0
 | B | 复用现有数据库，新增 Saved View API、表/迁移和权限校验 | 可跨浏览器/设备；服务器可审计 | 新增持久化面、迁移与 API 合同；需要独立高影响审计 |
 | C | 只写 URL/history | 无新增存储 | 不满足 Saved View 个人持久化；会暴露查询值并污染历史；不作为实现方案 |
 
-## 尚未冻结的共同语义
+## 已由 D-003 承接的共同语义
 
 - 首波仅保存当前表格查询与列配置 allowlist，不保存当前页、选择集、record view 或 modal 草稿。
 - 无跨用户共享、最近/收藏或协作权限；无效/越权视图必须 fail closed。
-- 方案 A/B 的选择会改变 R2 的实现边界；必须取得用户明确选择后，才能将 I-037-002 标记为 verified 并冻结 R1。
+- 用户已选择方案 A；完整决策见 [D-003-saved-view-localstorage-accepted.md](D-003-saved-view-localstorage-accepted.md)。I-037-002 仍为 `collecting`，直到 R2 提供序列化、Schema/权限失效和异常路径的实现证据。

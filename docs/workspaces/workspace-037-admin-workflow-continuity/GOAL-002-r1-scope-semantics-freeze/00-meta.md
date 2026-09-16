@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.2.0
+version: 0.3.0
 progress: 1/3
 plan_refs:
   - VP-037-admin-workflow-continuity
@@ -37,7 +37,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
 | I-037-001 | required | 当前列表页、状态字段、Profile/权限覆盖的精确分母 | R1 / R2 / R5 | R1 | 扫描 manifest、Schema 与 profile matrix | verified | 2026-09-17 已由矩阵核对 | `attachments/r1-denominator-matrix.json`、`attachments/r1-form-matrix.json` |
-| I-037-002 | required | Saved View 所有权、持久化/序列化、权限变化后的失效语义 | R1 / R2 | R1 | 对照现有 query state、认证用户边界与存储约束；须用户确认关键取舍 | open | R1 内完成 | 待确认 |
+| I-037-002 | required | Saved View 所有权、持久化/序列化、权限变化后的失效语义 | R1 / R2 | R1 | 已取得 localStorage 关键取舍确认；由 R2 验证序列化、Schema/权限失效与异常反馈 | collecting | 2026-09-17 已确认方案 A；R2 完成实现与测试后复核 | `01-decision/D-003-saved-view-localstorage-accepted.md`；实现证据待补 |
 | I-037-003 | required | dirty-state 在内部路由、浏览器离开、提交、重置、取消中的统一语义 | R1 / R3 | R1 | 盘点 App 导航、FormInner、modal 生命周期和浏览器事件 | collecting | R1 内完成 | `attachments/r1-state-feedback-matrix.md` |
 | I-037-004 | required | Toast、API 错误、重试、维护/不可用反馈的分类与可访问呈现 | R1 / R4 | R1 | 对照 `readResourceApiError`、FeedbackRegion、DataTable 和 Host failure | collecting | R1 内完成 | `attachments/r1-state-feedback-matrix.md` |
 
