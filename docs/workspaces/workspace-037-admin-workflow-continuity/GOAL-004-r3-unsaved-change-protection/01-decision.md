@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r3-unsaved-change-protection
 doc: decision
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策台账 · GOAL-004 R3
@@ -27,6 +27,10 @@ version: 0.1.0
 
 ## 当前投影
 
-- 本目标承接 R1 D-004，不新增用户待裁决的方案选择；R3 的 required 信息在实现与回归后才能从 `collecting` 变为 `verified`。
-- R2 提交中的 dirty-state 基础切片是已发生实现事实，但 C1～C4 尚未完成，不提前关闭 R3。
-- C1～C3 已有实现/回归证据并通过 self audit；C4 仍需要 independent audit 响应与 Git checkpoint。
+- 本目标承接 R1 D-004，不新增用户待裁决的方案选择；R3-I-001～003 已在实现与回归后标为 `verified`，R3-I-004 保持 non-blocking deferred。
+- R2 提交中的 dirty-state 基础切片已由本目标补齐生命周期与离开保护证据；不将 R4 统一反馈或 R5 组合关门提前计入 R3。
+- C1～C3 由 A-001 self 覆盖；A-002 independent 的 F-001 required finding 已由 E-003 修正并经 A-003 independent recheck 按 `fixed` 闭合；F-002～F-005 已有对应证据。
+
+## 关门决策
+
+在 C1～C3 回归、A-001 self、A-002 independent、E-003 响应、A-003 independent recheck 与 checkpoint `d2b39189` 完成后，A-004 self 核对无开放 required / 必改 finding，R3 标记为 `done · 4/4`，并将 Root 投影为 `active · 3/5`。统一反馈与恢复由 R4 承载，组合验收由 R5 承载。

@@ -1,11 +1,11 @@
 ---
 id: r3-dirty-state-acceptance-matrix
 doc: attachment
-status: active
+status: done
 created: 2026-09-17
 updated: 2026-09-17
 parent: GOAL-004-r3-unsaved-change-protection
-version: 0.1.0
+version: 0.2.0
 ---
 
 # R3 · dirty-state 验收矩阵

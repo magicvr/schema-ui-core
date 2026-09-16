@@ -5,12 +5,12 @@ status: active
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
 
-本索引与 `01-decision/D-NNN-*.md` 平铺条目共同构成 Root 的决策台账。当前已记录 workspace/Root scaffold、首波边界承接、R1 子目标开设、用户选择与 R1 审计响应。
+本索引与 `01-decision/D-NNN-*.md` 平铺条目共同构成 Root 的决策台账。当前已记录 workspace/Root scaffold、首波边界承接、R1 子目标开设、用户选择、R1/R2/R3 阶段投影与审计响应。
 
 ## 信息需求与阶段门禁
 
@@ -34,11 +34,12 @@ version: 0.5.0
 | D-005 | 2026-09-17 | 开设 R2 Saved Views | accepted | [D-005-open-r2-saved-views.md](01-decision/D-005-open-r2-saved-views.md) |
 | D-006 | 2026-09-17 | R2 Saved Views 关门与 Root 投影 | accepted | [D-006-close-r2-saved-views.md](01-decision/D-006-close-r2-saved-views.md) |
 | D-007 | 2026-09-17 | 开设 R3 未保存变更保护 | accepted | [D-007-open-r3-dirty-state.md](01-decision/D-007-open-r3-dirty-state.md) |
+| D-008 | 2026-09-17 | R3 未保存变更保护关门与 Root 投影 | accepted | [D-008-close-r3-dirty-state.md](01-decision/D-008-close-r3-dirty-state.md) |
 
 ## 当前投影
 
 - D-001 已确认 workspace slug、Root slug、VP-037 `planned → active`、`delivery` 角色与 Root `parent: null`。
 - D-002 已确认按 R1 阶段开设 `GOAL-002-r1-scope-semantics-freeze`；D-003 已记录用户选择 localStorage，但不替代 Saved View 序列化、失效和异常路径的实现证据。
-- R1 已完成信息收集与语义冻结；GOAL-002 的 C3 已由 A-001 self、A-002 independent 与 A-003 响应闭合，Root R1 检查点已投影完成并放行 R2/R3/R4 的阶段开设。R2～R4 仍须各自实现与回归证据。
+- R1 已完成信息收集与语义冻结；GOAL-002 的 C3 已由 A-001 self、A-002 independent 与 A-003 响应闭合，Root R1 检查点已投影完成并放行 R2/R3/R4 的阶段开设。R2/R3 已完成实现与回归证据，R4 仍待完成。
 - R2 `GOAL-003-r2-saved-views` 已按 A-003 关闭为 `done · 4/4`；R1 recommended 精度项、C1～C3 实现/回归、独立意见响应与 Git checkpoint `39c744ef` 均已记录。Root R2 检查点可投影完成，下一阶段为 R3。
-- R3 已开设 `GOAL-004-r3-unsaved-change-protection`（`active · 0/4`），承接 D-004 冻结的 dirty-state 合同；Root 仍为 `active · 2/5`。
+- R3 `GOAL-004-r3-unsaved-change-protection` 已按 A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 关闭为 `done · 4/4`；Root R3 检查点已投影完成，Root 更新为 `active · 3/5`，下一阶段为 R4 统一反馈与恢复。

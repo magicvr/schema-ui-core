@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-unsaved-change-protection
 title: R3 未保存变更保护与离开确认
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.2.0
-progress: 3/4
+version: 0.3.0
+progress: 4/4
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -32,7 +32,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] C1：dirty registry、默认表单 baseline 和 search 非 dirty 边界有实现与单元/Renderer 证据（R3 UI 4 项 + registry 3 项）。
 - [x] C2：内部导航和 `popstate` 的确认、取消、URL 恢复与确认后切换有 App 集成证据（App integration）。
 - [x] C3：`beforeunload` dirty/clean 两条路径，以及 modal close/cancel 的确认行为有自动化证据（R3 UI + App integration）。
-- [ ] C4：提交成功/失败、reset/cancel 结果、自审 + independent audit、required finding 响应与 Git checkpoint 完成；R3 关闭并投影 Root。
+- [x] C4：提交成功/失败、reset/cancel 结果、自审 + independent audit、required finding 响应与 Git checkpoint 完成；R3 已关闭并投影 Root（A-003/A-004，checkpoint `d2b39189`）。
 
 ## 信息需求与阶段门禁
 
@@ -45,8 +45,8 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 父目标
 
-- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 2/5`；R1/R2 已完成，本目标为 R3 当前阶段）。
+- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 3/5`；R1/R2/R3 已完成，本目标为 R3 已关闭阶段）。
 
 ## 台账布局
 
-本目标从第一条记录起使用平铺 ledger：`01-decision/`、`02-execution/`、`03-audit/`，并保留 `attachments/`。
+本目标从第一条记录起使用平铺 ledger：`01-decision/`、`02-execution/`、`03-audit/`，并保留 `attachments/`。C4 已由 A-003 independent recheck、A-004 self close-out 与 Git checkpoint `d2b39189` 共同关闭；R4/R5 不在本目标范围。
