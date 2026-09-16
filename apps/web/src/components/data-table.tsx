@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Inbox } from "lucide-react";
 
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
+import { FeedbackNoticeView, type FeedbackNotice } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslate } from "@/i18n/runtime";
 import { formatDisplayTime } from "@/lib/datetime";
@@ -51,6 +52,8 @@ export interface DataTableProps<T> {
   selectedKey?: string;
   /** W15-F02: retry control shown in the error state. */
   onRetry?: () => void;
+  /** R4: classified feedback keeps the inline error and retry policy shared. */
+  errorFeedback?: FeedbackNotice;
 }
 
 function cellContent<T>(
@@ -221,6 +224,7 @@ export function DataTable<T>({
   onRowClick,
   selectedKey,
   onRetry,
+  errorFeedback,
 }: DataTableProps<T>) {
   const t = useTranslate();
   const toggleSort = (column: DataTableColumn<T>) => {
@@ -260,23 +264,19 @@ export function DataTable<T>({
   }
 
   if (state === "error") {
+    const feedback =
+      errorFeedback ??
+      ({
+        kind: "error" as const,
+        message: error ?? "The table could not be loaded.",
+        ...(onRetry === undefined ? {} : { retry: onRetry }),
+      });
     return (
-      <div
-        role="alert"
-        className="space-y-3 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-sm text-destructive"
-      >
-        <p>{error}</p>
-        {onRetry !== undefined ? (
-          <button
-            type="button"
-            data-table-retry="true"
-            onClick={onRetry}
-            className="rounded-md border border-destructive/40 bg-background px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-          >
-            {t("feedback.retry")}
-          </button>
-        ) : null}
-      </div>
+      <FeedbackNoticeView
+        feedback={feedback}
+        surface="inline"
+        retryButtonDataAttribute={onRetry === undefined ? undefined : "data-table-retry"}
+      />
     );
   }
 

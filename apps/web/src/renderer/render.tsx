@@ -17,6 +17,7 @@ import type { NavigationContext } from "@/protocol/app-manifest";
 import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Card, CardContent } from "@/components/ui/card";
+import { FeedbackRegion, FeedbackNoticeView, type FeedbackNotice } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDisplayTime } from "@/lib/datetime";
 import {
@@ -31,6 +32,7 @@ import {
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
 import { confirmDiscard, equalDirtyValues, registerDirtyStateSource } from "@/renderer/dirty-state";
+import { feedbackFromError } from "@/renderer/feedback-policy";
 import { FormControls } from "@/renderer/form-controls.tsx";
 import { getCustomComponent } from "@/renderer/custom-components";
 import {
@@ -157,17 +159,7 @@ function stringOf(value: unknown): string {
 
 // --- Schema CRUD context (S4 · I-007-003 §9) ---
 
-export interface SchemaCrudFeedback {
-  kind: "success" | "error";
-  message: string;
-  code?: string;
-  /** VP-007 S4: catalog key for the frontend localization floor. */
-  messageKey?: string;
-  /** VP-007 S4: interpolation params for messageKey. */
-  params?: Record<string, unknown>;
-  /** Optional user-triggered recovery action rendered by the shared toast. */
-  retry?: () => void;
-}
+export type SchemaCrudFeedback = FeedbackNotice;
 
 export interface SchemaCrudConfirm {
   actionRef: string;
@@ -195,6 +187,8 @@ export type ActionResult =
       message: string;
       messageKey?: string;
       params?: Record<string, unknown>;
+      status?: number;
+      correlationId?: string;
       /** GOAL-014 D-002 §2: server field-level validation failures. */
       fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>;
     };
@@ -405,12 +399,20 @@ async function runCustomAction(
       if (!response.ok) {
         previewWindow?.close();
         const apiError = await readResourceApiError(response, handler);
-        return { ok: false, code: apiError.code, message: apiError.message };
+        return {
+          ok: false,
+          code: apiError.code,
+          message: apiError.message,
+          ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+          ...(apiError.params === undefined ? {} : { params: apiError.params }),
+          status: apiError.status,
+          ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
+        };
       }
       blob = await response.blob();
     } catch (error) {
       previewWindow?.close();
-      return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+      return transportFailureResult(error);
     }
     const objectUrl = URL.createObjectURL(blob);
     if (previewWindow === null || previewWindow.closed) {
@@ -439,11 +441,19 @@ async function runCustomAction(
   try {
     response = await fetcher(url, { method: "GET", headers: { "Content-Type": "application/json" } });
   } catch (error) {
-    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    return transportFailureResult(error);
   }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, handler);
-    return { ok: false, code: apiError.code, message: apiError.message };
+    return {
+      ok: false,
+      code: apiError.code,
+      message: apiError.message,
+      ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+      ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      status: apiError.status,
+      ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
+    };
   }
   const blob = await response.blob();
   // The download filename prefers the row's stored name, scrubbed with the
@@ -596,7 +606,7 @@ async function runRequest(
   } catch (error) {
     // Network-level failure (offline, server down, CORS): surface as an action
     // result so every caller shows feedback instead of an unhandled rejection.
-    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    return transportFailureResult(error);
   }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
@@ -606,6 +616,8 @@ async function runRequest(
       message: apiError.message,
       ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      status: apiError.status,
+      ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
       ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
     };
   }
@@ -646,11 +658,16 @@ async function runRequest(
     : { ok: true, data: parsedData };
 }
 
-function requestFailedMessage(error: unknown): string {
-  if (error instanceof Error && error.message !== "") {
-    return error.message;
-  }
-  return "request failed (network error)";
+function transportFailureResult(error: unknown): ActionResult {
+  // Classify the original transport signal before converting to ActionResult.
+  // No retry callback is supplied: action failures never offer write retries.
+  const feedback = feedbackFromError(error);
+  return {
+    ok: false,
+    code: feedback.code ?? "REQUEST_FAILED",
+    message: feedback.message,
+    messageKey: feedback.messageKey,
+  };
 }
 
 /**
@@ -735,7 +752,7 @@ async function runBatchRequest(
       ...(body === undefined ? {} : { body }),
     });
   } catch (error) {
-    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    return transportFailureResult(error);
   }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
@@ -745,6 +762,8 @@ async function runBatchRequest(
       message: apiError.message,
       ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      status: apiError.status,
+      ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
       ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
     };
   }
@@ -1542,73 +1561,16 @@ function errorFeedback(result: {
   message: string;
   messageKey?: string;
   params?: Record<string, unknown>;
+  status?: number;
+  correlationId?: string;
 }): SchemaCrudFeedback {
-  return {
-    kind: "error",
-    code: result.code,
-    message: result.message,
-    ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
-    ...(result.params === undefined ? {} : { params: result.params }),
-  };
+  return feedbackFromError(result);
 }
-
-function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
-  const t = useTranslate();
-  const [dismissed, setDismissed] = useState(false);
-  // W11 · U-03: toasts auto-dismiss; the parent remounts this component per
-  // feedback occurrence, so the timer always starts fresh.
-  useEffect(() => {
-    setDismissed(false);
-    if (feedback.kind === "error") {
-      return;
-    }
-    const timer = window.setTimeout(() => setDismissed(true), FEEDBACK_TOAST_MS);
-    return () => window.clearTimeout(timer);
-  }, [feedback]);
-  if (dismissed) {
-    return null;
-  }
-  // VP-007 S4 frontend floor: render the catalog entry by key/params when the
-  // catalog has it (current locale → en-US); otherwise the server message.
-  let text = feedback.message;
-  if (feedback.messageKey !== undefined && feedback.messageKey !== "") {
-    const localized = t(feedback.messageKey, feedback.params as MessageParams | undefined);
-    if (localized !== feedback.messageKey) {
-      text = localized;
-    }
-  }
-  return (
-    <div
-      role={feedback.kind === "error" ? "alert" : "status"}
-      data-feedback-toast={feedback.kind}
-      className={`fixed right-4 top-16 z-50 flex max-w-sm items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm shadow-lg ${
-        feedback.kind === "error"
-          ? "border-destructive/50 bg-destructive/10 text-destructive"
-          : "border-success/50 bg-success/10 text-success"
-      }`}
-    >
-      <span data-feedback-code={feedback.code ?? ""} title={feedback.code ?? undefined}>
-        {text}
-      </span>
-      <button
-        type="button"
-        aria-label={t("feedback.cancel")}
-        onClick={() => setDismissed(true)}
-        className="shrink-0 text-xs opacity-70 transition-opacity hover:opacity-100"
-      >
-        {"×"}
-      </button>
-    </div>
-  );
-}
-
-/** W11 · U-03: auto-dismiss window for operation feedback toasts (ms). */
-const FEEDBACK_TOAST_MS = 4000;
 
 type RecordSourcePrefillState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "error"; message: string }
+  | { status: "error"; feedback: FeedbackNotice }
   | { status: "ready"; values: Record<string, unknown> };
 
 function hasRequiredCapability(metaValue: unknown, capability: string): boolean {
@@ -1638,6 +1600,8 @@ function useRecordSourcePrefill(
   const [state, setState] = useState<RecordSourcePrefillState>(() =>
     recordSource !== undefined ? { status: "loading" } : { status: "idle" },
   );
+  const [retryNonce, setRetryNonce] = useState(0);
+  const retry = useCallback(() => setRetryNonce((current) => current + 1), []);
   // W11 F-012: the route is a prefill input (query/params flow into
   // recordSource construction). The route OBJECT identity is unstable (App
   // rebuilds the render context each render), so the effect depends on this
@@ -1650,13 +1614,20 @@ function useRecordSourcePrefill(
       return;
     }
     if (node.props.mode === "search") {
-      setState({ status: "error", message: "form.recordSource is forbidden on search-mode forms" });
+      setState({
+        status: "error",
+        feedback: { kind: "error", code: "RECORD_SOURCE_FORBIDDEN", message: "form.recordSource is forbidden on search-mode forms" },
+      });
       return;
     }
     if (!hasRequiredCapability(metaValue, FORM_RECORD_LOAD_CAPABILITY)) {
       setState({
         status: "error",
-        message: `form.recordSource requires capability "${FORM_RECORD_LOAD_CAPABILITY}" in meta.requiredCapabilities`,
+        feedback: {
+          kind: "error",
+          code: "RECORD_SOURCE_CAPABILITY_REQUIRED",
+          message: `form.recordSource requires capability "${FORM_RECORD_LOAD_CAPABILITY}" in meta.requiredCapabilities`,
+        },
       });
       return;
     }
@@ -1680,20 +1651,31 @@ function useRecordSourcePrefill(
     } catch (error) {
       setState({
         status: "error",
-        message: `recordSource construction failed: ${error instanceof Error ? error.message : "unknown error"}`,
+        feedback: {
+          kind: "error",
+          code: "RECORD_SOURCE_CONSTRUCTION_FAILED",
+          message: `recordSource construction failed: ${error instanceof Error ? error.message : "unknown error"}`,
+        },
       });
       return;
     }
     if (!constructed.ok) {
       setState({
         status: "error",
-        message: `recordSource construction failed (${constructed.path}): ${constructed.code}`,
+        feedback: {
+          kind: "error",
+          code: "RECORD_SOURCE_CONSTRUCTION_FAILED",
+          message: `recordSource construction failed (${constructed.path}): ${constructed.code}`,
+        },
       });
       return;
     }
     const url = constructed.request?.url;
     if (typeof url !== "string") {
-      setState({ status: "error", message: "recordSource produced no request URL" });
+      setState({
+        status: "error",
+        feedback: { kind: "error", code: "RECORD_SOURCE_NO_URL", message: "recordSource produced no request URL" },
+      });
       return;
     }
     let cancelled = false;
@@ -1707,7 +1689,10 @@ function useRecordSourcePrefill(
         if (!response.ok) {
           const apiError = await readResourceApiError(response, "recordSource");
           if (!cancelled) {
-            setState({ status: "error", message: `${apiError.code}: ${apiError.message}` });
+            setState({
+              status: "error",
+              feedback: feedbackFromError(apiError, { retry }),
+            });
           }
           return;
         }
@@ -1736,7 +1721,7 @@ function useRecordSourcePrefill(
         }
         setState({
           status: "error",
-          message: error instanceof Error ? error.message : String(error),
+          feedback: feedbackFromError(error, { retry }),
         });
       });
     return () => {
@@ -1748,7 +1733,7 @@ function useRecordSourcePrefill(
   // change, not on unrelated parent renders. The previous deps omitted the
   // route entirely: a same-page query change left the PREVIOUS record's
   // values pre-filled and a save could write to the wrong row.
-  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken, routeKey]);
+  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken, routeKey, retryNonce, retry]);
   return state;
 }
 
@@ -1781,11 +1766,7 @@ function FormView({
     );
   }
   if (prefill.status === "error") {
-    return (
-      <p role="alert" className="text-sm text-destructive">
-        {prefill.message}
-      </p>
-    );
+    return <FeedbackNoticeView feedback={prefill.feedback} surface="inline" dismissible={false} />;
   }
   return (
     <FormInner
@@ -1907,12 +1888,7 @@ function FormInner({
   }, [fullReaction]);
 
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<{
-    code: string;
-    message: string;
-    messageKey?: string;
-    params?: Record<string, unknown>;
-  } | null>(null);
+  const [formError, setFormError] = useState<FeedbackNotice | null>(null);
   // GOAL-014 D-002 §3: submit-time validation + server fieldErrors echo,
   // keyed by field id for inline display.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1999,12 +1975,7 @@ function FormInner({
           byField[fe.field] = fe.reason;
         }
         setFieldErrors(byField);
-        setFormError({
-          code: result.code,
-          message: result.message,
-          ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
-          ...(result.params === undefined ? {} : { params: result.params }),
-        });
+        setFormError(feedbackFromError(result));
       } else if (result.ok && (result.fieldErrors ?? []).length > 0) {
         // W16-F03: a 200 import response with fieldErrors is a partial
         // failure — keep the modal open and show row-level errors.
@@ -2015,6 +1986,7 @@ function FormInner({
         }));
         setImportErrorRows(rows);
         setFormError({
+          kind: "error",
           code: "IMPORT_HAS_ERRORS",
           message: t("importErrors.title"),
         });
@@ -2029,7 +2001,9 @@ function FormInner({
       // Defensive: a throwing submit (unexpected fetch/transport failure) must
       // never leave the button stuck in its disabled Submitting state (C5).
       setFieldErrors({});
-      setFormError({ code: "REQUEST_FAILED", message: requestFailedMessage(error) });
+      setFormError(
+        feedbackFromError(error),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -2206,12 +2180,12 @@ function FormInner({
         </ul>
       ) : null}
       {formError !== null ? (
-        <p role="alert" className="text-sm text-destructive">
-          {formError.code}:{" "}
-          {formError.messageKey !== undefined && formError.messageKey !== ""
-            ? t(formError.messageKey, formError.params as MessageParams | undefined)
-            : formError.message}
-        </p>
+        <FeedbackNoticeView
+          feedback={formError}
+          surface="inline"
+          dismissible={false}
+          showDiagnosticCode
+        />
       ) : null}
       {importErrorRows.length > 0 ? (
         <ul role="alert" className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs" data-import-error-rows>
@@ -2725,7 +2699,7 @@ function useDisplayData(
   dataSource: string | null,
   fetcher: typeof fetch,
   params?: Record<string, unknown>,
-): { list: ResourceList | null; error: string | null } {
+): { list: ResourceList | null; error: unknown | null; retry: () => void } {
   const crud = useSchemaCrud();
   useEffect(() => {
     if (crud !== null && fetcher !== undefined) {
@@ -2733,7 +2707,9 @@ function useDisplayData(
     }
   }, [crud, fetcher]);
   const [list, setList] = useState<ResourceList | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const retry = useCallback(() => setRetryNonce((current) => current + 1), []);
   // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
   // provider's route context; hostless renders fall back to the location query.
   const routeSnapshot = useMemo(() => {
@@ -2783,14 +2759,14 @@ function useDisplayData(
             setError(null);
             return;
           }
-          setError(err instanceof Error ? err.message : String(err));
+          setError(err);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken, targetedRefreshToken]);
-  return { list, error };
+  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken, targetedRefreshToken, retryNonce]);
+  return { list, error, retry };
 }
 
 /** W16-F04: cent-valued integers as yuan with two decimals (table currency columns). */
@@ -2818,7 +2794,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
         ? node.props.dataSource
         : null;
-  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
+  const { list, error, retry } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   if (dataSource === null) {
     return (
@@ -2827,9 +2803,18 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
-  const displayState = resolveAsyncDisplayState({ loading: list === null, error });
+  const displayState = resolveAsyncDisplayState({
+    loading: list === null,
+    error: error === null ? null : "error",
+  });
   if (displayState === "error") {
-    return <p role="alert" className="text-sm text-destructive">statCard data failed to load: {error}</p>;
+    return (
+      <FeedbackNoticeView
+        feedback={feedbackFromError(error, { retry })}
+        surface="inline"
+        dismissible={false}
+      />
+    );
   }
   if (displayState === "loading") {
     return (
@@ -2913,7 +2898,7 @@ function ChartView({ node }: { node: RenderChartNode }) {
       : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
         ? node.props.dataSource
         : null;
-  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
+  const { list, error, retry } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   const missingProps = chartType === undefined || xField === undefined || yField === undefined;
   if (dataSource === null || missingProps) {
@@ -2923,9 +2908,18 @@ function ChartView({ node }: { node: RenderChartNode }) {
       </p>
     );
   }
-  const chartDisplayState = resolveAsyncDisplayState({ loading: list === null, error });
+  const chartDisplayState = resolveAsyncDisplayState({
+    loading: list === null,
+    error: error === null ? null : "error",
+  });
   if (chartDisplayState === "error") {
-    return <p role="alert" className="text-sm text-destructive">chart data failed to load: {error}</p>;
+    return (
+      <FeedbackNoticeView
+        feedback={feedbackFromError(error, { retry })}
+        surface="inline"
+        dismissible={false}
+      />
+    );
   }
   if (chartDisplayState === "loading") {
     return (

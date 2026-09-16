@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.1.0
-progress: 0/4
+version: 0.3.0
+progress: 3/4
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -36,19 +36,19 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 成功检查点
 
-- [ ] C1：错误分类、catalog 文案、诊断 code/correlation 和恢复策略形成可核对合同；required 信息 R4-I-001 已 verified。
-- [ ] C2：共享反馈表面覆盖成功/错误、dismiss/retry、role/status/alert 与键盘路径；R4-I-002～003 已 verified。
-- [ ] C3：schema page 的读重试、写失败保留、maintenance/unavailable/offline/timeout 与 Host 边界有跨页面自动化证据；R4-I-004 已 verified。
+- [x] C1：错误分类、catalog 文案、诊断 code/correlation 和恢复策略形成可核对合同；required 信息 R4-I-001 已 verified。
+- [x] C2：共享反馈表面覆盖成功/错误、dismiss/retry、role/status/alert 与键盘路径；R4-I-002～003 已 verified。
+- [x] C3：schema page 的读重试、写失败保留、maintenance/unavailable/offline/timeout 分类与 Host 边界有列表/指标/图表/表单回归及既有 Host fixtures 证据；R4-I-004 已 verified。
 - [ ] C4：self + 必要 independent audit、required finding 响应与 Git checkpoint 完成；R4 关闭并投影 Root。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| R4-I-001 | required | HTTP status、resource envelope 与 Host failure kind 如何映射到安全用户文案和恢复策略？ | C1/C3 | C1 | 读取 `resource.ts`、`host/failure.ts`、D-005，建立纯函数/矩阵 | collecting | 2026-09-17 开设；C1 前复核 | 待补 |
-| R4-I-002 | required | 哪些 retry 是幂等读取，如何阻止写入重复提交和 retry loop？ | C2/C3 | C2 | 盘点 DataTable、display data、form/action 调用链，补重复调用测试 | collecting | 2026-09-17 开设；C2 前复核 | 待补 |
-| R4-I-003 | required | toast、列表错误、表单错误的 role、focus、dismiss/retry 和宣告去重如何保持可访问？ | C2/C3 | C2 | 共享组件/Renderer 集成测试，核对既有 Host failure 规则 | collecting | 2026-09-17 开设；C2 前复核 | 待补 |
-| R4-I-004 | required | maintenance/unavailable/offline/timeout 在普通资源与 Host 终态之间的边界及恢复动作是什么？ | C3/C4 | C3 | 对照 D-005、`HostFailureScreen`、resource/display fetch 回归 | collecting | 2026-09-17 开设；C3 前复核 | 待补 |
+| R4-I-001 | required | HTTP status、resource envelope 与 Host failure kind 如何映射到安全用户文案和恢复策略？ | C1/C3 | C1 | 读取 `resource.ts`、`host/failure.ts`、D-005，建立纯函数/矩阵 | verified | 2026-09-17：`feedback-policy.ts` 分类矩阵、E-002、E-004；A-003 待 independent recheck | status/code、Host 边界和 AbortError/网络错误的安全 catalog 文案已形成可核对合同 |
+| R4-I-002 | required | 哪些 retry 是幂等读取，如何阻止写入重复提交和 retry loop？ | C2/C3 | C2 | 盘点 DataTable、display data、form/action 调用链，补重复调用测试 | verified | 2026-09-17：E-002/E-003、A-001 | 仅读取路径暴露显式 retry；写入无自动重试且有回归证据 |
+| R4-I-003 | required | toast、列表错误、表单错误的 role、focus、dismiss/retry 和宣告去重如何保持可访问？ | C2/C3 | C2 | 共享组件/Renderer 集成测试，核对既有 Host failure 规则 | verified | 2026-09-17：`FeedbackNoticeView`、E-002、A-001 | role/status/alert、键盘路径、dismiss 与双击 guard 已验证 |
+| R4-I-004 | required | maintenance/unavailable/offline/timeout 在普通资源与 Host 终态之间的边界及恢复动作是什么？ | C3/C4 | C3 | 对照 D-005、`HostFailureScreen`、resource/display fetch 回归 | verified | 2026-09-17：E-003、E-004、A-002；A-003 待 independent recheck | 普通资源 policy 与 Host/page schema 终态保持边界；transport catch 已保留 timeout/offline，retry 仅作用于幂等读取 |
 | R4-I-005 | non-blocking | correlation/code 是否需要更丰富的用户可展开诊断细节？ | UX/支持体验 | R5 或真实支持需求 | 仅显示安全 code/correlation；敏感原始 payload 不进入 UI | deferred | owner=`/vision`；出现支持需求时复核 | D-005 安全边界 |
 
 ## 父目标

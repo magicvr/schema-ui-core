@@ -238,7 +238,7 @@ describe("SchemaTable (R1 list-data injection)", () => {
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       rowsFetcher(500),
     );
-    expect(container.textContent).toContain("resource fetch failed");
+    expect(container.textContent).toContain("This service is temporarily unavailable");
   });
 
   it("retries the resource fetch from the table error state (W15-F02)", async () => {
@@ -263,6 +263,44 @@ describe("SchemaTable (R1 list-data injection)", () => {
     });
     expect(calls).toBe(2);
     expect(container.textContent).toContain("Acme Console");
+  });
+
+  it("shows maintenance feedback and recovers after one explicit retry", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "SERVICE_MAINTENANCE" }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      }))
+      .mockImplementation(rowsFetcher());
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      fetcher,
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "This service is under maintenance. Try again shortly.",
+    );
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const retry = container.querySelector<HTMLButtonElement>("[data-table-retry]");
+    expect(retry).not.toBeNull();
+    await act(async () => { retry!.click(); });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector("[data-table-retry]")).toBeNull();
+    expect(container.textContent).toContain("Acme Console");
+  });
+
+  it.each([
+    [403, "You don't have permission to perform this action."],
+    [401, "Your session has expired. Sign in again."],
+  ])("does not offer a list retry for HTTP %s", async (status, message) => {
+    const fetcher = vi.fn(rowsFetcher(status));
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      fetcher,
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(message);
+    expect(container.querySelector("[data-table-retry]")).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it("toggles column sort and marks the active column", async () => {

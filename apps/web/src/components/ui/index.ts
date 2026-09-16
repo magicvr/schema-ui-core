@@ -6,6 +6,7 @@ export * from "./badge";
 export * from "./breadcrumbs";
 export * from "./button";
 export * from "./card";
+export * from "./feedback";
 export * from "./input";
 export * from "./label";
 export * from "./skeleton";

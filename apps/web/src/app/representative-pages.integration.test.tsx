@@ -404,7 +404,7 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
 
   it("fails closed when the users data source is unreachable on a list page", async () => {
     const container = await renderApp("/data-table", {}, realFixtures(), 500);
-    expect(container.textContent).toContain("resource fetch failed");
+    expect(container.textContent).toContain("This service is temporarily unavailable");
   });
 
   it("renders the data-display page (statCard + chart over /api/roles)", async () => {

@@ -154,7 +154,7 @@ describe("DataTable", () => {
     );
     const retry = container.querySelector("[data-table-retry]") as HTMLButtonElement | null;
     expect(retry).not.toBeNull();
-    retry?.click();
+    await act(async () => retry?.click());
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 

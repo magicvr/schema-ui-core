@@ -8,7 +8,7 @@ lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.7.0
+version: 0.8.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
@@ -23,11 +23,11 @@ version: 0.7.0
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-17 · v0.7.0；R1 C3、R2 C4、R3 C4 已完成，R4 已开设 `active · 0/4`；lead `workspace-037-admin-workflow-continuity`） |
+| status | **`active`**（2026-09-17 · v0.8.0；R1 C3、R2 C4、R3 C4 已完成，R4 C1～C3 已完成、当前 `active · 3/4`；lead `workspace-037-admin-workflow-continuity`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-036 之后的工作流连续性下一拍 |
 | Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；当前 open required = 0 |
 | 激活门禁 | Admin 类 freshness PASS；I-037-006 verified；用户确认 workspace/Root 命名；V-F124 保持 recommended，不阻断激活 |
-| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 3/5；R1 已冻结、R2/R3 已实现并通过 self/independent 审计，R4 由 `GOAL-005-r4-unified-feedback-recovery` 承载并处于 `active · 0/4` |
+| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 3/5；R1 已冻结、R2/R3 已实现并通过 self/independent 审计，R4 由 `GOAL-005-r4-unified-feedback-recovery` 承载并处于 `active · 3/4` |
 
 ## 首波范围与边界
 
@@ -55,7 +55,7 @@ version: 0.7.0
 | R1 · 分母与语义冻结 | 盘点列表页、筛选/排序/列配置、表单 dirty-state、反馈类型与权限/Profile 覆盖 | I-037-001～004 verified；矩阵与 D-003～D-005 取舍决策落盘；R1 Goal C3 self/independent 审计与响应完成（GOAL-002 `done · 3/3`） |
 | R2 · Saved Views | 实现用户级保存/恢复与失效边界 | R1 冻结；由 `GOAL-003-r2-saved-views` 承载并已完成（`done · 4/4`）；A-001/A-002/A-003 pass，checkpoint `39c744ef` |
 | R3 · 未保存保护 | 实现并验证 dirty-state 与离开确认 | R1 冻结；由 `GOAL-004-r3-unsaved-change-protection` 承载并已完成（`done · 4/4`）；A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录 |
-| R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；由 `GOAL-005-r4-unified-feedback-recovery` 承载（`active · 0/4`），退出判据 4 的跨页面回归 |
+| R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；由 `GOAL-005-r4-unified-feedback-recovery` 承载（`active · 3/4`），C1～C3 已有实现/回归证据，C4 待 independent 与 checkpoint |
 | R5 · 组合验收与关门 | 核对非目标、审计链、残余与愿景投影 | R2～R4 完成；退出判据 5～6 可核验；用户书面确认后才关门 |
 
 ## P-005 信息需求
@@ -65,7 +65,7 @@ version: 0.7.0
 | I-037-001 | 现有列表页、状态字段、Profile/权限覆盖的精确分母 | required | R1 范围冻结、R2/R5 验收 | R1 | 扫描页面/路由/列表注册表，形成机器可核对矩阵 | verified | 2026-09-17：`GOAL-002.../attachments/r1-denominator-matrix.json`、`r1-form-matrix.json` |
 | I-037-002 | Saved View 所有权、持久化/序列化、权限变化后的失效语义 | required | R1 方案冻结、R2 实施/验收 | R1 | 用户确认方案 A；矩阵/D-003 冻结 localStorage 序列化 allowlist、Schema/权限失效与异常边界 | verified | 2026-09-17；R2 完成实现与测试后留存阶段证据；D-003 |
 | I-037-003 | dirty-state 在内部路由、浏览器离开、提交、重置、取消中的统一语义 | required | R1 方案冻结、R3 实施/验收 | R1 | 盘点表单与路由守卫；矩阵/D-004 冻结状态机 | verified | 2026-09-17；R3 留存浏览器/自动化实现证据 |
-| I-037-004 | Toast、API 错误、重试、维护/不可用反馈的分类与可访问呈现 | required | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope、反馈组件与 maintenance 门控；矩阵/D-005 冻结映射 | verified | 2026-09-17；R4 留存跨页面回归实现证据 |
+| I-037-004 | Toast、API 错误、重试、维护/不可用反馈的分类与可访问呈现 | required | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope、反馈组件与 maintenance 门控；矩阵/D-005 冻结映射 | verified | 2026-09-17；R4 E-002/E-003 与 A-001 已补齐跨页面回归实现证据 |
 | I-037-005 | 跨用户共享视图、最近使用/收藏与协作权限是否进入后续波次 | non-blocking | 后续 UX 波次边界 | 关门后或出现协作触发 | 不纳入首波；出现明确多用户协作需求时由 `/vision` 复核 | deferred | 延期理由：首波聚焦个人工作流；责任人：`/vision`；复核触发：真实协作需求出现 |
 | I-037-006 | 激活前 Admin freshness 与 VP-008 `go` 消费有效性 | required | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，并核对当前 Charter/VP 引用与区间变更 | verified | 2026-09-16：当前 HEAD `0c29c08`；`apps/**` 无 staged/unstaged 区间变更；VRev-095 |
 
@@ -75,7 +75,7 @@ version: 0.7.0
 
 | workspace | role | scope | lead | 状态 |
 |-----------|------|-------|------|------|
-| workspace-037-admin-workflow-continuity | delivery | VP-037 首波实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 3/5**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`，R4 `active · 0/4` |
+| workspace-037-admin-workflow-continuity | delivery | VP-037 首波实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 3/5**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`，R4 `active · 3/4` |
 
 ## 关系与结构选型
 

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
+import { feedbackFromError } from "@/renderer/feedback-policy";
 import {
   EMPTY_RESOURCE_LIST,
   fetchResourceList,
@@ -806,7 +807,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
 
   const [list, setList] = useState<ResourceList | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
 
   // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
@@ -870,7 +871,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             setLoading(false);
             return;
           }
-          setError(err instanceof Error ? err.message : String(err));
+          setError(err);
           setLoading(false);
         }
       });
@@ -1383,7 +1384,14 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         onRowClick={crud !== null ? onRowClick : undefined}
         selectedKey={selectedKey}
         loading={loading}
-        error={error === null ? null : t("feedback.resourceFetchFailed")}
+        error={error === null ? null : "error"}
+        errorFeedback={
+          error === null
+            ? undefined
+            : feedbackFromError(error, {
+                retry: () => setRetryNonce((n) => n + 1),
+              })
+        }
         onRetry={() => setRetryNonce((n) => n + 1)}
         emptyMessage={query.q ? t("feedback.noItemsMatch") : t("feedback.listEmpty")}
         caption={t("feedback.schemaDrivenItems")}
