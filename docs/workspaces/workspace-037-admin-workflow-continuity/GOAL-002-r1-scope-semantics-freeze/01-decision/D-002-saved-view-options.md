@@ -29,4 +29,4 @@ version: 0.2.0
 
 - 首波仅保存当前表格查询与列配置 allowlist，不保存当前页、选择集、record view 或 modal 草稿。
 - 无跨用户共享、最近/收藏或协作权限；无效/越权视图必须 fail closed。
-- 用户已选择方案 A；完整决策见 [D-003-saved-view-localstorage-accepted.md](D-003-saved-view-localstorage-accepted.md)。I-037-002 仍为 `collecting`，直到 R2 提供序列化、Schema/权限失效和异常路径的实现证据。
+- 用户已选择方案 A；完整决策见 [D-003-saved-view-localstorage-accepted.md](D-003-saved-view-localstorage-accepted.md)。本候选方案记录保留为 `draft`，I-037-002 的 R1 信息冻结已由 D-003 verified；R2 仍需提供序列化、Schema/权限失效和异常路径的实现证据。

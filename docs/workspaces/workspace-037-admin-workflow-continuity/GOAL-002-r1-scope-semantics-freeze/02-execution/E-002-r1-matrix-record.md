@@ -6,7 +6,7 @@ status: recorded
 created: 2026-09-17
 updated: 2026-09-17
 parent: GOAL-002-r1-scope-semantics-freeze
-version: 0.1.0
+version: 0.2.0
 ---
 
 # E-002 · R1 分母与状态/反馈矩阵
@@ -20,4 +20,4 @@ version: 0.1.0
 
 ## 当前边界
 
-上述附件记录的是当前代码事实与明确标注的候选语义；没有把 Saved View 持久化、dirty guard 或统一反馈实现写成已完成。此前记录的“等待用户在 D-002 的方案 A/B 中裁决”已由 2026-09-17 的 D-003 取舍记录承接；I-037-002 现为 `collecting`，等待 R2 实现证据。
+上述附件记录的是当前代码事实与明确标注的候选语义；没有把 Saved View 持久化、dirty guard 或统一反馈实现写成已完成。此前记录的“等待用户在 D-002 的方案 A/B 中裁决”已由 2026-09-17 的 D-003 取舍记录承接；I-037-002～004 的 R1 信息冻结现为 `verified`，R2～R4 仍分别等待实现证据。

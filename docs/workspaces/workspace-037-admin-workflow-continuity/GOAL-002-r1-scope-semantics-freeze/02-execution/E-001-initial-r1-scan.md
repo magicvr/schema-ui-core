@@ -5,7 +5,7 @@ status: recorded
 parent: GOAL-002-r1-scope-semantics-freeze
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.2.0
+version: 0.3.0
 ---
 
 # E-001 · 建立 R1 子目标并完成初始扫描
@@ -29,6 +29,6 @@ version: 0.2.0
 - [Schema table](../../../../../apps/web/src/renderer/schema-table.tsx)
 - [App navigation](../../../../../apps/web/src/app/App.tsx)
 
-## 尚未完成
+## 扫描时状态
 
-I-037-001～004 尚未全部关闭；本条不代表 R1 方案冻结，也不放行 R2～R4。
+截至 2026-09-16 初始扫描时，I-037-001～004 尚未全部关闭；本条不代表 R1 方案冻结，也不放行 R2～R4。后续关闭事实见 E-003/E-004、D-003～D-005 及 R1 审计台账。
