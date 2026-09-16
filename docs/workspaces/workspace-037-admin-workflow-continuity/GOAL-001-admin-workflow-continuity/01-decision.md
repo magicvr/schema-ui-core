@@ -33,6 +33,7 @@ version: 0.5.0
 | D-004 | 2026-09-17 | R1 审计响应与 Root 投影 | accepted | [D-004-r1-audit-response-and-projection.md](01-decision/D-004-r1-audit-response-and-projection.md) |
 | D-005 | 2026-09-17 | 开设 R2 Saved Views | accepted | [D-005-open-r2-saved-views.md](01-decision/D-005-open-r2-saved-views.md) |
 | D-006 | 2026-09-17 | R2 Saved Views 关门与 Root 投影 | accepted | [D-006-close-r2-saved-views.md](01-decision/D-006-close-r2-saved-views.md) |
+| D-007 | 2026-09-17 | 开设 R3 未保存变更保护 | accepted | [D-007-open-r3-dirty-state.md](01-decision/D-007-open-r3-dirty-state.md) |
 
 ## 当前投影
 
@@ -40,3 +41,4 @@ version: 0.5.0
 - D-002 已确认按 R1 阶段开设 `GOAL-002-r1-scope-semantics-freeze`；D-003 已记录用户选择 localStorage，但不替代 Saved View 序列化、失效和异常路径的实现证据。
 - R1 已完成信息收集与语义冻结；GOAL-002 的 C3 已由 A-001 self、A-002 independent 与 A-003 响应闭合，Root R1 检查点已投影完成并放行 R2/R3/R4 的阶段开设。R2～R4 仍须各自实现与回归证据。
 - R2 `GOAL-003-r2-saved-views` 已按 A-003 关闭为 `done · 4/4`；R1 recommended 精度项、C1～C3 实现/回归、独立意见响应与 Git checkpoint `39c744ef` 均已记录。Root R2 检查点可投影完成，下一阶段为 R3。
+- R3 已开设 `GOAL-004-r3-unsaved-change-protection`（`active · 0/4`），承接 D-004 冻结的 dirty-state 合同；Root 仍为 `active · 2/5`。

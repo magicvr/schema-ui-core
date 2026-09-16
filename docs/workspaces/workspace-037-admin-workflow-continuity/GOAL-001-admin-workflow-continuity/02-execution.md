@@ -22,6 +22,7 @@ version: 0.6.0
 | E-004 | 2026-09-17 | R1 审计响应并投影 Root 检查点 | recorded | [E-004-r1-audit-response-and-projection.md](02-execution/E-004-r1-audit-response-and-projection.md) |
 | E-005 | 2026-09-17 | 开设 R2 Saved Views | recorded | [E-005-open-r2-saved-views.md](02-execution/E-005-open-r2-saved-views.md) |
 | E-006 | 2026-09-17 | R2 Saved Views 关门与 Root 投影 | recorded | [E-006-r2-closeout.md](02-execution/E-006-r2-closeout.md) |
+| E-007 | 2026-09-17 | 开设 R3 未保存变更保护 | recorded | [E-007-open-r3-dirty-state.md](02-execution/E-007-open-r3-dirty-state.md) |
 
 ## 当前事实
 
@@ -32,6 +33,7 @@ version: 0.6.0
 - 2026-09-17 用户确认 Saved View 采用浏览器 `localStorage`，按 `user.id + pageId + tableId` 隔离；工作树另有语义记录后形成的未提交 Saved Views/dirty-state 实现切片，由 R2/R3 目标承接，不在 R1 投影中计为完成。
 - Admin freshness 继承当前 HEAD 基线并通过。
 - `GOAL-003-r2-saved-views` 已关闭为 `done · 4/4`；C1～C3 实现与回归、C4 审计响应和 checkpoint `39c744ef` 均由该阶段目标承接。
+- `GOAL-004-r3-unsaved-change-protection` 已开设，当前 `active · 0/4`；承接 dirty-state 基础切片，浏览器/导航/提交组合证据待补。
 
 ## 事实边界
 
