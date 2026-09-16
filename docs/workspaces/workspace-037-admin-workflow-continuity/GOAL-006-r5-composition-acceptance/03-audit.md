@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计台账 · GOAL-006 R5
@@ -24,12 +24,12 @@ version: 0.4.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | R5 尚未开始关门审计 | — | — | — |
+| A-001 | 2026-09-17 | self | R5 C1-C3 composition and C4 readiness | conditional | R5-I-004 用户书面确认门禁 | [A-001-r5-composition-self.md](03-audit/A-001-r5-composition-self.md) |
 
 ## Required finding 响应
 
-当前尚无 R5 审计意见；C4 前不得宣称 required finding 已清零。
+当前 R5 self 意见为 conditional：未发现新的 required implementation finding；R5-I-004 用户书面确认门禁仍开放，C4 前不得宣称 Root/VP 关门或 required gate 已清零。
 
 ## 当前审计状态
 
-R1～R4 的阶段审计作为组合证据输入保留在各自目标的 `03-audit/`；本台账只登记 R5 组合审计及其响应。C1～C3 已记录为事实，但 R5 self 与 Grok independent 意见、用户确认及最终 Root/VP 投影尚未发生。
+R1～R4 的阶段审计作为组合证据输入保留在各自目标的 `03-audit/`；本台账只登记 R5 组合审计及其响应。C1～C3 已记录为事实，R5 self 已登记；Grok independent 意见、用户确认及最终 Root/VP 投影尚未发生。
