@@ -1,11 +1,11 @@
 ---
 id: GOAL-003-r2-saved-views
 doc: audit
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.5.0
+version: 0.6.0
 ---
 
 # 审计台账 · GOAL-003 R2
@@ -26,7 +26,8 @@ version: 0.5.0
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-09-17 | self | R2 Saved Views C1-C3 implementation and regression | pass | 无 | [A-001-r2-saved-view-self.md](03-audit/A-001-r2-saved-view-self.md) |
 | A-002 | 2026-09-17 | independent | R2 Saved Views C1-C3 implementation, fail-closed contract, and regression evidence | pass | 无 | [A-002-r2-saved-view-independent.md](03-audit/A-002-r2-saved-view-independent.md) |
+| A-003 | 2026-09-17 | self | R2 C4 close-out after independent response and Git checkpoint | pass | 无 | [A-003-r2-close-out.md](03-audit/A-003-r2-close-out.md) |
 
 ## 结论状态
 
-R2 C1～C3 经 A-001 self 与 A-002 independent 均为 `pass`，双方均无开放 required / 必改 finding。A-002 的 4 条 recommended 已由 E-004 响应；C4 仍未完成，需 `/govern` 响应本独立意见后做 Git checkpoint，才能关闭 C4 并投影 Root R2。R3 / R4 / R5 不在本目标本轮范围，尚未完成。
+R2 C1～C3 经 A-001 self 与 A-002 independent 均为 `pass`，双方均无开放 required / 必改 finding。A-002 的 4 条 recommended 已由 E-004 按 `fixed` 路径响应；A-003 已核对响应、118 项回归、TypeScript 检查与 Git checkpoint `39c744ef`，因此 C4 关闭，目标为 `done · 4/4` 并投影 Root R2。R3 / R4 / R5 不在本目标范围，尚未完成。

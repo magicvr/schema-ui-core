@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-saved-views
 title: R2 用户级 Saved Views 闭环
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.4.0
-progress: 3/4
+version: 0.5.0
+progress: 4/4
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -31,7 +31,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] C1：R2 分母与 allowlist 边界修订形成可核对附件，24 个 Schema table 与自定义排除项一致（E-002；R1 F-002～F-004 已响应）。
 - [x] C2：localStorage 文档、编码键、字段/列校验、过期/越权丢弃和读写失败路径有单元证据（E-003；7 项 storage tests）。
 - [x] C3：UI 完成保存、选择、刷新恢复、更新、删除、列可见性、空态与错误反馈，并有 Renderer 回归证据（E-003；3 项 UI tests）。
-- [ ] C4：self + 必要 independent audit、required finding 响应与 Git checkpoint 完成；R2 目标关闭并投影 Root。
+- [x] C4：self + independent audit、recommended 响应与 Git checkpoint 完成；A-003 记录关门核对，R2 目标关闭并投影 Root。
 
 ## 信息需求与阶段门禁
 
@@ -44,7 +44,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 父目标
 
-- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 1/5`；R1 已完成，本目标为 R2 当前阶段）。
+- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 2/5`；R1、R2 已完成，本目标已关闭）。
 
 ## 台账布局
 
