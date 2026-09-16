@@ -2,9 +2,9 @@
 title: 目标树 · workspace-037-admin-workflow-continuity
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 parent: null
-version: 0.1.0
+version: 0.2.0
 workspace_id: workspace-037-admin-workflow-continuity
 ---
 
@@ -19,12 +19,13 @@ workspace_id: workspace-037-admin-workflow-continuity
 
 ```text
 GOAL-001-admin-workflow-continuity [active · 0/5]
+└── GOAL-002-r1-scope-semantics-freeze [active · 1/3]
 ```
 
 ## 纲领路线图
 
 ```text
-R1 分母与语义冻结 [pending]
+R1 分母与语义冻结 [active · GOAL-002 · 1/3]
   → { R2 Saved Views [pending]
       R3 未保存变更保护 [pending]
       R4 统一反馈与恢复 [pending] }
@@ -37,7 +38,8 @@ R1 分母与语义冻结 [pending]
 
 | id | title | status | progress | parent | notes |
 |----|-------|--------|----------|--------|-------|
-| GOAL-001-admin-workflow-continuity | Admin 工作流连续性与安全反馈交付 | **active** | 0/5 | null | 仅完成 workspace/Root scaffold；R1～R5 均 pending；I-037-001～004 open required，I-037-006 verified；Vision open required = 0 |
+| GOAL-001-admin-workflow-continuity | Admin 工作流连续性与安全反馈交付 | **active** | 0/5 | null | R1 子目标已建立；I-037-001 verified，I-037-002 open required，I-037-003～004 collecting required，I-037-006 verified；Vision open required = 0 |
+| GOAL-002-r1-scope-semantics-freeze | R1 列表分母与工作流语义冻结 | **active** | 1/3 | GOAL-001-admin-workflow-continuity | C1 矩阵已记录；C2/C3 未完成；I-037-002 open、I-037-003/004 collecting |
 
 ## 维护说明
 

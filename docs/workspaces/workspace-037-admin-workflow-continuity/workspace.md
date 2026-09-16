@@ -10,8 +10,8 @@ plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
-updated: 2026-09-16
-version: 0.1.0
+updated: 2026-09-17
+version: 0.2.0
 parent: null
 ---
 
@@ -21,6 +21,7 @@ parent: null
 
 - VP-037 已于 2026-09-16 经用户确认从 `planned` 激活为 `active` v0.2.0。
 - Root `[workspace-037-admin-workflow-continuity] GOAL-001-admin-workflow-continuity`：**`active · 0/5`**；开区与 Root scaffold 不代表实现阶段完成。
+- R1 已按阶段开设子目标 `GOAL-002-r1-scope-semantics-freeze`，当前 **`active · 1/3`**；C1 矩阵已记录，C2 仍等待 Saved View 持久化取舍的用户裁决。
 - 激活门禁：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；Admin freshness PASS；I-037-006 verified。
 - 用户已确认 workspace slug = `workspace-037-admin-workflow-continuity`；Root slug = `GOAL-001-admin-workflow-continuity`。
 - Vision open required：0；V-F124 保持 `open · recommended`；I-037-001～004 为 R1 前 required，I-037-005 为 deferred non-blocking。
@@ -48,7 +49,7 @@ parent: null
 
 | 阶段 | 目的 | 状态 |
 |------|------|------|
-| R1 | 列表页分母、Saved View 所有权/持久化、dirty-state 与反馈/权限语义冻结 | pending；I-037-001～004 未关闭前不得放行后续方案/实施 |
+| R1 | 列表页分母、Saved View 所有权/持久化、dirty-state 与反馈/权限语义冻结 | active via `GOAL-002-r1-scope-semantics-freeze` · 1/3；I-037-002～004 未关闭前不得放行后续方案/实施 |
 | R2 | 用户级 Saved Views 保存、选择、恢复、更新、删除与失效边界 | pending；R1 后可与 R3/R4 按并行价值安排 |
 | R3 | 未保存变更保护与离开确认状态机 | pending；R1 后可与 R2/R4 按并行价值安排 |
 | R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | pending；R1 后可与 R2/R3 按并行价值安排 |
