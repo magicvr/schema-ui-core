@@ -42,7 +42,7 @@ parent: null
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：[VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md)（**`active` · v0.6.0**）
+- VP：[VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md)（**`active` · v1.0.0**）
 - 计划审视：[VRev-094](../../vision/reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`
 - 激活审视：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`
 - Vision open required：0；V-F124 `open · recommended`；I-037-006 `verified`；I-037-001～004 `verified`（R2/R3 已完成阶段实现证据，I-037-004 的 R4 实现/回归证据已补齐）；I-037-005 `deferred · non-blocking`

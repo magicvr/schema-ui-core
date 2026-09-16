@@ -13,7 +13,7 @@ workspace_id: workspace-037-admin-workflow-continuity
 > 工作区：`workspace-037-admin-workflow-continuity`
 > canonical：`docs/workspaces/workspace-037-admin-workflow-continuity/`
 > Root：`GOAL-001-admin-workflow-continuity`（**active · 4/5**）
-> primary_plan：`VP-037-admin-workflow-continuity`（active · v0.6.0）
+> primary_plan：`VP-037-admin-workflow-continuity`（active · v1.0.0）
 
 ## 目标树
 
