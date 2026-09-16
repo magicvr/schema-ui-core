@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.8.0
+version: 0.9.0
 parent: null
 ---
 
@@ -45,7 +45,7 @@ parent: null
 - VP：[VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md)（**`active` · v0.6.0**）
 - 计划审视：[VRev-094](../../vision/reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`
 - 激活审视：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`
-- Vision open required：0；V-F124 `open · recommended`；I-037-006 `verified`；I-037-001～004 `verified`（R2～R4 仍需阶段实现证据）；I-037-005 `deferred · non-blocking`
+- Vision open required：0；V-F124 `open · recommended`；I-037-006 `verified`；I-037-001～004 `verified`（R2/R3 已完成阶段实现证据，R4 仍需补齐）；I-037-005 `deferred · non-blocking`
 
 ## 纲领阶段
 
@@ -54,7 +54,7 @@ parent: null
 | R1 | 列表页分母、Saved View 所有权/持久化、dirty-state 与反馈/权限语义冻结 | **done via `GOAL-002-r1-scope-semantics-freeze` · 3/3**；I-037-001～004 verified，A-001/A-002 pass，A-003 已响应 |
 | R2 | 用户级 Saved Views 保存、选择、恢复、更新、删除与失效边界 | **done via `GOAL-003-r2-saved-views` · 4/4**；A-001/A-002/A-003 pass，checkpoint `39c744ef` 已记录 |
 | R3 | 未保存变更保护与离开确认状态机 | **done via `GOAL-004-r3-unsaved-change-protection` · 4/4**；C1～C4 回归、A-003 independent recheck、A-004 self close-out 与 checkpoint `d2b39189` 已记录 |
-| R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | pending；R1 后可与已完成的 R2/R3 按并行价值安排 |
+| R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | **active via `GOAL-005-r4-unified-feedback-recovery` · 0/4**；承接 R1 D-005，先冻结分类/重试/无障碍边界 |
 | R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | pending；须 R2～R4 证据闭合并经用户确认 |
 
 纲领阶段按 R1 →（R2/R3/R4 可在 R1 后并行）→ R5 推进。工作区建立本身不代表任何实现阶段完成。

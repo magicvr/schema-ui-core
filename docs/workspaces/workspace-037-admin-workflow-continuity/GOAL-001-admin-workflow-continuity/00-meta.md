@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-16
 updated: 2026-09-17
-version: 0.6.0
+version: 0.7.0
 progress: 3/5
 plan_refs:
   - VP-037-admin-workflow-continuity
@@ -52,7 +52,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **R1 分母与语义冻结**：列表页、Saved View 所有权/持久化、dirty-state、反馈分类与 Profile/权限覆盖形成可核对矩阵；由 `GOAL-002-r1-scope-semantics-freeze` 承载并以 `done · 3/3` 完成，I-037-001～004 verified，A-001 self + A-002 independent pass，A-003 已响应。
 - [x] **R2 Saved Views**：在首波分母内完成保存、选择、恢复、更新、删除、空态/错误态与无效/越权 fail-closed 闭环；由 `GOAL-003-r2-saved-views` 承载并以 `done · 4/4` 完成，A-001/A-002/A-003 pass，Git checkpoint `39c744ef` 已记录。
 - [x] **R3 未保存变更保护**：内部导航、浏览器离开/刷新、提交成功、重置和取消路径可验证，确认不会丢失修改或绕过提交结果；由 `GOAL-004-r3-unsaved-change-protection` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录。
-- [ ] **R4 统一反馈与恢复**：成功/失败/重试/维护反馈统一、可访问且不重复提交、不吞服务端错误、不泄露敏感信息。
+- [ ] **R4 统一反馈与恢复**：成功/失败/重试/维护反馈统一、可访问且不重复提交、不吞服务端错误、不泄露敏感信息；当前由 `GOAL-005-r4-unified-feedback-recovery` 承载（`active · 0/4`）。
 - [ ] **R5 组合验收与关门准备**：非目标边界、阶段事实、Goal 审计、必要独立意见与 VP 投影闭合；用户确认后才可将 Root/VP 关门。
 
 ## 信息就绪与未知项（P-005）

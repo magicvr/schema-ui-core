@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 执行台账 · GOAL-001-admin-workflow-continuity
@@ -25,6 +25,7 @@ version: 0.7.0
 | E-007 | 2026-09-17 | 开设 R3 未保存变更保护 | recorded | [E-007-open-r3-dirty-state.md](02-execution/E-007-open-r3-dirty-state.md) |
 | E-008 | 2026-09-17 | R3 dirty-state 回归推进 | recorded | [E-008-r3-dirty-state-regression.md](02-execution/E-008-r3-dirty-state-regression.md) |
 | E-009 | 2026-09-17 | R3 关门与 Root 投影 | recorded | [E-009-r3-closeout.md](02-execution/E-009-r3-closeout.md) |
+| E-010 | 2026-09-17 | 开设 R4 统一反馈与恢复 | recorded | [E-010-open-r4-unified-feedback.md](02-execution/E-010-open-r4-unified-feedback.md) |
 
 ## 当前事实
 
@@ -36,6 +37,7 @@ version: 0.7.0
 - Admin freshness 继承当前 HEAD 基线并通过。
 - `GOAL-003-r2-saved-views` 已关闭为 `done · 4/4`；C1～C3 实现与回归、C4 审计响应和 checkpoint `39c744ef` 均由该阶段目标承接。
 - `GOAL-004-r3-unsaved-change-protection` 已关闭为 `done · 4/4`；C1～C4 实现/回归、A-001/A-002/A-003/A-004 审计记录与 checkpoint `d2b39189` 已承接。
+- `GOAL-005-r4-unified-feedback-recovery` 已开设为 `active · 0/4`；当前只记录 R1 D-005 合同承接与阶段边界，R4 的实现/回归事实由该目标承接。
 
 ## 事实边界
 

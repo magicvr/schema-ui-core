@@ -4,7 +4,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.8.0
+version: 0.9.0
 workspace_id: workspace-037-admin-workflow-continuity
 ---
 
@@ -21,7 +21,8 @@ workspace_id: workspace-037-admin-workflow-continuity
 GOAL-001-admin-workflow-continuity [active · 3/5]
 ├── GOAL-002-r1-scope-semantics-freeze [done · 3/3]
 ├── GOAL-003-r2-saved-views [done · 4/4]
-└── GOAL-004-r3-unsaved-change-protection [done · 4/4]
+├── GOAL-004-r3-unsaved-change-protection [done · 4/4]
+└── GOAL-005-r4-unified-feedback-recovery [active · 0/4]
 ```
 
 ## 纲领路线图
@@ -30,7 +31,7 @@ GOAL-001-admin-workflow-continuity [active · 3/5]
 R1 分母与语义冻结 [done · GOAL-002 · 3/3]
   → { R2 Saved Views [done · GOAL-003 · 4/4]
       R3 未保存变更保护 [done · GOAL-004 · 4/4]
-      R4 统一反馈与恢复 [pending] }
+      R4 统一反馈与恢复 [active · GOAL-005 · 0/4] }
   → R5 组合验收与关门 [pending]
 ```
 
@@ -44,6 +45,7 @@ R1 分母与语义冻结 [done · GOAL-002 · 3/3]
 | GOAL-002-r1-scope-semantics-freeze | R1 列表分母与工作流语义冻结 | **done** | 3/3 | GOAL-001-admin-workflow-continuity | C1/C2/C3 已完成；A-001 self、A-002 independent 均 pass；F-002～F-004 为非阻断 recommended，已转入 R2 |
 | GOAL-003-r2-saved-views | R2 用户级 Saved Views 闭环 | **done** | 4/4 | GOAL-001-admin-workflow-continuity | D-001 已冻结 24 个 `type: table` 分母、custom 排除与活 Schema allowlist；C1～C4 完成，A-001/A-002/A-003 pass，checkpoint `39c744ef` |
 | GOAL-004-r3-unsaved-change-protection | R3 未保存变更保护与离开确认 | **done** | 4/4 | GOAL-001-admin-workflow-continuity | D-001 已承接 R1 D-004 dirty-state 合同；C1～C4 完成，A-003 independent recheck、A-004 self pass，checkpoint `d2b39189` |
+| GOAL-005-r4-unified-feedback-recovery | R4 统一反馈与恢复 | **active** | 0/4 | GOAL-001-admin-workflow-continuity | 承接 R1 D-005 反馈/恢复合同；先补跨表面错误分类、读重试安全边界、写失败保留与无障碍证据 |
 
 ## 维护说明
 

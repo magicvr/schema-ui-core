@@ -8,7 +8,7 @@ lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-17
 parent: null
-version: 0.6.0
+version: 0.7.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
@@ -17,17 +17,17 @@ version: 0.6.0
 
 在现有 Admin 导航、发现入口和横切契约之上，补齐高频操作的连续性与安全反馈：用户可以复用列表视图，离开有未保存修改的页面时得到可靠保护，并在成功、失败、重试和恢复路径上获得一致反馈。目标是降低重复配置、误操作和“操作到底有没有成功”的不确定性，而不是扩张为新的搜索或业务域平台。
 
-本 VP 已于 2026-09-16 经用户确认从 `planned` 激活为 `active`，并绑定 `workspace-037-admin-workflow-continuity`；R1、R2、R3 已完成信息/语义冻结、Saved View、dirty-state 实现与 Goal 审计，R4 尚待实现阶段证据。
+本 VP 已于 2026-09-16 经用户确认从 `planned` 激活为 `active`，并绑定 `workspace-037-admin-workflow-continuity`；R1、R2、R3 已完成信息/语义冻结、Saved View、dirty-state 实现与 Goal 审计，R4 已开设并进入信息就绪与实现阶段。
 
 ## 状态、激活与关门门禁
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-17 · v0.6.0；R1 C3、R2 C4、R3 C4 已完成，R4 待实现；lead `workspace-037-admin-workflow-continuity`） |
+| status | **`active`**（2026-09-17 · v0.7.0；R1 C3、R2 C4、R3 C4 已完成，R4 已开设 `active · 0/4`；lead `workspace-037-admin-workflow-continuity`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-036 之后的工作流连续性下一拍 |
 | Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；当前 open required = 0 |
 | 激活门禁 | Admin 类 freshness PASS；I-037-006 verified；用户确认 workspace/Root 命名；V-F124 保持 recommended，不阻断激活 |
-| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 3/5；R1 已冻结、R2/R3 已实现并通过 self/independent 审计，R4 待开设 |
+| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 3/5；R1 已冻结、R2/R3 已实现并通过 self/independent 审计，R4 由 `GOAL-005-r4-unified-feedback-recovery` 承载并处于 `active · 0/4` |
 
 ## 首波范围与边界
 
@@ -55,7 +55,7 @@ version: 0.6.0
 | R1 · 分母与语义冻结 | 盘点列表页、筛选/排序/列配置、表单 dirty-state、反馈类型与权限/Profile 覆盖 | I-037-001～004 verified；矩阵与 D-003～D-005 取舍决策落盘；R1 Goal C3 self/independent 审计与响应完成（GOAL-002 `done · 3/3`） |
 | R2 · Saved Views | 实现用户级保存/恢复与失效边界 | R1 冻结；由 `GOAL-003-r2-saved-views` 承载并已完成（`done · 4/4`）；A-001/A-002/A-003 pass，checkpoint `39c744ef` |
 | R3 · 未保存保护 | 实现并验证 dirty-state 与离开确认 | R1 冻结；由 `GOAL-004-r3-unsaved-change-protection` 承载并已完成（`done · 4/4`）；A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录 |
-| R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；退出判据 4 的跨页面回归 |
+| R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；由 `GOAL-005-r4-unified-feedback-recovery` 承载（`active · 0/4`），退出判据 4 的跨页面回归 |
 | R5 · 组合验收与关门 | 核对非目标、审计链、残余与愿景投影 | R2～R4 完成；退出判据 5～6 可核验；用户书面确认后才关门 |
 
 ## P-005 信息需求
@@ -69,13 +69,13 @@ version: 0.6.0
 | I-037-005 | 跨用户共享视图、最近使用/收藏与协作权限是否进入后续波次 | non-blocking | 后续 UX 波次边界 | 关门后或出现协作触发 | 不纳入首波；出现明确多用户协作需求时由 `/vision` 复核 | deferred | 延期理由：首波聚焦个人工作流；责任人：`/vision`；复核触发：真实协作需求出现 |
 | I-037-006 | 激活前 Admin freshness 与 VP-008 `go` 消费有效性 | required | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，并核对当前 Charter/VP 引用与区间变更 | verified | 2026-09-16：当前 HEAD `0c29c08`；`apps/**` 无 staged/unstaged 区间变更；VRev-095 |
 
-`I-037-001`～`I-037-004` 的 R1 信息冻结已关闭；R2～R4 仍须分别通过实现/回归证据关闭其阶段门禁。`I-037-006` 已 verified，不再阻断本次激活；`I-037-005` 是有界延期，不代表已验证或承诺后续实现。
+`I-037-001`～`I-037-004` 的 R1 信息冻结已关闭；R2/R3 已分别通过实现/回归证据关闭阶段门禁，R4 仍须通过实现/回归证据关闭其阶段门禁。`I-037-006` 已 verified，不再阻断本次激活；`I-037-005` 是有界延期，不代表已验证或承诺后续实现。
 
 ## Workspaces
 
 | workspace | role | scope | lead | 状态 |
 |-----------|------|-------|------|------|
-| workspace-037-admin-workflow-continuity | delivery | VP-037 首波实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 3/5**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`，R4 待实施 |
+| workspace-037-admin-workflow-continuity | delivery | VP-037 首波实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 3/5**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`，R4 `active · 0/4` |
 
 ## 关系与结构选型
 
@@ -93,6 +93,7 @@ version: 0.6.0
 - 2026-09-17：R2 `GOAL-003-r2-saved-views` 完成 C1～C4，A-001 self、A-002 independent、A-003 close-out 均 `pass`；commit `39c744ef`；Root 投影为 `active · 2/5`。
 - 2026-09-17：按 R2 关门后的既定路线开设 R3 `GOAL-004-r3-unsaved-change-protection`，初始 `active · 0/4`，承接 D-004 dirty-state 合同与 `39c744ef` 基础切片。
 - 2026-09-17：R3 完成 C1～C4；A-002 independent 的 F-001 required finding 经 E-003 修正并由 A-003 independent recheck 确认 `fixed`，A-004 self pass；Git checkpoint `d2b39189`；Root 投影为 `active · 3/5`。
+- 2026-09-17：按既定路线开设 R4 `GOAL-005-r4-unified-feedback-recovery`，初始 `active · 0/4`；承接 R1 D-005，不引入新的 API 或 Host 终态语义。
 
 ## Closeout placeholder
 
