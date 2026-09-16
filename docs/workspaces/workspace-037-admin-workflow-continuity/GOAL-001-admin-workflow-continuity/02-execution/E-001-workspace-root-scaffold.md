@@ -27,3 +27,9 @@ version: 0.1.0
 ## 下一步（计划）
 
 - 进入 R1：扫描现有列表页与 Profile/权限覆盖，冻结 Saved View 所有权/持久化、dirty-state 与反馈分类矩阵，并分别记录决策、执行事实与阶段自审。
+
+## Git checkpoint
+
+- **commit**：`d9440e12`（`docs(vision): activate VP-037 and scaffold workspace`）
+- **scope**：VP-037 激活、VRev-095、vision roadmap/revisions/reviews/workspaces 投影、workspace-037 上下文、Root 五件套、三个 ledger 目录与目标树。
+- **验证**：`git diff --cached --check` 通过；五件套/ledger、绑定字段、编号索引与 `apps/**` 无 staged/unstaged 变更均已核对；预先存在的 `.claude/settings.local.json` 未纳入。
