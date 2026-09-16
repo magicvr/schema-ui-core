@@ -1157,6 +1157,11 @@ export function App({
     if (!href.startsWith("/")) {
       return;
     }
+    // Re-selecting the exact committed location is not a navigation and must
+    // not ask the user to discard a draft or create a duplicate history entry.
+    if (href === currentLocationPath()) {
+      return;
+    }
     if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
       return;
     }

@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-17
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -29,18 +29,18 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 成功检查点
 
-- [ ] C1：dirty registry、默认表单 baseline 和 search 非 dirty 边界有实现与单元/Renderer 证据。
-- [ ] C2：内部导航和 `popstate` 的确认、取消、URL 恢复与确认后切换有 App 集成证据。
-- [ ] C3：`beforeunload` dirty/clean 两条路径，以及 modal close/cancel 的确认行为有自动化证据。
+- [x] C1：dirty registry、默认表单 baseline 和 search 非 dirty 边界有实现与单元/Renderer 证据（R3 UI 4 项 + registry 3 项）。
+- [x] C2：内部导航和 `popstate` 的确认、取消、URL 恢复与确认后切换有 App 集成证据（App integration）。
+- [x] C3：`beforeunload` dirty/clean 两条路径，以及 modal close/cancel 的确认行为有自动化证据（R3 UI + App integration）。
 - [ ] C4：提交成功/失败、reset/cancel 结果、自审 + independent audit、required finding 响应与 Git checkpoint 完成；R3 关闭并投影 Root。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|----------------|----------|--------------|-----------------|------|-------------|-------------|
-| R3-I-001 | required | 默认表单的 baseline、结构比较与成功提交后的清理是否覆盖 inline/modal 生命周期？ | C1/C4 | C1 | 读取 FormInner 生命周期，补 Renderer 回归 | collecting | 2026-09-17；C1 前关闭 | 待测试 |
-| R3-I-002 | required | App 内部导航、popstate 取消/确认与 committed URL 恢复是否满足 D-004？ | C2 | C2 | App jsdom 集成测试 + 路径断言 | collecting | 2026-09-17；C2 前关闭 | 待测试 |
-| R3-I-003 | required | beforeunload、modal close/cancel 和 reset 路径是否可观察且不误放行？ | C3/C4 | C3 | 事件测试、modal/表单回归与浏览器合同核对 | collecting | 2026-09-17；C3 前关闭 | 待测试 |
+| R3-I-001 | required | 默认表单的 baseline、结构比较与成功提交后的清理是否覆盖 inline/modal 生命周期？ | C1/C4 | C1 | 读取 FormInner 生命周期，补 Renderer 回归 | verified | 2026-09-17；E-002 | `r3-dirty-state.ui.test.tsx` + `render.tsx` |
+| R3-I-002 | required | App 内部导航、popstate 取消/确认与 committed URL 恢复是否满足 D-004？ | C2 | C2 | App jsdom 集成测试 + 路径断言 | verified | 2026-09-17；E-002 | `App.integration.test.tsx` |
+| R3-I-003 | required | beforeunload、modal close/cancel 和 reset 路径是否可观察且不误放行？ | C3/C4 | C3 | 事件测试、modal/表单回归与浏览器合同核对 | verified | 2026-09-17；E-002 | `r3-dirty-state.ui.test.tsx` + `App.integration.test.tsx` |
 | R3-I-004 | non-blocking | 浏览器对 beforeunload 文案的具体呈现是否需要定制？ | R3 UX 细节 | R5 或真实触发 | 沿用 D-004，使用浏览器原生文案；真实需求走 `/vision` | deferred | 浏览器不保证自定义文案；owner=`/vision` | D-004 |
 
 ## 父目标

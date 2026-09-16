@@ -2102,6 +2102,15 @@ function FormInner({
       crud.searchFormSubmit(node, cleared);
     }
   };
+  const resetToBaseline = () => {
+    // Native reset events can come from a custom form component. Keep React's
+    // controlled values and the dirty registry in the same state instead of
+    // letting the browser reset only the DOM controls.
+    setValues({ ...mountBaselines.current });
+    setFieldErrors({});
+    setImportErrorRows([]);
+    setFormError(null);
+  };
   const removeFilter = (field: FormControlField) => {
     const next = { ...values, [field.id]: "" };
     setValues(next);
@@ -2114,6 +2123,12 @@ function FormInner({
     <form
       data-form-dirty={isDirty ? "true" : "false"}
       className={isSearch ? "space-y-3.5 rounded-xl border border-border/70 bg-card/85 p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.03),0_1px_2px_-1px_rgba(0,0,0,0.03)] dark:border-border/60 dark:bg-card/70 dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.2)]" : "space-y-3"}
+      onReset={(event) => {
+        if (!isSearch) {
+          event.preventDefault();
+          resetToBaseline();
+        }
+      }}
       onSubmit={(event) => {
         event.preventDefault();
         void handleSubmit();
