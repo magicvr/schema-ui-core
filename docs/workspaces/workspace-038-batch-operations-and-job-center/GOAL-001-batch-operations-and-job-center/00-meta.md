@@ -21,7 +21,15 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检索、组织/数据权限、新业务域或架构 gated 项（Redis / 外部队列 / 多实例 / 专用搜索引擎）写入本目标，也不重开 VP-012/011/037/036。
 
-工作区与 Root 已建立（2026-09-19）；纲领阶段尚未开始，`progress: 0/5` 是显式检查点的派生展示。
+工作区与 Root 已建立（2026-09-19）；纲领阶段 R1 已由子目标 `GOAL-002-r1-denominator-and-contract-freeze` 承接（`active · 0/4`），`progress: 0/5` 是显式检查点的派生展示。
+
+## 子目标
+
+| id | 纲领阶段 | status | progress |
+|----|---------|--------|----------|
+| GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | active | 0/4 |
+
+R2～R5 子目标在 R1 冻结后按 P-001 逐阶段立项。
 
 ## 愿景对齐
 
@@ -71,7 +79,7 @@ Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检
 | I-038-005 | required | 激活前 Admin 类 freshness 与 VP-008 `go` 消费有效性是否仍成立？ | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，核对协议 pin、依赖锁、迁移台账、Profile 默认集与装配、provenance 及区间变更 | **verified** | 2026-09-19 已完成 | `0c29c08` → `7e5ce891` 五域 PASS，不暂挂 `go`；VRev-099 |
 | I-038-006 | non-blocking | 历史作业保留与清理策略（`expires_at` 已存在；是否需要归档/清理/容量上限）？ | 后续运维波次边界 | 关门后或出现容量触发 | 不纳入首波；出现真实容量或合规需求时由 `/vision` 复核 | deferred | 理由：首波聚焦可见性与结果读取，不新建数据生命周期程序；责任人：`/vision`；复核触发：作业表容量/保留期出现真实需求 | 待确认 |
 
-`I-038-004` 与 `I-038-005` 已于 2026-09-19 关闭（用户 P-004 裁决 + Admin 类 freshness PASS），激活门禁解除。`I-038-001`～`003` 为 R1 冻结前的 required 门禁，仍为 open；`I-038-003` 同时承接 `V-F126`。`I-038-006` 是有界延期，不代表已验证或承诺后续实现。
+`I-038-004` 与 `I-038-005` 已于 2026-09-19 关闭（用户 P-004 裁决 + Admin 类 freshness PASS），激活门禁解除。`I-038-001`～`003` 为 R1 冻结前的 required 门禁，仍为 open（侦察证据已收集，见 `02-execution/E-002-r1-recon.md` 与 `attachments/R1-recon-*.md`；冻结口径待 `GOAL-002` C1～C3 决策落盘，C2/C3 须经用户 P-004 裁决）。`I-038-003` 同时承接 `V-F126`。`I-038-006` 是有界延期，不代表已验证或承诺后续实现。
 
 ## 父目标
 
@@ -83,7 +91,7 @@ Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检
 
 ## 备注
 
-- workspace/Root scaffold 是已发生事实；纲领 R1→R5 尚未开始，`progress: 0/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
+- workspace/Root scaffold 是已发生事实；纲领 R1 由 `GOAL-002` 承接（`active · 0/4`），`progress: 0/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
 - 建区不代表任何实现阶段完成；VP-038 关门须链接本区证据并经用户确认。
 - Vision Review `VRev-098`/`VRev-099` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。
 - `admin.jobs` 模块的建立属 VP-038 R2/R3 实现范围，本轮 scaffold **未**改动 `apps/**`。

@@ -1,21 +1,20 @@
 ---
-id: GOAL-001-batch-operations-and-job-center
+id: GOAL-002-r1-denominator-and-contract-freeze
 doc: execution
 status: active
-parent: null
+parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
 version: 0.1.0
 ---
 
-# 执行记录 · GOAL-001
+# 执行记录 · GOAL-002
 
 ## 执行索引
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| E-001 | 2026-09-19 | 工作区与 Root 建立（VP-038 激活 + 开区） | recorded | `02-execution/E-001-workspace-establishment.md` |
-| E-002 | 2026-09-19 | R1 只读侦察（`I-038-001`～`003` 证据收集） | recorded | `02-execution/E-002-r1-recon.md` |
+| E-001 | 2026-09-19 | R1 立项与只读侦察（`I-038-001`～`003` 证据收集） | recorded | `02-execution/E-001-r1-establishment-and-recon.md` |
 
 ## 事实边界
 
