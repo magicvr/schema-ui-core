@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 0.9.0
+version: 1.0.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
@@ -39,6 +39,7 @@ version: 0.9.0
 | D-009 | 2026-09-17 | 开设 R4 统一反馈与恢复 | accepted | [D-009-open-r4-unified-feedback.md](01-decision/D-009-open-r4-unified-feedback.md) |
 | D-010 | 2026-09-17 | R4 关门、Root 投影并开设 R5 组合验收 | accepted | [D-010-r4-close-and-open-r5.md](01-decision/D-010-r4-close-and-open-r5.md) |
 | D-011 | 2026-09-18 | 保持 R5/Root/VP 开放并开设 R6 列表页视觉收敛 | accepted | [D-011-open-r6-list-page-visual-alignment.md](01-decision/D-011-open-r6-list-page-visual-alignment.md) |
+| D-012 | 2026-09-18 | 用户选择回开 R6 并追加列表布局修订 | accepted | [D-012-reopen-r6-layout-revision.md](01-decision/D-012-reopen-r6-layout-revision.md) |
 
 ## 当前投影
 
@@ -49,3 +50,4 @@ version: 0.9.0
 - R3 `GOAL-004-r3-unsaved-change-protection` 已按 A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 关闭为 `done · 4/4`；Root R3 检查点已投影完成，Root 更新为 `active · 3/5`，下一阶段为 R4 统一反馈与恢复。
 - R4 `GOAL-005-r4-unified-feedback-recovery` 已按 A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 关闭为 `done · 4/4`。随后按 D-010 开设 R5 `GOAL-006-r5-composition-acceptance`（`active · 0/4`），只承载组合验收与 Root/VP 关门准备。
 - 用户于 2026-09-18 明确要求 Root 暂不关门并新增 R6；按 D-011 将 Root 路线图扩展为 6 个检查点，Root 保持 `active · 4/6`，R5 仍为 `active · 3/4`，并开设 `GOAL-007-list-page-visual-alignment`（`active · 1/4`）。R6 不关闭或改写 R5-I-004。
+- 用户随后对 R6 的实现提出布局修订，并选择回开方案 A；按 D-012 保留 GOAL-007、追加 C5/C6，Root 当前回投影为 `active · 4/6`，R5 仍为 `active · 3/4`，不新建 GOAL-008，不关闭或改写 R5-I-004。

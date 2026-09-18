@@ -2143,29 +2143,25 @@ function FormInner({
             : undefined
         }
         searchMode={isSearch}
-        // A-003 pairing rule (user 2026-08-16): the search button belongs
-        // beside its keyword input — one button per text input, adjacent.
-        searchButtonSlot={
-          isSearch ? (
-            <button
-              type="submit"
-              disabled={hasBlockingErrors}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-l-none rounded-r-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 -ml-px"
-            >
-              <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
-              {resolveTextProp(
-                node.props as unknown as Record<string, unknown>,
-                "submitLabelKey",
-                "submitLabel",
-                t,
-                t("feedback.search"),
-              )}
-            </button>
-          ) : undefined
-        }
+        // D-002 action-unit contract: query and reset share the final grid
+        // action cell with ListFilterPanel's expand/collapse toggle.
         actionSlot={
           isSearch ? (
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
+              <button
+                type="submit"
+                disabled={hasBlockingErrors}
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+              >
+                <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
+                {resolveTextProp(
+                  node.props as unknown as Record<string, unknown>,
+                  "submitLabelKey",
+                  "submitLabel",
+                  t,
+                  t("feedback.search"),
+                )}
+              </button>
               <button
                 type="button"
                 onClick={resetValues}

@@ -8,7 +8,7 @@ lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.1.0
+version: 1.2.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
@@ -23,11 +23,11 @@ version: 1.1.0
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-18 · v1.1.0；R1 C3、R2 C4、R3 C4、R4 C4、R6 C4 已完成，R5 `GOAL-006` 当前 `active · 3/4`，R6 `GOAL-007` 当前 `done · 4/4`；Root `active · 5/6`；lead `workspace-037-admin-workflow-continuity`） |
+| status | **`active`**（2026-09-18 · v1.2.0；R1 C3、R2 C4、R3 C4、R4 C4 已完成；R5 `GOAL-006` 当前 `active · 3/4`；R6 `GOAL-007` 按用户选择 A 回开后 C5 实现/回归已完成、当前 `active · 5/6`；Root `active · 4/6`；lead `workspace-037-admin-workflow-continuity`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-036 之后的工作流连续性下一拍 |
 | Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；当前 open required = 0 |
 | 激活门禁 | Admin 类 freshness PASS；I-037-006 verified；用户确认 workspace/Root 命名；V-F124 保持 recommended，不阻断激活 |
-| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 5/6；R1 已冻结、R2/R3/R4/R6 已实现并通过阶段审计，R4 由 `GOAL-005-r4-unified-feedback-recovery`、R6 由 `GOAL-007-list-page-visual-alignment` 承载并分别以 `done · 4/4` 完成 |
+| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 4/6；R1 已冻结、R2/R3/R4 已实现并通过阶段审计，R6 由 `GOAL-007-list-page-visual-alignment` 承载，原 C1～C4 已完成，C5 布局修订与回归已完成，C6 修订审计待完成 |
 
 ## 首波范围与边界
 
@@ -59,7 +59,7 @@ version: 1.1.0
 | R3 · 未保存保护 | 实现并验证 dirty-state 与离开确认 | R1 冻结；由 `GOAL-004-r3-unsaved-change-protection` 承载并已完成（`done · 4/4`）；A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录 |
 | R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；由 `GOAL-005-r4-unified-feedback-recovery` 承载并已完成（`done · 4/4`）；A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已记录 |
 | R5 · 组合验收与关门 | 核对非目标、审计链、残余与愿景投影 | R2～R4 已完成；由 `GOAL-006-r5-composition-acceptance` 承载（`active · 3/4`），C1～C3 已完成，继续核对退出判据 5～6，用户书面确认后才关 Root/VP |
-| R6 · 列表页视觉与筛选体验收敛 | 参考范例页收敛通用列表、筛选折叠、页面级操作/视图布局、对象语义文案与分页展示 | 由 `GOAL-007-list-page-visual-alignment` 承载并完成 `done · 4/4`；不改变 R5-I-004 或既有查询/重置合同 |
+| R6 · 列表页视觉与筛选体验收敛 | 参考范例页收敛通用列表、筛选折叠、页面级操作/视图布局、对象语义文案与分页展示 | 由 `GOAL-007-list-page-visual-alignment` 承载；原 C1～C4 已完成，用户选择 A 后 C5 布局修订与回归已完成，当前 `active · 5/6`，C6 修订审计待完成；不改变 R5-I-004 或既有查询/重置合同 |
 
 ## P-005 信息需求
 
@@ -79,7 +79,7 @@ version: 1.1.0
 
 | workspace | role | scope | lead | 状态 |
 |-----------|------|-------|------|------|
-| workspace-037-admin-workflow-continuity | delivery | VP-037 首波与 R6 列表页视觉实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 5/6**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`、R4 `done · 4/4`，R5 `active · 3/4`，R6 `done · 4/4` |
+| workspace-037-admin-workflow-continuity | delivery | VP-037 首波与 R6 列表页视觉实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 4/6**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`、R4 `done · 4/4`，R5 `active · 3/4`，R6 `active · 5/6`（C5 布局修订与回归已完成，C6 修订审计待完成） |
 
 ## 关系与结构选型
 
@@ -101,7 +101,8 @@ version: 1.1.0
 - 2026-09-17：R4 完成 C1～C4；A-002 grok independent `conditional` 的 F-001 按 E-004 `fixed` 响应，由 A-003 independent recheck `pass` 确认；E-005 补 recommended 回归，A-004 self close-out `pass`；checkpoint `89666e5c`；R4 `done · 4/4`，Root 投影为 `active · 4/5`，下一阶段为 R5 组合验收。
 - 2026-09-17：按 D-010 开设 R5 `GOAL-006-r5-composition-acceptance`（`active · 0/4`），承载 VP-037 组合验收、非目标/对齐核对、最终验证和 Root/VP 用户确认门禁。
 - 2026-09-18：用户明确要求 Root 暂不关门并追加列表页视觉收敛；按 Root D-011 在同一 VP/workspace 下开设 R6 `GOAL-007-list-page-visual-alignment`，Root 路线图扩展为 6 个检查点（`active · 4/6`），R5-I-004 用户确认门禁保持开放；本次不改 Charter strategic 方向、vision_ref 或新建 VP/workspace。
-- 2026-09-18：R6 `GOAL-007-list-page-visual-alignment` 完成 C1～C4 与 A-001 self 审计，投影为 `done · 4/4`；Root 更新为 `active · 5/6`。R5-I-004 用户确认门禁仍开放，VP 继续保持 `active`。
+- 2026-09-18：R6 `GOAL-007-list-page-visual-alignment` 原完成 C1～C4 与 A-001 self 审计，曾投影为 `done · 4/4`、Root `active · 5/6`；用户随后选择方案 A 回开 R6，追加 C5/C6 布局修订，当前 Root `active · 4/6`、R6 `active · 4/6`。R5-I-004 用户确认门禁仍开放，VP 继续保持 `active`。
+- 2026-09-18：R6 C5 布局修订实现与回归完成，C6 修订审计待完成；Root 继续 `active · 4/6`，R5-I-004 用户确认门禁仍开放。
 
 ## Closeout placeholder
 

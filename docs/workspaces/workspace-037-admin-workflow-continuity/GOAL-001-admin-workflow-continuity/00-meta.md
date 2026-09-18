@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-16
 updated: 2026-09-18
-version: 1.2.0
-progress: 5/6
+version: 1.3.0
+progress: 4/6
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -19,7 +19,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 在现有 Admin 导航、发现入口、设计系统、locale/settings 与横切契约之上，交付 VP-037 的工作流连续性与列表体验收敛：用户级 Saved Views、未保存变更保护、统一 Toast/错误恢复，以及用户明确追加的通用列表页视觉与筛选布局改造。Root 只承接 VP-037 的实现层路线图，不把实体全文搜索、批量结果中心、组织/数据权限、新业务域或架构 gated 项写入本目标。
 
-工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护、R4 统一反馈与恢复和 R6 列表页视觉与筛选体验收敛已完成并通过各自 Goal 审计。R5 组合验收仍有用户书面确认门禁；用户明确要求 Root 暂不关门，当前 `progress: 5/6` 是显式检查点的派生展示。
+工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护和 R4 统一反馈与恢复已完成并通过各自 Goal 审计。R5 组合验收仍有用户书面确认门禁；R6 原 C1～C4 曾完成，用户选择回开 GOAL-007 追加 C5/C6 布局修订，当前 `progress: 4/6` 是显式检查点的派生展示。Root/VP 继续保持 active。
 
 ## 愿景对齐
 
@@ -55,7 +55,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **R3 未保存变更保护**：内部导航、浏览器离开/刷新、提交成功、重置和取消路径可验证，确认不会丢失修改或绕过提交结果；由 `GOAL-004-r3-unsaved-change-protection` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录。
 - [x] **R4 统一反馈与恢复**：成功/失败/重试/维护反馈统一、可访问且不重复提交、不吞服务端错误、不泄露敏感信息；由 `GOAL-005-r4-unified-feedback-recovery` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已记录。
 - [ ] **R5 组合验收与关门准备**：非目标边界、阶段事实、Goal 审计、必要独立意见与 VP 投影闭合；当前由 `GOAL-006-r5-composition-acceptance` 承载（`active · 3/4`，C1～C3 已完成），用户确认后才可将 Root/VP 关门。
-- [x] **R6 列表页视觉与筛选体验收敛**：参考 `raw/new-table` 收敛通用列表、筛选、页面级按钮、视图布局与分页展示；由 `GOAL-007-list-page-visual-alignment` 承载并以 `done · 4/4` 完成，不改变 shell 与既有查询/重置合同。
+- [ ] **R6 列表页视觉与筛选体验收敛**：参考 `raw/new-table` 收敛通用列表、筛选、页面级按钮、视图布局与分页展示；由 `GOAL-007-list-page-visual-alignment` 承载。原 C1～C4 已完成，用户选择回开后当前为 `active · 4/6`，追加 C5/C6 修订，不改变 shell 与既有查询/重置合同。
 
 ## 信息就绪与未知项（P-005）
 
@@ -69,7 +69,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 | I-037-006 | required | 激活前 Admin freshness 与 VP-008 `go` 消费有效性是否仍成立？ | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，并核对当前 Charter/VP 引用与区间变更 | verified | 2026-09-16 已核对 | VRev-095；激活基线 HEAD `0c29c08`，后续治理提交 `d9440e12`、`1e823416` 未修改 `apps/**` |
 | I-037-007 | required | R6 的范例布局、通用列表调用链、shell 边界、查询/重置与分页合同是什么？ | R6 方案与实施 | R6-C2 | 读取 `raw/new-table`，盘点 `App.tsx`/renderer/components/test 并记录对象文案未知 | verified | 2026-09-18 已完成基线；对象名实现验证由 GOAL-007 I-007-004 承接 | `GOAL-007-list-page-visual-alignment/01-decision/D-001-list-page-visual-contract.md`、E-001 |
 
-I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/回归与 Goal 审计证据关闭阶段门禁。I-037-005 是有界延期，不代表已验证或承诺后续实现；I-037-006 已 verified，不再阻断本次激活与开区；I-037-007 已由 R6 基线盘点验证，具体对象语义仍在 GOAL-007 的 C3 前验证。R5 仍需组合验收、Root 审计与用户确认后才能关门，R6 不替代该门禁。
+I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/回归与 Goal 审计证据关闭阶段门禁。I-037-005 是有界延期，不代表已验证或承诺后续实现；I-037-006 已 verified，不再阻断本次激活与开区；I-037-007 已由 R6 基线盘点验证，C5 继续沿用该信息合同。R5 仍需组合验收、Root 审计与用户确认后才能关门，R6 不替代该门禁。
 
 ## 父目标
 
@@ -82,5 +82,5 @@ I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/�
 ## 备注
 
 - workspace/Root scaffold、R1、R2、R3 与 R4 子目标已完成是已发生事实；R5 尚未完成。
-- `progress: 5/6` 只由上方 6 个显式检查点派生；它不放行阶段、不关闭 finding、不覆盖 status。
+- `progress: 4/6` 只由上方 6 个显式检查点派生；R6 的回开不改变 Root 的六阶段分母，也不放行阶段、不关闭 finding、不覆盖 status。
 - Vision Review `VRev-094`/`VRev-095` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。

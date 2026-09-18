@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-list-page-visual-alignment-decisions
 doc: decision
-status: done
+status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.2.0
+version: 0.3.0
 ---
 
 # 决策台账 · GOAL-007-list-page-visual-alignment
@@ -25,10 +25,12 @@ version: 0.2.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-09-18 | R6 列表页视觉与筛选实施合同 | accepted | [D-001-list-page-visual-contract.md](01-decision/D-001-list-page-visual-contract.md) |
+| D-002 | 2026-09-18 | 回开 R6 并修订范例页布局合同 | accepted | [D-002-r6-layout-revision.md](01-decision/D-002-r6-layout-revision.md) |
 
 ## 当前投影
 
-- R6 沿用 VP-037、当前 workspace 和 Root；不新建 VP/workspace。
+- R6 沿用 VP-037、当前 workspace 和 Root；用户选择回开 GOAL-007 追加 C5/C6，不新建 VP/workspace 或 GOAL-008。
 - 视觉层采用现有 `card`、`muted`、`border`、`input`、`foreground`、`primary`、`accent` 等 token，不新增或重定义全局 token。
 - 查询、重置、表级 select 即时筛选、Saved View 持久化和字段归属保持原实现；新增层只负责展示、位置与折叠可访问性。
 - 审计模式按常规、边界清楚且可逆的 UI 实施记录为 `self`；若发现跨表合并筛选、对象名无法本地化或多个列表争抢页级插槽，则先回到方案复查。
+- D-002 局部修订 D-001：视图选择/保存视图仍使用标题区局部插槽，但页面 actions（包括列配置）不得进入该插槽；筛选操作必须是筛选网格的末尾 cell；分页 footer 仅改 DOM/样式，不改 query、Saved View 或分页状态逻辑。

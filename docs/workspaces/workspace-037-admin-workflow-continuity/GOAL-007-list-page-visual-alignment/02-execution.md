@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-list-page-visual-alignment-execution
 doc: execution
-status: done
+status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.3.0
+version: 0.5.0
 ---
 
 # 执行台账 · GOAL-007-list-page-visual-alignment
@@ -16,6 +16,8 @@ version: 0.3.0
 |------|------|------|------|------|
 | E-001 | 2026-09-18 | 开设 R6 并完成范例/现状基线 | recorded | [E-001-open-r6-list-page-visual-alignment.md](02-execution/E-001-open-r6-list-page-visual-alignment.md) |
 | E-002 | 2026-09-18 | 完成列表视觉实现与回归验证 | recorded | [E-002-list-page-visual-alignment-implementation.md](02-execution/E-002-list-page-visual-alignment-implementation.md) |
+| E-003 | 2026-09-18 | 用户选择回开 R6 并启动布局修订 | recorded | [E-003-r6-layout-revision-opened.md](02-execution/E-003-r6-layout-revision-opened.md) |
+| E-004 | 2026-09-18 | 完成 C5 布局修订与回归 | recorded | [E-004-r6-layout-revision-implementation.md](02-execution/E-004-r6-layout-revision-implementation.md) |
 
 ## 事实边界
 

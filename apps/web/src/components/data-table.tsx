@@ -54,6 +54,8 @@ export interface DataTableProps<T> {
   onRetry?: () => void;
   /** R4: classified feedback keeps the inline error and retry policy shared. */
   errorFeedback?: FeedbackNotice;
+  /** Optional list footer rendered inside the table surface. */
+  footer?: ReactNode;
 }
 
 function cellContent<T>(
@@ -225,6 +227,7 @@ export function DataTable<T>({
   selectedKey,
   onRetry,
   errorFeedback,
+  footer,
 }: DataTableProps<T>) {
   const t = useTranslate();
   const toggleSort = (column: DataTableColumn<T>) => {
@@ -283,74 +286,93 @@ export function DataTable<T>({
   if (state === "empty") {
     // W11 · U-07: graphic empty state — an inbox glyph plus the message.
     return (
-      <div
-        className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center shadow-2xs"
-        data-table-empty="true"
-      >
-        <Inbox aria-hidden="true" className="size-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      <div className="w-full min-w-0" data-table-presentation="dual-end">
+        <div
+          data-table-surface="true"
+          className="w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card shadow-2xs"
+        >
+          <div
+            className="flex flex-col items-center gap-2 border-dashed px-4 py-10 text-center"
+            data-table-empty="true"
+          >
+            <Inbox aria-hidden="true" className="size-8 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          </div>
+          {footer !== undefined ? (
+            <div
+              data-table-footer="true"
+              className="border-t border-border/70 bg-muted/20 px-4 py-3"
+            >
+              {footer}
+            </div>
+          ) : null}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="w-full min-w-0 space-y-0" data-table-presentation="dual-end">
-      {/* Desktop / tablet dense table (D-004 §4): hidden below md; scrolls within viewport */}
       <div
-        data-table-presentation="desktop-table"
-        className="hidden w-full min-w-0 overflow-x-auto rounded-lg border border-border/70 bg-card shadow-2xs md:block"
+        data-table-surface="true"
+        className="w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card shadow-2xs"
       >
-        <table className="w-full min-w-[32rem] border-collapse text-sm">
-          {caption ? <caption className="sr-only">{caption}</caption> : null}
-          <thead>
-            <tr className="border-b border-border/70 bg-muted/50">
-              {columns.map((column) => {
-                const isActive = sort?.field === column.key;
+        {/* Desktop / tablet dense table (D-004 §4): hidden below md; scrolls within viewport */}
+        <div
+          data-table-presentation="desktop-table"
+          className="hidden w-full min-w-0 overflow-x-auto md:block"
+        >
+          <table className="w-full min-w-[32rem] border-collapse text-sm">
+            {caption ? <caption className="sr-only">{caption}</caption> : null}
+            <thead>
+              <tr className="border-b border-border/70 bg-muted/50">
+                {columns.map((column) => {
+                  const isActive = sort?.field === column.key;
+                  return (
+                    <th
+                      key={column.key}
+                      style={{
+                        ...(column.width !== undefined ? { width: column.width } : {}),
+                        ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
+                      }}
+                      className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                      scope="col"
+                    >
+                      {column.sortable ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(column)}
+                          aria-sort={
+                            isActive
+                              ? sort.order === "asc"
+                                ? "ascending"
+                                : "descending"
+                              : undefined
+                          }
+                          className={cn(
+                            "inline-flex items-center gap-1 uppercase tracking-[0.12em]",
+                            isActive ? "text-foreground" : "hover:text-foreground",
+                          )}
+                        >
+                          {column.label}
+                          <span aria-hidden="true" className="text-[10px]">
+                            {arrowFor(column)}
+                          </span>
+                        </button>
+                      ) : (
+                        column.label
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const key = rowKey(row);
+                const selected = selectedKey !== undefined && selectedKey === key;
                 return (
-                  <th
-                    key={column.key}
-                    style={{
-                      ...(column.width !== undefined ? { width: column.width } : {}),
-                      ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
-                    }}
-                    className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-                    scope="col"
-                  >
-                    {column.sortable ? (
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(column)}
-                        aria-sort={
-                          isActive
-                            ? sort.order === "asc"
-                              ? "ascending"
-                              : "descending"
-                            : undefined
-                        }
-                        className={cn(
-                          "inline-flex items-center gap-1 uppercase tracking-[0.12em]",
-                          isActive ? "text-foreground" : "hover:text-foreground",
-                        )}
-                      >
-                        {column.label}
-                        <span aria-hidden="true" className="text-[10px]">
-                          {arrowFor(column)}
-                        </span>
-                      </button>
-                    ) : (
-                      column.label
-                    )}
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const key = rowKey(row);
-              const selected = selectedKey !== undefined && selectedKey === key;
-              return (
-                <tr
+                  <tr
                   key={key}
                   tabIndex={onRowClick === undefined ? undefined : 0}
                   onClick={
@@ -432,21 +454,32 @@ export function DataTable<T>({
                       </td>
                     );
                   })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Mobile card list (D-004 §4): visible only below md */}
-      <MobileCardList
-        columns={columns}
-        rows={rows}
-        rowKey={rowKey}
-        onRowClick={onRowClick}
-        selectedKey={selectedKey}
-      />
+        {/* Mobile card list (D-004 §4): visible only below md */}
+        <div className="p-2 md:hidden">
+          <MobileCardList
+            columns={columns}
+            rows={rows}
+            rowKey={rowKey}
+            onRowClick={onRowClick}
+            selectedKey={selectedKey}
+          />
+        </div>
+        {footer !== undefined ? (
+          <div
+            data-table-footer="true"
+            className="border-t border-border/70 bg-muted/20 px-4 py-3"
+          >
+            {footer}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

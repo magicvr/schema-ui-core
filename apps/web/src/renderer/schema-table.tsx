@@ -5,6 +5,7 @@ import { DataTable, type DataTableColumn, type SortState } from "@/components/da
 import { ListFilterPanel } from "@/components/list-filter-panel";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
+import { cn } from "@/lib/utils";
 import { feedbackFromError } from "@/renderer/feedback-policy";
 import {
   EMPTY_RESOURCE_LIST,
@@ -1218,9 +1219,88 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
       </details>
     ) : null;
 
-  const pageToolbarSurface = columnConfiguration !== null || toolbar.length > 0 ? (
-    <div className="flex flex-wrap items-center justify-end gap-2" data-list-page-actions>
+  const savedViewManagementSurface =
+    savedViewEnabled &&
+    savedViewLoad.status !== "disabled" &&
+    (selectedSavedView !== undefined || saveViewOpen || savedViewLoad.status === "error") ? (
+      <>
+        {selectedSavedView !== undefined ? (
+          <>
+            <button
+              type="button"
+              data-saved-view-action="update"
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={updateSelectedView}
+              className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              {t("feedback.savedViewUpdate")}
+            </button>
+            <button
+              type="button"
+              data-saved-view-action="delete"
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={deleteSelectedView}
+              className="h-9 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive shadow-2xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
+            >
+              {t("feedback.savedViewDelete")}
+            </button>
+          </>
+        ) : null}
+        {saveViewOpen ? (
+          <form
+            className="flex basis-full flex-wrap items-center justify-end gap-2 pt-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveNewView();
+            }}
+          >
+            <label className="sr-only" htmlFor={`${tableId}-saved-view-name`}>
+              {t("feedback.savedViewName")}
+            </label>
+            <input
+              id={`${tableId}-saved-view-name`}
+              autoFocus
+              value={saveViewName}
+              onChange={(event) => setSaveViewName(event.target.value)}
+              placeholder={t("feedback.savedViewName")}
+              maxLength={80}
+              className="h-9 min-w-52 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-2xs"
+            />
+            <button
+              type="submit"
+              data-saved-view-action="confirm-save"
+              className="h-9 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90"
+            >
+              {t("feedback.savedViewConfirmSave")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSaveViewOpen(false)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground shadow-2xs transition-colors hover:bg-accent"
+            >
+              {t("feedback.cancel")}
+            </button>
+          </form>
+        ) : null}
+        {savedViewLoad.status === "error" ? (
+          <span role="alert" className="basis-full text-xs text-destructive">
+            {t("feedback.savedViewUnavailable")}
+          </span>
+        ) : null}
+      </>
+    ) : null;
+
+  const pageToolbarSurface =
+    columnConfiguration !== null || toolbar.length > 0 || savedViewManagementSurface !== null ? (
+    <div
+      className="flex flex-wrap items-center justify-end gap-2"
+      data-list-page-actions
+      // Keep the legacy Saved View test scope able to discover column
+      // configuration after page actions move below the filter surface.
+      data-saved-views={savedViewEnabled ? "true" : undefined}
+    >
       {columnConfiguration}
+      {savedViewManagementSurface}
       {toolbar.map((trigger) => {
         const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
         const permitted = crud?.effectivePermission(key) ?? true;
@@ -1268,30 +1348,73 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
 
   const savedViewSurface = savedViewEnabled && savedViewLoad.status !== "disabled" ? (
     <div
-      className="flex flex-wrap items-center justify-end gap-2 rounded-lg border border-border/70 bg-card/85 p-2 shadow-2xs dark:border-border/60 dark:bg-card/70"
+      className="flex flex-wrap items-center justify-end gap-1 rounded-lg border border-border/70 bg-card/85 p-1 shadow-2xs dark:border-border/60 dark:bg-card/70"
       data-saved-views
+      data-saved-views-surface="true"
     >
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{t("feedback.savedViews")}</span>
-          <select
-            data-saved-view-select
-            aria-label={t("feedback.savedViews")}
-            value={savedViewLoad.activeViewId ?? ""}
-            disabled={savedViewLoad.status !== "ready"}
-            onChange={(event) => selectSavedView(event.target.value)}
-            className="h-9 min-w-40 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-2xs outline-none transition-all hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
-          >
-            <option value="">
-              {t("feedback.savedViewCurrent", { object: listObjectLabel })}
-            </option>
-            {savedViewLoad.views.map((view) => (
-              <option key={view.id} value={view.id}>
-                {view.name}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div
+        className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1"
+        role="group"
+        aria-label={t("feedback.savedViews")}
+        data-saved-view-tabs="true"
+      >
+        <button
+          type="button"
+          aria-pressed={savedViewLoad.activeViewId === undefined}
+          data-saved-view-option=""
+          disabled={savedViewLoad.status !== "ready"}
+          onClick={() => selectSavedView("")}
+          className={cn(
+            "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+            savedViewLoad.activeViewId === undefined
+              ? "bg-muted text-foreground shadow-2xs"
+              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+          )}
+        >
+          <span className="truncate">{t("feedback.savedViewCurrent", { object: listObjectLabel })}</span>
+        </button>
+        {savedViewLoad.views.map((view) => {
+          const selected = savedViewLoad.activeViewId === view.id;
+          return (
+            <button
+              key={view.id}
+              type="button"
+              aria-pressed={selected}
+              data-saved-view-option={view.id}
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={() => selectSavedView(view.id)}
+              className={cn(
+                "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                selected
+                  ? "bg-muted text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              )}
+            >
+              <span className="truncate">{view.name}</span>
+            </button>
+          );
+        })}
+      </div>
+      <select
+        data-saved-view-select
+        aria-label={t("feedback.savedViews")}
+        aria-hidden="true"
+        tabIndex={-1}
+        value={savedViewLoad.activeViewId ?? ""}
+        disabled={savedViewLoad.status !== "ready"}
+        onChange={(event) => selectSavedView(event.target.value)}
+        className="sr-only"
+      >
+        <option value="">
+          {t("feedback.savedViewCurrent", { object: listObjectLabel })}
+        </option>
+        {savedViewLoad.views.map((view) => (
+          <option key={view.id} value={view.id}>
+            {view.name}
+          </option>
+        ))}
+      </select>
+      <div className="flex flex-wrap items-center justify-end gap-1">
         <button
           type="button"
           data-saved-view-action="save"
@@ -1300,92 +1423,160 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
             setSaveViewName("");
             setSaveViewOpen(true);
           }}
-          className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+          className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
         >
           {t("feedback.savedViewSave")}
         </button>
-        {selectedSavedView !== undefined ? (
-          <>
-            <button
-              type="button"
-              data-saved-view-action="update"
-              disabled={savedViewLoad.status !== "ready"}
-              onClick={updateSelectedView}
-              className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
-            >
-              {t("feedback.savedViewUpdate")}
-            </button>
-            <button
-              type="button"
-              data-saved-view-action="delete"
-              disabled={savedViewLoad.status !== "ready"}
-              onClick={deleteSelectedView}
-              className="h-9 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive shadow-2xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
-            >
-              {t("feedback.savedViewDelete")}
-            </button>
-          </>
-        ) : null}
       </div>
-      {pageToolbarSurface}
-      {saveViewOpen ? (
+    </div>
+  ) : null;
+
+  const pageActionsPortalSurface =
+    savedViewSurface !== null &&
+    pageListActionsHost !== null &&
+    pageListActionsHost.element !== null &&
+    pageActionsPortalReady
+      ? createPortal(savedViewSurface, pageListActionsHost.element)
+      : null;
+  const inlineSavedViewHeader =
+    savedViewSurface !== null && pageListActionsHost === null ? (
+      <div
+        className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3"
+        data-saved-view-inline="true"
+      >
+        {title !== "" ? (
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+        ) : null}
+        {savedViewSurface}
+      </div>
+    ) : null;
+  const totalPages = list === null ? 1 : Math.max(1, Math.ceil(list.total / list.pageSize));
+  const paginationFooter = list === null ? undefined : (
+    <div
+      className="flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row"
+      data-pagination-footer="true"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+        <span className="pl-0.5">
+          {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")}
+        </span>
+        <span aria-hidden="true" className="text-muted-foreground/50">{" · "}</span>
+        <span>
+          {t("feedback.pageOf", {
+            page: String(list.page),
+            total: String(totalPages),
+          })}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-end">
+        {/* W11 · U-06: per-page size switcher (resets to page 1). */}
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span>{t("feedback.pageSize")}</span>
+          <select
+            aria-label={t("feedback.pageSize")}
+            data-pagination-page-size="true"
+            value={String(query.pageSize ?? 10)}
+            onChange={(event) =>
+              setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
+            }
+            className="h-7 rounded-md border border-input bg-background px-1.5 text-xs scheme-light dark:scheme-dark"
+          >
+            {[10, 20, 50, 100].map((size) => (
+              <option key={size} value={String(size)}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </label>
+        <nav
+          aria-label={t("feedback.pagination")}
+          data-pagination-navigation="true"
+          className="flex items-center gap-1"
+        >
+          <button
+            type="button"
+            disabled={list.page <= 1}
+            aria-label={t("feedback.previousPage")}
+            onClick={() => setQuery({ ...query, page: list.page - 1 })}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {"‹"}
+          </button>
+          {pagerPages(list.page, totalPages).map(
+            (page, index) =>
+              page === "gap" ? (
+                <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
+                  {"…"}
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  type="button"
+                  disabled={page === list.page}
+                  aria-current={page === list.page ? "page" : undefined}
+                  aria-label={t("feedback.pageNumber", { page: String(page) })}
+                  onClick={() => setQuery({ ...query, page })}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:border-primary/40 disabled:bg-primary/10 disabled:text-foreground"
+                >
+                  {page}
+                </button>
+              ),
+          )}
+          <button
+            type="button"
+            disabled={list.page >= totalPages}
+            aria-label={t("feedback.nextPage")}
+            onClick={() => setQuery({ ...query, page: list.page + 1 })}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {"›"}
+          </button>
+        </nav>
+        {/* W11 · U-06: quick jump to a specific page. */}
         <form
-          className="flex basis-full flex-wrap items-center justify-end gap-2 pt-1"
+          aria-label={t("feedback.goToPage")}
+          data-pagination-jump="true"
+          className="flex items-center gap-1.5"
           onSubmit={(event) => {
             event.preventDefault();
-            saveNewView();
+            const target = Number(goToPageRef.current?.value ?? "");
+            const pages = totalPages;
+            if (Number.isFinite(target) && target >= 1 && target <= pages) {
+              setQuery({ ...query, page: Math.floor(target) });
+            }
           }}
         >
-          <label className="sr-only" htmlFor={`${tableId}-saved-view-name`}>
-            {t("feedback.savedViewName")}
-          </label>
+          <label className="text-xs text-muted-foreground">{t("feedback.goToPage")}</label>
           <input
-            id={`${tableId}-saved-view-name`}
-            autoFocus
-            value={saveViewName}
-            onChange={(event) => setSaveViewName(event.target.value)}
-            placeholder={t("feedback.savedViewName")}
-            maxLength={80}
-            className="h-9 min-w-52 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-2xs"
+            ref={goToPageRef}
+            type="number"
+            min={1}
+            max={totalPages}
+            defaultValue=""
+            placeholder={String(list.page)}
+            aria-label={t("feedback.goToPage")}
+            disabled={totalPages <= 1}
+            className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-center text-xs"
           />
           <button
             type="submit"
-            data-saved-view-action="confirm-save"
-            className="h-9 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90"
+            disabled={totalPages <= 1}
+            className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {t("feedback.savedViewConfirmSave")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSaveViewOpen(false)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground shadow-2xs transition-colors hover:bg-accent"
-          >
-            {t("feedback.cancel")}
+            {t("feedback.search")}
           </button>
         </form>
-      ) : null}
-      {savedViewLoad.status === "error" ? (
-        <span role="alert" className="basis-full text-xs text-destructive">
-          {t("feedback.savedViewUnavailable")}
-        </span>
-      ) : null}
+      </div>
     </div>
-  ) : pageToolbarSurface;
-
-  const listActionSurface =
-    savedViewSurface === null
-      ? null
-      : pageListActionsHost !== null && pageListActionsHost.element !== null && pageActionsPortalReady
-        ? createPortal(savedViewSurface, pageListActionsHost.element)
-        : savedViewSurface;
-  const totalPages = list === null ? 1 : Math.max(1, Math.ceil(list.total / list.pageSize));
+  );
 
   return (
     <div className="w-full min-w-0 space-y-2">
-      {title !== "" ? (
+      {inlineSavedViewHeader}
+      {inlineSavedViewHeader === null && title !== "" ? (
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       ) : null}
-      {listActionSurface}
+      {pageActionsPortalSurface}
       {filters.length > 0 ? (
         <ListFilterPanel
           items={filters.map((filter) => {
@@ -1433,6 +1624,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
           dataAttributes={{ "data-table-filters": "true" }}
         />
       ) : null}
+      {pageToolbarSurface}
       <DataTable
         columns={dataColumns}
         rows={list?.items ?? []}
@@ -1453,111 +1645,8 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
         onRetry={() => setRetryNonce((n) => n + 1)}
         emptyMessage={query.q ? t("feedback.noItemsMatch") : t("feedback.listEmpty")}
         caption={t("feedback.schemaDrivenItems")}
+        footer={paginationFooter}
       />
-      {list !== null ? (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="pl-0.5 text-xs text-muted-foreground">
-              {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
-              {t("feedback.pageOf", {
-                page: String(list.page),
-                total: String(totalPages),
-              })}
-            </p>
-            {/* W11 · U-06: per-page size switcher (resets to page 1). */}
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{t("feedback.pageSize")}</span>
-              <select
-                aria-label={t("feedback.pageSize")}
-                value={String(query.pageSize ?? 10)}
-                onChange={(event) =>
-                  setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
-                }
-                className="h-7 rounded-md border border-input bg-background px-1.5 text-xs scheme-light dark:scheme-dark"
-              >
-                {[10, 20, 50, 100].map((size) => (
-                  <option key={size} value={String(size)}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={list.page <= 1}
-                aria-label={t("feedback.previousPage")}
-                onClick={() => setQuery({ ...query, page: list.page - 1 })}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
-              >
-                {"‹"}
-              </button>
-              {pagerPages(list.page, totalPages).map(
-                (page, index) =>
-                  page === "gap" ? (
-                    <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
-                      {"…"}
-                    </span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      disabled={page === list.page}
-                      aria-current={page === list.page ? "page" : undefined}
-                      aria-label={t("feedback.pageNumber", { page: String(page) })}
-                      onClick={() => setQuery({ ...query, page })}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:border-primary/40 disabled:bg-primary/10 disabled:text-foreground"
-                    >
-                      {page}
-                    </button>
-                  ),
-              )}
-              <button
-                type="button"
-                disabled={list.page >= totalPages}
-                aria-label={t("feedback.nextPage")}
-                onClick={() => setQuery({ ...query, page: list.page + 1 })}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
-              >
-                {"›"}
-              </button>
-            </nav>
-          {/* W11 · U-06: quick jump to a specific page. */}
-            <form
-              aria-label={t("feedback.goToPage")}
-              className="flex items-center gap-1.5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const target = Number(goToPageRef.current?.value ?? "");
-                const pages = totalPages;
-                if (Number.isFinite(target) && target >= 1 && target <= pages) {
-                  setQuery({ ...query, page: Math.floor(target) });
-                }
-              }}
-            >
-              <label className="text-xs text-muted-foreground">{t("feedback.goToPage")}</label>
-              <input
-                ref={goToPageRef}
-                type="number"
-                min={1}
-                max={totalPages}
-                defaultValue=""
-                placeholder={String(list.page)}
-                aria-label={t("feedback.goToPage")}
-                disabled={totalPages <= 1}
-                className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-xs"
-              />
-              <button
-                type="submit"
-                disabled={totalPages <= 1}
-                className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {t("feedback.search")}
-              </button>
-            </form>
-        </div>
-      ) : null}
     </div>
   );
 }

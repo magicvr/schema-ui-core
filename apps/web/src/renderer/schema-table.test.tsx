@@ -464,6 +464,34 @@ describe("SchemaTable title / filters / pager", () => {
     expect(heading?.textContent).toBe("Signed-in sessions");
   });
 
+  it("renders page actions after the filter panel and keeps filter actions in the grid", async () => {
+    const container = await renderTable(
+      tableNode({
+        columns: COLUMNS,
+        dataSource: "/api/users",
+        filters: [
+          { field: "status", type: "select", options: [{ value: "" }, { value: "active" }] },
+          { field: "owner", type: "select", options: [{ value: "" }, { value: "alice" }] },
+        ],
+        toolbar: [{ key: "create", label: "Create" }],
+      }),
+      rowsFetcher(),
+    );
+    const filterPanel = container.querySelector('[data-list-filter-panel="true"]');
+    const pageActions = container.querySelector('[data-list-page-actions]');
+    const filterGrid = container.querySelector('[data-list-filter-grid="true"]');
+    const filterActions = container.querySelector('[data-filter-actions="true"]');
+    expect(filterPanel).not.toBeNull();
+    expect(pageActions).not.toBeNull();
+    expect(filterGrid?.contains(filterActions)).toBe(true);
+    expect(filterPanel?.compareDocumentPosition(pageActions!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(
+      filterPanel?.querySelector('[data-list-page-actions]'),
+    ).toBeNull();
+  });
+
   it("parses only well-formed select filters (fail-closed on malformed entries)", () => {
     const node = tableNode({
       columns: COLUMNS,

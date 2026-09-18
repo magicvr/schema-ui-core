@@ -1,12 +1,12 @@
 ---
 id: GOAL-007-list-page-visual-alignment
 title: R6 列表页视觉与筛选体验收敛
-status: done
+status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.3.0
-progress: 4/4
+version: 0.5.0
+progress: 5/6
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -17,7 +17,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 概述
 
-在 Root 尚未关门、R5 用户确认门禁保持开放的前提下，新增 R6 子目标，参考 `raw/new-table` 范例页收敛现有通用列表页的视觉和布局。R6 沿用 VP-037 与当前工作区，不新建 VP 或 workspace，不改变顶部功能栏、左侧导航、后端 schema、Saved View 存储格式或现有查询/重置语义。
+在 Root 尚未关门、R5 用户确认门禁保持开放的前提下，R6 继续参考 `raw/new-table` 范例页收敛现有通用列表页的视觉和布局。C1～C4 的原交付事实保留；用户选择回开 R6，追加 C5/C6 修订，以校正页面 actions、视图标签、筛选操作位和分页 footer 的实际布局。R6 沿用 VP-037 与当前工作区，不新建 VP 或 workspace，不改变顶部功能栏、左侧导航、后端 schema、Saved View 存储格式或现有查询/重置语义。
 
 ## 范围与边界
 
@@ -27,6 +27,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - 筛选栏默认折叠，折叠后只展示第一行字段；字段值、查询、重置和已有即时筛选/查询提交逻辑保持不变。
 - 单页或零结果的有效列表响应也显示分页区域；不可用的前后页/跳页操作保持禁用。
 - 当前尚未实现的多选批量动作不新增、不扩张本目标范围。
+- C5 已完成，页面标题区只承载视图切换/保存视图；包含列配置的页面 actions 位于筛选栏下方、列表上方；筛选操作组归入筛选网格最后一行右侧；分页 footer 对齐范例页的列表内布局。
 
 明确非目标：顶部功能栏与左侧导航结构/样式、全局视觉 token 值、后端 schema、查询控制器重写、Saved View 持久化格式、逐业务页面定制和新的批量操作。
 
@@ -36,6 +37,8 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 2. **C2 · 列表视觉合同**：冻结共享筛选展示层、对象语义文案、标题行插槽、按钮顺序、折叠可访问性和单页分页合同。已完成，证据见 `D-001` 与实现核对。
 3. **C3 · 通用实现与回归**：在不改变查询归属的前提下完成实现，补齐单元/集成回归并核对顶部栏与左侧导航未变。已完成，证据见 `E-002`。
 4. **C4 · 阶段审计与交付**：完成 self 审计，响应 required finding；不借 R6 审计关闭 R5 的 Root/VP 用户确认门禁。已完成，证据见 `A-001`。
+5. **C5 · 布局修订、实现与回归**：修正视图标签与页面 actions 的分工、筛选操作网格归属和列表内分页 footer；保持现有状态/查询逻辑并完成定向回归。已完成，证据见 `E-004`。
+6. **C6 · 修订审计与交付**：完成修订后的 self 审计、必要的独立意见响应和 Root/VP 投影；不关闭 R5-I-004。待修订审计。
 
 ## 成功检查点
 
@@ -43,6 +46,8 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] C2：列表视觉合同与信息项达到实施就绪，未把未知项伪装为已确认事实。
 - [x] C3：通用列表页完成视觉/交互调整，查询/重置语义保持，单页分页显示，相关测试通过。
 - [x] C4：R6 self 审计与响应完成；R5-I-004 仍按原台账等待用户对 Root/VP 的书面关门确认。
+- [x] C5：页面 actions、视图标签、筛选操作网格和列表内分页 footer 已按修订合同实现并通过回归；查询/重置/Saved View 存储语义未变。
+- [ ] C6：修订后的审计与投影完成；R5-I-004 仍保持开放。
 
 ## 信息就绪与未知项（P-005）
 
@@ -65,4 +70,5 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 ## 备注
 
 - R5 `GOAL-006-r5-composition-acceptance` 仍为 `active · 3/4`，其 R5-I-004 用户书面确认未被本目标替代、关闭或推断。
-- `progress: 4/4` 只由上述四个显式检查点派生；它不放行方案、不关闭 finding，也不改变 Root/VP 状态。
+- C1～C4 的 `4/4` 是历史交付事实；用户选择 A 后，R6 当前以 `active · 5/6` 承载 C6 修订，旧 A-001 仍只证明原版本交付。
+- `progress: 5/6` 只由上述六个显式检查点派生；它不放行方案、不关闭 finding，也不改变 Root/VP 状态。

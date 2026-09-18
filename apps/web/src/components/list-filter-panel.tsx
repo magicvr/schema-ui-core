@@ -42,11 +42,31 @@ export function ListFilterPanel({
   const [expanded, setExpanded] = useState(false);
   const panelId = useId();
   const hasAdditionalItems = items.length > 1;
+  const hasGridActions = actionSlot !== undefined || hasAdditionalItems;
   const activeItemSet = new Set(activeItemIds);
   const activeCountFrom = (firstHiddenIndex: number): number =>
     activeItemIds.filter((id) => itemIds.indexOf(id) >= firstHiddenIndex).length;
+  const hiddenAtMobile = 1;
+  const hiddenAtSmall = hasGridActions ? 1 : 2;
+  const hiddenAtMedium = hasGridActions ? 2 : 3;
+  const hiddenAtLarge = hasGridActions ? 3 : 4;
 
   const collapsedVisibility = (index: number): string => {
+    // The action group occupies the last slot of the collapsed first row. This
+    // keeps filter controls and their operations on one visual grid row at
+    // each responsive breakpoint.
+    if (hasGridActions) {
+      switch (index) {
+        case 0:
+          return "";
+        case 1:
+          return "hidden md:block";
+        case 2:
+          return "hidden lg:block";
+        default:
+          return "hidden";
+      }
+    }
     switch (index) {
       case 0:
         return "";
@@ -97,54 +117,59 @@ export function ListFilterPanel({
             </div>
           );
         })}
+        {hasGridActions ? (
+          <div
+            className="flex min-w-0 items-end justify-end sm:col-start-2 md:col-start-3 lg:col-start-4"
+            data-filter-actions="true"
+          >
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {actionSlot}
+              {hasAdditionalItems ? (
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={panelId}
+                  data-filter-toggle="true"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input/80 bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-2xs transition-colors hover:border-muted-foreground/30 hover:bg-accent/40 hover:text-foreground"
+                  onClick={() => setExpanded((current) => !current)}
+                >
+                  {expanded ? t("feedback.collapseFilters") : t("feedback.expandFilters")}
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={cn("size-3.5 transition-transform", expanded ? "rotate-180" : "")}
+                  />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
-      {actionSlot !== undefined || hasAdditionalItems ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-3">
-          <div className="flex flex-wrap items-center gap-2">{actionSlot}</div>
-          {hasAdditionalItems ? (
-            <button
-              type="button"
-              aria-expanded={expanded}
-              aria-controls={panelId}
-              data-filter-toggle="true"
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input/80 bg-background px-2.5 text-xs font-medium text-muted-foreground shadow-2xs transition-colors hover:border-muted-foreground/30 hover:bg-accent/40 hover:text-foreground"
-              onClick={() => setExpanded((current) => !current)}
-            >
-              {expanded ? t("feedback.collapseFilters") : t("feedback.expandFilters")}
-              <ChevronDown
-                aria-hidden="true"
-                className={cn("size-3.5 transition-transform", expanded ? "rotate-180" : "")}
-              />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
       {!expanded &&
       Math.max(
-        activeCountFrom(1),
-        activeCountFrom(2),
-        activeCountFrom(3),
-        activeCountFrom(4),
+        activeCountFrom(hiddenAtMobile),
+        activeCountFrom(hiddenAtSmall),
+        activeCountFrom(hiddenAtMedium),
+        activeCountFrom(hiddenAtLarge),
       ) > 0 ? (
-        <p className="text-xs text-muted-foreground" data-filter-hidden-active="true">
+        <p className="border-t border-border/50 pt-2.5 text-xs text-muted-foreground" data-filter-hidden-active="true">
           {activeCountFrom(1) > 0 ? (
             <span className="sm:hidden">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(1)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtMobile)) })}
             </span>
           ) : null}
-          {activeCountFrom(2) > 0 ? (
+          {activeCountFrom(hiddenAtSmall) > 0 ? (
             <span className="hidden sm:inline md:hidden">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(2)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtSmall)) })}
             </span>
           ) : null}
-          {activeCountFrom(3) > 0 ? (
+          {activeCountFrom(hiddenAtMedium) > 0 ? (
             <span className="hidden md:inline lg:hidden">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(3)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtMedium)) })}
             </span>
           ) : null}
-          {activeCountFrom(4) > 0 ? (
+          {activeCountFrom(hiddenAtLarge) > 0 ? (
             <span className="hidden lg:inline">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(4)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtLarge)) })}
             </span>
           ) : null}
         </p>

@@ -20,11 +20,11 @@ parent: null
 本工作区是 [VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md) 的唯一 `delivery` workspace，承接 Saved Views、未保存变更保护、统一 Toast/错误恢复三项首波能力。它不重开 VP-036，不属于 VP-010 符合性整改，不承载实体全文搜索、批量结果中心、组织/数据权限、新业务域或 Redis/MQ/多实例。
 
 - VP-037 已于 2026-09-16 经用户确认从 `planned` 激活为 `active`，当前计划已追加 R6 列表页视觉与筛选体验收敛。
-- Root `[workspace-037-admin-workflow-continuity] GOAL-001-admin-workflow-continuity`：**`active · 5/6`**；R1、R2、R3、R4、R6 已完成，R5 仍在组合验收；Root/VP 尚未关门。
+- Root `[workspace-037-admin-workflow-continuity] GOAL-001-admin-workflow-continuity`：**`active · 4/6`**；R1～R4 已完成，R6 原交付完成后按用户选择 A 回开为 `active · 4/6`，R5 仍在组合验收；Root/VP 尚未关门。
 - R1 子目标 `GOAL-002-r1-scope-semantics-freeze` 已完成 **`done · 3/3`**；C1 矩阵、C2 语义决策、C3 self/independent audit 与响应均已记录。
 - R2 子目标 `GOAL-003-r2-saved-views` 已完成 **`done · 4/4`**；C1～C3 实现/回归、C4 self/independent audit 响应与 Git checkpoint `39c744ef` 均已记录。
 - R3 子目标 `GOAL-004-r3-unsaved-change-protection` 已完成 **`done · 4/4`**；C1～C4 实现/回归、A-003 independent recheck、A-004 self close-out 与 Git checkpoint `d2b39189` 均已记录。
-- R6 子目标 `GOAL-007-list-page-visual-alignment` 已完成 **`done · 4/4`**；C1～C4 与 self 审计已记录；不改变 shell、查询/重置逻辑或 Saved View 存储格式。
+- R6 子目标 `GOAL-007-list-page-visual-alignment` 原已完成 `done · 4/4`；用户选择 A 后回开为 **`active · 5/6`**，C5 布局修订与回归已完成，C6 修订审计待完成；不改变 shell、查询/重置逻辑或 Saved View 存储格式。
 - 激活门禁：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；Admin freshness PASS；I-037-006 verified。
 - 用户已确认 workspace slug = `workspace-037-admin-workflow-continuity`；Root slug = `GOAL-001-admin-workflow-continuity`。
 - Vision open required：0；V-F124 保持 `open · recommended`；I-037-001～004 为 R1 前 required，I-037-005 为 deferred non-blocking。
@@ -34,7 +34,7 @@ parent: null
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-037-admin-workflow-continuity` | 与本区目标及资料引用的 `workspace_id` 一致；当前无固定共享资料 |
-| Root Goal | `GOAL-001-admin-workflow-continuity` | `parent: null`；**active · 5/6** |
+| Root Goal | `GOAL-001-admin-workflow-continuity` | `parent: null`；**active · 4/6** |
 | canonical 范围 | `docs/workspaces/workspace-037-admin-workflow-continuity/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料；不得声明共享资料引用 |
 | 愿景角色 | `delivery` | VP-037 唯一 delivery workspace；不改变 Charter primary workspace |
@@ -43,7 +43,7 @@ parent: null
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：[VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md)（**`active` · v1.1.0**）
+- VP：[VP-037-admin-workflow-continuity](../../vision/plans/VP-037-admin-workflow-continuity.md)（**`active` · v1.2.0**）
 - 计划审视：[VRev-094](../../vision/reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`
 - 激活审视：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`
 - Vision open required：0；V-F124 `open · recommended`；I-037-006 `verified`；I-037-001～004 `verified`（R2/R3 已完成阶段实现证据，I-037-004 的 R4 实现/回归证据已补齐）；I-037-005 `deferred · non-blocking`
@@ -57,7 +57,7 @@ parent: null
 | R3 | 未保存变更保护与离开确认状态机 | **done via `GOAL-004-r3-unsaved-change-protection` · 4/4**；C1～C4 回归、A-003 independent recheck、A-004 self close-out 与 checkpoint `d2b39189` 已记录 |
 | R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | **done via `GOAL-005-r4-unified-feedback-recovery` · 4/4**；A-001 self、A-002 conditional/F-001 fixed、A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已闭合 |
 | R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | **active via `GOAL-006-r5-composition-acceptance` · 3/4**；C1～C3 已完成，仍须完成审计与用户确认后才可关 Root/VP |
-| R6 | 参考范例页收敛通用列表、筛选折叠、视图/页面级按钮布局与单页分页 | **done via `GOAL-007-list-page-visual-alignment` · 4/4**；C1～C4 与 self 审计已完成；不改变顶部栏、左侧导航与查询/重置合同 |
+| R6 | 参考范例页收敛通用列表、筛选折叠、视图/页面级按钮布局与单页分页 | **active via `GOAL-007-list-page-visual-alignment` · 5/6**；C5 布局修订与回归已完成，C6 修订审计待完成；不改变顶部栏、左侧导航与查询/重置合同 |
 
 纲领阶段按 R1 →（R2/R3/R4 可在 R1 后并行）→ R5 → R6 推进。用户明确要求在 R5 的 Root/VP 用户确认门禁开放时开设 R6；这不代表 R5、Root 或 VP 已完成。工作区建立本身不代表任何实现阶段完成。
 
