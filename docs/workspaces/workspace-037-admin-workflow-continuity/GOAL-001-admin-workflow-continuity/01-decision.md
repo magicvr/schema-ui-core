@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.0.0
+version: 1.1.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
@@ -51,3 +51,4 @@ version: 1.0.0
 - R4 `GOAL-005-r4-unified-feedback-recovery` 已按 A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 关闭为 `done · 4/4`。随后按 D-010 开设 R5 `GOAL-006-r5-composition-acceptance`（`active · 0/4`），只承载组合验收与 Root/VP 关门准备。
 - 用户于 2026-09-18 明确要求 Root 暂不关门并新增 R6；按 D-011 将 Root 路线图扩展为 6 个检查点，Root 保持 `active · 4/6`，R5 仍为 `active · 3/4`，并开设 `GOAL-007-list-page-visual-alignment`（`active · 1/4`）。R6 不关闭或改写 R5-I-004。
 - 用户随后对 R6 的实现提出布局修订，并选择回开方案 A；按 D-012 保留 GOAL-007、追加 C5/C6，Root 当前回投影为 `active · 4/6`，R5 仍为 `active · 3/4`，不新建 GOAL-008，不关闭或改写 R5-I-004。
+- 用户在 C5 交付后追加三项 UI 反馈，仍属 R6 同一视觉分母；按 D-003 继续在同一 GOAL-007 内追加 C7（图标强调、搜索配对回调、视图表单归属），R6 检查点扩为 7 项、当前 `active · 6/7`。其中搜索配对项是对 C5 引入回归的回退：本项目搜索按钮提交其所属关键词输入，与范例页提交整表的单一“查询”按钮机制不同，故必须与输入同格贴合。Root 六阶段分母不变，仍为 `active · 4/6`；不新建 GOAL-008。

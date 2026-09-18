@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.5.0
-progress: 5/6
+version: 0.6.0
+progress: 6/7
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -17,7 +17,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 概述
 
-在 Root 尚未关门、R5 用户确认门禁保持开放的前提下，R6 继续参考 `raw/new-table` 范例页收敛现有通用列表页的视觉和布局。C1～C4 的原交付事实保留；用户选择回开 R6，追加 C5/C6 修订，以校正页面 actions、视图标签、筛选操作位和分页 footer 的实际布局。R6 沿用 VP-037 与当前工作区，不新建 VP 或 workspace，不改变顶部功能栏、左侧导航、后端 schema、Saved View 存储格式或现有查询/重置语义。
+在 Root 尚未关门、R5 用户确认门禁保持开放的前提下，R6 继续参考 `raw/new-table` 范例页收敛现有通用列表页的视觉和布局。C1～C5 的原交付事实保留；用户在 C5 交付后追加第三轮反馈，故再追加 C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属），以校正 C5 引入的搜索按钮错位与视图表单远离触发按钮的问题。R6 沿用 VP-037 与当前工作区，不新建 VP 或 workspace，不改变顶部功能栏、左侧导航、后端 schema、Saved View 存储格式或现有查询/重置语义。
 
 ## 范围与边界
 
@@ -28,6 +28,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - 单页或零结果的有效列表响应也显示分页区域；不可用的前后页/跳页操作保持禁用。
 - 当前尚未实现的多选批量动作不新增、不扩张本目标范围。
 - C5 已完成，页面标题区只承载视图切换/保存视图；包含列配置的页面 actions 位于筛选栏下方、列表上方；筛选操作组归入筛选网格最后一行右侧；分页 footer 对齐范例页的列表内布局。
+- C7 已完成，是 C5 之上的同范围纠偏：“列配置”与“保存为视图”各配范例页风格的图标；搜索提交按钮回到其关键词输入所属网格单元并贴合为同一控件（撤销 C5 将其并入筛选操作单元的改动，恢复 A-003 / W13 T-03 配对规则）；“更新视图”“删除视图”与新建视图表单移入视图标签组所在 surface，紧随标签组下方，不再出现在页面级 actions 行。
 
 明确非目标：顶部功能栏与左侧导航结构/样式、全局视觉 token 值、后端 schema、查询控制器重写、Saved View 持久化格式、逐业务页面定制和新的批量操作。
 
@@ -39,6 +40,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 4. **C4 · 阶段审计与交付**：完成 self 审计，响应 required finding；不借 R6 审计关闭 R5 的 Root/VP 用户确认门禁。已完成，证据见 `A-001`。
 5. **C5 · 布局修订、实现与回归**：修正视图标签与页面 actions 的分工、筛选操作网格归属和列表内分页 footer；保持现有状态/查询逻辑并完成定向回归。已完成，证据见 `E-004`。
 6. **C6 · 修订审计与交付**：完成修订后的 self 审计、必要的独立意见响应和 Root/VP 投影；不关闭 R5-I-004。待修订审计。
+7. **C7 · 控制位纠偏、实现与回归**：为列配置/保存视图触发器补范例页图标；把搜索提交按钮回调到其关键词输入所属单元并恢复贴合配对；把视图管理操作与新建视图表单移入视图标签组 surface。已完成，证据见 `D-003`、`E-005`。
 
 ## 成功检查点
 
@@ -48,6 +50,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] C4：R6 self 审计与响应完成；R5-I-004 仍按原台账等待用户对 Root/VP 的书面关门确认。
 - [x] C5：页面 actions、视图标签、筛选操作网格和列表内分页 footer 已按修订合同实现并通过回归；查询/重置/Saved View 存储语义未变。
 - [ ] C6：修订后的审计与投影完成；R5-I-004 仍保持开放。
+- [x] C7：图标强调、搜索配对回调与视图表单归属已实现并通过定向/全量回归及真实浏览器布局核对；查询/重置/Saved View 存储语义未变。
 
 ## 信息就绪与未知项（P-005）
 
@@ -70,5 +73,5 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 ## 备注
 
 - R5 `GOAL-006-r5-composition-acceptance` 仍为 `active · 3/4`，其 R5-I-004 用户书面确认未被本目标替代、关闭或推断。
-- C1～C4 的 `4/4` 是历史交付事实；用户选择 A 后，R6 当前以 `active · 5/6` 承载 C6 修订，旧 A-001 仍只证明原版本交付。
-- `progress: 5/6` 只由上述六个显式检查点派生；它不放行方案、不关闭 finding，也不改变 Root/VP 状态。
+- C1～C5 的交付事实保留；用户追加反馈后，R6 当前以 `active · 6/7` 承载 C6 修订审计，旧 A-001 仍只证明原版本交付，E-004 不再代表当前交付状态。
+- `progress: 6/7` 只由上述七个显式检查点派生；它不放行方案、不关闭 finding，也不改变 Root/VP 状态。

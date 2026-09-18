@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计 · GOAL-007-list-page-visual-alignment
@@ -27,4 +27,6 @@ version: 0.4.0
 
 ## 结论状态
 
-历史 C1～C4 的 A-001 self 审计仍为 `pass`，但用户选择回开 R6 后，该意见只证明原版本交付，不证明 C5/C6 修订完成。当前 R6 为 `active · 4/6`，C5/C6 尚待实现、回归与新的审计意见；R6 不改变 R5 的 `R5-I-004` 用户书面关门门禁，Root/VP 保持 `active`。
+历史 C1～C4 的 A-001 self 审计仍为 `pass`，但用户选择回开 R6 后，该意见只证明原版本交付，不证明 C5/C6/C7 修订完成。当前 R6 为 `active · 6/7`，C5 与 C7 已实现并通过回归（E-004、E-005），C6 修订审计尚待记录；E-004 不再代表当前交付状态，因为 C7 已修正 C5 引入的搜索按钮错位与视图表单位置。R6 不改变 R5 的 `R5-I-004` 用户书面关门门禁，Root/VP 保持 `active`。
+
+C7 未新增审计意见：本轮为常规、边界清楚且可逆的 UI 纠偏，按 D-003 记为 `self` 模式，审计意见在 C6 一并记录。开放 required finding 仍为 0。

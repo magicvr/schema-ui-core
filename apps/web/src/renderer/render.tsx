@@ -2143,25 +2143,36 @@ function FormInner({
             : undefined
         }
         searchMode={isSearch}
-        // D-002 action-unit contract: query and reset share the final grid
-        // action cell with ListFilterPanel's expand/collapse toggle.
+        // A-003 pairing rule (user 2026-08-16, restored 2026-09-18 by R6 C7):
+        // the search submit button belongs to its keyword input — one button
+        // per text input, rendered inside the input's own grid cell and
+        // visually attached to it. The filter grid's action cell must NOT own
+        // the submit button: this control is not the reference page's single
+        // "query" button, it commits the keyword of the input it belongs to.
+        searchButtonSlot={
+          isSearch ? (
+            <button
+              type="submit"
+              disabled={hasBlockingErrors}
+              className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-l-none rounded-r-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 -ml-px"
+            >
+              <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
+              {resolveTextProp(
+                node.props as unknown as Record<string, unknown>,
+                "submitLabelKey",
+                "submitLabel",
+                t,
+                t("feedback.search"),
+              )}
+            </button>
+          ) : undefined
+        }
+        // D-002 action-unit contract: reset keeps its place in the filter
+        // grid's final action cell, beside ListFilterPanel's expand/collapse
+        // toggle. Query/reset handlers are unchanged.
         actionSlot={
           isSearch ? (
-            <div className="flex items-end gap-2">
-              <button
-                type="submit"
-                disabled={hasBlockingErrors}
-                className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-2xs transition-all duration-150 hover:bg-primary/90 hover:shadow-xs active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-              >
-                <Search aria-hidden="true" className="size-3.5 stroke-[2.2]" />
-                {resolveTextProp(
-                  node.props as unknown as Record<string, unknown>,
-                  "submitLabelKey",
-                  "submitLabel",
-                  t,
-                  t("feedback.search"),
-                )}
-              </button>
+            <div className="flex items-end">
               <button
                 type="button"
                 onClick={resetValues}

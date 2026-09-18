@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-18
-version: 1.4.0
+version: 1.5.0
 parent: null
 ---
 
@@ -24,7 +24,7 @@ parent: null
 - R1 子目标 `GOAL-002-r1-scope-semantics-freeze` 已完成 **`done · 3/3`**；C1 矩阵、C2 语义决策、C3 self/independent audit 与响应均已记录。
 - R2 子目标 `GOAL-003-r2-saved-views` 已完成 **`done · 4/4`**；C1～C3 实现/回归、C4 self/independent audit 响应与 Git checkpoint `39c744ef` 均已记录。
 - R3 子目标 `GOAL-004-r3-unsaved-change-protection` 已完成 **`done · 4/4`**；C1～C4 实现/回归、A-003 independent recheck、A-004 self close-out 与 Git checkpoint `d2b39189` 均已记录。
-- R6 子目标 `GOAL-007-list-page-visual-alignment` 原已完成 `done · 4/4`；用户选择 A 后回开为 **`active · 5/6`**，C5 布局修订与回归已完成，C6 修订审计待完成；不改变 shell、查询/重置逻辑或 Saved View 存储格式。
+- R6 子目标 `GOAL-007-list-page-visual-alignment` 原已完成 `done · 4/4`；用户选择 A 后回开为 **`active · 6/7`**，C5 布局修订与 C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属）均已完成，C6 修订审计待完成；不改变 shell、查询/重置逻辑或 Saved View 存储格式。
 - 激活门禁：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；Admin freshness PASS；I-037-006 verified。
 - 用户已确认 workspace slug = `workspace-037-admin-workflow-continuity`；Root slug = `GOAL-001-admin-workflow-continuity`。
 - Vision open required：0；V-F124 保持 `open · recommended`；I-037-001～004 为 R1 前 required，I-037-005 为 deferred non-blocking。
@@ -57,7 +57,7 @@ parent: null
 | R3 | 未保存变更保护与离开确认状态机 | **done via `GOAL-004-r3-unsaved-change-protection` · 4/4**；C1～C4 回归、A-003 independent recheck、A-004 self close-out 与 checkpoint `d2b39189` 已记录 |
 | R4 | 统一 Toast、错误分类、重试/恢复与可访问状态 | **done via `GOAL-005-r4-unified-feedback-recovery` · 4/4**；A-001 self、A-002 conditional/F-001 fixed、A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已闭合 |
 | R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | **active via `GOAL-006-r5-composition-acceptance` · 3/4**；C1～C3 已完成，仍须完成审计与用户确认后才可关 Root/VP |
-| R6 | 参考范例页收敛通用列表、筛选折叠、视图/页面级按钮布局与单页分页 | **active via `GOAL-007-list-page-visual-alignment` · 5/6**；C5 布局修订与回归已完成，C6 修订审计待完成；不改变顶部栏、左侧导航与查询/重置合同 |
+| R6 | 参考范例页收敛通用列表、筛选折叠、视图/页面级按钮布局与单页分页 | **active via `GOAL-007-list-page-visual-alignment` · 6/7**；C5 布局修订与 C7 控制位纠偏已完成，C6 修订审计待完成；不改变顶部栏、左侧导航与查询/重置合同 |
 
 纲领阶段按 R1 →（R2/R3/R4 可在 R1 后并行）→ R5 → R6 推进。用户明确要求在 R5 的 Root/VP 用户确认门禁开放时开设 R6；这不代表 R5、Root 或 VP 已完成。工作区建立本身不代表任何实现阶段完成。
 

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 决策台账 · GOAL-007-list-page-visual-alignment
@@ -26,6 +26,7 @@ version: 0.3.0
 |------|------|------|------|------|
 | D-001 | 2026-09-18 | R6 列表页视觉与筛选实施合同 | accepted | [D-001-list-page-visual-contract.md](01-decision/D-001-list-page-visual-contract.md) |
 | D-002 | 2026-09-18 | 回开 R6 并修订范例页布局合同 | accepted | [D-002-r6-layout-revision.md](01-decision/D-002-r6-layout-revision.md) |
+| D-003 | 2026-09-18 | R6 追加 C7 控制位与搜索配对纠偏 | accepted | [D-003-r6-c7-control-placement-correction.md](01-decision/D-003-r6-c7-control-placement-correction.md) |
 
 ## 当前投影
 
@@ -34,3 +35,4 @@ version: 0.3.0
 - 查询、重置、表级 select 即时筛选、Saved View 持久化和字段归属保持原实现；新增层只负责展示、位置与折叠可访问性。
 - 审计模式按常规、边界清楚且可逆的 UI 实施记录为 `self`；若发现跨表合并筛选、对象名无法本地化或多个列表争抢页级插槽，则先回到方案复查。
 - D-002 局部修订 D-001：视图选择/保存视图仍使用标题区局部插槽，但页面 actions（包括列配置）不得进入该插槽；筛选操作必须是筛选网格的末尾 cell；分页 footer 仅改 DOM/样式，不改 query、Saved View 或分页状态逻辑。
+- D-003 追加 C7 并修订 D-002 第 3 项：筛选网格末尾操作单元只保留重置与展开/收起；搜索提交按钮回到其关键词输入所属单元并贴合为同一控件（恢复 A-003 / W13 T-03）。D-002 第 1 项细化为：视图标签组所在 surface 同时承载视图管理操作与新建视图表单，页面 actions 行不承载视图表单。

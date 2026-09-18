@@ -294,4 +294,63 @@ describe("Saved View table integration", () => {
       setItem.mockRestore();
     }
   });
+
+  // R6 C7 (user 2026-09-18, item 3): the "add view" form was surfacing in the
+  // page-level actions row, far from the "保存为视图" button that opened it. It
+  // must render inside the view surface, directly beneath the tab group.
+  it("renders the new-view form inside the view surface, next to its trigger", async () => {
+    const calls: string[] = [];
+    const container = await renderFixture(calls);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const viewSurface = container.querySelector('[data-saved-views-surface="true"]');
+    const tabs = container.querySelector('[data-saved-view-tabs="true"]');
+    expect(viewSurface).not.toBeNull();
+    expect(tabs).not.toBeNull();
+    expect(container.querySelector("#users-table-saved-view-name")).toBeNull();
+
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>('[data-saved-view-action="save"]')?.click(),
+    );
+
+    const nameInput = container.querySelector("#users-table-saved-view-name");
+    const management = container.querySelector('[data-saved-view-management="true"]');
+    const pageActions = container.querySelector('[data-list-page-actions]');
+    expect(nameInput).not.toBeNull();
+    expect(management).not.toBeNull();
+    // The form lives inside the view surface, after the tab group.
+    expect(viewSurface?.contains(management as Node)).toBe(true);
+    expect(management?.contains(nameInput as Node)).toBe(true);
+    expect(tabs?.compareDocumentPosition(management as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    // The page actions row must not own the view form.
+    expect(pageActions?.contains(management as Node) ?? false).toBe(false);
+  });
+
+  // R6 C7 (user 2026-09-18, item 1): the reference page pairs "列配置" and
+  // "保存视图" with a glyph as visual emphasis.
+  it("carries reference-page icons on the column and save-view triggers", async () => {
+    const calls: string[] = [];
+    const container = await renderFixture(calls);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const columnsTrigger = container.querySelector('[data-saved-view-columns-trigger="true"]');
+    const saveTrigger = container.querySelector('[data-saved-view-action="save"]');
+    expect(columnsTrigger).not.toBeNull();
+    expect(saveTrigger).not.toBeNull();
+    expect(columnsTrigger?.querySelector("svg")).not.toBeNull();
+    expect(saveTrigger?.querySelector("svg")).not.toBeNull();
+    // The glyph must not replace the accessible label.
+    expect(columnsTrigger?.textContent).toContain("Columns");
+    expect(saveTrigger?.textContent).toContain("Save as view");
+    expect(columnsTrigger?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(saveTrigger?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
 });

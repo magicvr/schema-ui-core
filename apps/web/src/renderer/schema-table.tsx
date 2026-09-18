@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 
+import { Check, Columns3, Plus, Save, Trash2 } from "lucide-react";
+
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
 import { ListFilterPanel } from "@/components/list-filter-panel";
 import { resolveTextProp } from "@/i18n/catalog";
@@ -1177,7 +1179,13 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
   const columnConfiguration =
     savedViewEnabled && savedViewLoad.status !== "disabled" ? (
       <details className="relative" data-list-page-action="columns">
-        <summary className="cursor-pointer list-none rounded-md border border-input bg-background px-2.5 py-2 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent">
+        <summary
+          data-saved-view-columns-trigger="true"
+          className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-input bg-background px-2.5 py-2 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent"
+        >
+          {/* Reference page (raw/new-table): the column-configuration trigger
+              carries a columns glyph as its visual emphasis. */}
+          <Columns3 aria-hidden="true" className="size-3.5 text-muted-foreground" />
           {t("feedback.savedViewColumns")}
         </summary>
         <div
@@ -1223,7 +1231,13 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
     savedViewEnabled &&
     savedViewLoad.status !== "disabled" &&
     (selectedSavedView !== undefined || saveViewOpen || savedViewLoad.status === "error") ? (
-      <>
+      // R6 C7 (item 3): the management actions and the new-view form belong to
+      // the view tab group they act on — they render directly beneath it, not
+      // in the page-level actions row.
+      <div
+        data-saved-view-management="true"
+        className="flex w-full max-w-full flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-1.5"
+      >
         {selectedSavedView !== undefined ? (
           <>
             <button
@@ -1231,8 +1245,9 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
               data-saved-view-action="update"
               disabled={savedViewLoad.status !== "ready"}
               onClick={updateSelectedView}
-              className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
             >
+              <Save aria-hidden="true" className="size-3.5 text-muted-foreground" />
               {t("feedback.savedViewUpdate")}
             </button>
             <button
@@ -1240,15 +1255,16 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
               data-saved-view-action="delete"
               disabled={savedViewLoad.status !== "ready"}
               onClick={deleteSelectedView}
-              className="h-9 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive shadow-2xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive shadow-2xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
             >
+              <Trash2 aria-hidden="true" className="size-3.5" />
               {t("feedback.savedViewDelete")}
             </button>
           </>
         ) : null}
         {saveViewOpen ? (
           <form
-            className="flex basis-full flex-wrap items-center justify-end gap-2 pt-1"
+            className="flex w-full flex-wrap items-center justify-end gap-2"
             onSubmit={(event) => {
               event.preventDefault();
               saveNewView();
@@ -1269,8 +1285,9 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
             <button
               type="submit"
               data-saved-view-action="confirm-save"
-              className="h-9 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90"
             >
+              <Check aria-hidden="true" className="size-3.5" />
               {t("feedback.savedViewConfirmSave")}
             </button>
             <button
@@ -1283,15 +1300,15 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
           </form>
         ) : null}
         {savedViewLoad.status === "error" ? (
-          <span role="alert" className="basis-full text-xs text-destructive">
+          <span role="alert" className="w-full text-right text-xs text-destructive">
             {t("feedback.savedViewUnavailable")}
           </span>
         ) : null}
-      </>
+      </div>
     ) : null;
 
   const pageToolbarSurface =
-    columnConfiguration !== null || toolbar.length > 0 || savedViewManagementSurface !== null ? (
+    columnConfiguration !== null || toolbar.length > 0 ? (
     <div
       className="flex flex-wrap items-center justify-end gap-2"
       data-list-page-actions
@@ -1300,7 +1317,6 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
       data-saved-views={savedViewEnabled ? "true" : undefined}
     >
       {columnConfiguration}
-      {savedViewManagementSurface}
       {toolbar.map((trigger) => {
         const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
         const permitted = crud?.effectivePermission(key) ?? true;
@@ -1348,86 +1364,91 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
 
   const savedViewSurface = savedViewEnabled && savedViewLoad.status !== "disabled" ? (
     <div
-      className="flex flex-wrap items-center justify-end gap-1 rounded-lg border border-border/70 bg-card/85 p-1 shadow-2xs dark:border-border/60 dark:bg-card/70"
+      className="flex flex-col gap-1 rounded-lg border border-border/70 bg-card/85 p-1 shadow-2xs dark:border-border/60 dark:bg-card/70"
       data-saved-views
       data-saved-views-surface="true"
     >
-      <div
-        className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1"
-        role="group"
-        aria-label={t("feedback.savedViews")}
-        data-saved-view-tabs="true"
-      >
-        <button
-          type="button"
-          aria-pressed={savedViewLoad.activeViewId === undefined}
-          data-saved-view-option=""
-          disabled={savedViewLoad.status !== "ready"}
-          onClick={() => selectSavedView("")}
-          className={cn(
-            "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-            savedViewLoad.activeViewId === undefined
-              ? "bg-muted text-foreground shadow-2xs"
-              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-          )}
-        >
-          <span className="truncate">{t("feedback.savedViewCurrent", { object: listObjectLabel })}</span>
-        </button>
-        {savedViewLoad.views.map((view) => {
-          const selected = savedViewLoad.activeViewId === view.id;
-          return (
-            <button
-              key={view.id}
-              type="button"
-              aria-pressed={selected}
-              data-saved-view-option={view.id}
-              disabled={savedViewLoad.status !== "ready"}
-              onClick={() => selectSavedView(view.id)}
-              className={cn(
-                "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                selected
-                  ? "bg-muted text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-              )}
-            >
-              <span className="truncate">{view.name}</span>
-            </button>
-          );
-        })}
-      </div>
-      <select
-        data-saved-view-select
-        aria-label={t("feedback.savedViews")}
-        aria-hidden="true"
-        tabIndex={-1}
-        value={savedViewLoad.activeViewId ?? ""}
-        disabled={savedViewLoad.status !== "ready"}
-        onChange={(event) => selectSavedView(event.target.value)}
-        className="sr-only"
-      >
-        <option value="">
-          {t("feedback.savedViewCurrent", { object: listObjectLabel })}
-        </option>
-        {savedViewLoad.views.map((view) => (
-          <option key={view.id} value={view.id}>
-            {view.name}
-          </option>
-        ))}
-      </select>
       <div className="flex flex-wrap items-center justify-end gap-1">
-        <button
-          type="button"
-          data-saved-view-action="save"
-          disabled={savedViewLoad.status !== "ready"}
-          onClick={() => {
-            setSaveViewName("");
-            setSaveViewOpen(true);
-          }}
-          className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+        <div
+          className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1"
+          role="group"
+          aria-label={t("feedback.savedViews")}
+          data-saved-view-tabs="true"
         >
-          {t("feedback.savedViewSave")}
-        </button>
+          <button
+            type="button"
+            aria-pressed={savedViewLoad.activeViewId === undefined}
+            data-saved-view-option=""
+            disabled={savedViewLoad.status !== "ready"}
+            onClick={() => selectSavedView("")}
+            className={cn(
+              "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              savedViewLoad.activeViewId === undefined
+                ? "bg-muted text-foreground shadow-2xs"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+            )}
+          >
+            <span className="truncate">{t("feedback.savedViewCurrent", { object: listObjectLabel })}</span>
+          </button>
+          {savedViewLoad.views.map((view) => {
+            const selected = savedViewLoad.activeViewId === view.id;
+            return (
+              <button
+                key={view.id}
+                type="button"
+                aria-pressed={selected}
+                data-saved-view-option={view.id}
+                disabled={savedViewLoad.status !== "ready"}
+                onClick={() => selectSavedView(view.id)}
+                className={cn(
+                  "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  selected
+                    ? "bg-muted text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                )}
+              >
+                <span className="truncate">{view.name}</span>
+              </button>
+            );
+          })}
+        </div>
+        <select
+          data-saved-view-select
+          aria-label={t("feedback.savedViews")}
+          aria-hidden="true"
+          tabIndex={-1}
+          value={savedViewLoad.activeViewId ?? ""}
+          disabled={savedViewLoad.status !== "ready"}
+          onChange={(event) => selectSavedView(event.target.value)}
+          className="sr-only"
+        >
+          <option value="">
+            {t("feedback.savedViewCurrent", { object: listObjectLabel })}
+          </option>
+          {savedViewLoad.views.map((view) => (
+            <option key={view.id} value={view.id}>
+              {view.name}
+            </option>
+          ))}
+        </select>
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <button
+            type="button"
+            data-saved-view-action="save"
+            disabled={savedViewLoad.status !== "ready"}
+            onClick={() => {
+              setSaveViewName("");
+              setSaveViewOpen(true);
+            }}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            {/* Reference page: "保存视图" pairs a plus glyph with its label. */}
+            <Plus aria-hidden="true" className="size-3.5" />
+            {t("feedback.savedViewSave")}
+          </button>
+        </div>
       </div>
+      {savedViewManagementSurface}
     </div>
   ) : null;
 
@@ -1572,6 +1593,8 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
 
   return (
     <div className="w-full min-w-0 space-y-2">
+      {/* R6 C7 (item 3): the view tab group sits directly under the title row,
+          and its management form (new/update/delete) renders inside it. */}
       {inlineSavedViewHeader}
       {inlineSavedViewHeader === null && title !== "" ? (
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
