@@ -57,7 +57,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 父目标
 
-- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 5/6`；R1～R4 与 R6 已完成，本目标承载 R5 组合验收）。
+- `GOAL-001-admin-workflow-continuity`（Root 现为 `done · 6/6`；R1～R6 与四个非纲领整改子目标全部完成，本目标承载 R5 组合验收并已随 Root/VP 关门）。
 
 ## 台账布局
 

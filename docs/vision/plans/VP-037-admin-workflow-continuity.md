@@ -2,7 +2,7 @@
 doc_type: vision-plan
 id: VP-037-admin-workflow-continuity
 title: Admin 工作流连续性与安全反馈
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
