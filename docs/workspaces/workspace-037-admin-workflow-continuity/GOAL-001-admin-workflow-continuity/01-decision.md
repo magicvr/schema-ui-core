@@ -41,6 +41,7 @@ version: 1.4.0
 | D-011 | 2026-09-18 | 保持 R5/Root/VP 开放并开设 R6 列表页视觉收敛 | accepted | [D-011-open-r6-list-page-visual-alignment.md](01-decision/D-011-open-r6-list-page-visual-alignment.md) |
 | D-012 | 2026-09-18 | 用户选择回开 R6 并追加列表布局修订 | accepted | [D-012-reopen-r6-layout-revision.md](01-decision/D-012-reopen-r6-layout-revision.md) |
 | D-013 | 2026-09-18 | 用户裁决 F-005 处置路径并开设整改子目标 GOAL-008 | accepted | [D-013-open-typecheck-evidence-goal.md](01-decision/D-013-open-typecheck-evidence-goal.md) |
+| D-014 | 2026-09-18 | 用户指示补做列表视觉 e2e 守卫并开设 GOAL-009 | accepted | [D-014-open-list-visual-e2e-guard.md](01-decision/D-014-open-list-visual-e2e-guard.md) |
 
 ## 当前投影
 

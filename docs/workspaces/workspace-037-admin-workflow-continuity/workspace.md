@@ -26,6 +26,7 @@ parent: null
 - R3 子目标 `GOAL-004-r3-unsaved-change-protection` 已完成 **`done · 4/4`**；C1～C4 实现/回归、A-003 independent recheck、A-004 self close-out 与 Git checkpoint `d2b39189` 均已记录。
 - R6 子目标 `GOAL-007-list-page-visual-alignment` 已 **`done · 8/8`** 关门：C5 布局修订、C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属）与 C8（页面 actions 高度统一、`--control` 折叠开关语义 token、空展开抑制）全部完成；C6 审计 A-002 为 `conditional`，其 F-005 跨区部分经 `GOAL-008` 闭环。不改变 shell、查询/重置逻辑或 Saved View 存储格式。
 - 整改子目标 `GOAL-008-typecheck-evidence-convention` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-005（裸 `tsc --noEmit` 类型校验空转，high required）的跨工作区部分；用户 P-004 裁决为方案 A。口径固化、`npm run typecheck` 入口、防复发守卫（6 断言 + CI 门禁，5/5 变异捕获）与 self 审计 `pass` 均已完成。
+- 整改子目标 `GOAL-009-list-visual-e2e-guard` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-003（列表视觉面缺持久化浏览器级回归，recommended）。新增 `apps/web/e2e/list-visual-surface.spec.ts`，覆盖 C7 搜索配对/图标/视图表单归属、C8 高度/`--control` token/空展开抑制、C5 布局顺序与列表内 footer；在 mvp/admin 两 profile 下通过，并经 6/6 变异验证（含当年由用户发现的两类回归）。
 - 激活门禁：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；Admin freshness PASS；I-037-006 verified。
 - 用户已确认 workspace slug = `workspace-037-admin-workflow-continuity`；Root slug = `GOAL-001-admin-workflow-continuity`。
 - Vision open required：0；V-F124 保持 `open · recommended`；I-037-001～004 为 R1 前 required，I-037-005 为 deferred non-blocking。
@@ -60,6 +61,7 @@ parent: null
 | R5 | 组合验收、Goal 审计、必要独立意见与 VP 关门投影 | **active via `GOAL-006-r5-composition-acceptance` · 3/4**；C1～C3 已完成，仍须完成审计与用户确认后才可关 Root/VP |
 | R6 | 参考范例页收敛通用列表、筛选折叠、视图/页面级按钮布局与单页分页 | **done via `GOAL-007-list-page-visual-alignment` · 8/8**；C1～C8 完成（C5 布局修订、C7 控制位纠偏、C8 控件语义），C6 审计 A-002 `conditional`（F-005 跨区部分经 GOAL-008 闭环）；不改变顶部栏、左侧导航与查询/重置合同 |
 | 整改 | 类型检查证据约定纠偏与防复发（非纲领） | **done via `GOAL-008-typecheck-evidence-convention` · 4/4**；口径固化、`npm run typecheck` 入口、防复发守卫（6 断言 + CI 门禁，5/5 变异捕获）与 self 审计 `pass` 均已完成；不计入 Root 六阶段分母 |
+| 整改 | 列表视觉浏览器级回归守卫（非纲领） | **done via `GOAL-009-list-visual-e2e-guard` · 4/4**；`e2e/list-visual-surface.spec.ts` 覆盖 C5/C7/C8 列表视觉合同，mvp/admin 两 profile 通过，6/6 变异捕获；不计入 Root 六阶段分母 |
 
 纲领阶段按 R1 →（R2/R3/R4 可在 R1 后并行）→ R5 → R6 推进。用户明确要求在 R5 的 Root/VP 用户确认门禁开放时开设 R6；这不代表 R5、Root 或 VP 已完成。工作区建立本身不代表任何实现阶段完成。
 

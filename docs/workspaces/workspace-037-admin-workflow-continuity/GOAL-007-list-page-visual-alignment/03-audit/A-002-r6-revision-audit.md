@@ -75,7 +75,7 @@ verdict: conditional
 - 描述：`apps/web/e2e/` 中 `data-filter-`、`data-saved-view`、`data-list-page-actions`、`data-table-footer` 的匹配数为 **0**，即 R6 全部结论依赖 jsdom 与一次性临时预览页。jsdom 无法求值响应式 `matchMedia` 分档与真实计算高度，而这正是 C5→C7→C8 连续三轮出现布局回归、且均由用户先于测试发现的直接原因。临时预览页在核对后即删除，不构成可复跑的持久证据。
 - 证据：`Select-String apps/web/e2e/*.spec.ts` 对上述选择器 0 匹配；E-004/E-005/E-006 的浏览器核对均自述“核对后已删除”。
 - 影响：同类视觉/响应式回归在下次改动时仍只能靠人工发现；R6 的“视觉基线”缺少可复跑的机器守卫。
-- 状态：open
+- 状态：**fixed**（由 `GOAL-009-list-visual-e2e-guard` 闭环，2026-09-18；Root `D-014`/`E-022`。新增 `apps/web/e2e/list-visual-surface.spec.ts` 在真实浏览器中断言 C5/C7/C8 列表视觉合同，mvp/admin 两 profile 各 2 passed，6/6 变异捕获——其中变异 1 复现 C5 搜索配对回归、变异 6 复现 C7 视图表单位置问题）
 
 ### F-004 · 隐藏项提示常量重复了槽位表数值
 
@@ -108,7 +108,7 @@ verdict: conditional
 | F-001 | med | VP-037 与 `docs/vision/workspaces.md` 的 R6 投影须同步到 C7/C8 后的真实状态 | **fixed**（本轮已同步四处 VP 行、规划短史与两处 vision 索引；`git diff` 可核） |
 | F-005 | high | 以裸 `tsc --noEmit` 作为类型校验证据属空转，须改用 `tsc -b`；本目标条目须更正，跨工作区影响另行处置 | **in-scope fixed / cross-workspace 已移交 GOAL-008**（用户 P-004 裁决方案 A） |
 
-F-002、F-004 已 `fixed`；F-003 为 recommended，不阻断本阶段，但建议在 R6 关门后或下一次列表面改动前处理。
+F-002、F-004 已 `fixed`；F-003 已由 `GOAL-009` 闭环（`fixed`）；F-005 承接范围内闭环并经 `A-003` 复核。
 
 ## 信息就绪核对
 
