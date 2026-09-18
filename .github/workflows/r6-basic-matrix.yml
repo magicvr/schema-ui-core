@@ -22,6 +22,12 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
       - run: npm test
+      # GOAL-008: an explicit type-check gate. `npm test` also runs the
+      # typecheck-convention guard, but that guard only asserts the *convention*;
+      # this step is what actually type-checks src/**. Note `tsc -b` — never a
+      # bare `tsc --noEmit`, which compiles nothing under the solution-style
+      # tsconfig.json and would pass vacuously.
+      - run: npm run typecheck
       - run: npm run build
 
   api:
