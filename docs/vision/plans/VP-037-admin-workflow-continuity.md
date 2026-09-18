@@ -8,7 +8,7 @@ lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.5.0
+version: 1.6.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
@@ -23,11 +23,11 @@ version: 1.5.0
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-18 · v1.5.0；R1 C3、R2 C4、R3 C4、R4 C4 已完成；R5 `GOAL-006` 当前 `active · 3/4`；R6 `GOAL-007` 经 C5/C7/C8 三轮纠偏后 `done · 8/8`（C6 审计 A-002 全部 finding 已处置：F-005 经 `GOAL-008`、F-003 经 `GOAL-009` 闭环）；Root `active · 5/6`；lead `workspace-037-admin-workflow-continuity`） |
+| status | **`active`**（2026-09-18 · v1.6.0；R1 C3、R2 C4、R3 C4、R4 C4 已完成；R5 `GOAL-006` 当前 `active · 3/4`；R6 `GOAL-007` 经 C5/C7/C8 三轮纠偏后 `done · 8/8`（C6 审计 A-002 全部 finding 已处置：F-005 经 `GOAL-008`、F-003 经 `GOAL-009` 闭环）；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010` 均 `done · 4/4`（非纲领）；Root `active · 5/6`；lead `workspace-037-admin-workflow-continuity`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-036 之后的工作流连续性下一拍 |
 | Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；当前 open required = 0 |
 | 激活门禁 | Admin 类 freshness PASS；I-037-006 verified；用户确认 workspace/Root 命名；V-F124 保持 recommended，不阻断激活 |
-| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 5/6；R1 已冻结、R2/R3/R4 已实现并通过阶段审计，R6 由 `GOAL-007-list-page-visual-alignment` 承载并以 `done · 8/8` 完成（原 C1～C4 后经 C5 布局修订、C7 控制位纠偏、C8 控件语义/高度三轮纠偏）；其 C6 审计 A-002 的 finding 已全部处置（F-001/F-002/F-004 fixed；F-005 经 `GOAL-008`、F-003 经 `GOAL-009` 闭环，二者均为非纲领整改子目标） |
+| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 5/6；R1 已冻结、R2/R3/R4 已实现并通过阶段审计，R6 由 `GOAL-007-list-page-visual-alignment` 承载并以 `done · 8/8` 完成（原 C1～C4 后经 C5 布局修订、C7 控制位纠偏、C8 控件语义/高度三轮纠偏）；其 C6 审计 A-002 的 finding 已全部处置（F-001/F-002/F-004 fixed；F-005 经 `GOAL-008`、F-003 经 `GOAL-009` 闭环，二者均为非纲领整改子目标）；`GOAL-008` 自身新发现的守卫缺口 F-001 经第三个整改子目标 `GOAL-010-typecheck-guard-hardening` 以 `done · 4/4` 闭合（self + grok 4.6（xhigh）独立审计 + finding-closure 复审均 `pass`） |
 
 ## 首波范围与边界
 
@@ -107,6 +107,7 @@ version: 1.5.0
 - 2026-09-18：R6 C6 修订审计 A-002 记录为 `conditional`：C5/C7/C8 实现与回归经独立复核属实、C8 token 边界修订合规且进入生产构建产物，但发现 F-001 required——VP-037 与 `docs/vision/workspaces.md` 的 R6 投影落后两轮（停在 `active · 5/6`）。F-001 已按本轮同步闭合；F-003（列表视觉面缺持久化浏览器级回归）、F-004（隐藏项提示常量重复槽位表数值）为不阻断的 recommended，保持 open。R5-I-004 仍开放。
 - 2026-09-18：A-002 的 F-005（裸 `tsc --noEmit` 类型校验空转，high required）经用户 P-004 裁决为方案 A；按 Root D-013 开设整改子目标 `GOAL-008-typecheck-evidence-convention`。该目标完成口径固化（`tsc -b` + e2e 项目 `tsc -p`）、`npm run typecheck` 入口、防复发守卫（6 断言 + CI 门禁，5/5 变异捕获）与 self 审计 `pass`（开放 required = 0），关闭为 `done · 4/4`。它为非纲领整改子目标，不改变 Root 六阶段分母。
 - 2026-09-18：F-005 承接范围内闭环后，用户设定的 R6 关门前置条件解除；按 Root E-021 投影 R6 `GOAL-007` 为 `done · 8/8`、Root 为 `active · 5/6`。R5-I-004 用户确认门禁仍开放，Root/VP 继续保持 `active`。
+- 2026-09-18：用户授权跨工作区类型检查空转条目追溯更正后（Root `D-015`/`E-023`，11 处勘误注记），实测发现守卫自身的 `-p` 判定缺口（`GOAL-008 A-002 F-001`）；按 Root `D-016` 开设第三个整改子目标 `GOAL-010-typecheck-guard-hardening`，同日以 `done · 4/4` 关门（self + grok 4.6（xhigh）独立审计 + finding-closure 复审均 `pass`，开放 required = 0），`GOAL-008 A-002 F-001` 转 `fixed`。VP 版本推进为 v1.6.0；不改变 Root 六阶段分母、`vision_ref` 或 `R5-I-004` 门禁。
 - 2026-09-18：用户指示「先做列表视觉的 e2e 守卫」；按 Root D-014 开设整改子目标 `GOAL-009-list-visual-e2e-guard`（非纲领），承接 R6 A-002 F-003 并同日关闭为 `done · 4/4`：新增 `apps/web/e2e/list-visual-surface.spec.ts`，在真实浏览器断言 C5/C7/C8 列表视觉合同，mvp/admin 两 profile 各 2 passed，6/6 变异捕获（其中两类复现了当年由用户而非测试发现的回归）。至此 R6 A-002 的 finding 全部处置；Root 仍 `active · 5/6`。
 
 ## Closeout placeholder

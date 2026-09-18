@@ -6,7 +6,7 @@ goal_id: GOAL-010-typecheck-guard-hardening
 created: 2026-09-18
 updated: 2026-09-18
 parent: GOAL-001-admin-workflow-continuity
-version: 1.0.0
+version: 1.1.0
 ---
 
 # E-004 · C4 双审响应、关门与投影
@@ -34,10 +34,16 @@ version: 1.0.0
 
 ### 4. 复审与关门
 
-- `A-003`（independent · same provider）对 F-001/F-002 的修正做 finding-closure 复审。
-- 复审通过后：`GOAL-008 A-002 F-001` 按 P-003 的 `fixed` 路径闭合（证据指向本目标 `E-002`/`E-003`/`E-004`、`A-002`/`A-003`）；`GOAL-010` 投影为 `done · 4/4`。
+- `A-003`（independent · 同一 provider）对 F-001/F-002 做 finding-closure 复审：verdict **`pass`**，`F-001` → **fixed**，`F-002` → **fixed**，**无新增 finding**，开放 required = 0。该条独立重放 N3（2 failed / 7 passed）、复算通配命中集（`$CFG` 命中 9 个顶层配置含根配置 → `every` 为 false）、核对 `E-001`～`E-004` 索引/目录/frontmatter 一致，并确认产品/CI 边界未破。
+- `A-003` 的两点精度已记入其残余（非 finding）：`` `tsc --noEmit --project ${CFG}` `` 表行经扫描路径会被 `{`/`}` 拆词，故 N3 下该行仍判空转（覆盖 `every` 的是 `-p $CFG` 表行与函数级 `${CFG}` 断言）；`./$CFG` 命中集为空，走的是「至少命中一个」分支。两者当前行为均为 fail closed。
+- 三方意见（`A-001` self、`A-002` independent、`A-003` independent）结论一致，无 P-004 冲突；无未合法闭合的 required/必改 finding，满足用户设定的关门条件。
 
-## 投影（复审通过后生效）
+### 5. 关门（已执行）
+
+- `GOAL-008 A-002 F-001` 按 P-003 的 `fixed` 路径闭合（证据：本目标 `E-002`/`E-003`/`E-004`、`A-002`、`A-003`）。
+- `GOAL-010` 投影为 `done · 4/4`（C4 勾选），`00-meta`/`goal-tree`/`workspace.md` 同步。
+
+## 投影（已生效 · 2026-09-18）
 
 | 层 | 变化 |
 |----|------|

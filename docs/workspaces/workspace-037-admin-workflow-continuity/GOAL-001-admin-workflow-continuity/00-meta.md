@@ -19,7 +19,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 在现有 Admin 导航、发现入口、设计系统、locale/settings 与横切契约之上，交付 VP-037 的工作流连续性与列表体验收敛：用户级 Saved Views、未保存变更保护、统一 Toast/错误恢复，以及用户明确追加的通用列表页视觉与筛选布局改造。Root 只承接 VP-037 的实现层路线图，不把实体全文搜索、批量结果中心、组织/数据权限、新业务域或架构 gated 项写入本目标。
 
-工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护、R4 统一反馈与恢复以及 R6 列表页视觉收敛已完成并通过各自 Goal 审计。R5 组合验收仍有用户书面确认门禁；两个整改子目标（`GOAL-008-typecheck-evidence-convention`、`GOAL-009-list-visual-e2e-guard`，均为非纲领阶段）已 `done`，使 R6 的 A-002 F-003/F-005 全部闭环。当前 `progress: 5/6` 是显式检查点的派生展示。Root/VP 继续保持 active。
+工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护、R4 统一反馈与恢复以及 R6 列表页视觉收敛已完成并通过各自 Goal 审计。R5 组合验收仍有用户书面确认门禁；三个整改子目标（`GOAL-008-typecheck-evidence-convention`、`GOAL-009-list-visual-e2e-guard`、`GOAL-010-typecheck-guard-hardening`，均为非纲领阶段）已 `done`，使 R6 的 A-002 F-003/F-005 与 GOAL-008 守卫缺口 F-001 全部闭环。当前 `progress: 5/6` 是显式检查点的派生展示。Root/VP 继续保持 active。
 
 ## 愿景对齐
 
@@ -82,5 +82,5 @@ I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/�
 ## 备注
 
 - workspace/Root scaffold、R1、R2、R3、R4 与 R6 子目标已完成是已发生事实；R5 尚未完成。
-- `progress: 5/6` 只由上方 6 个显式检查点派生；整改子目标 `GOAL-008`/`GOAL-009` 为非纲领阶段、不计入分母，也不放行阶段、不关闭 finding、不覆盖 status。R5 的 `R5-I-004` 用户书面确认未闭合，故 Root/VP 仍为 `active`。
+- `progress: 5/6` 只由上方 6 个显式检查点派生；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010` 为非纲领阶段、不计入分母，也不放行阶段、不关闭 finding、不覆盖 status。R5 的 `R5-I-004` 用户书面确认未闭合，故 Root/VP 仍为 `active`。
 - Vision Review `VRev-094`/`VRev-095` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。

@@ -38,7 +38,8 @@ version: 1.0.0
 | R4 | `GOAL-005-r4-unified-feedback-recovery` | `done · 4/4` | A-002 independent `conditional`（F-001 transport 分类）→ A-003 recheck `pass` → A-004 `pass` | `89666e5c` |
 | R5 | `GOAL-006-r5-composition-acceptance` | `active · 3/4` | A-001 self `conditional`、A-002 grok independent `conditional`、A-003 响应 `conditional`；唯一开放 required = **R5-I-004** | — |
 | R6 | `GOAL-007-list-page-visual-alignment` | `done · 8/8` | A-001 `pass`；A-002 `conditional` 的 F-001～F-005 全部合法闭合；A-003 `pass` | `81801b30`/`0cc18418`/`e4b8c5fa`/`dc4b5c5b` |
-| 整改 | `GOAL-008-typecheck-evidence-convention` | `done · 4/4` | A-001 `pass`（开放 required = 0）；2026-09-18 追加 A-002 `conditional`（跨区勘误可核对；F-001 守卫缺口、F-002 简写未裁定，均 recommended open） | `09a36ebf` |
+| 整改 | `GOAL-008-typecheck-evidence-convention` | `done · 4/4` | A-001 `pass`（开放 required = 0）；2026-09-18 追加 A-002 `conditional`（跨区勘误可核对；F-002 简写未裁定 recommended open；F-001 守卫缺口已由 `GOAL-010` 闭环为 fixed） | `09a36ebf` |
+| 整改 | `GOAL-010-typecheck-guard-hardening` | `done · 4/4` | 承接 `GOAL-008 A-002 F-001`：self `A-001` `pass` + grok 4.6（xhigh）独立审计 `A-002` `pass` + finding-closure 复审 `A-003` `pass`，开放 required = 0（非纲领，不计入 Root 分母） | `cc33da25`/`51a262f7` |
 | 整改 | `GOAL-009-list-visual-e2e-guard` | `done · 4/4` | A-001 `pass`，开放 required = 0（非纲领，不计入 Root 分母） | `2a9ec682` |
 | VP | `VP-037-admin-workflow-continuity` | `active` v1.5.0 | VRev-094（计划）self `pass`、VRev-095（激活）self `pass`；open required = 0；V-F124 recommended | — |
 
@@ -77,7 +78,7 @@ version: 1.0.0
 | `I-037-005` 跨用户共享视图 / 最近使用 / 收藏 / 协作权限 | deferred | owner `/vision`；真实协作需求 |
 | `I-007-005` 未实装的多选 | deferred | 按你此前指令忽略 |
 | `GOAL-008 A-001 F-002` 守卫未正向断言 CI 步骤存在 | recommended | 后续加固 |
-| `GOAL-008 A-002 F-001` 守卫按 `-p` 令牌判定检查型调用，`tsc --noEmit -p tsconfig.json`（实测空转）仍会被判合规 | recommended open（2026-09-18 新发现） | 当前无可执行面使用该形态；是否修复待你裁决（新目标或并入后续轮次） |
+| `GOAL-008 A-002 F-001` 守卫按 `-p` 令牌判定检查型调用，`tsc --noEmit -p tsconfig.json`（实测空转）仍会被判合规 | **已 fixed**（2026-09-18 经整改子目标 `GOAL-010-typecheck-guard-hardening` `done · 4/4`；其 self + grok 4.6（xhigh）独立审计 + 复审均 `pass`） | 完成 |
 | `GOAL-008 A-002 F-002` 全仓 `tsc` 简写（300+ 行）未逐条裁定 | recommended open | 由 README 约定 + 守卫 + CI 门禁保证新增记录 |
 | `GOAL-008 I-008-004` 其他工作区历史条目追溯更正 | 2026-09-18 你已授权并**已执行**：11 处勘误注记、2 处复核确认有效（`E-006`/`E-023`）；`I-008-004` → `verified` | 完成 |
 | `GOAL-009 A-001 F-001` 暗色开关计算背景未断言 · `F-002` 仅 roles 页覆盖 | recommended | 后续加固 |
@@ -91,7 +92,7 @@ version: 1.0.0
 4. Vision 层投影同步（A-002 F-002 清单）：`docs/vision/roadmap.md`（VP-037 行与三处叙述仍写 plan `v1.1.0`、R6 `done · 4/4`）、`docs/vision/workspaces.md`、Charter「现行组合投影」快照 —— Charter 属愿景层 editorial，按 A-002 F-002 由 `/vision` 同步。
 5. 执行 VP 关门 Vision Review（对照 VP-032/033/036 惯例为 self `pass`）。
 6. 修掉本轮核对中发现的两处**目标内当前态**滞后（不涉及关门）：`GOAL-006 00-meta.md` 父目标行的 Root `active · 4/5`、`GOAL-008 00-meta.md` 备注的 `progress: 4/6`。其余 `4/5`/`4/6` 出现处均为时间线历史条目，按事实保留不改。**（已于 2026-09-18 本轮完成）**
-7. 说明：§4 中的跨区勘误（`I-008-004`）与新发现的守卫缺口（`A-002 F-001`）已在本轮先行执行/登记，不属于确认后的待办；确认后只需在 C4 投影中一并复核。
+7. 说明：§4 中的跨区勘误（`I-008-004`）与守卫缺口（`A-002 F-001`）已在本轮先行执行/登记，不属于确认后的待办；确认后只需在 C4 投影中一并复核。
 
 ## 6 · 确认模板（可复制）
 

@@ -1,12 +1,12 @@
 ---
 id: GOAL-010-typecheck-guard-hardening
 title: 类型检查守卫加固（`-p` 目标有效性）
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 1.1.0
-progress: 3/4
+version: 1.2.0
+progress: 4/4
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -26,6 +26,8 @@ tsc --noEmit -p tsconfig.json
 会被守卫判为合规，而 `apps/web/tsconfig.json` 是 solution-style（`files: []`、仅 `references`）；非 build 模式下 TypeScript 只编译该配置选中的文件，于是该命令**编译空程序、恒 exit 0**。2026-09-18 以注入类型错误实测确认（`GOAL-008 E-006`）：裸 `tsc --noEmit` 与 `-p tsconfig.json` 均 exit 0，`-p tsconfig.app.json` 与 `tsc -b` 报 `TS2322`。
 
 这正是 `GOAL-008` 要防的失效模式换了一个 `-p` 外壳——守卫是唯一的防复发装置，所以用户于 2026-09-18 指示「开一个小整改子目标（GOAL-010）加固守卫并补 `-p tsconfig.json` 变异用例」，并在其后执行交叉审计（本地 grok build · grok 4.6 · 思考强度 xhigh）后关门。
+
+本目标已于 2026-09-18 以 `done · 4/4` 完成：判定改为按 `-p` 目标配置内容、补齐 18 行合成变异用例与动态目标解析，5 种自设变异 + 审计员 N3 变异均被捕获；self `A-001` `pass`、grok 独立审计 `A-002` `pass`、finding-closure 复审 `A-003` `pass`，开放 required = 0。
 
 ## 范围与边界
 
@@ -48,7 +50,7 @@ tsc --noEmit -p tsconfig.json
 - [x] C1：空转形态边界与判定规则冻结；`-p tsconfig.json` 空转有注入错误实测证据（`E-001`）。
 - [x] C2：守卫按「目标配置必须自身选择源文件」判定，含 `-p tsconfig.json` 等 16 行合成用例表与动态目标解析（`E-002`）。
 - [x] C3：5/5 变异被捕获（含 CI/`package.json` 真实面变异）；全量 Vitest 112/1428 与 `npm run typecheck` 通过（`E-003`）。
-- [ ] C4：self 审计与 grok 4.6（xhigh）独立审计完成并合并响应；开放 required = 0 后关门。
+- [x] C4：self 审计 `A-001` `pass`；grok build（grok 4.6 · xhigh）独立审计 `A-002` `pass`（0 required）与 finding-closure 复审 `A-003` `pass`（F-001/F-002 均 fixed）；开放 required = 0，已于 2026-09-18 关门（`E-004`）。
 
 ## 信息就绪与未知项（P-005）
 
@@ -69,6 +71,6 @@ tsc --noEmit -p tsconfig.json
 ## 备注
 
 - 本目标**不是** Root 的纲领阶段，不改变 Root 六阶段分母与 `progress: 5/6`；它是 Root 下的整改子目标，与 `GOAL-008`/`GOAL-009` 平行。
-- 目标关闭的是 `GOAL-008 A-002 F-001`（recommended）。该 finding 不阻断任何门禁，本目标是主动补齐防复发覆盖。
+- 目标已关闭 `GOAL-008 A-002 F-001`（recommended）为 `fixed`。该 finding 不阻断任何门禁，本目标是主动补齐防复发覆盖。
 - 不改变 `GOAL-008` 的 `done · 4/4`；`GOAL-008 A-002 F-002`（全仓 `tsc` 简写未逐条裁定）与 `GOAL-009 A-001 F-001/F-002` 仍为 recommended open。
-- R5 `GOAL-006` 的 `R5-I-004` 用户书面关门确认仍开放，本目标不替代、不关闭它。
+- R5 `GOAL-006` 的 `R5-I-004` 用户书面关门确认仍开放，本目标关门不替代、不关闭它，也不关闭 Root 或 VP-037。

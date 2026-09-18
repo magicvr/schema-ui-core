@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 1.1.0
+version: 1.2.0
 progress: 4/4
 plan_refs:
   - VP-037-admin-workflow-continuity
@@ -67,4 +67,4 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 - 本目标**不是** Root 的纲领阶段，不改变 Root 六阶段分母与 `progress`（开设时为 `4/6`，R6 关闭投影后为 `5/6`）；它是 Root 下的整改子目标，与 R6 的视觉范围相互独立。
 - 本目标完成使 F-005 在承接范围内闭环，从而解除用户为 R6 关门设定的前置条件（「等 F-005 处置落定后再关门」）。
-- `I-008-004`：2026-09-18 用户授权追溯更正后，已在 workspace-002（复核确认有效，未改）、workspace-009、workspace-010、workspace-011 加 11 处勘误注记并落盘 `E-006`，状态转 `verified`。**新发现** `A-002 F-001`（守卫以 `-p` 令牌判定检查型调用，`-p tsconfig.json` 空转仍会通过）为 recommended 保持 open，与 `A-001 F-002` 同属后续加固项。
+- `I-008-004`：2026-09-18 用户授权追溯更正后，已在 workspace-002（复核确认有效，未改）、workspace-009、workspace-010、workspace-011 加 11 处勘误注记并落盘 `E-006`，状态转 `verified`。**新发现** `A-002 F-001`（守卫以 `-p` 令牌判定检查型调用，`-p tsconfig.json` 空转仍会通过）已由整改子目标 `GOAL-010-typecheck-guard-hardening` 以 `fixed` 路径闭合（2026-09-18，`GOAL-010` `done · 4/4`，其 `A-002`/`A-003` 独立审计 `pass`）；`A-001 F-002`（守卫未正向断言 CI 步骤存在）与 `A-002 F-002`（全仓 `tsc` 简写未逐条裁定）为 recommended 保持 open。

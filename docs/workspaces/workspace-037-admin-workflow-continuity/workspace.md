@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-18
-version: 1.9.0
+version: 1.10.0
 parent: null
 ---
 
@@ -27,6 +27,7 @@ parent: null
 - R6 子目标 `GOAL-007-list-page-visual-alignment` 已 **`done · 8/8`** 关门：C5 布局修订、C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属）与 C8（页面 actions 高度统一、`--control` 折叠开关语义 token、空展开抑制）全部完成；C6 审计 A-002 为 `conditional`，其 F-005 跨区部分经 `GOAL-008` 闭环。不改变 shell、查询/重置逻辑或 Saved View 存储格式。
 - 整改子目标 `GOAL-008-typecheck-evidence-convention` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-005（裸 `tsc --noEmit` 类型校验空转，high required）的跨工作区部分；用户 P-004 裁决为方案 A。口径固化、`npm run typecheck` 入口、防复发守卫（6 断言 + CI 门禁，5/5 变异捕获）与 self 审计 `pass` 均已完成。2026-09-18 按用户 `D-015` 授权执行跨区追溯勘误（`E-006`/`E-023`：workspace-009/010/011 共 11 处注记，workspace-002 两处复核确认有效），`I-008-004` 转 `verified`；同期注入错误实测发现 `tsc --noEmit -p tsconfig.json`（根 solution-style 配置）同样空转，据此记 `A-002 F-001`（守卫按 `-p` 令牌判定检查型调用，推荐加固，recommended open）。
 - 整改子目标 `GOAL-009-list-visual-e2e-guard` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-003（列表视觉面缺持久化浏览器级回归，recommended）。新增 `apps/web/e2e/list-visual-surface.spec.ts`，覆盖 C7 搜索配对/图标/视图表单归属、C8 高度/`--control` token/空展开抑制、C5 布局顺序与列表内 footer；在 mvp/admin 两 profile 下通过，并经 6/6 变异验证（含当年由用户发现的两类回归）。
+- 整改子目标 `GOAL-010-typecheck-guard-hardening` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 `GOAL-008 A-002 F-001`——守卫原按 `-p` 令牌判定检查型调用，`tsc --noEmit -p tsconfig.json` 空转仍会被放行。判定改为按 `-p` 目标配置内容（`-b`，或目标自身选择源文件；其余 fail closed），补 18 行合成变异用例与动态目标通配解析；self `A-001` `pass` + 本地 grok build（grok 4.6 · 思考强度 xhigh）独立审计 `A-002` `pass`（0 required）+ finding-closure 复审 `A-003` `pass`（审计的 N3 变异现被捕获），开放 required = 0。仅改守卫测试文件，无产品/CI 变更。
 - 激活门禁：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；Admin freshness PASS；I-037-006 verified。
 - 用户已确认 workspace slug = `workspace-037-admin-workflow-continuity`；Root slug = `GOAL-001-admin-workflow-continuity`。
 - Vision open required：0；V-F124 保持 `open · recommended`；I-037-001～004 为 R1 前 required，I-037-005 为 deferred non-blocking。
