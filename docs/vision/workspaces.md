@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-09-18
+updated: 2026-09-19
 parent: null
-version: 0.62.0
+version: 0.64.0
 ---
 
 # 工作区贡献图
@@ -49,6 +49,8 @@ version: 0.62.0
 | workspace-035-foundation-architecture-health | docs/workspaces/workspace-035-foundation-architecture-health/ | GOAL-001-foundation-architecture-health | delivery | VP-035-foundation-architecture-health | **done**（2026-09-09 开区 · 2026-09-10 结项；Root `GOAL-001-foundation-architecture-health` **`done · 4/4`** · R1～R4 全部 completed；VP-035 `closed` v0.3.0 · VRev-087 激活 / VRev-088 editorial / VRev-089 关门 self `pass` · A-019 grok build 4.6 high independent `pass`） |
 | workspace-036-admin-command-palette | docs/workspaces/workspace-036-admin-command-palette/ | GOAL-001-admin-command-palette | delivery | VP-036-admin-command-palette | **done**（2026-09-14 激活开区并同日结项；Root `GOAL-001-admin-command-palette` done 4/4；VRev-093 self `pass`；I-036-001～004、I-036-006 verified；I-036-005 deferred non-blocking；V-F123 fixed；VP-036 closed v0.3.0） |
 | workspace-037-admin-workflow-continuity | docs/workspaces/workspace-037-admin-workflow-continuity/ | GOAL-001-admin-workflow-continuity | delivery | VP-037-admin-workflow-continuity | **done**（2026-09-18 结项；Root `GOAL-001-admin-workflow-continuity` **`done · 6/6`**；R1～R6 全部完成，R6 `GOAL-007` 经 C5/C7/C8 三轮纠偏后 `done · 8/8`；四个非纲领整改子目标 `GOAL-008`/`009`/`010`/`011` 均 `done · 4/4`；关门依据 = 用户书面确认（`GOAL-006` `D-002`，前置条件为 `GOAL-011` 修正两个分页/文案缺陷）+ `VRev-096` self `pass` + 开放 required = 0；VP-037 **`closed` v1.7.0**；关门后残余经 workspace-010 `GOAL-043` 统一收口：`V-F124` 经 `VRev-097` 转 fixed、三项测试覆盖残余 fixed、`GOAL-008 A-002 F-002` 收为 bounded residual、`I-037-005` 与 gated 能力登记于 roadmap「未决项统一登记」） |
+
+| workspace-038-batch-operations-and-job-center | docs/workspaces/workspace-038-batch-operations-and-job-center/ | GOAL-001-batch-operations-and-job-center | delivery | VP-038-batch-operations-and-job-center | **active**（2026-09-19 激活开区；`/govern` scaffold Root 纲领 R1→R5；`I-038-004` 用户裁决 = `admin.jobs` 进 admin 默认集 · Profile 内容扩展不暂挂 `go`；freshness `0c29c08` → `7e5ce891` PASS；VRev-099 `pass`） |
 
 ## 说明
 
@@ -96,3 +98,4 @@ version: 0.62.0
 - **VP-009 / workspace-009 语义纠正（2026-08-10 用户书面）**：VP-009 = **持续**共享基架安全与健壮性程序（`active`）；workspace-009 = 唯一 lead；Root `GOAL-001-production-hardening` = **长期程序容器（`active`）**；有界波次 = 子目标（W1–W4 与 W6 done；W5 扫描 0 中高危未开子目标）。单波完成或 `go` 恢复**不等于** VP/Root 关门。不改变 Charter `primary_workspace`。
 - **VP-010 / workspace-010 已于 2026-08-11 落盘并激活**：长期**设计意图—实现符合性**程序（类 VP-009 持续程序语义，与 009 正交：安全 vs 符合性）；lead = workspace-010-design-implementation-conformance；Root `GOAL-001-design-implementation-conformance` = **长期程序容器（`active`）**；波次 W1–W13 均 done（W1 = GOAL-002 范例/演示产品面可选模块化）。改变 Profile 默认集 / 模块矩阵 / Manifest 装配语义的 gap 按 VP-008 `go` 消费有效性规则暂挂/重验证。单波完成**不等于** VP/Root 关门。不改变 Charter `primary_workspace`。
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。波次 progress 不得推导 Root/`VP` done。
+- **VP-038（2026-09-19 激活 · `active` v0.2.0 · lead `workspace-038-batch-operations-and-job-center`）**：Admin 功能 · 批量操作与异步结果中心。计划 self = **VRev-098 `pass`**；激活 self = **VRev-099 `pass`**（0 required）。**P-004 裁决 `I-038-004` = 方案 A**：新建 `admin.jobs` 进 admin 默认集（Profile 内容扩展，不改装配语义，**不暂挂 VP-008 `go`**）。Admin 类 freshness **PASS**（`0c29c08` → `7e5ce891`，五域零变更）。Root `GOAL-001-batch-operations-and-job-center` 由 `/govern` scaffold（纲领 R1→R5）；R1 前须关闭 `I-038-001`～`003`。不改变 Charter `primary_workspace`。
