@@ -21,7 +21,7 @@ version: 1.0.0
 
 验证事实：
 
-- `npm exec -- tsc --noEmit --pretty false`：通过。
+- `npm exec -- tsc -b --pretty false`：通过（**更正**：原记 `tsc --noEmit` 属空转，见 A-002 F-005；`apps/web/tsconfig.json` 为 solution-style `{"files": []}`，裸 `tsc --noEmit` 不检查任何文件）。
 - 定向 Vitest：4 个文件、60 个测试通过。
 - 全量 Web Vitest：111 个文件、1415 个测试通过。
 - `git diff --check`：通过。

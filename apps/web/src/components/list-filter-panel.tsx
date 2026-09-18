@@ -154,13 +154,10 @@ export function ListFilterPanel({
   const activeItemSet = new Set(activeItemIds);
   const activeCountFrom = (firstHiddenIndex: number): number =>
     activeItemIds.filter((id) => itemIds.indexOf(id) >= firstHiddenIndex).length;
-  const hiddenAtMobile = 1;
-  const hiddenAtSmall = hasGridActions ? 1 : 2;
-  const hiddenAtMedium = hasGridActions ? 2 : 3;
-  const hiddenAtLarge = hasGridActions ? 3 : 4;
 
   // Lowest tier at which the item survives the collapsed row; "" never
-  // survives. Derived from the same slot table as the capacity decision.
+  // survives. Derived from the same slot table as the capacity decision, so
+  // the "N filters hidden" hint can never disagree with what is really hidden.
   const slotCounts: Record<Tier, number> = {
     base: collapsedCapacityFor("base", hasGridActions),
     sm: collapsedCapacityFor("sm", hasGridActions),
@@ -171,6 +168,12 @@ export function ListFilterPanel({
     const visibleFrom = TIERS.find((candidate) => index < slotCounts[candidate]);
     return visibleFrom === undefined ? "hidden" : TIER_CLASS[visibleFrom];
   };
+  // Index of the first hidden item at each tier (its own slot count), used by
+  // the hidden-active hint below.
+  const hiddenFromMobile = slotCounts.base;
+  const hiddenFromSmall = slotCounts.sm;
+  const hiddenFromMedium = slotCounts.md;
+  const hiddenFromLarge = slotCounts.lg;
 
   if (items.length === 0) {
     return actionSlot === undefined ? null : <div className={className}>{actionSlot}</div>;
@@ -241,30 +244,30 @@ export function ListFilterPanel({
       </div>
       {!expanded && hasHiddenItems &&
       Math.max(
-        activeCountFrom(hiddenAtMobile),
-        activeCountFrom(hiddenAtSmall),
-        activeCountFrom(hiddenAtMedium),
-        activeCountFrom(hiddenAtLarge),
+        activeCountFrom(hiddenFromMobile),
+        activeCountFrom(hiddenFromSmall),
+        activeCountFrom(hiddenFromMedium),
+        activeCountFrom(hiddenFromLarge),
       ) > 0 ? (
         <p className="border-t border-border/50 pt-2.5 text-xs text-muted-foreground" data-filter-hidden-active="true">
-          {activeCountFrom(1) > 0 ? (
+          {activeCountFrom(hiddenFromMobile) > 0 ? (
             <span className="sm:hidden">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtMobile)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenFromMobile)) })}
             </span>
           ) : null}
-          {activeCountFrom(hiddenAtSmall) > 0 ? (
+          {activeCountFrom(hiddenFromSmall) > 0 ? (
             <span className="hidden sm:inline md:hidden">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtSmall)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenFromSmall)) })}
             </span>
           ) : null}
-          {activeCountFrom(hiddenAtMedium) > 0 ? (
+          {activeCountFrom(hiddenFromMedium) > 0 ? (
             <span className="hidden md:inline lg:hidden">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtMedium)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenFromMedium)) })}
             </span>
           ) : null}
-          {activeCountFrom(hiddenAtLarge) > 0 ? (
+          {activeCountFrom(hiddenFromLarge) > 0 ? (
             <span className="hidden lg:inline">
-              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenAtLarge)) })}
+              {t("feedback.hiddenFiltersActive", { count: String(activeCountFrom(hiddenFromLarge)) })}
             </span>
           ) : null}
         </p>
