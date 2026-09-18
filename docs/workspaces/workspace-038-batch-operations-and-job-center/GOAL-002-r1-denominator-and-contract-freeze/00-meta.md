@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -42,9 +42,9 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 以下 4 个检查点构成 `progress: 0/4` 的派生来源。
 
-- [ ] **C1 分母与作用域矩阵**：`I-038-001` 关闭——Job 种类×作用域矩阵（种类、注册点、可见作用域、读面缺口）落盘且可机器核对。
-- [ ] **C2 契约形态冻结**：`I-038-002` 关闭——批量异步契约形态经用户 P-004 裁决并落盘（含未选方案、同步 `batch-delete` 兼容口径、协议 pin 影响结论）。
-- [ ] **C3 首波分母冻结**：`I-038-003` 关闭——逐项「保持同步 / 改异步 / 不进首波」矩阵落盘并承接 `V-F126`。
+- [x] **C1 分母与作用域矩阵**：`I-038-001` 关闭——Job 种类×作用域矩阵（种类、注册点、可见作用域、读面缺口、索引、后台周期任务口径、运行时门控）落盘且可机器核对（`attachments/r1-job-kind-scope-matrix.md`）。
+- [x] **C2 契约形态冻结**：`I-038-002` 关闭——批量异步契约形态经用户 P-004 裁决（**方案 B**）并落盘（含未选方案、同步 `batch-delete` 兼容口径、协议 pin 零影响结论；`01-decision/D-001-…` §1）。
+- [x] **C3 首波分母冻结**：`I-038-003` 关闭——首波 = **仅「新建批量导出所选」**（1 条），含保持同步 S-1～S-5、排除 X-1～X-11、Breaking 标记与回归面（`attachments/r1-first-wave-denominator-matrix.md`）；承接 `V-F126`。
 - [ ] **C4 R1 审计与投影**：self 审计 + 按风险判定的 independent 审计落盘（`03-audit/A-NNN`），开放 required = 0，Root R1 检查点可投影为完成。
 
 ## 审计模式（P-002 实施前确定）
@@ -57,9 +57,9 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-038-001 | required | Job 种类、可见作用域（管理 vs actor）与 `wallet.reconcile` 既有 actor 作用域的兼容关系；读面所需 repository 查询缺口 | R1 C1、R2 读面 | R1 | 侦察报告 + 本目标 C1 矩阵 | open | — | `attachments/R1-recon-I-038-001-job-kinds-and-scopes.md`；`../02-execution/E-002-r1-recon.md` F-1～F-4 |
-| I-038-002 | required | 批量异步契约是本地扩展还是上游协议变更；同步 `batch-delete` 是否保持；是否触碰 pinned `v2.9.0` 协议面 | R1 C2、R3 实施 | R1 | 侦察报告 + 用户 P-004 裁决 + C2 决策落盘 | open | — | `attachments/R1-recon-I-038-002-batch-async-contract.md`；`E-002` F-5、F-10、F-11 |
-| I-038-003 | required | 哪些现有批量/长操作进入异步首波，哪些保持同步 | R1 C3、R3 实施 | R1 | 侦察报告 + 用户 P-004 裁决 + C3 矩阵落盘 | open | — | `attachments/R1-recon-I-038-003-batch-operation-inventory.md`；`E-002` F-6、F-13、F-15；承接 `V-F126` |
+| I-038-001 | required | Job 种类、可见作用域（管理 vs actor）与 `wallet.reconcile` 既有 actor 作用域的兼容关系；读面所需 repository 查询缺口 | R1 C1、R2 读面 | R1 | 侦察报告 + 本目标 C1 矩阵 | **verified**（2026-09-19） | — | `attachments/R1-recon-I-038-001-job-kinds-and-scopes.md`；`attachments/r1-job-kind-scope-matrix.md`；`01-decision/D-001-…` §2 |
+| I-038-002 | required | 批量异步契约是本地扩展还是上游协议变更；同步 `batch-delete` 是否保持；是否触碰 pinned `v2.9.0` 协议面 | R1 C2、R3 实施 | R1 | 侦察报告 + 用户 P-004 裁决 + C2 决策落盘 | **verified**（2026-09-19 用户裁决方案 B） | — | `attachments/R1-recon-I-038-002-batch-async-contract.md`；`01-decision/D-001-…` §1 |
+| I-038-003 | required | 哪些现有批量/长操作进入异步首波，哪些保持同步 | R1 C3、R3 实施 | R1 | 侦察报告 + 用户 P-004 裁决 + C3 矩阵落盘 | **verified**（2026-09-19 用户裁决首波 = 新建批量导出所选） | — | `attachments/R1-recon-I-038-003-batch-operation-inventory.md`；`attachments/r1-first-wave-denominator-matrix.md`；`01-decision/D-001-…` §3；承接 `V-F126` |
 
 ## 父目标
 
