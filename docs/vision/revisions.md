@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-16
+updated: 2026-09-18
 parent: null
-version: 0.4.56
+version: 0.4.57
 ---
 
 # Charter 修订台账
@@ -97,3 +97,4 @@ version: 0.4.56
 | VR-080 | 2026-09-14 | editorial | VP-036 关门与愿景投影同步 | 用户指令「完成 VP-036 关门与愿景投影同步」；workspace-036 Root `GOAL-001-admin-command-palette` `done · 4/4`，R1～R4 与 A-001～A-010 审计链闭合，open required = 0；**VRev-093 self `pass`** 核对七条方向级退出判据，I-036-001～004、I-036-006 verified，I-036-005 deferred non-blocking；V-F123 已由 VRev-092 响应为 `fixed`。VP-036 `active → closed` v0.3.0；`roadmap.md`、`workspaces.md`、Charter 当前组合投影、VP 关门记录与 workspace 上下文已同步。Charter `vision_id@version` 仍 `@0.4.0`，无 strategic、无 re-align。 |
 | VR-081 | 2026-09-16 | editorial | VP-037 planned · Admin 工作流连续性与安全反馈 | 用户确认沿用总路线图推荐的 Admin 体验增强下一拍：新建 **VP-037-admin-workflow-continuity** `planned` v0.1.0 · 0 区 · `vision_ref` = `schema-ui-core-admin-foundation@0.4.0`；首波收窄为用户级 Saved Views、未保存变更保护、统一 Toast/错误恢复；实体全文检索、批量结果中心、组织/权限域、新业务域不进本波。计划阶段 self = **VRev-094 `pass`**（0 required；V-F124 recommended，不阻断 planned）。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），不激活、不创建工作区、无 strategic、无 re-align；后续须 `/vision` 激活就绪，再交 `/govern` 开区。 |
 | VR-082 | 2026-09-16 | editorial | VP-037 激活 + workspace-037 开区 | 用户确认 workspace slug = `workspace-037-admin-workflow-continuity`、Root slug = `GOAL-001-admin-workflow-continuity`，授权按流程激活并开区。**VRev-095 self `pass`**（0 required）；Admin freshness PASS（当前 HEAD `0c29c08`，`apps/**` 无 staged/unstaged 区间变更）；I-037-006 verified，V-F124 recommended 保持开放但不阻断。VP-037 `planned → active` v0.2.0；lead = workspace-037-admin-workflow-continuity；Root `GOAL-001-admin-workflow-continuity` active · 0/5；`/govern` 已创建 delivery workspace、goal-tree、Root 五件套与三个 ledger 目录。Charter `@0.4.0` 不变；无 strategic、无 re-align。 |
+| VR-083 | 2026-09-18 | editorial | VP-037 关门投影 + 未决项统一登记 + `V-F124` 闭合 | ① **VP-037 关门投影**：用户书面确认（前置条件=整改子目标 GOAL-011 修正两个分页/文案缺陷），`GOAL-006` done 4/4、Root `GOAL-001-admin-workflow-continuity` **done · 6/6**、VP-037 `active → closed` v1.7.0，**VRev-096 self `pass`**；`roadmap.md`/`workspaces.md`/Charter 组合投影同步。② **未决项统一登记**：`roadmap.md` 增设「未决项统一登记（残余 / 悬置 / trigger-gated）」节，把散落在各工作区台账的残余与 gated 能力集中登记（性质/现状/触发条件/责任人/证据），并写入维护约定「新增或闭合必须同步本节」。③ **`V-F124` → `fixed`**：**VRev-097 self `pass`** 逐项对照确认其索要的首波矩阵即 R1 交付物（`r1-denominator-matrix.json` 24/58、`r1-form-matrix.json`、`r1-state-feedback-matrix.md` + `D-003`～`D-005`），属记账未回填而非未做工作。④ 由 [workspace-010 GOAL-043](../workspaces/workspace-010-design-implementation-conformance/GOAL-043-w31-cross-workspace-residual-closeout/00-meta.md) 就地修复三项测试覆盖残余（暗色计算背景、第二页面、Host/resource 对照），`GOAL-008 A-002 F-002` 收口为 bounded residual。Charter `vision_id@version` 仍 `@0.4.0`，无 strategic、无 re-align。 |

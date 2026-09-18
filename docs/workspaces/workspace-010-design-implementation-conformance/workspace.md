@@ -10,8 +10,8 @@ plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
-updated: 2026-09-06
-version: 0.55.0
+updated: 2026-09-18
+version: 0.56.0
 parent: null
 ---
 
@@ -102,3 +102,5 @@ GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口
 **W26（2026-08-26 关门，GOAL-038 done 4/4）**：用户点名三项符合性对齐——① 用户邮箱身份绑定管理端读面；② 发送邮件控制台与出站记录移出设置页为独立页面并注册左侧导航，出站记录覆盖全部渠道（含 mock），权限沿用 `settings.read` 不新设；③ 邀请管理「撤销」MISSING_PATH_BINDING 修复。S1 D-001 方案冻结（I-001～I-003 required 全 closed：0060 加列迁移 / admin.settings 两页 + menu_mail·menu_mail_outbox / ListUsers 同查询投影无 N+1）。S2 实施（E-002）：users 读面 email/emailStatus/emailStatusStyle + users.json 邮箱 badge 列与详情字段；`mail`（控制台）+ `mail-outbox`（声明式 table 六列 + recordView 含正文）两页贡献、设置页移除 tab-mail、DefaultNavigationOrder/BuiltinModules/快照测试 lockstep；Switcher 对 resend/smtp 落 sent/failed 记录、mock 单记 delivered；users-invites 撤销绑定补齐 + row-action-bindings 防复发登记。S3 回归（E-003）：Go 全量 0 FAIL + vitest 1116/1116 + tsc 0 + build ok；go 判定 = additive 产品面，**无影响不暂挂**；同日用户指示**补跑 e2e 双方言矩阵全绿（sqlite 9/9 + postgres 9/9，各 1 预期 skip；scratch 库闭环回收）**。S4 A-001 self 关门审计 **pass**（required 0；F-001/F-002 non-blocking 留痕）。Root/VP 保持 active 程序容器。
 
 **W27（2026-08-26 立项并关门，GOAL-039 done 4/4）**：用户点名两页补强——邀请管理与邮件出站记录页面加上合理的筛选和排序。S1 D-001 冻结（无 required 信息项；白名单与默认序由既有约定唯一判定）：invites 后端 ListInvites 扩展 q/sort/order（LOWER+LIKE over email/id/invited_by，排序白名单 createdAt 默认/expiresAt × asc/desc，二级 id 稳定分页）；outbox 读面切换 `mail.OutboxListQuery` 契约（page/pageSize 归一化默认 50 上限 200，替换无消费方的 limit/offset；q/channel/delivery_status 筛选未知值 fallback-all；created_at × asc/desc）。S2 实施（E-001）：users-invites.json 搜索表单加 q + 两列 sortable；mail-outbox.json 插入搜索表单三控件 + created_at sortable + table.sort 能力；i18n 双目录新键。S3 回归：Go 全量 0 FAIL + vitest 1116/1116 + tsc 0 + build ok；go 判定 = additive 无影响不暂挂。S4 A-001 self **pass**（0 开放 required；status 列不可排序等两条 non-blocking 留痕）。Root 保持 active。
+
+**W31（2026-09-18 立项并当日关门，GOAL-043 done 4/4）**：承接用户指令「能现在处理的直接处理掉……暂时不需要处理的确保在路线图中被正确统一登记」，承载 VP-037 关门后残余的**治理上下文**。**修复（均经变异验证）**：① 暗色下开关计算背景断言（4 条不变量；把类名改成 `bg-control dark:bg-[oklch(0.955_0_0)]` 时浅色断言全过、新断言失败）② 分页契约改 roles + users 双页面参数化 ③ Host 终态与普通 resource 反馈跨表直接对照（新增 `resource-feedback-parity.test.ts`，8 共有条件 × 分类一致/不回退通用文案/命名空间不混用/双语 key 齐备）。**收口**：`GOAL-008 A-002 F-002` → bounded residual（可执行面由守卫 + CI 锁死；文档侧 354 行形态不可唯一确定）。**愿景层**：`V-F124` 经 VRev-097 self `pass` 转 `fixed`；`VR-083` 记录 editorial 变更。**登记**：`roadmap.md` 新增「未决项统一登记」节（有界残余 / 悬置决策 / trigger-gated 能力三类表 + 维护约定）。回归：Vitest 114/1437 + typecheck 0 + e2e 4 passed × admin/mvp；无产品行为变更；A-001 self `pass`（0 required）。Root/VP-010 保持 active 程序容器；VP-037/workspace-037 不重开。

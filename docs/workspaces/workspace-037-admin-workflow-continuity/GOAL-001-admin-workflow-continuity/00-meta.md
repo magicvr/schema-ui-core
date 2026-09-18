@@ -83,5 +83,5 @@ I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/�
 
 - workspace/Root scaffold、R1、R2、R3、R4、R6 与 R5 子目标全部完成是已发生事实；Root 于 2026-09-18 以 `done · 6/6` 关门，VP-037 同步 `closed`。
 - `progress: 6/6` 只由上方 6 个显式检查点派生；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010`/`GOAL-011` 为非纲领阶段、不计入分母，也不放行阶段、不关闭 finding、不覆盖 status。
-- 关门不改变以下仍开放的项：`GOAL-008 A-002 F-002`（全仓 `tsc` 简写未逐条裁定，recommended）、`GOAL-009 A-001 F-001/F-002`（暗色开关计算背景未断言、仅 roles 页覆盖，recommended）、`GOAL-006 R5-I-005` / `A-002 F-003`（Host/resource 直接对照，non-blocking deferred）、`I-037-005`（协作/收藏，deferred）、`V-F124`（recommended）。这些不因关门被标为已验证。
+- 关门后的残余去向（2026-09-18 统一收口，见 `docs/vision/roadmap.md`「未决项统一登记」）：`GOAL-009 A-001 F-001/F-002`、`GOAL-005 A-002 F-002`/`R5-I-005` 已由 workspace-010 `GOAL-043` 补齐测试并转 **`fixed`**；`GOAL-008 A-002 F-002` 收口为 **bounded residual**（可执行面已锁死，文档侧不逐条考古，触发=历史记录被再次引用为类型检查证据）；`I-037-005` 与全部 trigger-gated 能力保持登记、暂不推进；`V-F124` 经 **`VRev-097`** 复核确认实质已由 R1 交付并转 **`fixed`**。这些均不因关门被标为已验证。
 - Vision Review `VRev-094`/`VRev-095` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。VP-037 关门 Vision Review = `VRev-096`。

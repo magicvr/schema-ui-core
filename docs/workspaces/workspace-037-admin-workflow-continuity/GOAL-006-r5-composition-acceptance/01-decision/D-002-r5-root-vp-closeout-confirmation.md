@@ -45,3 +45,5 @@ version: 1.0.0
 
 - 关门不改变 VP-037 判据文本、不新增/解除 gated 项、不重开 VP-036 等既有 VP。
 - `I-037-005`（协作/收藏，deferred）、`R5-I-005`（Host/resource 直接对照，deferred non-blocking）、`V-F124`（recommended）、`GOAL-008 A-002 F-002`、`GOAL-009 A-001 F-001/F-002`（recommended）继续按各自台账开放，不因关门被标为已验证。
+
+> **2026-09-18 后续（追加说明，不改本条决定）**：上述残余已按用户指令由 workspace-010 `GOAL-043-w31-cross-workspace-residual-closeout` 统一收口——`GOAL-009 A-001 F-001/F-002`、`GOAL-005 A-002 F-002`/`R5-I-005` 补齐测试后转 `fixed`；`GOAL-008 A-002 F-002` 收口为 bounded residual；`V-F124` 经 `VRev-097` 复核转 `fixed`；`I-037-005` 与全部 trigger-gated 能力登记于 `docs/vision/roadmap.md`「未决项统一登记」节。

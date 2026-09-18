@@ -51,6 +51,7 @@ version: 1.5.0
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-097 | 2026-09-18 | self | VP-037 `V-F124` 闭合复审 · 首波矩阵是否已由 R1 交付 | pass | 0 | 逐项对照：页面分母/状态字段/Profile·权限覆盖/Saved View 持久化边界/dirty-state·反馈类型 全部由 R1 交付物覆盖，机读矩阵即 R1 交付物；防范意图成立（未滑向共享视图/实体搜索/第二套基础设施）。`V-F124` → **fixed**；VP-037 其余残余改由路线图「未决项统一登记」承载 | [VRev-097-vp037-vf124-closure.md](reviews/VRev-097-vp037-vf124-closure.md) |
 | VRev-096 | 2026-09-18 | self | VP-037 关门就绪 · 判据 1～7 / required 闭合 / 用户确认 / 投影同步 | pass | 0 | Root `done · 6/6`；判据 1～7 全 verified；R6 A-002 与 GOAL-008 A-002 的 finding 全部闭合；用户书面确认（前置条件=GOAL-011 两个缺陷已修正）；投影同步完成；支持 VP-037 `active → closed` v1.7.0 | [VRev-096-vp037-admin-workflow-continuity-closeout.md](reviews/VRev-096-vp037-admin-workflow-continuity-closeout.md) |
 | VRev-095 | 2026-09-16 | self | VP-037 激活就绪 · Admin freshness / Workspace-Root 绑定 / P-005 | pass | 0 | 用户确认 workspace/Root slug；Admin freshness PASS；I-037-006 verified；Root active · 0/5；V-F124 recommended，不阻断激活 | [VRev-095-vp037-admin-workflow-continuity-activation.md](reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) |
 | VRev-094 | 2026-09-16 | self | VP-037 planned · Admin 工作流连续性与安全反馈 | pass | 0 | Charter `@0.4.0` 对齐；首波范围/退出判据/P-005 信息门禁成立；V-F124 recommended，不阻断 planned；不是激活许可 | [VRev-094-vp037-admin-workflow-continuity-planned.md](reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) |

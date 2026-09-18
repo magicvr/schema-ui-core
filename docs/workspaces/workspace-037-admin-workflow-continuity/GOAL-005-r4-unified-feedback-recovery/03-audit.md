@@ -40,10 +40,10 @@ version: 0.6.0
 
 | finding | 状态 | 响应证据 |
 |---------|------|----------|
-| A-002 F-002 | partially addressed | [E-005-r4-recommended-regression-coverage.md](02-execution/E-005-r4-recommended-regression-coverage.md)：maintenance、timeout/offline 与资源读取回归已补；Host/resource 直接对照断言仍保留为不阻断备注 |
+| A-002 F-002 | **fixed**（2026-09-18） | [E-005-r4-recommended-regression-coverage.md](02-execution/E-005-r4-recommended-regression-coverage.md)：maintenance、timeout/offline 与资源读取回归已补。**Host/resource 直接对照断言于 2026-09-18 由 [workspace-010 GOAL-043](../../../workspace-010-design-implementation-conformance/GOAL-043-w31-cross-workspace-residual-closeout/00-meta.md) 补齐**：新增 `apps/web/src/host/resource-feedback-parity.test.ts`，对 8 个两表面共有条件逐条对照（分类一致、两侧都不得回退通用文案、命名空间不混用、两侧引用的 key 在两个 locale 均存在）；`HostFailureScreen` 仅导出文案表供读取。变异验证：删 `maintenance` 条目 / 改名 locale key 均被指名报出。证据：`GOAL-043 E-002` §3 |
 | A-002 F-003 | addressed | `01-decision.md` 信息表已与 `00-meta`/本索引对齐为 verified，并登记 E-004/A-003 证据 |
 | A-002 F-004 | addressed | E-005 补 401/403 列表无 retry 与 chart 显式 retry 调用次数回归 |
 
 ## 结论状态
 
-R4 C1～C3 已有实现与回归证据，A-001 self `pass`。A-002 grok independent 原 verdict 为 `conditional`；其 required F-001 已由 E-004 按 `fixed` 路径响应，并由 A-003 independent recheck 确认为合法闭合。F-003/F-004 已响应，F-002 的 Host/resource 直接对照仍为不阻断 recommended。A-004 self close-out 核对 checkpoint `89666e5c`、全量 110/1408 与 tsc/diff check，当前开放 required = 0；R4 已 `done · 4/4`，下一阶段为 R5，Root R4 投影另记于 Root 台账。
+R4 C1～C3 已有实现与回归证据，A-001 self `pass`。A-002 grok independent 原 verdict 为 `conditional`；其 required F-001 已由 E-004 按 `fixed` 路径响应，并由 A-003 independent recheck 确认为合法闭合。F-003/F-004 已响应；F-002 的 Host/resource 直接对照原为不阻断 recommended，**2026-09-18 由 workspace-010 `GOAL-043` 补齐对照测试并转 `fixed`**（证据见该目标 `E-002` §3，不改本目标 `status`/`progress` 与历史结论）。A-004 self close-out 核对 checkpoint `89666e5c`、全量 110/1408 与 tsc/diff check，当前开放 required = 0；R4 已 `done · 4/4`，下一阶段为 R5，Root R4 投影另记于 Root 台账。

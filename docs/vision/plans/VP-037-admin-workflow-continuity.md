@@ -110,7 +110,8 @@ version: 1.7.0
 - 2026-09-18：用户授权跨工作区类型检查空转条目追溯更正后（Root `D-015`/`E-023`，11 处勘误注记），实测发现守卫自身的 `-p` 判定缺口（`GOAL-008 A-002 F-001`）；按 Root `D-016` 开设第三个整改子目标 `GOAL-010-typecheck-guard-hardening`，同日以 `done · 4/4` 关门（self + grok 4.6（xhigh）独立审计 + finding-closure 复审均 `pass`，开放 required = 0），`GOAL-008 A-002 F-001` 转 `fixed`。VP 版本推进为 v1.6.0；不改变 Root 六阶段分母、`vision_ref` 或 `R5-I-004` 门禁。
 - 2026-09-18：用户指示「先做列表视觉的 e2e 守卫」；按 Root D-014 开设整改子目标 `GOAL-009-list-visual-e2e-guard`（非纲领），承接 R6 A-002 F-003 并同日关闭为 `done · 4/4`：新增 `apps/web/e2e/list-visual-surface.spec.ts`，在真实浏览器断言 C5/C7/C8 列表视觉合同，mvp/admin 两 profile 各 2 passed，6/6 变异捕获（其中两类复现了当年由用户而非测试发现的回归）。至此 R6 A-002 的 finding 全部处置；Root 仍 `active · 5/6`。
 - 2026-09-18：用户报告两个使用中发现的缺陷——每页条数下拉默认显示 10 而实际生效 20（且选 10 不生效）、页码跳转确认按钮显示为「搜索」；并授权「修改这两个问题后，授权走根目标关闭流程」。按 Root `D-017` 开设第四个整改子目标 `GOAL-011-pagination-page-size-contract`：同日修正（默认值统一为 20、10 真正生效、按钮改为「跳转 / Go」、清理同类字面量），新增跨层断言（单元/组件/前后端常量结构守卫/真实浏览器 e2e），以 `done · 4/4` 关门（self `A-001` `pass`，开放 required = 0）。
-- 2026-09-18：**VP-037 关门**。用户授权构成 `GOAL-006 R5-I-004` 的书面确认（前置条件即上述两个缺陷的修正，已完成）；`A-001 R5-GATE-001` / `A-002 F-001` 按 P-003 `fixed` 闭合；`GOAL-006` → `done · 4/4`，Root `GOAL-001` → **`done · 6/6`**，VP-037 → **`closed`** v1.7.0。关门 Vision Review = `VRev-096` self `pass`（方向级退出判据 1～7 逐条 verified）。仍开放（不因关门改变）：`GOAL-008 A-002 F-002`、`GOAL-009 A-001 F-001/F-002`、`GOAL-006 A-002 F-003`/`R5-I-005`、`I-037-005`、`V-F124`；gated 非目标保持 gated。
+- 2026-09-18：**VP-037 关门**。用户授权构成 `GOAL-006 R5-I-004` 的书面确认（前置条件即上述两个缺陷的修正，已完成）；`A-001 R5-GATE-001` / `A-002 F-001` 按 P-003 `fixed` 闭合；`GOAL-006` → `done · 4/4`，Root `GOAL-001` → **`done · 6/6`**，VP-037 → **`closed`** v1.7.0。关门 Vision Review = `VRev-096` self `pass`（方向级退出判据 1～7 逐条 verified）。gated 非目标保持 gated。
+- 2026-09-18：**关门后残余统一收口**（用户指令：能处理的直接处理、其余在路线图统一登记）。由 workspace-010 `GOAL-043-w31-cross-workspace-residual-closeout`：`GOAL-009 A-001 F-001`（暗色计算背景）与 `F-002`（第二页面覆盖）、`GOAL-005 A-002 F-002`/`R5-I-005`（Host/resource 直接对照）**转 `fixed`**；`GOAL-008 A-002 F-002` 收口为 **bounded residual**；`V-F124` 经 **`VRev-097`** 复核确认实质已由 R1 交付并转 **`fixed`**；`I-037-005` 与全部 trigger-gated 能力统一登记于 [roadmap.md「未决项统一登记」](../roadmap.md)。本 VP 与本工作区**不重开**。
 
 ## Closeout（2026-09-18 关门）
 
@@ -130,7 +131,7 @@ version: 1.7.0
 
 **关门时的组合证据**：`GOAL-006` 组合台账 + Root `A-006`；整改子目标 `GOAL-008`/`009`/`010`/`011` 全部 `done · 4/4`；R6 `A-002` 的 F-001～F-005 全部合法闭合。
 
-**残余（保持开放，不因关门改变）**：`V-F124`（recommended）、`R5-I-005`/`A-002 F-003`（Host/resource 直接对照，non-blocking deferred，触发=真实支持需求）、`I-037-005`（协作/收藏，deferred，owner `/vision`）、`GOAL-008 A-002 F-002`（全仓 `tsc` 简写未逐条裁定）、`GOAL-009 A-001 F-001/F-002`（暗色开关计算背景未断言、仅 roles 页覆盖）。
+**残余（2026-09-18 统一收口后）**：`GOAL-009 A-001 F-001/F-002`、`GOAL-005 A-002 F-002`/`R5-I-005` 已由 workspace-010 `GOAL-043` 补齐测试并转 **`fixed`**；`GOAL-008 A-002 F-002` 收口为 **bounded residual**；`V-F124` 经 **`VRev-097`** 复核转 **`fixed`**（实质要求已由 R1 交付）。仍开放：`I-037-005`（协作/收藏，deferred，owner `/vision`）与全部 trigger-gated 能力——统一登记于 [roadmap.md「未决项统一登记」](../roadmap.md)。
 
 **gated 非目标**：实体全文检索 / `RT-X01`/`RT-X02`、批量结果中心、组织·部门·岗位与 `org` 数据权限、新业务域、Redis/MQ/多实例/第二持久化栈、跨用户共享视图与协作权限。
 

@@ -56,7 +56,9 @@ verdict: pass
 - 描述：C8 item 2 的暗色一侧目前断言"`.dark` 下 `--control` 存在且不同于浅色值"，但没有断言暗色下开关**计算背景**确实等于该值。若将来开关的类名被改成不消费 `--control`（例如硬编码浅色背景），浅色断言会捕获，但暗色路径无独立断言。
 - 证据：规格中暗色检查读取 CSS 变量后即移除 `dark` 类，未在暗色下重读开关的 `background-color`。
 - 影响：低——浅色路径的"等于 `--control`"断言已钉住 token 驱动关系；暗色是同一 CSS 变量作用域内的覆盖。
-- 状态：open（recommended，不阻断）
+- 状态：**fixed**（2026-09-18，经 [workspace-010 GOAL-043](../../../workspace-010-design-implementation-conformance/GOAL-043-w31-cross-workspace-residual-closeout/00-meta.md) 修复：暗色下新增四条不变量——根 token = 暗色覆盖值、开关继承同一值、`--color-control` 别名解析到该值、开关**计算背景**等于该值；变异验证＝把类名改成 `bg-control dark:bg-[oklch(0.955_0_0)]`（暗色硬编码浅色）时浅色断言全过、新增暗色断言失败并指明原因。证据：`GOAL-043 E-002` §1）
+
+> 修复过程中的一个坑（记录备查）：开关带 `transition-colors`，加 `.dark` 后立即 `getComputedStyle` 读到的是过渡插值帧（浅色），会被误判为缺陷；正确读法是读取前内联 `transition: none`。这不是产品缺陷。
 
 ### F-002 · 目标页仅 `/roles` 一个，覆盖面受页面差异限制
 
@@ -65,7 +67,7 @@ verdict: pass
 - 描述：守卫只跑 roles 页。其他列表页（users、account sessions 等）若出现同类回归不会被捕获。选择单页是 `D-001` 的显式取舍（roles 是唯一同时具备 search form 与 toolbar 的页面），但覆盖面确实窄于"通用列表页"这一合同表述。
 - 证据：`D-001` §2；`E-001` schema 检索结果（table `filters` 仅 account 一处；search+toolbar 交集仅 roles）。
 - 影响：低——被守卫的是**共享实现**（`SchemaTable` / `ListFilterPanel` / `render.tsx` 的 search slot），单页即可回归共享层；页面差异主要影响数据而非这些合同面。
-- 状态：open（recommended，不阻断）
+- 状态：**fixed**（2026-09-18，经 workspace-010 `GOAL-043` 修复：分页契约用例改为 **roles + users 双页面参数化**，断言默认显示 20、首个列表请求不带 `pageSize`、选 10 后确实发出 `pageSize=10`、跳转按钮文案；两 profile 各 4 passed。证据：`GOAL-043 E-002` §2）
 
 ## 必改项汇总（required）
 

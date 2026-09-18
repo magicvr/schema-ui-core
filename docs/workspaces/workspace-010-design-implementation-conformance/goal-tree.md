@@ -2,9 +2,9 @@
 title: 目标树 · workspace-010-design-implementation-conformance
 status: active
 created: 2026-08-11
-updated: 2026-09-06
+updated: 2026-09-18
 parent: null
-version: 0.55.0
+version: 0.56.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -60,6 +60,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 └── GOAL-040-w28-admin-passwd-convention [done] (4/4) · W28 · 现有库 admin 凭据约定（ADMIN_PASSWD 声明）与 TEST_ADMIN 测试账户机制退役
 └── GOAL-041-w29-api-web-protocol-conformance [done] (6/6) · W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环
 └── GOAL-042-w30-w29-followup-supplement [done] (3/3) · W30 · W29 后继补充（legacy 能力保守声明审计 / claim↔host-support 一致性 / 10 页行为级单测）
+└── GOAL-043-w31-cross-workspace-residual-closeout [done] (4/4) · W31 · 跨工作区残余统一收口与路线图登记（三项测试覆盖 fixed + `tsc` 余项 bounded residual + `V-F124` 经 VRev-097 fixed + roadmap「未决项统一登记」）
 ```
 
 **W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
@@ -159,6 +160,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-040-w28-admin-passwd-convention | W28 · 现有库 admin 凭据约定（ADMIN_PASSWD 声明）与 TEST_ADMIN 测试账户机制退役 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-09-06 |
 | GOAL-041-w29-api-web-protocol-conformance | W29 · schema-ui-docs v2.9.0 API/Web 页面控件符合性审视与上游协议闭环 | GOAL-001-design-implementation-conformance | done | 6/6 | 2026-09-06 |
 | GOAL-042-w30-w29-followup-supplement | W30 · W29 后继补充（legacy 能力保守声明全量审计 / claim↔host-support 机械一致性 / 10 页行为级单测） | GOAL-001-design-implementation-conformance | done | 3/3 | 2026-09-06 |
+| GOAL-043-w31-cross-workspace-residual-closeout | W31 · 跨工作区残余统一收口与路线图登记（VP-037 关门后残余；三项测试覆盖 fixed + `tsc` 余项 bounded residual + `V-F124` 经 VRev-097 fixed + roadmap「未决项统一登记」） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-09-18 |
 
 
 ## 维护说明
@@ -172,3 +174,4 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 - **W28（2026-09-06 立项并当日关门）**：GOAL-040 done 4/4——现有库 admin 凭据墙治理：`ADMIN_PASSWD` 声明约定（维护者在 gitignored `apps/api/configs/.env` 声明当前 admin 现密码，供自动化测试/AI 助手/smoke 连现有库登录；API 不读取不重置）+ AI 助手可发现性（AGENTS.md「本地开发环境与 admin 凭据约定」+ QUICKSTART + README）+ TEST_ADMIN 测试账户机制退役（config.go / bootstrap.go `EnsureTestAdmin` / composition.go / reconcile_test.go / .env.example）+ smoke.sh `SMOKE_PASSWORD` 回退 `ADMIN_PASSWD`。回归：`go build/vet` 干净、`go test ./...` 全绿 0 FAIL；canonical 模板守卫 `env_example_test.go` 增 `declarationOnlyKeys` 白名单。**真实验证（E-002）**：API 连现有 postgres 库启动，`ADMIN_PASSWD` 登录 admin 200 + token + mustChangePassword=False；`SMOKE_PASSWORD` 未设 + `ADMIN_PASSWD` 导出 → smoke SM-001~005 全 PASS。A-001 self 关门审计 pass（0 required）+ 用户确认关门。Root 保持 active 程序容器。
 - **W29（2026-09-06，已关门 · done 6/6）**：GOAL-041 全目标完成——S1 分母/目录；S2 分类（upstream gap 0）+ cross 闭合；S3 C-009 custom 边界用户裁决；S4 整改（C-001/002/003/004含F-001/006/010 + C-005 子项；页面级能力门禁 + 19 能力 claim）；S5 运行时验证（35/35 分母 + 5 组合 HTTP 快照；I-006 verified；I-007 = go 无影响不暂挂）；**S6 cross 关门**（A-007 self + A-008 grok-build independent → A-009 响应，A-008 F-001 walker 跨平台修复 + F-002 台账卫生，required 0 开放；**用户书面确认关门 2026-09-06**）→ `status: done` / progress 6/6。回归 Web vitest 1307/1307 + Go 全量 0 FAIL。Root 保持 active 程序容器。
 - **W30（2026-09-06 立项并当日关门 · done 3/3）**：GOAL-042 W29 后继补充（用户书面指令）——**F1** legacy 能力全量审计：守卫扩展至全部非豁免能力（35/35）+ 32 个 schema 双向修正（删 22 处未使用声明 / 补 11 处欠声明，含 record.view.load×5、actions.page.trigger×4、navigateMapping 判据）；**F2** claim↔host-support 单源（`host-support.json`，host-support.ts 与 generate-claim.mjs 同源）+ 一致性测试 5/5 + claim 重生成；**F3** 10 页行为级单测（`behavior-pages.test.tsx` 20/20，真实链路 + 页面特有 UI）。全量回归 Web vitest 1332/1332 + build 0 + Go 0 FAIL；A-001 self pass（0 required）；子目标关门经审计执行。Root 保持 active 程序容器。
+- **W31（2026-09-18 立项并当日关门 · done 4/4）**：GOAL-043 跨工作区残余统一收口与路线图登记（用户指令：能处理的直接处理、其余统一登记）。**修复**：① `GOAL-009 A-001 F-001` 暗色下开关计算背景（4 条不变量 + 变异验证：暗色硬编码浅色时浅色断言全过、新断言失败）② `GOAL-009 A-001 F-002` 分页契约改 roles + users 双页面参数化 ③ `GOAL-005 A-002 F-002`/`R5-I-005` Host 终态与普通 resource 反馈跨表直接对照（`resource-feedback-parity.test.ts` 3 用例，8 共有条件 × 3 类不变量，2 变异被指名捕获）。**收口**：`GOAL-008 A-002 F-002` → bounded residual（可执行面由守卫 + CI 锁死；文档侧 354 行形态不可唯一确定，触发=被再次引用为证据时复核）。**愿景层**：`V-F124` 经 **VRev-097 self `pass`** 确认实质已由 R1 交付 → `fixed`；`VR-083` 记录 editorial 变更。**登记**：`roadmap.md` 新增「未决项统一登记」节（有界残余 / 悬置决策 / trigger-gated 能力三类表 + 维护约定），`I-037-005` 与全部 gated 能力入库。回归：Web vitest 114/1437 + typecheck 0 + e2e 4 passed × admin/mvp；无产品行为变更；A-001 self pass（0 required）。Root 保持 active 程序容器；VP-037/workspace-037 不重开。
