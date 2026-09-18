@@ -30,5 +30,6 @@ version: 1.0.0
   - token：展开按键底色 `oklch(0.955 0 0)` 对重置按键 `oklch(1 0 0)`；深色下重置为 `oklch(0.145 0 0)`，token 生效。
   - 空展开抑制：2 个筛选项时 900px 与 1280px 无展开按键、480px 与 700px 有（确有隐藏项）；5 个筛选项时 1280px 有展开按键。
   - 无 console 错误。
+- Git checkpoint：本轮 C8 以 `dc4b5c5b` 提交；只暂存本轮 owned paths，未使用 `git add -A`。
 
 C8 实现与回归已完成；C6 修订审计与 Root/VP 的 R6 完成投影待后续审计记录。R5-I-004、Root 和 VP 仍保持开放。

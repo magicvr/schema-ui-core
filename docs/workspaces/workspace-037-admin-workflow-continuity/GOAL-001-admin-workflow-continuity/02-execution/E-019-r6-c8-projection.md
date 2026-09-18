@@ -18,3 +18,5 @@ C8 新增了一个全局语义 token `--control`/`--control-foreground`，是对
 Root 的六阶段纲领分母不变，R6 检查点仍为未完成，因此 Root 保持 `active · 4/6`。R5 `GOAL-006` 仍为 `active · 3/4`，R5-I-004 用户书面关门确认仍开放。
 
 本条只记录 R6 C8 的实现投影，不关闭 R6 C6、R5、Root 或 VP-037；C6 修订审计完成后再决定 R6 完成投影。
+
+Git checkpoint：本轮 C8 为 `dc4b5c5b`；详细验证事实见 GOAL-007 `E-006`。
