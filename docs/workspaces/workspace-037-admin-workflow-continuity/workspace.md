@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-18
-version: 1.8.0
+version: 1.9.0
 parent: null
 ---
 
@@ -25,7 +25,7 @@ parent: null
 - R2 子目标 `GOAL-003-r2-saved-views` 已完成 **`done · 4/4`**；C1～C3 实现/回归、C4 self/independent audit 响应与 Git checkpoint `39c744ef` 均已记录。
 - R3 子目标 `GOAL-004-r3-unsaved-change-protection` 已完成 **`done · 4/4`**；C1～C4 实现/回归、A-003 independent recheck、A-004 self close-out 与 Git checkpoint `d2b39189` 均已记录。
 - R6 子目标 `GOAL-007-list-page-visual-alignment` 已 **`done · 8/8`** 关门：C5 布局修订、C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属）与 C8（页面 actions 高度统一、`--control` 折叠开关语义 token、空展开抑制）全部完成；C6 审计 A-002 为 `conditional`，其 F-005 跨区部分经 `GOAL-008` 闭环。不改变 shell、查询/重置逻辑或 Saved View 存储格式。
-- 整改子目标 `GOAL-008-typecheck-evidence-convention` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-005（裸 `tsc --noEmit` 类型校验空转，high required）的跨工作区部分；用户 P-004 裁决为方案 A。口径固化、`npm run typecheck` 入口、防复发守卫（6 断言 + CI 门禁，5/5 变异捕获）与 self 审计 `pass` 均已完成。
+- 整改子目标 `GOAL-008-typecheck-evidence-convention` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-005（裸 `tsc --noEmit` 类型校验空转，high required）的跨工作区部分；用户 P-004 裁决为方案 A。口径固化、`npm run typecheck` 入口、防复发守卫（6 断言 + CI 门禁，5/5 变异捕获）与 self 审计 `pass` 均已完成。2026-09-18 按用户 `D-015` 授权执行跨区追溯勘误（`E-006`/`E-023`：workspace-009/010/011 共 11 处注记，workspace-002 两处复核确认有效），`I-008-004` 转 `verified`；同期注入错误实测发现 `tsc --noEmit -p tsconfig.json`（根 solution-style 配置）同样空转，据此记 `A-002 F-001`（守卫按 `-p` 令牌判定检查型调用，推荐加固，recommended open）。
 - 整改子目标 `GOAL-009-list-visual-e2e-guard` **`done · 4/4`**（非纲领阶段，不计入 Root 分母）：承接 R6 A-002 F-003（列表视觉面缺持久化浏览器级回归，recommended）。新增 `apps/web/e2e/list-visual-surface.spec.ts`，覆盖 C7 搜索配对/图标/视图表单归属、C8 高度/`--control` token/空展开抑制、C5 布局顺序与列表内 footer；在 mvp/admin 两 profile 下通过，并经 6/6 变异验证（含当年由用户发现的两类回归）。
 - 激活门禁：[VRev-095](../../vision/reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；Admin freshness PASS；I-037-006 verified。
 - 用户已确认 workspace slug = `workspace-037-admin-workflow-continuity`；Root slug = `GOAL-001-admin-workflow-continuity`。

@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 1.0.0
+version: 1.1.0
 ---
 
 # 执行台账 · GOAL-008-typecheck-evidence-convention
@@ -19,7 +19,8 @@ version: 1.0.0
 | E-003 | 2026-09-18 | 实施防复发守卫（结构断言 + CI 门禁）并通过变异验证 | recorded | [E-003-guard-implementation-and-mutation.md](02-execution/E-003-guard-implementation-and-mutation.md) |
 | E-004 | 2026-09-18 | 关闭同类的第二层缺口：e2e 项目类型检查 | recorded | [E-004-e2e-typecheck-gap-closure.md](02-execution/E-004-e2e-typecheck-gap-closure.md) |
 | E-005 | 2026-09-18 | GOAL-008 关门并投影 R6 完成 | recorded | [E-005-goal008-closeout-and-r6-projection.md](02-execution/E-005-goal008-closeout-and-r6-projection.md) |
+| E-006 | 2026-09-18 | 跨工作区类型检查空转条目追溯更正（用户授权） | recorded | [E-006-cross-workspace-typecheck-errata.md](02-execution/E-006-cross-workspace-typecheck-errata.md) |
 
 ## 事实边界
 
-本台账只记录已经发生的核查、代码与文档变更、变异测试与审计事实；`I-008-004` 的跨区追溯等未决事项保留在 `00-meta.md` / `01-decision.md`。
+本台账只记录已经发生的核查、代码与文档变更、变异测试与审计事实；`I-008-004` 已由用户授权并执行（`E-006`）。

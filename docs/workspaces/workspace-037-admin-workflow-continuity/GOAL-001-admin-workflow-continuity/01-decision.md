@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.4.0
+version: 1.5.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
@@ -42,6 +42,7 @@ version: 1.4.0
 | D-012 | 2026-09-18 | 用户选择回开 R6 并追加列表布局修订 | accepted | [D-012-reopen-r6-layout-revision.md](01-decision/D-012-reopen-r6-layout-revision.md) |
 | D-013 | 2026-09-18 | 用户裁决 F-005 处置路径并开设整改子目标 GOAL-008 | accepted | [D-013-open-typecheck-evidence-goal.md](01-decision/D-013-open-typecheck-evidence-goal.md) |
 | D-014 | 2026-09-18 | 用户指示补做列表视觉 e2e 守卫并开设 GOAL-009 | accepted | [D-014-open-list-visual-e2e-guard.md](01-decision/D-014-open-list-visual-e2e-guard.md) |
+| D-015 | 2026-09-18 | 授权跨工作区类型检查空转条目追溯更正 | accepted | [D-015-authorize-cross-workspace-typecheck-errata.md](01-decision/D-015-authorize-cross-workspace-typecheck-errata.md) |
 
 ## 当前投影
 
@@ -56,3 +57,4 @@ version: 1.4.0
 - 用户在 C5 交付后追加三项 UI 反馈，仍属 R6 同一视觉分母；按 D-003 继续在同一 GOAL-007 内追加 C7（图标强调、搜索配对回调、视图表单归属），R6 检查点扩为 7 项、当前 `active · 6/7`。其中搜索配对项是对 C5 引入回归的回退：本项目搜索按钮提交其所属关键词输入，与范例页提交整表的单一“查询”按钮机制不同，故必须与输入同格贴合。Root 六阶段分母不变，仍为 `active · 4/6`；不新建 GOAL-008。
 - 用户随后追加三项控件层反馈；按 D-004 在同一 GOAL-007 内追加 C8（页面 actions 高度统一、折叠开关语义 token、空展开抑制），R6 检查点扩为 8 项、当前 `active · 7/8`。C8 新增 `--control`/`--control-foreground` 语义 token，是 D-002 §5“不新增全局语义 token”边界的**局部修订**，已在 D-004 显式留痕并附 `theme.test.ts` 结构守卫；既有 token 未重命名或重定义。Root 仍为 `active · 4/6`。
 - 按 D-013，用户裁决 F-005 处置为方案 A 并开设整改子目标 `GOAL-008-typecheck-evidence-convention`（非纲领，不计入 Root 分母）。该目标完成口径固化、`npm run typecheck` 入口、防复发守卫（结构断言 + CI 门禁，5/5 变异捕获，并修复 e2e 项目未被检查的第二层同类缺口）与 self 审计 `pass`，关闭为 `done · 4/4`。F-005 闭环复核见 GOAL-007 `A-003`（`pass`），用户设定的 R6 关门前置条件解除；按 `E-021` 投影 R6 为 `done · 8/8`、Root 为 **`active · 5/6`**。R5 仍 `active · 3/4`，R5-I-004 用户书面确认未闭合，Root/VP 不因本轮关门。
+- 按 D-015，用户于 2026-09-18 就 `I-008-004` 授权跨工作区追溯更正：`GOAL-008` 已在 workspace-009/010/011 追加 11 处勘误注记、复核确认 workspace-002 两处有效（`E-006`/`E-023`）。同期实测新增第二层事实——`tsc --noEmit -p tsconfig.json`（根 solution-style 配置）同样空转，据此记录守卫缺口 `GOAL-008 A-002 F-001`（recommended open），是否修复待用户裁决。Root 六阶段分母与 `progress: 5/6` 不变；R5-I-004、Root 与 VP-037 均保持开放。

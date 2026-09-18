@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 1.0.0
+version: 1.1.0
 progress: 4/4
 plan_refs:
   - VP-037-admin-workflow-continuity
@@ -53,7 +53,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 | I-008-001 | required | `tsconfig` 结构与裸 `tsc --noEmit` 是否真的空转？ | C1/C2 | C1 | 读取 `apps/web/tsconfig*.json`；注入类型错误对比两条命令的退出码与输出 | verified | 2026-09-18 已完成 | `D-001`、`E-001` |
 | I-008-002 | required | 受影响的历史条目范围有多大？ | C1/C3 | C1 | 全仓检索裸 `tsc --noEmit`；追溯 `tsconfig.json` 引入时点 | verified | 2026-09-18 已完成；跨区条目只登记不代改 | `E-001` |
 | I-008-003 | required | 防复发守卫应采用什么形态？ | C3 | C3 前 | 评估结构断言 / CI 引用 / 约定权威化；必要时问用户 | verified | 2026-09-18 决策为结构守卫测试 + CI 门禁组合并实施 | `D-002`、`E-003`、`E-004` |
-| I-008-004 | non-blocking | 其他工作区历史条目是否追溯更正？ | 范围外 | 用户路由时 | 用户另行决定；本目标不跨区写入 | deferred | 理由：跨区边界（AGENTS §6c）；触发：用户明确要求 | 待确认 |
+| I-008-004 | non-blocking | 其他工作区历史条目是否追溯更正？ | 范围外 | 用户路由时 | 用户另行决定；本目标不跨区写入 | verified | 2026-09-18 用户授权追溯更正（Root `D-015`）；已加 11 处勘误注记、2 处复核确认有效 | `E-006`；`A-002` |
 
 ## 父目标
 
@@ -65,6 +65,6 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 备注
 
-- 本目标**不是** Root 的纲领阶段，不改变 Root 六阶段分母与 `progress: 4/6`；它是 Root 下的整改子目标，与 R6 的视觉范围相互独立。
+- 本目标**不是** Root 的纲领阶段，不改变 Root 六阶段分母与 `progress`（开设时为 `4/6`，R6 关闭投影后为 `5/6`）；它是 Root 下的整改子目标，与 R6 的视觉范围相互独立。
 - 本目标完成使 F-005 在承接范围内闭环，从而解除用户为 R6 关门设定的前置条件（「等 F-005 处置落定后再关门」）。
-- `I-008-004`（跨区历史条目追溯）仍 deferred，需用户另行路由；`A-001 F-002`（守卫未断言 CI 步骤存在）为 recommended 保持 open。
+- `I-008-004`：2026-09-18 用户授权追溯更正后，已在 workspace-002（复核确认有效，未改）、workspace-009、workspace-010、workspace-011 加 11 处勘误注记并落盘 `E-006`，状态转 `verified`。**新发现** `A-002 F-001`（守卫以 `-p` 令牌判定检查型调用，`-p tsconfig.json` 空转仍会通过）为 recommended 保持 open，与 `A-001 F-002` 同属后续加固项。

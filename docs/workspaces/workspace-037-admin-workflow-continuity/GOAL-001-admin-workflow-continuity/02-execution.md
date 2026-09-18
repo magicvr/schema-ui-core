@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.9.0
+version: 1.10.0
 ---
 
 # 执行台账 · GOAL-001-admin-workflow-continuity
@@ -38,6 +38,7 @@ version: 1.9.0
 | E-020 | 2026-09-18 | 开设整改子目标 GOAL-008 并记录 R6 C6 审计结论 | recorded | [E-020-open-typecheck-evidence-goal.md](02-execution/E-020-open-typecheck-evidence-goal.md) |
 | E-021 | 2026-09-18 | GOAL-008 关门并投影 R6 完成（Root 5/6） | recorded | [E-021-goal008-closeout-and-r6-projection.md](02-execution/E-021-goal008-closeout-and-r6-projection.md) |
 | E-022 | 2026-09-18 | 开设并关闭整改子目标 GOAL-009（列表视觉 e2e 守卫） | recorded | [E-022-list-visual-e2e-guard.md](02-execution/E-022-list-visual-e2e-guard.md) |
+| E-023 | 2026-09-18 | 跨工作区类型检查空转勘误执行（用户授权） | recorded | [E-023-cross-workspace-typecheck-errata.md](02-execution/E-023-cross-workspace-typecheck-errata.md) |
 
 ## 当前事实
 
@@ -58,6 +59,8 @@ version: 1.9.0
 - 2026-09-18，R6 完成 C6 修订审计并记录 `A-002`（self · `conditional`）：F-001（vision 层投影落后）已闭合，F-002/F-004 已 `fixed`，F-003 recommended 保持 open；F-005（high，裸 `tsc --noEmit` 类型校验空转）本目标条目已更正为 `tsc -b`，跨工作区部分按用户 P-004 裁决（方案 A）移交新开设的整改子目标 `GOAL-008-typecheck-evidence-convention`（`active · 2/4`，非纲领阶段，不计入 Root 分母）。R6 按用户裁决保持 `active · 7/8`，完成投影待 GOAL-008 处置落定后单独执行；Root 仍 `active · 4/6`。
 - 2026-09-18，`GOAL-008` 完成 C3（防复发守卫：结构断言 6 项 + CI 显式 `npm run typecheck` 门禁，5/5 变异捕获；并修复 e2e 项目未被 `tsc -b` 检查的第二层同类缺口）与 C4（self 审计 A-001 `pass`，开放 required = 0），关闭为 `done · 4/4`。F-005 承接范围内闭环，用户设定的 R6 关门前置条件解除；按 E-021 投影 R6 `GOAL-007` 为 `done · 8/8`、Root 为 `active · 5/6`。本轮不关闭 R5-I-004、Root 或 VP。
 - 2026-09-18，用户指示「先做列表视觉的 e2e 守卫」；按 D-014 开设整改子目标 `GOAL-009-list-visual-e2e-guard`（非纲领，不计入 Root 分母）承接 R6 A-002 F-003。同日完成 C1～C4 并关闭为 `done · 4/4`（self 审计 A-001 `pass`，开放 required = 0）：新增 `apps/web/e2e/list-visual-surface.spec.ts`，mvp/admin 两 profile 各 2 passed，6/6 变异捕获。至此 R6 A-002 的全部 finding 均已处置（F-001/F-002/F-004 fixed；F-005 经 GOAL-008、F-003 经 GOAL-009 闭环）。Root 仍 `active · 5/6`。
+- 2026-09-18，用户就 `R5-I-004` 选择「先给一页证据再定」：按 E-006 产出关门外证据一页（`GOAL-006/attachments/r5-closeout-evidence-digest.md`）并刷新裁决前证据（`npm run typecheck` exit 0、Vitest 112/1426、`list-visual-surface` e2e 在 admin/mvp 各 2 passed、`apps/api` 自 `89666e5c` 起零漂移），同时修正两处目标内当前态滞后。`R5-I-004` 仍 `collecting`。
+- 2026-09-18，用户另就 `GOAL-008 I-008-004` 授权**跨工作区追溯更正**；按 D-015/E-023 在 workspace-009/010/011 追加 11 处勘误注记、复核确认 workspace-002 两处 `-p e2e/tsconfig.json` 有效。同期注入错误实测新增第二层事实：`tsc --noEmit -p tsconfig.json`（根 solution-style）同样空转，据此记录 `GOAL-008 A-002 F-001`（守卫缺口，recommended open）。Root 仍 `active · 5/6`，`R5-I-004` 未闭合。
 
 ## 事实边界
 
