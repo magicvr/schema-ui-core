@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useTranslate } from "@/i18n/runtime";
 import type { HostFailure } from "@/host/failure";
 
-const KIND_MESSAGE_KEY: Record<string, string> = {
+/**
+ * Terminal-failure kinds and the copy they render. Exported (GOAL-043) so the
+ * cross-surface parity test can compare this table with the ordinary resource
+ * feedback policy instead of the two drifting apart unnoticed.
+ */
+export const HOST_FAILURE_MESSAGE_KEYS: Record<string, string> = {
   "maintenance": "hostFailure.maintenance",
   "upgrade-required": "hostFailure.upgradeRequired",
   "authentication-required": "hostFailure.requiresAuth",
@@ -19,6 +24,11 @@ const KIND_MESSAGE_KEY: Record<string, string> = {
   "render-failed": "hostFailure.renderFailed",
   "unavailable": "hostFailure.unavailable",
 };
+
+/** Fallback copy for an unknown kind — never the raw key (ADR-0036 D5). */
+export const HOST_FAILURE_GENERIC_KEY = "hostFailure.generic";
+
+const KIND_MESSAGE_KEY = HOST_FAILURE_MESSAGE_KEYS;
 
 const ACTION_MESSAGE_KEY: Record<string, string> = {
   retry: "hostFailure.action.retry",

@@ -30,7 +30,9 @@ import { openSidebarGroup, signInAsAdmin } from "./sign-in";
  *   C8 item 3              the toggle exists only when the collapsed row hides a filter
  *   C5 / D-002             filter panel → page actions → list, footer inside the list surface
  *   GOAL-011               page-size control shows the effective size; 10 reaches the API
- *   GOAL-011               the jump confirm action is labelled as a jump
+ *   GOAL-011 / 043         the jump confirm action is labelled as a jump
+ *   GOAL-043               the pager contract holds on two pages, not just roles
+ *   GOAL-043               the toggle consumes `--control` with `.dark` applied too
  */
 
 const DESKTOP = { width: 1440, height: 900 };
@@ -39,14 +41,29 @@ const NARROW = { width: 700, height: 900 };
 
 /** Signs in and lands on the roles list (which owns a search form + toolbar). */
 async function openRolesList(page: Page, viewport = DESKTOP): Promise<void> {
+  await openListPage(page, "Roles", viewport);
+}
+
+/**
+ * Signs in and opens a list page under the identity/access group. The sidebar is
+ * `hidden lg:block`, so navigate at desktop width first and resize afterwards
+ * when a narrow tier is under test.
+ */
+async function openListPage(
+  page: Page,
+  linkName: string,
+  viewport = DESKTOP,
+  pagePath?: string,
+): Promise<void> {
   await page.setViewportSize(viewport);
   await signInAsAdmin(page);
-  // The sidebar is `hidden lg:block`, so navigate at desktop width first and
-  // resize afterwards when a narrow tier is under test.
   await openSidebarGroup(page, "manifest.nav.group.identityAccess");
-  await page.getByRole("link", { name: "Roles" }).click();
-  await expect(page.getByRole("heading", { name: "Roles" })).toBeVisible();
+  await page.getByRole("link", { name: linkName }).click();
+  await expect(page.getByRole("heading", { name: linkName })).toBeVisible();
   await expect(page.locator('[data-table-surface="true"]')).toBeVisible();
+  if (pagePath !== undefined) {
+    await expect(page).toHaveURL(new RegExp(`${pagePath}$`));
+  }
 }
 
 /** Resolves a CSS custom property to the value the browser actually uses. */
@@ -272,6 +289,54 @@ test.describe("R6 list-surface visual contract", () => {
       controlToken,
     );
 
+    // GOAL-009 A-001 F-001 (closed by GOAL-043): the dark path needs its own
+    // assertion — the light one cannot catch a toggle that stops consuming
+    // `--control` only while `.dark` is set. Re-read the CONTROL's computed
+    // background with the class applied, not just the variable's value.
+    //
+    // The toggle carries `transition-colors`, so the read has to ignore the
+    // transition: with it active, `getComputedStyle` returns the frame being
+    // interpolated from (the light value) and the assertion would compare an
+    // animation frame instead of the resolved token binding.
+    const darkToggle = await page.evaluate(() => {
+      const root = document.documentElement;
+      const toggleEl = document.querySelector<HTMLElement>('[data-filter-toggle="true"]');
+      if (toggleEl === null) {
+        return { background: null, token: "", toggleToken: "", colorControl: "" };
+      }
+      const previousTransition = toggleEl.style.transition;
+      toggleEl.style.transition = "none";
+      root.classList.add("dark");
+      const style = getComputedStyle(toggleEl);
+      const result = {
+        background: style.backgroundColor,
+        token: getComputedStyle(root).getPropertyValue("--control").trim(),
+        toggleToken: style.getPropertyValue("--control").trim(),
+        colorControl: style.getPropertyValue("--color-control").trim(),
+      };
+      root.classList.remove("dark");
+      toggleEl.style.transition = previousTransition;
+      return result;
+    });
+    expect(darkToggle.background, "the toggle must paint a background in dark mode").not.toBeNull();
+    expect(
+      darkToggle.token,
+      "the dark token read on the toggle must be the dark override",
+    ).toBe(darkControl);
+    expect(
+      darkToggle.toggleToken,
+      "the toggle must inherit the same --control value as the root",
+    ).toBe(darkControl);
+    expect(
+      darkToggle.colorControl,
+      "the theme alias must resolve to the dark token, not a build-time literal",
+    ).toBe(darkControl);
+    expect(
+      darkToggle.background,
+      "the toggle must consume --control in dark mode, not a hard-coded light colour",
+    ).toBe(darkControl);
+    expect(darkToggle.token, "the dark token value must be the dark override").toBe(darkControl);
+
     // ── Page actions keep their uniform height at the narrow tier too.
     const headerHeights = await page.evaluate(() => {
       const trigger = document.querySelector('[data-saved-view-columns-trigger="true"]');
@@ -289,38 +354,51 @@ test.describe("R6 list-surface visual contract", () => {
    * the browser. So assert it here, against the real API: the first list request
    * carries no `pageSize` (the server's own 20 applies), the control displays
    * 20, and choosing 10 sends `pageSize=10`.
+   *
+   * GOAL-009 A-001 F-002 (closed by GOAL-043): the list contracts belong to the
+   * SHARED implementation, so they are checked on two different pages rather
+   * than one — a regression limited to a page's own wiring (data source, table
+   * id) can otherwise survive on every other list.
    */
-  test("shows the effective page size and makes 10 reach the API", async ({ page }) => {
-    const listRequests: string[] = [];
-    page.on("request", (request) => {
-      const url = request.url();
-      if (url.includes("/api/roles") && !url.includes("pageSize=100")) {
-        listRequests.push(url);
-      }
+  for (const surface of [
+    { name: "roles", link: "Roles", api: "/api/roles" },
+    { name: "users", link: "Users", api: "/api/users" },
+  ]) {
+    test(`shows the effective page size and makes 10 reach the API (${surface.name})`, async ({
+      page,
+    }) => {
+      const listRequests: string[] = [];
+      page.on("request", (request) => {
+        const url = request.url();
+        if (url.includes(surface.api) && !url.includes("pageSize=100")) {
+          listRequests.push(url);
+        }
+      });
+
+      await openListPage(page, surface.link);
+
+      const sizeSelect = page.locator("select[data-pagination-page-size]");
+      await expect(sizeSelect).toHaveValue("20");
+      expect(
+        listRequests.some((url) => new URL(url).searchParams.has("pageSize")),
+        "the default page size must be omitted so the API's own default applies",
+      ).toBe(false);
+
+      const listRequest = page.waitForRequest(
+        (request) =>
+          request.url().includes(surface.api) && request.url().includes("pageSize=10"),
+      );
+      await sizeSelect.selectOption("10");
+      await listRequest;
+      await expect(sizeSelect).toHaveValue("10");
+
+      // The confirm action of the go-to-page form reads as a jump, not a search
+      // (zh "跳转" / en "Go"), while the form itself stays "go to page".
+      const jump = page.locator('[data-pagination-jump="true"] button[type="submit"]');
+      await expect(jump).toHaveText(/^(跳转|Go)$/);
+      await expect(page.locator('[data-pagination-jump="true"] label')).toHaveText(
+        /^(跳至页|Go to page)$/,
+      );
     });
-
-    await openRolesList(page, DESKTOP);
-
-    const sizeSelect = page.locator("select[data-pagination-page-size]");
-    await expect(sizeSelect).toHaveValue("20");
-    expect(
-      listRequests.some((url) => new URL(url).searchParams.has("pageSize")),
-      "the default page size must be omitted so the API's own default applies",
-    ).toBe(false);
-
-    const listRequest = page.waitForRequest(
-      (request) => request.url().includes("/api/roles") && request.url().includes("pageSize=10"),
-    );
-    await sizeSelect.selectOption("10");
-    await listRequest;
-    await expect(sizeSelect).toHaveValue("10");
-
-    // The confirm action of the go-to-page form reads as a jump, not a search
-    // (zh "跳转" / en "Go"), while the form itself stays "go to page".
-    const jump = page.locator('[data-pagination-jump="true"] button[type="submit"]');
-    await expect(jump).toHaveText(/^(跳转|Go)$/);
-    await expect(page.locator('[data-pagination-jump="true"] label')).toHaveText(
-      /^(跳至页|Go to page)$/,
-    );
-  });
+  }
 });
