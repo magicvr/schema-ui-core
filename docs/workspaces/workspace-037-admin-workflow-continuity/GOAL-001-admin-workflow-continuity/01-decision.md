@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.3.0
+version: 1.4.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
@@ -54,3 +54,4 @@ version: 1.3.0
 - 用户随后对 R6 的实现提出布局修订，并选择回开方案 A；按 D-012 保留 GOAL-007、追加 C5/C6，Root 当前回投影为 `active · 4/6`，R5 仍为 `active · 3/4`，不新建 GOAL-008，不关闭或改写 R5-I-004。
 - 用户在 C5 交付后追加三项 UI 反馈，仍属 R6 同一视觉分母；按 D-003 继续在同一 GOAL-007 内追加 C7（图标强调、搜索配对回调、视图表单归属），R6 检查点扩为 7 项、当前 `active · 6/7`。其中搜索配对项是对 C5 引入回归的回退：本项目搜索按钮提交其所属关键词输入，与范例页提交整表的单一“查询”按钮机制不同，故必须与输入同格贴合。Root 六阶段分母不变，仍为 `active · 4/6`；不新建 GOAL-008。
 - 用户随后追加三项控件层反馈；按 D-004 在同一 GOAL-007 内追加 C8（页面 actions 高度统一、折叠开关语义 token、空展开抑制），R6 检查点扩为 8 项、当前 `active · 7/8`。C8 新增 `--control`/`--control-foreground` 语义 token，是 D-002 §5“不新增全局语义 token”边界的**局部修订**，已在 D-004 显式留痕并附 `theme.test.ts` 结构守卫；既有 token 未重命名或重定义。Root 仍为 `active · 4/6`。
+- 按 D-013，用户裁决 F-005 处置为方案 A 并开设整改子目标 `GOAL-008-typecheck-evidence-convention`（非纲领，不计入 Root 分母）。该目标完成口径固化、`npm run typecheck` 入口、防复发守卫（结构断言 + CI 门禁，5/5 变异捕获，并修复 e2e 项目未被检查的第二层同类缺口）与 self 审计 `pass`，关闭为 `done · 4/4`。F-005 闭环复核见 GOAL-007 `A-003`（`pass`），用户设定的 R6 关门前置条件解除；按 `E-021` 投影 R6 为 `done · 8/8`、Root 为 **`active · 5/6`**。R5 仍 `active · 3/4`，R5-I-004 用户书面确认未闭合，Root/VP 不因本轮关门。

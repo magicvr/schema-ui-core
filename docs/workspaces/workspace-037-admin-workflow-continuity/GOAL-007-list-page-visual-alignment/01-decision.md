@@ -1,11 +1,11 @@
 ---
 id: GOAL-007-list-page-visual-alignment-decisions
 doc: decision
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.5.0
+version: 1.0.0
 ---
 
 # 决策台账 · GOAL-007-list-page-visual-alignment

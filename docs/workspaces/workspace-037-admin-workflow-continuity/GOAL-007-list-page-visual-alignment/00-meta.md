@@ -1,12 +1,12 @@
 ---
 id: GOAL-007-list-page-visual-alignment
 title: R6 列表页视觉与筛选体验收敛
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.7.0
-progress: 7/8
+version: 1.0.0
+progress: 8/8
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -17,7 +17,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 概述
 
-在 Root 尚未关门、R5 用户确认门禁保持开放的前提下，R6 继续参考 `raw/new-table` 范例页收敛现有通用列表页的视觉和布局。C1～C5 的原交付事实保留；用户在 C5 交付后追加第三轮反馈，故再追加 C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属），以校正 C5 引入的搜索按钮错位与视图表单远离触发按钮的问题。R6 沿用 VP-037 与当前工作区，不新建 VP 或 workspace，不改变顶部功能栏、左侧导航、后端 schema、Saved View 存储格式或现有查询/重置语义。
+在 Root 尚未关门、R5 用户确认门禁保持开放的前提下，R6 继续参考 `raw/new-table` 范例页收敛现有通用列表页的视觉和布局。C1～C5 的原交付事实保留；用户在 C5 交付后追加两轮反馈，故再追加 C7 控制位纠偏（图标强调、搜索配对回调、视图表单归属）与 C8 控件语义（页面 actions 高度、`--control` 折叠开关 token、空展开抑制）。R6 沿用 VP-037 与当前工作区，不新建 VP 或 workspace，不改变顶部功能栏、左侧导航、后端 schema、Saved View 存储格式或现有查询/重置语义。R6 已于 2026-09-18 以 `done · 8/8` 关门，Root 相应投影为 `active · 5/6`；本目标不关闭 Root 或 VP-037。
 
 ## 范围与边界
 
@@ -40,7 +40,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 3. **C3 · 通用实现与回归**：在不改变查询归属的前提下完成实现，补齐单元/集成回归并核对顶部栏与左侧导航未变。已完成，证据见 `E-002`。
 4. **C4 · 阶段审计与交付**：完成 self 审计，响应 required finding；不借 R6 审计关闭 R5 的 Root/VP 用户确认门禁。已完成，证据见 `A-001`。
 5. **C5 · 布局修订、实现与回归**：修正视图标签与页面 actions 的分工、筛选操作网格归属和列表内分页 footer；保持现有状态/查询逻辑并完成定向回归。已完成，证据见 `E-004`。
-6. **C6 · 修订审计与交付**：完成修订后的 self 审计、必要的独立意见响应和 Root/VP 投影；不关闭 R5-I-004。A-002 已记录（`conditional`）：F-001/F-002/F-004 已闭合，F-005 跨工作区部分待用户裁决。
+6. **C6 · 修订审计与交付**：完成修订后的 self 审计、必要的独立意见响应和 Root/VP 投影；不关闭 R5-I-004。A-002 已记录（`conditional`）：F-001/F-002/F-004 已闭合；F-005 跨工作区部分按用户裁决移交 `GOAL-008` 并已在该目标内闭环。已完成。
 7. **C7 · 控制位纠偏、实现与回归**：为列配置/保存视图触发器补范例页图标；把搜索提交按钮回调到其关键词输入所属单元并恢复贴合配对；把视图管理操作与新建视图表单移入视图标签组 surface。已完成，证据见 `D-003`、`E-005`。
 8. **C8 · 控制高度、折叠开关 token 与空展开抑制**：统一页面 actions 行高度；新增 `--control` 语义 token 并让展开/收起按键与普通描边操作区分；无隐藏筛选项时不渲染展开/收起按键。已完成，证据见 `D-004`、`E-006`。
 
@@ -51,7 +51,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] C3：通用列表页完成视觉/交互调整，查询/重置语义保持，单页分页显示，相关测试通过。
 - [x] C4：R6 self 审计与响应完成；R5-I-004 仍按原台账等待用户对 Root/VP 的书面关门确认。
 - [x] C5：页面 actions、视图标签、筛选操作网格和列表内分页 footer 已按修订合同实现并通过回归；查询/重置/Saved View 存储语义未变。
-- [ ] C6：修订后的审计与投影完成；R5-I-004 仍保持开放。
+- [x] C6：修订后的审计与投影完成；R5-I-004 仍保持开放。A-002 verdict `conditional`（F-001/F-002/F-004 fixed；F-005 跨区部分经 GOAL-008 闭环）；R6 投影 `done · 8/8`，Root 投影 `active · 5/6`。
 - [x] C7：图标强调、搜索配对回调与视图表单归属已实现并通过定向/全量回归及真实浏览器布局核对；查询/重置/Saved View 存储语义未变。
 - [x] C8：页面 actions 高度统一为 32px，`--control` 语义 token 已双层声明并接入折叠开关，无隐藏项时不渲染展开/收起按键；已通过回归与真实浏览器多断点核对。
 
@@ -76,5 +76,6 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 ## 备注
 
 - R5 `GOAL-006-r5-composition-acceptance` 仍为 `active · 3/4`，其 R5-I-004 用户书面确认未被本目标替代、关闭或推断。
-- C1～C5 的交付事实保留；用户追加反馈后，R6 当前以 `active · 7/8` 承载 C6 修订审计，旧 A-001 仍只证明原版本交付，E-004 不再代表当前交付状态。
-- `progress: 7/8` 只由上述八个显式检查点派生；它不放行方案、不关闭 finding，也不改变 Root/VP 状态。
+- C1～C8 全部完成，R6 以 `done · 8/8` 关门。C5 的 E-004 不再单独代表交付状态（C7/C8 已在其上纠偏）；C6 的 A-002 为 `conditional`，其 F-005 跨区部分经 `GOAL-008`（`done · 4/4`）闭环。
+- `progress: 8/8` 只由上述八个显式检查点派生；它不放行方案、不关闭 finding，也不改变 Root/VP 状态。
+- 本目标关门**不**关闭 Root 或 VP-037：R5 的 `R5-I-004` 用户书面确认门禁仍开放。

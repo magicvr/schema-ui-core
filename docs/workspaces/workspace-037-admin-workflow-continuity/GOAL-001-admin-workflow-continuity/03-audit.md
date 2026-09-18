@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 0.11.0
+version: 0.12.0
 ---
 
 # 审计台账 · GOAL-001-admin-workflow-continuity
@@ -35,4 +35,4 @@ version: 0.11.0
 
 ## 结论状态
 
-Root 当前为 `active · 4/6`；R1 子目标 GOAL-002 已 `done · 3/3`，R2 子目标 GOAL-003 已 `done · 4/4`，R3 子目标 GOAL-004 已 `done · 4/4`，R4 子目标 GOAL-005 已 `done · 4/4`，R5 GOAL-006 仍 `active · 3/4`，R6 GOAL-007 已回开为 `active · 7/8`（C6 修订审计待完成）。A-001～A-004 完成 R1～R4 阶段投影核对；A-005 记录的是 R6 原版本 `done · 4/4` 时的投影，**在 D-012 回开 R6 后已不代表当前 R6 状态**，故本轮将其 scope 限定为历史版本证据。当前 Root 台账无新的开放 required finding，但 R5-I-004 用户书面确认仍是 R5/Root/VP 关门门禁。Vision 层 VRev-095 的 `pass` 只支持 VP 激活与工作区建立，不支持实现阶段或关门完成。
+Root 当前为 `active · 5/6`；R1 子目标 GOAL-002 已 `done · 3/3`，R2 子目标 GOAL-003 已 `done · 4/4`，R3 子目标 GOAL-004 已 `done · 4/4`，R4 子目标 GOAL-005 已 `done · 4/4`，R5 GOAL-006 仍 `active · 3/4`，R6 GOAL-007 已经 C5/C7/C8 三轮纠偏后以 `done · 8/8` 关门（其 C6 审计 A-002 为 `conditional`，F-005 跨区部分经整改子目标 GOAL-008 闭环，A-001 `pass`）。A-001～A-004 完成 R1～R4 阶段投影核对；A-005 记录的是 R6 原版本 `done · 4/4` 时的投影，**在 D-012 回开 R6 后已不代表当前 R6 状态**，故其 scope 已限定为历史版本证据。当前 Root 台账无新的开放 required finding，但 R5-I-004 用户书面确认仍是 R5/Root/VP 关门门禁。Vision 层 VRev-095 的 `pass` 只支持 VP 激活与工作区建立，不支持实现阶段或关门完成。
