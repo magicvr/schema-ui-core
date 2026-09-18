@@ -189,6 +189,7 @@
   "feedback.pageNumber": "Page {page}",
   "feedback.pageSize": "Rows per page",
   "feedback.goToPage": "Go to page",
+  "feedback.jumpToPage": "Go",
   "feedback.moreActions": "More actions",
   "schema.users.field.username": "Username",
   "schema.users.field.name": "Name",

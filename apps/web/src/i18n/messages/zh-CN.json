@@ -189,6 +189,7 @@
   "feedback.pageNumber": "第 {page} 页",
   "feedback.pageSize": "每页条数",
   "feedback.goToPage": "跳至页",
+  "feedback.jumpToPage": "跳转",
   "feedback.moreActions": "更多操作",
   "schema.users.field.username": "用户名",
   "schema.users.field.name": "姓名",

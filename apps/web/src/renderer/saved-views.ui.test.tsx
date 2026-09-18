@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
+import { DEFAULT_PAGE_SIZE } from "@/renderer/resource";
 import { savedViewStorageKey } from "@/renderer/saved-views";
 import { SchemaTable } from "@/renderer/schema-table";
 
@@ -191,7 +192,9 @@ describe("Saved View table integration", () => {
       activeViewId?: string;
     };
     expect(updated.views[0].id).toBe(initial.views[0].id);
-    expect(updated.views[0].query).toEqual({ pageSize: 10 });
+    // GOAL-011: the saved state records the list's default page size, so assert
+    // against the shared constant instead of re-encoding the old literal 10.
+    expect(updated.views[0].query).toEqual({ pageSize: DEFAULT_PAGE_SIZE });
     expect(updated.activeViewId).toBe(initial.activeViewId);
 
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);

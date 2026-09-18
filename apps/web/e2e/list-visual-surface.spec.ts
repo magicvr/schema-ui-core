@@ -29,6 +29,8 @@ import { openSidebarGroup, signInAsAdmin } from "./sign-in";
  *   C8 item 2              the expand toggle wears the `control` token, not the reset style
  *   C8 item 3              the toggle exists only when the collapsed row hides a filter
  *   C5 / D-002             filter panel → page actions → list, footer inside the list surface
+ *   GOAL-011               page-size control shows the effective size; 10 reaches the API
+ *   GOAL-011               the jump confirm action is labelled as a jump
  */
 
 const DESKTOP = { width: 1440, height: 900 };
@@ -276,5 +278,49 @@ test.describe("R6 list-surface visual contract", () => {
       return trigger === null ? null : Math.round(trigger.getBoundingClientRect().height);
     });
     expect(headerHeights).not.toBeNull();
+  });
+
+  /**
+   * GOAL-011: the pager's page-size control must show the size that is actually
+   * in effect, and every other option must reach the wire. The defect this
+   * covers (client default 10 vs server default 20, with the parameter omitted
+   * whenever the two matched) was invisible to jsdom tests of the day because
+   * their mock modelled the wrong contract — and it was the user who saw it in
+   * the browser. So assert it here, against the real API: the first list request
+   * carries no `pageSize` (the server's own 20 applies), the control displays
+   * 20, and choosing 10 sends `pageSize=10`.
+   */
+  test("shows the effective page size and makes 10 reach the API", async ({ page }) => {
+    const listRequests: string[] = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (url.includes("/api/roles") && !url.includes("pageSize=100")) {
+        listRequests.push(url);
+      }
+    });
+
+    await openRolesList(page, DESKTOP);
+
+    const sizeSelect = page.locator("select[data-pagination-page-size]");
+    await expect(sizeSelect).toHaveValue("20");
+    expect(
+      listRequests.some((url) => new URL(url).searchParams.has("pageSize")),
+      "the default page size must be omitted so the API's own default applies",
+    ).toBe(false);
+
+    const listRequest = page.waitForRequest(
+      (request) => request.url().includes("/api/roles") && request.url().includes("pageSize=10"),
+    );
+    await sizeSelect.selectOption("10");
+    await listRequest;
+    await expect(sizeSelect).toHaveValue("10");
+
+    // The confirm action of the go-to-page form reads as a jump, not a search
+    // (zh "跳转" / en "Go"), while the form itself stays "go to page".
+    const jump = page.locator('[data-pagination-jump="true"] button[type="submit"]');
+    await expect(jump).toHaveText(/^(跳转|Go)$/);
+    await expect(page.locator('[data-pagination-jump="true"] label')).toHaveText(
+      /^(跳至页|Go to page)$/,
+    );
   });
 });

@@ -8,7 +8,7 @@ import { Download } from "lucide-react";
 import { useTranslate } from "@/i18n/runtime";
 import { registerCustomComponent, type CustomComponentProps } from "@/renderer/custom-components";
 import { useSchemaCrud } from "@/renderer/render.tsx";
-import { buildResourceQuery } from "@/renderer/resource";
+import { buildResourceQuery, DEFAULT_PAGE_SIZE } from "@/renderer/resource";
 
 const EXPORT_PAGE_SIZE = 10000;
 
@@ -32,7 +32,7 @@ export function ActivityExport({ node }: CustomComponentProps) {
     setExporting(true);
     setError(null);
     try {
-      const query = crud?.tableQuery(targetTable) ?? { page: 1, pageSize: 10 };
+      const query = crud?.tableQuery(targetTable) ?? { page: 1, pageSize: DEFAULT_PAGE_SIZE };
       const params = new URLSearchParams(
         buildResourceQuery({
           ...query,

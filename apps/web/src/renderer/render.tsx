@@ -51,6 +51,7 @@ import {
   validatePermissions,
 } from "@/renderer/permissions";
 import {
+  DEFAULT_PAGE_SIZE,
   DISPLAY_LIST_QUERY,
   EMPTY_RESOURCE_LIST,
   fetchResourceList,
@@ -1453,7 +1454,7 @@ function SchemaCrudProvider({
       }
     }
     setQueries((prev) => {
-      const current = prev[targetTable] ?? { page: 1, pageSize: 10 };
+      const current = prev[targetTable] ?? { page: 1, pageSize: DEFAULT_PAGE_SIZE };
       const filters: Record<string, string> = { ...(current.filters ?? {}) };
       for (const id of owned) {
         delete filters[id];

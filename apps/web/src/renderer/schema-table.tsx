@@ -10,6 +10,7 @@ import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
 import { feedbackFromError } from "@/renderer/feedback-policy";
 import {
+  DEFAULT_PAGE_SIZE,
   EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
@@ -612,7 +613,10 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
   // W11 · U-06: go-to-page input ref (submit reads it; no controlled state).
   const goToPageRef = useRef<HTMLInputElement>(null);
   const providerQuery = crud?.tableQuery(tableId);
-  const [localQuery, setLocalQuery] = useState<ResourceQuery>({ page: 1, pageSize: 10 });
+  const [localQuery, setLocalQuery] = useState<ResourceQuery>({
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
   const query = providerQuery ?? localQuery;
   const setQuery = (next: ResourceQuery) => {
     if (crud !== null) {
@@ -1498,7 +1502,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
           <select
             aria-label={t("feedback.pageSize")}
             data-pagination-page-size="true"
-            value={String(query.pageSize ?? 10)}
+            value={String(query.pageSize ?? DEFAULT_PAGE_SIZE)}
             onChange={(event) =>
               setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
             }
@@ -1586,7 +1590,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
             disabled={totalPages <= 1}
             className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {t("feedback.search")}
+            {t("feedback.jumpToPage")}
           </button>
         </form>
       </div>
