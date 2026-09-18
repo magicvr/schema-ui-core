@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } fr
 import { createPortal } from "react-dom";
 
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
+import { ListFilterPanel } from "@/components/list-filter-panel";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
 import { feedbackFromError } from "@/renderer/feedback-policy";
@@ -17,6 +18,10 @@ import {
 } from "@/renderer/resource";
 import type { RenderTableNode } from "@/renderer/render.types";
 import { useSchemaCrud } from "@/renderer/render.tsx";
+import {
+  resolveListObjectLabel,
+  usePageListActionsHost,
+} from "@/renderer/list-surface";
 import {
   createSavedViewRecord,
   getBrowserSavedViewStorage,
@@ -61,6 +66,8 @@ export interface SchemaTableProps {
   node: RenderTableNode;
   /** Injectable fetch (defaults to `globalThis.fetch`). */
   fetcher?: typeof fetch;
+  /** Localized page title used only as a semantic fallback for Saved Views. */
+  pageTitle?: string;
 }
 
 export interface SchemaTableColumnSpec {
@@ -516,7 +523,7 @@ function RowActionsMenu({
   );
 }
 
-export function SchemaTable({ node, fetcher }: SchemaTableProps) {
+export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
   const columns = useMemo(() => schemaTableColumns(node), [node]);
   const dataSource = schemaTableDataSource(node);
   const dataParams = schemaTableDataParams(node);
@@ -524,6 +531,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   const crud = useSchemaCrud();
   const t = useTranslate();
   const tableId = node.id ?? "default";
+  const pageListActionsHost = usePageListActionsHost();
+  const [pageActionsPortalReady, setPageActionsPortalReady] = useState(false);
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
   const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
   const filters = useMemo(() => schemaTableFilters(node), [node]);
@@ -534,6 +543,32 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     t,
     "",
   );
+  const tableTitleKey =
+    typeof node.props?.titleKey === "string" ? node.props.titleKey : undefined;
+  const listObjectLabel = resolveListObjectLabel({
+    pageId: crud?.pageId,
+    pageTitle,
+    tableTitle: title,
+    tableTitleKey,
+    translate: (key, params) => t(key, params),
+  });
+
+  useEffect(() => {
+    const host = pageListActionsHost;
+    if (host === null || host.element === null) {
+      setPageActionsPortalReady(false);
+      return;
+    }
+    const claimed = host.claim(tableId);
+    setPageActionsPortalReady(claimed);
+    return claimed ? () => host.release(tableId) : undefined;
+  }, [
+    pageListActionsHost?.availabilityVersion,
+    pageListActionsHost?.claim,
+    pageListActionsHost?.element,
+    pageListActionsHost?.release,
+    tableId,
+  ]);
 
   const formFilterFields = useMemo(
     () => (crud?.tableFilterFields !== undefined ? crud.tableFilterFields(tableId) : []),
@@ -1135,17 +1170,225 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             },
           },
         ]
-      : []),
+    : []),
   ];
+
+  const columnConfiguration =
+    savedViewEnabled && savedViewLoad.status !== "disabled" ? (
+      <details className="relative" data-list-page-action="columns">
+        <summary className="cursor-pointer list-none rounded-md border border-input bg-background px-2.5 py-2 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent">
+          {t("feedback.savedViewColumns")}
+        </summary>
+        <div
+          role="group"
+          aria-label={t("feedback.savedViewColumns")}
+          className="absolute left-0 top-10 z-20 grid min-w-44 gap-2 rounded-md border border-border bg-card p-3 shadow-lg"
+        >
+          {columns.map((column) => {
+            const checked = visibleColumnSet.has(column.field);
+            const label = resolveTextProp(
+              column as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              column.field,
+            );
+            return (
+              <label key={column.field} className="flex items-center gap-2 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={checked && visibleColumns.length <= 1}
+                  onChange={() =>
+                    setVisibleColumns((current) => {
+                      if (current.includes(column.field)) {
+                        return current.length <= 1
+                          ? current
+                          : current.filter((field) => field !== column.field);
+                      }
+                      return [...current, column.field];
+                    })
+                  }
+                />
+                <span>{t("feedback.savedViewColumns")}: {label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </details>
+    ) : null;
+
+  const pageToolbarSurface = columnConfiguration !== null || toolbar.length > 0 ? (
+    <div className="flex flex-wrap items-center justify-end gap-2" data-list-page-actions>
+      {columnConfiguration}
+      {toolbar.map((trigger) => {
+        const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
+        const permitted = crud?.effectivePermission(key) ?? true;
+        const isBatch =
+          typeof trigger === "object" &&
+          trigger !== null &&
+          !Array.isArray(trigger) &&
+          ((trigger as Record<string, unknown>).batchMapping !== undefined ||
+            (trigger as Record<string, unknown>).requiresSelection === true);
+        const requiresSelection = trigger.requiresSelection === true;
+        const selectionDisabled =
+          requiresSelection && (currentSelection === undefined || currentSelection.count === 0);
+        const disabled = !permitted || selectionDisabled;
+        return (
+          <button
+            key={key}
+            type="button"
+            disabled={disabled}
+            title={
+              disabled
+                ? selectionDisabled
+                  ? t("feedback.selectRowFirst")
+                  : t("feedback.actionNotPermitted")
+                : undefined
+            }
+            onClick={() =>
+              isBatch && selectionEnabled
+                ? crud?.invokeBatchAction(trigger, tableId)
+                : crud?.invokeAction(trigger, null)
+            }
+            className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90 disabled:opacity-50"
+          >
+            {resolveTextProp(
+              trigger as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              key,
+            )}
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
+
+  const savedViewSurface = savedViewEnabled && savedViewLoad.status !== "disabled" ? (
+    <div
+      className="flex flex-wrap items-center justify-end gap-2 rounded-lg border border-border/70 bg-card/85 p-2 shadow-2xs dark:border-border/60 dark:bg-card/70"
+      data-saved-views
+    >
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{t("feedback.savedViews")}</span>
+          <select
+            data-saved-view-select
+            aria-label={t("feedback.savedViews")}
+            value={savedViewLoad.activeViewId ?? ""}
+            disabled={savedViewLoad.status !== "ready"}
+            onChange={(event) => selectSavedView(event.target.value)}
+            className="h-9 min-w-40 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-2xs outline-none transition-all hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+          >
+            <option value="">
+              {t("feedback.savedViewCurrent", { object: listObjectLabel })}
+            </option>
+            {savedViewLoad.views.map((view) => (
+              <option key={view.id} value={view.id}>
+                {view.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          data-saved-view-action="save"
+          disabled={savedViewLoad.status !== "ready"}
+          onClick={() => {
+            setSaveViewName("");
+            setSaveViewOpen(true);
+          }}
+          className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+        >
+          {t("feedback.savedViewSave")}
+        </button>
+        {selectedSavedView !== undefined ? (
+          <>
+            <button
+              type="button"
+              data-saved-view-action="update"
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={updateSelectedView}
+              className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              {t("feedback.savedViewUpdate")}
+            </button>
+            <button
+              type="button"
+              data-saved-view-action="delete"
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={deleteSelectedView}
+              className="h-9 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive shadow-2xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
+            >
+              {t("feedback.savedViewDelete")}
+            </button>
+          </>
+        ) : null}
+      </div>
+      {pageToolbarSurface}
+      {saveViewOpen ? (
+        <form
+          className="flex basis-full flex-wrap items-center justify-end gap-2 pt-1"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveNewView();
+          }}
+        >
+          <label className="sr-only" htmlFor={`${tableId}-saved-view-name`}>
+            {t("feedback.savedViewName")}
+          </label>
+          <input
+            id={`${tableId}-saved-view-name`}
+            autoFocus
+            value={saveViewName}
+            onChange={(event) => setSaveViewName(event.target.value)}
+            placeholder={t("feedback.savedViewName")}
+            maxLength={80}
+            className="h-9 min-w-52 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-2xs"
+          />
+          <button
+            type="submit"
+            data-saved-view-action="confirm-save"
+            className="h-9 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90"
+          >
+            {t("feedback.savedViewConfirmSave")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSaveViewOpen(false)}
+            className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground shadow-2xs transition-colors hover:bg-accent"
+          >
+            {t("feedback.cancel")}
+          </button>
+        </form>
+      ) : null}
+      {savedViewLoad.status === "error" ? (
+        <span role="alert" className="basis-full text-xs text-destructive">
+          {t("feedback.savedViewUnavailable")}
+        </span>
+      ) : null}
+    </div>
+  ) : pageToolbarSurface;
+
+  const listActionSurface =
+    savedViewSurface === null
+      ? null
+      : pageListActionsHost !== null && pageListActionsHost.element !== null && pageActionsPortalReady
+        ? createPortal(savedViewSurface, pageListActionsHost.element)
+        : savedViewSurface;
+  const totalPages = list === null ? 1 : Math.max(1, Math.ceil(list.total / list.pageSize));
 
   return (
     <div className="w-full min-w-0 space-y-2">
       {title !== "" ? (
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       ) : null}
+      {listActionSurface}
       {filters.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-4" data-table-filters>
-          {filters.map((filter) => {
+        <ListFilterPanel
+          items={filters.map((filter) => {
             const label = resolveTextProp(
               filter as unknown as Record<string, unknown>,
               "labelKey",
@@ -1155,11 +1398,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             );
             const value = query.filters?.[filter.field] ?? "";
             return (
-              <label
-                key={filter.field}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <span>{label}</span>
+              <label key={filter.field} className="block min-w-0 space-y-1.5">
+                <span className="block text-xs font-medium text-muted-foreground/80">{label}</span>
                 <select
                   value={value}
                   onChange={(event) =>
@@ -1169,7 +1409,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                       page: 1,
                     })
                   }
-                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  className="h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                 >
                   {filter.options.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1186,194 +1426,12 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               </label>
             );
           })}
-        </div>
-      ) : null}
-      {savedViewEnabled && savedViewLoad.status !== "disabled" ? (
-        <div
-          className="flex flex-wrap items-center gap-2 rounded-md border border-border/70 bg-card/60 p-2"
-          data-saved-views
-        >
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{t("feedback.savedViews")}</span>
-            <select
-              data-saved-view-select
-              aria-label={t("feedback.savedViews")}
-              value={savedViewLoad.activeViewId ?? ""}
-              disabled={savedViewLoad.status !== "ready"}
-              onChange={(event) => selectSavedView(event.target.value)}
-              className="h-8 min-w-40 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-            >
-              <option value="">{t("feedback.savedViewCurrent")}</option>
-              {savedViewLoad.views.map((view) => (
-                <option key={view.id} value={view.id}>
-                  {view.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            data-saved-view-action="save"
-            disabled={savedViewLoad.status !== "ready"}
-            onClick={() => {
-              setSaveViewName("");
-              setSaveViewOpen(true);
-            }}
-            className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent disabled:opacity-50"
-          >
-            {t("feedback.savedViewSave")}
-          </button>
-          {selectedSavedView !== undefined ? (
-            <>
-              <button
-                type="button"
-                data-saved-view-action="update"
-                disabled={savedViewLoad.status !== "ready"}
-                onClick={updateSelectedView}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent disabled:opacity-50"
-              >
-                {t("feedback.savedViewUpdate")}
-              </button>
-              <button
-                type="button"
-                data-saved-view-action="delete"
-                disabled={savedViewLoad.status !== "ready"}
-                onClick={deleteSelectedView}
-                className="h-8 rounded-md border border-destructive/40 bg-background px-2.5 text-xs font-medium text-destructive shadow-sm hover:bg-destructive/10 disabled:opacity-50"
-              >
-                {t("feedback.savedViewDelete")}
-              </button>
-            </>
-          ) : null}
-          <details className="relative">
-            <summary className="cursor-pointer list-none rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-accent">
-              {t("feedback.savedViewColumns")}
-            </summary>
-            <div
-              role="group"
-              aria-label={t("feedback.savedViewColumns")}
-              className="absolute right-0 top-9 z-20 grid min-w-44 gap-2 rounded-md border border-border bg-card p-3 shadow-lg"
-            >
-              {columns.map((column) => {
-                const checked = visibleColumnSet.has(column.field);
-                const label = resolveTextProp(
-                  column as unknown as Record<string, unknown>,
-                  "labelKey",
-                  "label",
-                  t,
-                  column.field,
-                );
-                return (
-                  <label key={column.field} className="flex items-center gap-2 text-xs text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={checked && visibleColumns.length <= 1}
-                      onChange={() =>
-                        setVisibleColumns((current) => {
-                          if (current.includes(column.field)) {
-                            return current.length <= 1
-                              ? current
-                              : current.filter((field) => field !== column.field);
-                          }
-                          return [...current, column.field];
-                        })
-                      }
-                    />
-                    <span>{t("feedback.savedViewColumns")}: {label}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </details>
-          {saveViewOpen ? (
-            <form
-              className="flex basis-full flex-wrap items-center gap-2 pt-1"
-              onSubmit={(event) => {
-                event.preventDefault();
-                saveNewView();
-              }}
-            >
-              <label className="sr-only" htmlFor={`${tableId}-saved-view-name`}>
-                {t("feedback.savedViewName")}
-              </label>
-              <input
-                id={`${tableId}-saved-view-name`}
-                autoFocus
-                value={saveViewName}
-                onChange={(event) => setSaveViewName(event.target.value)}
-                placeholder={t("feedback.savedViewName")}
-                maxLength={80}
-                className="h-8 min-w-52 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-              />
-              <button
-                type="submit"
-                data-saved-view-action="confirm-save"
-                className="h-8 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground shadow-sm hover:opacity-90"
-              >
-                {t("feedback.savedViewConfirmSave")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSaveViewOpen(false)}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-muted-foreground hover:bg-accent"
-              >
-                {t("feedback.cancel")}
-              </button>
-            </form>
-          ) : null}
-          {savedViewLoad.status === "error" ? (
-            <span role="alert" className="basis-full text-xs text-destructive">
-              {t("feedback.savedViewUnavailable")}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-      {toolbar.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {toolbar.map((trigger) => {
-            const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
-            const permitted = crud?.effectivePermission(key) ?? true;
-            const isBatch =
-              typeof trigger === "object" &&
-              trigger !== null &&
-              !Array.isArray(trigger) &&
-              ((trigger as Record<string, unknown>).batchMapping !== undefined ||
-                (trigger as Record<string, unknown>).requiresSelection === true);
-            const requiresSelection = trigger.requiresSelection === true;
-            const selectionDisabled =
-              requiresSelection && (currentSelection === undefined || currentSelection.count === 0);
-            const disabled = !permitted || selectionDisabled;
-            return (
-              <button
-                key={key}
-                type="button"
-                disabled={disabled}
-                title={
-                  disabled
-                    ? selectionDisabled
-                      ? t("feedback.selectRowFirst")
-                      : t("feedback.actionNotPermitted")
-                    : undefined
-                }
-                onClick={() =>
-                  isBatch && selectionEnabled
-                    ? crud?.invokeBatchAction(trigger, tableId)
-                    : crud?.invokeAction(trigger, null)
-                }
-                className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {resolveTextProp(
-                  trigger as unknown as Record<string, unknown>,
-                  "labelKey",
-                  "label",
-                  t,
-                  key,
-                )}
-              </button>
-            );
-          })}
-        </div>
+          itemIds={filters.map((filter) => filter.field)}
+          activeItemIds={filters
+            .filter((filter) => (query.filters?.[filter.field] ?? "") !== "")
+            .map((filter) => filter.field)}
+          dataAttributes={{ "data-table-filters": "true" }}
+        />
       ) : null}
       <DataTable
         columns={dataColumns}
@@ -1403,7 +1461,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
               {t("feedback.pageOf", {
                 page: String(list.page),
-                total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
+                total: String(totalPages),
               })}
             </p>
             {/* W11 · U-06: per-page size switcher (resets to page 1). */}
@@ -1425,8 +1483,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               </select>
             </label>
           </div>
-          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
-            <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
+          <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
               <button
                 type="button"
                 disabled={list.page <= 1}
@@ -1436,7 +1493,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               >
                 {"‹"}
               </button>
-              {pagerPages(list.page, Math.max(1, Math.ceil(list.total / list.pageSize))).map(
+              {pagerPages(list.page, totalPages).map(
                 (page, index) =>
                   page === "gap" ? (
                     <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
@@ -1458,7 +1515,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               )}
               <button
                 type="button"
-                disabled={list.page >= Math.max(1, Math.ceil(list.total / list.pageSize))}
+                disabled={list.page >= totalPages}
                 aria-label={t("feedback.nextPage")}
                 onClick={() => setQuery({ ...query, page: list.page + 1 })}
                 className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
@@ -1466,16 +1523,14 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 {"›"}
               </button>
             </nav>
-          ) : null}
           {/* W11 · U-06: quick jump to a specific page. */}
-          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
             <form
               aria-label={t("feedback.goToPage")}
               className="flex items-center gap-1.5"
               onSubmit={(event) => {
                 event.preventDefault();
                 const target = Number(goToPageRef.current?.value ?? "");
-                const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
+                const pages = totalPages;
                 if (Number.isFinite(target) && target >= 1 && target <= pages) {
                   setQuery({ ...query, page: Math.floor(target) });
                 }
@@ -1486,20 +1541,21 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                 ref={goToPageRef}
                 type="number"
                 min={1}
-                max={Math.max(1, Math.ceil(list.total / list.pageSize))}
+                max={totalPages}
                 defaultValue=""
                 placeholder={String(list.page)}
                 aria-label={t("feedback.goToPage")}
+                disabled={totalPages <= 1}
                 className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-xs"
               />
               <button
                 type="submit"
+                disabled={totalPages <= 1}
                 className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
               >
                 {t("feedback.search")}
               </button>
             </form>
-          ) : null}
         </div>
       ) : null}
     </div>

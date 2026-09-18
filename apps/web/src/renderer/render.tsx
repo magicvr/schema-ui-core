@@ -144,6 +144,13 @@ export interface RendererComponentProps {
     onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
     /** W11 · U-01/U-02: auth-aware transport for dynamic option sources. */
     fetcher?: typeof fetch;
+    /** Submitted search-mode filter ids used for the collapsed hint. */
+    activeFilterIds?: string[];
+    /** Search-mode presentation props accepted by the default FormControls. */
+    searchMode?: boolean;
+    actionSlot?: ReactNode;
+    searchButtonSlot?: ReactNode;
+    columns?: number;
   }>;
 }
 
@@ -2127,6 +2134,7 @@ function FormInner({
         fieldDisabled={fieldDisabled}
         onUpload={crud?.uploadFiles}
         fieldErrors={fieldErrors}
+        activeFilterIds={isSearch ? activeFilters.map(({ field }) => field.id) : undefined}
         // W11 · U-01/U-02: auth-aware transport for dynamic option sources.
         fetcher={crud?.fetcher}
         columns={

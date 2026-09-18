@@ -117,6 +117,16 @@ describe("T-02 search form filter binding (GOAL-013 D-003 / T-07 GOAL-014)", () 
     expect(form).not.toBeNull();
     const qInput = form!.querySelector('input');
     const select = form!.querySelector('select');
+    const collapsedSelectItem = form!.querySelector('[data-filter-item-index="1"]');
+    expect(collapsedSelectItem?.className).toContain("hidden");
+    const filterToggle = form!.querySelector<HTMLButtonElement>('[data-filter-toggle="true"]');
+    expect(filterToggle).not.toBeNull();
+    expect(filterToggle?.getAttribute("aria-expanded")).toBe("false");
+    await act(async () => filterToggle?.click());
+    expect(filterToggle?.getAttribute("aria-expanded")).toBe("true");
+    expect(collapsedSelectItem?.className).not.toContain("hidden");
+    await act(async () => filterToggle?.click());
+    expect(filterToggle?.getAttribute("aria-expanded")).toBe("false");
 
     // T-07: changing the SELECT applies the filter IMMEDIATELY — the list
     // refetches without pressing Search, and the chip appears at once.

@@ -3,9 +3,9 @@ doc_type: goal-decision-index
 id: GOAL-001-admin-workflow-continuity-decisions
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 parent: null
-version: 0.8.0
+version: 0.9.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
@@ -22,6 +22,7 @@ version: 0.8.0
 | I-037-004 | required | Toast、错误、重试、维护与可访问反馈分类 | R1 / R4 | R1 | 现有错误 envelope/组件/门控对照 | verified | 2026-09-17 R1 信息冻结；R4 E-002～E-006、A-003/A-004 已复核实现证据 | `GOAL-002.../attachments/r1-state-feedback-matrix.md` + GOAL-005 `03-audit` |
 | I-037-005 | non-blocking | 跨用户共享、最近/收藏、协作权限 | 后续 UX 波次 | 触发时 | 真实协作需求出现时由 `/vision` 复核 | deferred | 有界延期；责任人 `/vision`；触发复核 | 首波排除 |
 | I-037-006 | required | Admin freshness / VP-008 `go` 消费有效性 | 激活 / 开区 | 激活前 | freshness review + Charter/VP/区间核对 | verified | 2026-09-16 | VRev-095 |
+| I-037-007 | required | R6 范例布局、通用列表调用链、shell 边界与查询/分页合同 | R6 方案与实施 | R6-C2 | 读取 raw 范例、盘点 renderer/components/app/test | verified | 2026-09-18；对象语义实现验证由 GOAL-007 承接 | `GOAL-007-list-page-visual-alignment/01-decision/D-001-list-page-visual-contract.md` |
 
 ## 决策索引
 
@@ -37,6 +38,7 @@ version: 0.8.0
 | D-008 | 2026-09-17 | R3 未保存变更保护关门与 Root 投影 | accepted | [D-008-close-r3-dirty-state.md](01-decision/D-008-close-r3-dirty-state.md) |
 | D-009 | 2026-09-17 | 开设 R4 统一反馈与恢复 | accepted | [D-009-open-r4-unified-feedback.md](01-decision/D-009-open-r4-unified-feedback.md) |
 | D-010 | 2026-09-17 | R4 关门、Root 投影并开设 R5 组合验收 | accepted | [D-010-r4-close-and-open-r5.md](01-decision/D-010-r4-close-and-open-r5.md) |
+| D-011 | 2026-09-18 | 保持 R5/Root/VP 开放并开设 R6 列表页视觉收敛 | accepted | [D-011-open-r6-list-page-visual-alignment.md](01-decision/D-011-open-r6-list-page-visual-alignment.md) |
 
 ## 当前投影
 
@@ -46,3 +48,4 @@ version: 0.8.0
 - R2 `GOAL-003-r2-saved-views` 已按 A-003 关闭为 `done · 4/4`；R1 recommended 精度项、C1～C3 实现/回归、独立意见响应与 Git checkpoint `39c744ef` 均已记录。Root R2 检查点可投影完成，下一阶段为 R3。
 - R3 `GOAL-004-r3-unsaved-change-protection` 已按 A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 关闭为 `done · 4/4`；Root R3 检查点已投影完成，Root 更新为 `active · 3/5`，下一阶段为 R4 统一反馈与恢复。
 - R4 `GOAL-005-r4-unified-feedback-recovery` 已按 A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 关闭为 `done · 4/4`。随后按 D-010 开设 R5 `GOAL-006-r5-composition-acceptance`（`active · 0/4`），只承载组合验收与 Root/VP 关门准备。
+- 用户于 2026-09-18 明确要求 Root 暂不关门并新增 R6；按 D-011 将 Root 路线图扩展为 6 个检查点，Root 保持 `active · 4/6`，R5 仍为 `active · 3/4`，并开设 `GOAL-007-list-page-visual-alignment`（`active · 1/4`）。R6 不关闭或改写 R5-I-004。

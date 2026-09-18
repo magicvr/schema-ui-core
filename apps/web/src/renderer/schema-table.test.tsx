@@ -608,12 +608,19 @@ describe("SchemaTable title / filters / pager", () => {
     expect(calls.some((query) => query.includes("page=2"))).toBe(true);
   });
 
-  it("hides the pager when everything fits on one page", async () => {
+  it("keeps a disabled pager visible when everything fits on one page", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       rowsFetcher(),
     );
-    expect(container.querySelector("nav")).toBeNull();
+    const nav = container.querySelector("nav");
+    expect(nav).not.toBeNull();
+    expect(nav?.querySelector('[aria-label="Previous page"]')).toHaveProperty("disabled", true);
+    expect(nav?.querySelector('[aria-label="Page 1"]')).toHaveProperty("disabled", true);
+    expect(nav?.querySelector('[aria-label="Next page"]')).toHaveProperty("disabled", true);
+    const jump = container.querySelector<HTMLFormElement>('[aria-label="Go to page"]');
+    expect(jump?.querySelector("input")).toHaveProperty("disabled", true);
+    expect(jump?.querySelector("button")).toHaveProperty("disabled", true);
   });
 
   // W11 · U-06: pageSize switcher + go-to-page control.

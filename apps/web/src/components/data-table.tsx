@@ -158,7 +158,7 @@ function MobileCardList<T>({
                     }
               }
               className={cn(
-                "rounded-lg border border-border bg-card p-3 text-left shadow-sm transition-colors",
+                "rounded-lg border border-border/80 bg-card p-3 text-left shadow-2xs transition-colors",
                 onRowClick === undefined ? "" : "cursor-pointer hover:bg-accent/40",
                 selected ? "border-primary/40 bg-accent/50 ring-1 ring-primary/20" : "",
               )}
@@ -254,7 +254,7 @@ export function DataTable<T>({
   if (state === "loading") {
     return (
       <div className="space-y-2" data-table-presentation="loading">
-        <div role="status" aria-label={t("feedback.loading")} className="space-y-2 rounded-md border border-border p-4">
+        <div role="status" aria-label={t("feedback.loading")} className="space-y-2 rounded-lg border border-border/70 bg-card p-4 shadow-2xs">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />
@@ -284,7 +284,7 @@ export function DataTable<T>({
     // W11 · U-07: graphic empty state — an inbox glyph plus the message.
     return (
       <div
-        className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border bg-card px-4 py-10 text-center"
+        className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center shadow-2xs"
         data-table-empty="true"
       >
         <Inbox aria-hidden="true" className="size-8 text-muted-foreground/40" />
@@ -298,12 +298,12 @@ export function DataTable<T>({
       {/* Desktop / tablet dense table (D-004 §4): hidden below md; scrolls within viewport */}
       <div
         data-table-presentation="desktop-table"
-        className="hidden w-full min-w-0 overflow-x-auto rounded-md border border-border md:block"
+        className="hidden w-full min-w-0 overflow-x-auto rounded-lg border border-border/70 bg-card shadow-2xs md:block"
       >
         <table className="w-full min-w-[32rem] border-collapse text-sm">
           {caption ? <caption className="sr-only">{caption}</caption> : null}
           <thead>
-            <tr className="border-b border-border bg-muted/30">
+            <tr className="border-b border-border/70 bg-muted/50">
               {columns.map((column) => {
                 const isActive = sort?.field === column.key;
                 return (
@@ -313,7 +313,7 @@ export function DataTable<T>({
                       ...(column.width !== undefined ? { width: column.width } : {}),
                       ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
                     }}
-                    className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
+                    className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
                     scope="col"
                   >
                     {column.sortable ? (
@@ -390,7 +390,7 @@ export function DataTable<T>({
                   }
                   aria-selected={onRowClick === undefined ? undefined : selected}
                   className={cn(
-                    "border-b border-border transition-colors last:border-b-0 hover:bg-accent/40",
+                    "border-b border-border/70 transition-colors last:border-b-0 hover:bg-accent/40",
                     onRowClick === undefined
                       ? ""
                       : "cursor-pointer hover:bg-accent/50",
@@ -409,7 +409,7 @@ export function DataTable<T>({
                           ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
                         }}
                         className={cn(
-                          "px-4 py-3 align-middle text-sm",
+                          "px-4 py-3 align-middle text-sm text-foreground",
                           // W4 · GOAL-005: table-layout auto sizes a column by
                           // its cell max-content; the inner span's max-width
                           // alone does not clamp the cell, so the width cap

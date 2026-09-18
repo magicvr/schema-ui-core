@@ -67,6 +67,7 @@ import { confirmDiscard, hasDirtyState } from "@/renderer/dirty-state";
 import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
+import { PageListActionsProvider } from "@/renderer/list-surface";
 import { HostFailureScreen } from "@/app/HostFailureScreen";
 import { NotificationBell } from "@/app/notification-bell";
 import { nextFailureId, type HostFailure } from "@/host/failure";
@@ -710,6 +711,7 @@ function PageSchemaErrorSurface({ error }: { error: PageSchemaError }) {
  */
 function SchemaPageSurface({
   page,
+  pageTitle,
   params,
   query,
   context,
@@ -721,6 +723,8 @@ function SchemaPageSurface({
   onInitialActionConsumed,
 }: {
   page: PageEntry;
+  /** Localized title from the shell, used by list Saved View semantics. */
+  pageTitle: string;
   params: Record<string, string>;
   query: Record<string, string>;
   context: NavigationContext;
@@ -787,7 +791,9 @@ function SchemaPageSurface({
           route: { params, query },
         } as Record<string, unknown>
       }
-      tableRenderer={(node) => <SchemaTable node={node} fetcher={resourceFetcher} />}
+      tableRenderer={(node) => (
+        <SchemaTable node={node} fetcher={resourceFetcher} pageTitle={pageTitle} />
+      )}
       dataFetcher={resourceFetcher}
       onNavigate={onNavigate}
       initialAction={initialAction}
@@ -823,6 +829,7 @@ function PageSurface({
   onInitialActionConsumed?: (id: string) => void;
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
+  const [listActionsHost, setListActionsHost] = useState<HTMLDivElement | null>(null);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
   const t = useTranslate();
   const hostOwned = useMemo(() => HOST_OWNED_PATHS.includes(stripPathQuery(path)), [path]);
@@ -905,9 +912,9 @@ function PageSurface({
       aria-labelledby="page-title"
     >
       <div className={isTelegramOperatorPage
-        ? "flex w-full min-w-0 shrink-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6"
-        : "flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6"}>
-        <div className="min-w-0 flex-1">
+        ? "flex w-full min-w-0 shrink-0 flex-col items-start gap-6 border-b border-border pb-6 md:flex-row md:justify-between"
+        : "flex w-full min-w-0 flex-col items-start gap-6 border-b border-border pb-6 md:flex-row md:justify-between"}>
+        <div className="w-full min-w-0 md:flex-1">
           <Breadcrumbs
             entries={trail}
             onNavigate={onNavigate}
@@ -923,24 +930,32 @@ function PageSurface({
             {pageTitle}
           </h1>
         </div>
+        <div
+          ref={setListActionsHost}
+          data-page-list-actions-host="true"
+          className="flex w-full min-w-0 flex-wrap items-start justify-end gap-2 md:flex-1"
+        />
       </div>
       <div className={isTelegramOperatorPage
         ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
         : "w-full min-w-0"}>
-        <SchemaPageSurface
-          page={route.page}
-          params={route.params}
-          query={query}
-          context={navigationContext}
-          fetcher={schemaFetcher}
-          resourceFetcher={resourceFetcher}
-          schemaDocumentCache={schemaDocumentCache}
-          onNavigate={onNavigate}
-          initialAction={pendingAction?.pageId === route.page.pageId && pendingAction !== null
-            ? { id: pendingAction.id, pageId: pendingAction.pageId, trigger: pendingAction.trigger }
-            : undefined}
-          onInitialActionConsumed={onInitialActionConsumed}
-        />
+        <PageListActionsProvider host={listActionsHost}>
+          <SchemaPageSurface
+            page={route.page}
+            pageTitle={pageTitle}
+            params={route.params}
+            query={query}
+            context={navigationContext}
+            fetcher={schemaFetcher}
+            resourceFetcher={resourceFetcher}
+            schemaDocumentCache={schemaDocumentCache}
+            onNavigate={onNavigate}
+            initialAction={pendingAction?.pageId === route.page.pageId && pendingAction !== null
+              ? { id: pendingAction.id, pageId: pendingAction.pageId, trigger: pendingAction.trigger }
+              : undefined}
+            onInitialActionConsumed={onInitialActionConsumed}
+          />
+        </PageListActionsProvider>
       </div>
     </section>
   );

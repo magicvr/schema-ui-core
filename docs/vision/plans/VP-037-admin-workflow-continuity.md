@@ -6,16 +6,16 @@ status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 parent: null
-version: 1.0.0
+version: 1.1.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
 
 ## 意图
 
-在现有 Admin 导航、发现入口和横切契约之上，补齐高频操作的连续性与安全反馈：用户可以复用列表视图，离开有未保存修改的页面时得到可靠保护，并在成功、失败、重试和恢复路径上获得一致反馈。目标是降低重复配置、误操作和“操作到底有没有成功”的不确定性，而不是扩张为新的搜索或业务域平台。
+在现有 Admin 导航、发现入口和横切契约之上，补齐高频操作的连续性、安全反馈与通用列表体验：用户可以复用列表视图，离开有未保存修改的页面时得到可靠保护，在成功、失败、重试和恢复路径上获得一致反馈，并在列表页获得范例化的筛选、视图和分页布局。目标是降低重复配置、误操作和“操作到底有没有成功”的不确定性，而不是扩张为新的搜索或业务域平台。
 
 本 VP 已于 2026-09-16 经用户确认从 `planned` 激活为 `active`，并绑定 `workspace-037-admin-workflow-continuity`；R1、R2、R3、R4 已分别完成信息/语义冻结、Saved View、dirty-state 与统一反馈实现及 Goal 审计，R5 当前承载组合验收与关门准备。
 
@@ -23,11 +23,11 @@ version: 1.0.0
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-17 · v1.0.0；R1 C3、R2 C4、R3 C4、R4 C4 已完成，R5 `GOAL-006` 当前 `active · 3/4`；lead `workspace-037-admin-workflow-continuity`） |
+| status | **`active`**（2026-09-18 · v1.1.0；R1 C3、R2 C4、R3 C4、R4 C4、R6 C4 已完成，R5 `GOAL-006` 当前 `active · 3/4`，R6 `GOAL-007` 当前 `done · 4/4`；Root `active · 5/6`；lead `workspace-037-admin-workflow-continuity`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-036 之后的工作流连续性下一拍 |
 | Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；当前 open required = 0 |
 | 激活门禁 | Admin 类 freshness PASS；I-037-006 verified；用户确认 workspace/Root 命名；V-F124 保持 recommended，不阻断激活 |
-| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 4/5；R1 已冻结、R2/R3/R4 已实现并通过 self/independent 审计，R4 由 `GOAL-005-r4-unified-feedback-recovery` 承载并以 `done · 4/4` 完成 |
+| 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 5/6；R1 已冻结、R2/R3/R4/R6 已实现并通过阶段审计，R4 由 `GOAL-005-r4-unified-feedback-recovery`、R6 由 `GOAL-007-list-page-visual-alignment` 承载并分别以 `done · 4/4` 完成 |
 
 ## 首波范围与边界
 
@@ -36,6 +36,7 @@ version: 1.0.0
 | Saved Views | 面向现有已注册列表页，保存并恢复用户级筛选、排序、列配置等视图状态；具体字段与持久化形态由 R1 冻结 |
 | 未保存变更保护 | 覆盖页面内导航、浏览器离开/刷新和提交/重置后的 dirty-state 语义；不替代业务表单自己的校验 |
 | 统一 Toast / 错误恢复 | 收敛成功、失败、可重试、维护/不可用等反馈语义，并与既有 API 错误合同对齐 |
+| 列表页视觉收敛 | 参考 `raw/new-table` 调整通用列表、筛选折叠、页面级按钮、视图位置/“全部{对象}”文案与始终可见分页；不改变 shell、查询/重置逻辑、Saved View 存储格式或未实装的多选能力 |
 | 明确排除 | 实体全文检索、专用搜索引擎、批量结果中心、组织/部门/岗位与数据权限、新业务域、Redis/MQ/多实例 |
 | 继承边界 | 复用 VP-034 导航分组、VP-036 发现入口、VP-005/007 体验基线、VP-012 横切契约；不重开既有 VP |
 
@@ -47,6 +48,7 @@ version: 1.0.0
 4. 成功、失败、重试、维护/不可用反馈使用统一语义和可访问呈现；错误恢复不会重复提交、吞掉服务端错误或暴露敏感信息。
 5. 首波不解除实体全文搜索、`RT-X01`/`RT-X02`、批量结果中心、组织/数据权限或架构分支 gated 项；边界证据与回归结果可追溯。
 6. VP 工作区阶段链、Goal 审计、required 信息与 Vision Review 全部闭合，且关门前组合投影同步；开放 required finding = 0。
+7. 通用列表页的视觉与交互基线可由共享实现覆盖，顶部功能栏/左侧导航不变，查询/重置合同不变，单页有效列表仍显示分页区域。
 
 ## 纲领路线图
 
@@ -57,6 +59,7 @@ version: 1.0.0
 | R3 · 未保存保护 | 实现并验证 dirty-state 与离开确认 | R1 冻结；由 `GOAL-004-r3-unsaved-change-protection` 承载并已完成（`done · 4/4`）；A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录 |
 | R4 · 统一反馈与恢复 | 收敛 Toast、错误分类、重试/恢复和可访问状态 | R1 冻结；由 `GOAL-005-r4-unified-feedback-recovery` 承载并已完成（`done · 4/4`）；A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已记录 |
 | R5 · 组合验收与关门 | 核对非目标、审计链、残余与愿景投影 | R2～R4 已完成；由 `GOAL-006-r5-composition-acceptance` 承载（`active · 3/4`），C1～C3 已完成，继续核对退出判据 5～6，用户书面确认后才关 Root/VP |
+| R6 · 列表页视觉与筛选体验收敛 | 参考范例页收敛通用列表、筛选折叠、页面级操作/视图布局、对象语义文案与分页展示 | 由 `GOAL-007-list-page-visual-alignment` 承载并完成 `done · 4/4`；不改变 R5-I-004 或既有查询/重置合同 |
 
 ## P-005 信息需求
 
@@ -68,6 +71,7 @@ version: 1.0.0
 | I-037-004 | Toast、API 错误、重试、维护/不可用反馈的分类与可访问呈现 | required | R1 方案冻结、R4 实施/验收 | R1 | 对照现有错误 envelope、反馈组件与 maintenance 门控；矩阵/D-005 冻结映射 | verified | 2026-09-17；R4 E-002/E-003 与 A-001 已补齐跨页面回归实现证据 |
 | I-037-005 | 跨用户共享视图、最近使用/收藏与协作权限是否进入后续波次 | non-blocking | 后续 UX 波次边界 | 关门后或出现协作触发 | 不纳入首波；出现明确多用户协作需求时由 `/vision` 复核 | deferred | 延期理由：首波聚焦个人工作流；责任人：`/vision`；复核触发：真实协作需求出现 |
 | I-037-006 | 激活前 Admin freshness 与 VP-008 `go` 消费有效性 | required | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，并核对当前 Charter/VP 引用与区间变更 | verified | 2026-09-16：当前 HEAD `0c29c08`；`apps/**` 无 staged/unstaged 区间变更；VRev-095 |
+| I-037-007 | R6 范例布局、通用列表调用链、shell 边界与查询/分页合同 | required | R6 方案与实施 | R6-C2 | 读取 raw 范例、盘点 renderer/components/app/test；对象语义实现由 GOAL-007 承接 | verified | 2026-09-18；D-001/E-001 已记录，C3 前复核对象文案 | `GOAL-007-list-page-visual-alignment/01-decision/D-001-list-page-visual-contract.md` |
 
 `I-037-001`～`I-037-004` 的 R1 信息冻结已关闭；R2/R3/R4 已分别通过实现/回归证据关闭阶段门禁，R5 当前继续核对组合退出判据与关门投影。`I-037-006` 已 verified，不再阻断本次激活；`I-037-005` 是有界延期，不代表已验证或承诺后续实现。
 
@@ -75,7 +79,7 @@ version: 1.0.0
 
 | workspace | role | scope | lead | 状态 |
 |-----------|------|-------|------|------|
-| workspace-037-admin-workflow-continuity | delivery | VP-037 首波实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 4/5**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`、R4 `done · 4/4`，R5 `active · 3/4` |
+| workspace-037-admin-workflow-continuity | delivery | VP-037 首波与 R6 列表页视觉实现层范围 | workspace-037-admin-workflow-continuity | **active · Root 5/6**；R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`、R4 `done · 4/4`，R5 `active · 3/4`，R6 `done · 4/4` |
 
 ## 关系与结构选型
 
@@ -96,6 +100,8 @@ version: 1.0.0
 - 2026-09-17：按既定路线开设 R4 `GOAL-005-r4-unified-feedback-recovery`，初始 `active · 0/4`；承接 R1 D-005，不引入新的 API 或 Host 终态语义。
 - 2026-09-17：R4 完成 C1～C4；A-002 grok independent `conditional` 的 F-001 按 E-004 `fixed` 响应，由 A-003 independent recheck `pass` 确认；E-005 补 recommended 回归，A-004 self close-out `pass`；checkpoint `89666e5c`；R4 `done · 4/4`，Root 投影为 `active · 4/5`，下一阶段为 R5 组合验收。
 - 2026-09-17：按 D-010 开设 R5 `GOAL-006-r5-composition-acceptance`（`active · 0/4`），承载 VP-037 组合验收、非目标/对齐核对、最终验证和 Root/VP 用户确认门禁。
+- 2026-09-18：用户明确要求 Root 暂不关门并追加列表页视觉收敛；按 Root D-011 在同一 VP/workspace 下开设 R6 `GOAL-007-list-page-visual-alignment`，Root 路线图扩展为 6 个检查点（`active · 4/6`），R5-I-004 用户确认门禁保持开放；本次不改 Charter strategic 方向、vision_ref 或新建 VP/workspace。
+- 2026-09-18：R6 `GOAL-007-list-page-visual-alignment` 完成 C1～C4 与 A-001 self 审计，投影为 `done · 4/4`；Root 更新为 `active · 5/6`。R5-I-004 用户确认门禁仍开放，VP 继续保持 `active`。
 
 ## Closeout placeholder
 
