@@ -39,6 +39,7 @@ version: 1.10.0
 | E-021 | 2026-09-18 | GOAL-008 关门并投影 R6 完成（Root 5/6） | recorded | [E-021-goal008-closeout-and-r6-projection.md](02-execution/E-021-goal008-closeout-and-r6-projection.md) |
 | E-022 | 2026-09-18 | 开设并关闭整改子目标 GOAL-009（列表视觉 e2e 守卫） | recorded | [E-022-list-visual-e2e-guard.md](02-execution/E-022-list-visual-e2e-guard.md) |
 | E-023 | 2026-09-18 | 跨工作区类型检查空转勘误执行（用户授权） | recorded | [E-023-cross-workspace-typecheck-errata.md](02-execution/E-023-cross-workspace-typecheck-errata.md) |
+| E-024 | 2026-09-18 | 开设 GOAL-010 并完成守卫加固 C1～C3 | recorded | [E-024-open-typecheck-guard-hardening.md](02-execution/E-024-open-typecheck-guard-hardening.md) |
 
 ## 当前事实
 
@@ -61,6 +62,7 @@ version: 1.10.0
 - 2026-09-18，用户指示「先做列表视觉的 e2e 守卫」；按 D-014 开设整改子目标 `GOAL-009-list-visual-e2e-guard`（非纲领，不计入 Root 分母）承接 R6 A-002 F-003。同日完成 C1～C4 并关闭为 `done · 4/4`（self 审计 A-001 `pass`，开放 required = 0）：新增 `apps/web/e2e/list-visual-surface.spec.ts`，mvp/admin 两 profile 各 2 passed，6/6 变异捕获。至此 R6 A-002 的全部 finding 均已处置（F-001/F-002/F-004 fixed；F-005 经 GOAL-008、F-003 经 GOAL-009 闭环）。Root 仍 `active · 5/6`。
 - 2026-09-18，用户就 `R5-I-004` 选择「先给一页证据再定」：按 E-006 产出关门外证据一页（`GOAL-006/attachments/r5-closeout-evidence-digest.md`）并刷新裁决前证据（`npm run typecheck` exit 0、Vitest 112/1426、`list-visual-surface` e2e 在 admin/mvp 各 2 passed、`apps/api` 自 `89666e5c` 起零漂移），同时修正两处目标内当前态滞后。`R5-I-004` 仍 `collecting`。
 - 2026-09-18，用户另就 `GOAL-008 I-008-004` 授权**跨工作区追溯更正**；按 D-015/E-023 在 workspace-009/010/011 追加 11 处勘误注记、复核确认 workspace-002 两处 `-p e2e/tsconfig.json` 有效。同期注入错误实测新增第二层事实：`tsc --noEmit -p tsconfig.json`（根 solution-style）同样空转，据此记录 `GOAL-008 A-002 F-001`（守卫缺口，recommended open）。Root 仍 `active · 5/6`，`R5-I-004` 未闭合。
+- 2026-09-18，用户指示按 D-016 开设整改子目标 `GOAL-010-typecheck-guard-hardening`（非纲领，不计入 Root 分母）闭合 `GOAL-008 A-002 F-001`：同日完成 C1（空转边界与判定规则）、C2（守卫按配置内容判定 + 16 行合成用例 + 动态目标解析，仅改守卫测试文件）与 C3（5/5 变异捕获、`npm run typecheck` exit 0、Vitest 112/1428、`.github`/`package.json` 无差异）；C4 待 self 审计后的 grok build（grok 4.6 · xhigh）独立审计与合并响应。Root 仍 `active · 5/6`。
 
 ## 事实边界
 

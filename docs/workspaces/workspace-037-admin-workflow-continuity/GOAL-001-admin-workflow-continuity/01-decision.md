@@ -43,6 +43,7 @@ version: 1.5.0
 | D-013 | 2026-09-18 | 用户裁决 F-005 处置路径并开设整改子目标 GOAL-008 | accepted | [D-013-open-typecheck-evidence-goal.md](01-decision/D-013-open-typecheck-evidence-goal.md) |
 | D-014 | 2026-09-18 | 用户指示补做列表视觉 e2e 守卫并开设 GOAL-009 | accepted | [D-014-open-list-visual-e2e-guard.md](01-decision/D-014-open-list-visual-e2e-guard.md) |
 | D-015 | 2026-09-18 | 授权跨工作区类型检查空转条目追溯更正 | accepted | [D-015-authorize-cross-workspace-typecheck-errata.md](01-decision/D-015-authorize-cross-workspace-typecheck-errata.md) |
+| D-016 | 2026-09-18 | 开设 GOAL-010 加固类型检查守卫并约定交叉审计与关门条件 | accepted | [D-016-open-typecheck-guard-hardening.md](01-decision/D-016-open-typecheck-guard-hardening.md) |
 
 ## 当前投影
 
