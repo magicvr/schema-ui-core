@@ -291,6 +291,8 @@ const COMMAND_FORMS: Array<{ command: string; vacuous: boolean; note: string }> 
   { command: "tsc --noEmit -p tsconfig.missing.json", vacuous: true, note: "unreadable target fails closed" },
   { command: "tsc --noEmit -p", vacuous: true, note: "missing target fails closed" },
   { command: "npm exec -- tsc --noEmit -p tsconfig.json", vacuous: true, note: "runner prefix does not help" },
+  { command: "tsc --noEmit -p $CFG", vacuous: true, note: "A-002 F-001: a whole-value wildcard can denote the root config" },
+  { command: "tsc --noEmit --project ${CFG}", vacuous: true, note: "same, ${} form" },
   { command: "tsc -p tsconfig.app.json --noEmit", vacuous: false, note: "app config selects src" },
   { command: "tsc -p e2e/tsconfig.json", vacuous: false, note: "e2e config selects ./**/*.ts" },
   { command: "tsc -b", vacuous: false, note: "build mode walks references" },
@@ -452,6 +454,20 @@ describe("GOAL-008 · type-check evidence convention", () => {
     expect(projectTargetSelectsSources("e2e/tsconfig.json")).toBe(true);
     expect(projectTargetSelectsSources("tsconfig.nope.json")).toBe(false);
     expect(projectTargetSelectsSources("")).toBe(false);
+  });
+
+  // GOAL-010 A-002 F-001: the interpolated-target rule is "every config the
+  // pattern can denote selects sources", so a whole-value wildcard must fail
+  // closed — it can denote the solution-style root config. Dropping that
+  // `every(...)` used to keep the suite green because every existing
+  // `tsconfig.*.json` happens to be a real project.
+  it("fails closed when an interpolated -p target could denote the root config", () => {
+    expect(dynamicTargetSelectsSources("$CFG")).toBe(false);
+    expect(dynamicTargetSelectsSources("${CFG}")).toBe(false);
+    expect(dynamicTargetSelectsSources("./$CFG")).toBe(false);
+    // The lib-package build script's shape keeps counting as a real check: its
+    // literal `tsconfig.` / `.json` parts cannot denote the root config.
+    expect(dynamicTargetSelectsSources('tsconfig.${name.split("/")[1]}.json')).toBe(true);
   });
 
   it("uses no non-checking tsc invocation in any executable surface", () => {
