@@ -3,7 +3,7 @@ id: A-002
 source: independent
 date: 2026-09-01
 scope: R3 全部检查点（C1/C2/C3 + I-028-004）
-verdict: deferred
+verdict: conditional
 ---
 
 # A-002 · R3 接缝与对齐独立审计（工具链受阻）

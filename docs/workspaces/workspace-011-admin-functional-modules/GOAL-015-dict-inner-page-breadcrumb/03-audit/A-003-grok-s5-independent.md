@@ -4,7 +4,7 @@ goal: GOAL-015-dict-inner-page-breadcrumb
 source: independent
 date: 2026-08-14
 scope: S1～S4 交叉审计（execution-facts + go 影响）
-verdict: fail → 处置后 required 全部 fixed
+verdict: fail
 parent: GOAL-015-dict-inner-page-breadcrumb
 created: 2026-08-14
 updated: 2026-08-14

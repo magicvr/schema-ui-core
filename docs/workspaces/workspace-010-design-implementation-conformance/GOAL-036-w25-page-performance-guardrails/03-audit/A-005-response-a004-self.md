@@ -7,7 +7,7 @@ updated: 2026-08-23
 parent: GOAL-036-w25-page-performance-guardrails
 version: 0.1.0
 scope: 响应 A-004（independent · pass · F-009 / F-010 recommended）
-verdict: pass（响应结论：recommended 全闭）
+verdict: pass
 ---
 
 # A-005 · 响应 A-004 独立复核意见（2026-08-23，self）

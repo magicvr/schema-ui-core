@@ -1,3 +1,13 @@
+---
+title: 目标树 · workspace-031-digital-offer-entitlement
+status: done
+created: 2026-09-05
+updated: 2026-09-18
+parent: null
+version: 0.1.0
+workspace_id: workspace-031-digital-offer-entitlement
+---
+
 # goal-tree · workspace-031-digital-offer-entitlement
 
 *自动同步工作区扁平目标树（树 + 状态表）。更新任一目标状态/进度后必须同步本文件。更新：2026-09-05（第 3 次关门：A-012 两轮 required（F-007/F-008）经 D-004/A-013 fixed ×2 → A-014 independent `pass` 0 required → F-001 关门前置加固（A-015 fixed）；Root done 4/4 · VP-031 closed v0.3.4）*

@@ -1,3 +1,13 @@
+---
+title: 目标树 · workspace-032-rate-limiter-atomic-port
+status: done
+created: 2026-09-03
+updated: 2026-09-18
+parent: null
+version: 0.1.0
+workspace_id: workspace-032-rate-limiter-atomic-port
+---
+
 # goal-tree · workspace-032-rate-limiter-atomic-port
 
 *自动同步工作区扁平目标树（树 + 状态表）。更新任一目标状态/进度后必须同步本文件。更新：2026-09-04（Root 关门 · 全工作区结项）*
