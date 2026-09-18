@@ -15,8 +15,28 @@ import { SchemaTable } from "@/renderer/schema-table.tsx";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
+/**
+ * R6 C8: the filter panel is responsive — it renders the expand/collapse
+ * toggle only when the collapsed first row hides a control at the current
+ * width. This suite exercises that toggle, so it pins a narrow (mobile) tier
+ * where the second filter is genuinely hidden.
+ */
+function pinNarrowViewport(): void {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+}
+
 beforeEach(() => {
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
+  pinNarrowViewport();
 });
 
 afterEach(async () => {

@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-18
 updated: 2026-09-18
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 执行台账 · GOAL-007-list-page-visual-alignment
@@ -19,6 +19,7 @@ version: 0.6.0
 | E-003 | 2026-09-18 | 用户选择回开 R6 并启动布局修订 | recorded | [E-003-r6-layout-revision-opened.md](02-execution/E-003-r6-layout-revision-opened.md) |
 | E-004 | 2026-09-18 | 完成 C5 布局修订与回归 | recorded | [E-004-r6-layout-revision-implementation.md](02-execution/E-004-r6-layout-revision-implementation.md) |
 | E-005 | 2026-09-18 | 完成 C7 控制位纠偏与回归 | recorded | [E-005-r6-c7-control-placement-implementation.md](02-execution/E-005-r6-c7-control-placement-implementation.md) |
+| E-006 | 2026-09-18 | 完成 C8 控制高度、折叠开关 token 与空展开抑制 | recorded | [E-006-r6-c8-control-height-and-toggle-implementation.md](02-execution/E-006-r6-c8-control-height-and-toggle-implementation.md) |
 
 ## 事实边界
 

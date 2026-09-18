@@ -469,9 +469,15 @@ describe("SchemaTable title / filters / pager", () => {
       tableNode({
         columns: COLUMNS,
         dataSource: "/api/users",
+        // R6 C8: the filter action cell only exists when something needs it —
+        // either host actions or filters that overflow the collapsed row. Five
+        // selects exceed the lg capacity of four, so the cell is present.
         filters: [
           { field: "status", type: "select", options: [{ value: "" }, { value: "active" }] },
           { field: "owner", type: "select", options: [{ value: "" }, { value: "alice" }] },
+          { field: "region", type: "select", options: [{ value: "" }, { value: "eu" }] },
+          { field: "tier", type: "select", options: [{ value: "" }, { value: "gold" }] },
+          { field: "channel", type: "select", options: [{ value: "" }, { value: "web" }] },
         ],
         toolbar: [{ key: "create", label: "Create" }],
       }),
@@ -490,6 +496,29 @@ describe("SchemaTable title / filters / pager", () => {
     expect(
       filterPanel?.querySelector('[data-list-page-actions]'),
     ).toBeNull();
+  });
+
+  // R6 C8 (user 2026-09-18, item 3): a single-row filter set has nothing to
+  // expand, so neither the toggle nor the action cell it would occupy renders.
+  it("omits the expand toggle and its action cell when no filter is hidden", async () => {
+    const container = await renderTable(
+      tableNode({
+        columns: COLUMNS,
+        dataSource: "/api/users",
+        filters: [
+          { field: "status", type: "select", options: [{ value: "" }, { value: "active" }] },
+          { field: "owner", type: "select", options: [{ value: "" }, { value: "alice" }] },
+        ],
+        toolbar: [{ key: "create", label: "Create" }],
+      }),
+      rowsFetcher(),
+    );
+    const filterPanel = container.querySelector('[data-list-filter-panel="true"]');
+    expect(filterPanel).not.toBeNull();
+    expect(container.querySelector('[data-filter-toggle="true"]')).toBeNull();
+    expect(container.querySelector('[data-filter-actions="true"]')).toBeNull();
+    // The page actions row is unaffected by the filter panel's own actions.
+    expect(container.querySelector('[data-list-page-actions]')).not.toBeNull();
   });
 
   it("parses only well-formed select filters (fail-closed on malformed entries)", () => {

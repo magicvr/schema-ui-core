@@ -1181,7 +1181,9 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
       <details className="relative" data-list-page-action="columns">
         <summary
           data-saved-view-columns-trigger="true"
-          className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-input bg-background px-2.5 py-2 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent"
+          // R6 C8 (item 1): one shared control height for the whole page-actions
+          // row — the schema toolbar buttons use the same h-8/text-xs scale.
+          className="inline-flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent"
         >
           {/* Reference page (raw/new-table): the column-configuration trigger
               carries a columns glyph as its visual emphasis. */}
@@ -1191,7 +1193,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
         <div
           role="group"
           aria-label={t("feedback.savedViewColumns")}
-          className="absolute left-0 top-10 z-20 grid min-w-44 gap-2 rounded-md border border-border bg-card p-3 shadow-lg"
+          className="absolute left-0 top-9 z-20 grid min-w-44 gap-2 rounded-md border border-border bg-card p-3 shadow-lg"
         >
           {columns.map((column) => {
             const checked = visibleColumnSet.has(column.field);
@@ -1347,7 +1349,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
                 ? crud?.invokeBatchAction(trigger, tableId)
                 : crud?.invokeAction(trigger, null)
             }
-            className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90 disabled:opacity-50"
+            className="h-8 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90 disabled:opacity-50"
           >
             {resolveTextProp(
               trigger as unknown as Record<string, unknown>,
