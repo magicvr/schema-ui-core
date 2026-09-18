@@ -81,7 +81,7 @@ status: recorded
 
 - `go test ./...`（apps/api）：23 包全 ok（含新增 P0-1/P0-2（权限门+配额）/P0-3 回归；迁移计数 10→11 同步）。
 - `go vet ./...`：clean。
-- `npx tsc --noEmit`（apps/web）：clean。
+- `npx tsc --noEmit`（apps/web）：clean。**（勘误 2026-09-18：裸 `tsc --noEmit` 在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；本条其余回归证据不受影响。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。）**
 - `npx vitest run`（apps/web）：44 文件 / 747+ 测试全过（新增 LoginPage 1 + error key 目录；renderer/protocol/i18n 全绿）。
 - e2e：未覆盖上传操作；demo profile 的 form-with-upload 由 admin（持有 files.write）访问，无行为变化。
 

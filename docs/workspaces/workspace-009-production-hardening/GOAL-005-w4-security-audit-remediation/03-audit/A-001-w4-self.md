@@ -41,6 +41,8 @@ status: recorded
 
 **复跑（2026-08-11）**：`go test ./...` 23 包 ok、`go vet` clean、`tsc --noEmit` clean、`vitest run` 747 测试过、i18n 62 过、protocol 343 过、renderer 205 过。
 
+> **勘误注记（事后追加 2026-09-18，不改本条 verdict 与结论）**：上句中的 `tsc --noEmit` 为裸命令，在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；本条其余复跑证据（go/vitest/i18n/protocol/renderer）不受影响。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。
+
 ## Findings
 
 ### F-001 · required · low · 「allow 返回 false 仍保留过期剪枝」语义澄清 — **fixed（审计中已核对实现）**

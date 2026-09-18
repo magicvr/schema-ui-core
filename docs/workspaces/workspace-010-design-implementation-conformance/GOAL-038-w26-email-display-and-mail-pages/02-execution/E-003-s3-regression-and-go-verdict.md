@@ -14,8 +14,10 @@ author: govern orchestrator（S3 回归）
 |------|------|------|
 | Go 全量 | `go test ./...`（apps/api） | **全绿，0 FAIL**（含 store 迁移头快照 v60 同步后重跑；`internal/store` ok 30.6s） |
 | Web 单测 | `npx vitest run`（apps/web） | **81 文件 / 1116 测试全过** |
-| 类型检查 | `npx tsc --noEmit` | **0 错误** |
+| 类型检查 | `npx tsc --noEmit` | **0 错误**（勘误 2026-09-18：裸命令空转，非有效类型校验；本质检由同行 `npm run build` 的 `tsc -b` 覆盖，见下注） |
 | 生产构建 | `npm run build` | **成功**（chunk >500kB 警告为既有现象，非本次引入） |
+
+> **勘误注记（事后追加 2026-09-18，不改本条结论）**：上表「类型检查」一行的 `npx tsc --noEmit` 为裸命令，在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；同表「生产构建」`npm run build` 走 `tsc -b && vite build`，类型检查实质由该步覆盖。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。
 
 迁移快照维护（W26 新增 0060 后的强制同步，均有测试锁定）：`store/identity.go completeFingerprintCatalogHead 59→60` + `lockedHeadExtraTables[60]={}`（纯加列无新对象）；`migrate_test.go / operations_test.go / restart_test.go` applied 头 v59→v60 `mail_outbox_channels`；`TestCompiledMigrationCatalogOwnership` want 增 `{"core.persistence","mail_outbox_channels","6f9d3771…"}`。
 

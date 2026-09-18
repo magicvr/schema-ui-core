@@ -57,5 +57,5 @@ author: govern orchestrator（S2 实施）
 
 ## 回归状态（S3 输入）
 
-- vitest 全量 **1116/1116**（81 文件）；`npx tsc --noEmit` **0**；`npm run build` 成功。
+- vitest 全量 **1116/1116**（81 文件）；`npx tsc --noEmit` **0**；`npm run build` 成功。**（勘误 2026-09-18：`npx tsc --noEmit` 为裸命令、在 solution-style 根配置下空转；同行的 `npm run build` 走 `tsc -b`，类型检查实质由该步覆盖。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006）。）**
 - Go 受影响包（kernel/composition/mail/handler/settings/corepersistence/authsession）全部 ok；Go 全量后台跑批中，结果记于 E-003。

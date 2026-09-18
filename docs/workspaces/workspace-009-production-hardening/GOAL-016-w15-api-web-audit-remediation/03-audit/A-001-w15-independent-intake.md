@@ -77,5 +77,7 @@ version: 0.1.0
 
 - API：`go test ./...` 通过；`go vet ./...` 通过。
 - Web：`tsc --noEmit` 通过；Vite production build 通过（仅 bundle 大小警告）。
+
+> **勘误注记（事后追加 2026-09-18，不改本条 verdict 与结论）**：上句 `tsc --noEmit` 为裸命令，在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。
 - Web：Vitest 受 F-006 阻断，不能宣称全量回归通过。
 - 工作区：审计开始前代码工作树 `git status` clean，`git diff --check` 通过；本目标治理文档随后按用户指令新增，属于本次开区记录，不是代码实施变更。
