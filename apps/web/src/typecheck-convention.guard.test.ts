@@ -22,7 +22,8 @@
  *    bare form vacuous — change it and you must revisit this convention);
  * 2. `npm run typecheck` exists and is a real checking form;
  * 3. no executable surface (package scripts, CI workflows, repo/app scripts)
- *    invokes `tsc` in a non-checking form;
+ *    invokes `tsc` in a non-checking form — where "checking" means `-b`, or a
+ *    `-p` target whose config selects sources of its own (GOAL-010);
  * 4. the README keeps documenting the convention.
  *
  * WHAT IT DELIBERATELY DOES NOT DO
@@ -34,7 +35,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
@@ -77,14 +78,107 @@ function selectsOwnSources(config: TsConfigShape): boolean {
 
 /**
  * A `tsc` invocation is a real check only when it walks project references
- * (`-b` / `--build`) or targets an explicit project (`-p` / `--project`).
- * Everything else — `tsc`, `tsc --noEmit`, `tsc --noEmit --pretty false` —
- * compiles only what the (empty) root config selects.
+ * (`-b` / `--build`) or targets an explicit project (`-p` / `--project`) whose
+ * config selects sources of its own.
  *
- * The flag must be a standalone token; trailing shell/JSON punctuation
- * (quote, comma, semicolon, pipe, bracket) legitimately ends it.
+ * Targeting a project is NOT sufficient by itself (GOAL-010, hardening
+ * GOAL-008 A-002 F-001): `tsc --noEmit -p tsconfig.json` names the root
+ * solution-style config, which selects no files, so it compiles an empty
+ * program and exits 0 — the same vacuity in a `-p` wrapper. The `-p` target is
+ * therefore resolved and inspected; an unreadable or unparsable target fails
+ * closed (treated as non-checking) rather than passing silently.
+ *
+ * Everything else — `tsc`, `tsc --noEmit`, `tsc --noEmit --pretty false`,
+ * `tsc -p <solution-style config>` — is vacuous.
  */
-const CHECKING_FLAG = /(^|[\s"'(=[])(-b|--build|-p|--project)([\s"',;|&)\]]|$)/;
+/** Marks a shell command boundary (`&&`, `||`, `;`, `|`) between argv tokens. */
+const BOUNDARY = "\u0000boundary";
+/** Characters that end an argv token. */
+const ARG_SEPARATOR = /[\s,[\](){}]/;
+/** A quote preceded by one of these starts a value; otherwise it closes one. */
+const OPENS_QUOTE = /[\s,=([{;:]/;
+
+/**
+ * Split one command remainder into argv-ish tokens. The remainder starts right
+ * after the `tsc` token, i.e. mid-line, so quotes are resolved by position: a
+ * quote that begins a value (after a separator) opens a quoted region, while a
+ * quote glued to the previous character closes the surrounding literal and is
+ * dropped. Backtick regions keep `${…}` interpolations — which may contain `"`,
+ * `)` or `]` — in one piece. Unquoted shell separators become `BOUNDARY` tokens
+ * so a following command's flags are never attributed to this one.
+ */
+function tokenizeArgs(segment: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let quote: string | null = null;
+  const flush = (): void => {
+    if (current !== "") {
+      tokens.push(current);
+      current = "";
+    }
+  };
+  for (let index = 0; index < segment.length; index += 1) {
+    const char = segment[index];
+    const previous = index === 0 ? undefined : segment[index - 1];
+    if (quote !== null) {
+      if (char === quote) {
+        quote = null;
+      } else {
+        current += char;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      if (previous !== undefined && OPENS_QUOTE.test(previous)) {
+        quote = char;
+      }
+      continue;
+    }
+    if (char === "&" || char === "|" || char === ";") {
+      flush();
+      if (tokens[tokens.length - 1] !== BOUNDARY) {
+        tokens.push(BOUNDARY);
+      }
+      continue;
+    }
+    if (ARG_SEPARATOR.test(char)) {
+      flush();
+      continue;
+    }
+    current += char;
+  }
+  flush();
+  return tokens;
+}
+
+/** Drop punctuation left over from JSON/`=` wrapping (`x.json",`). */
+const cleanArg = (value: string): string =>
+  value.replace(/^["'`,;]+/, "").replace(/["'`,;]+$/, "");
+
+/** `-p x` / `-p=x` / `--project x` / `--project=x` targets of one invocation. */
+function projectTargetsFrom(tokens: string[]): string[] {
+  const targets: string[] = [];
+  tokens.forEach((token, index) => {
+    if (token === "-p" || token === "--project") {
+      const value = tokens[index + 1];
+      if (value !== undefined && value !== "" && value !== BOUNDARY) {
+        targets.push(cleanArg(value));
+      }
+      return;
+    }
+    if (token.startsWith("--project=") || token.startsWith("-p=")) {
+      targets.push(cleanArg(token.slice(token.indexOf("=") + 1)));
+    }
+  });
+  return targets;
+}
+
+/** Tokens of one `tsc` invocation, cut at the next shell separator. */
+function tscCallTokens(remainder: string): string[] {
+  const tokens = tokenizeArgs(remainder);
+  const boundary = tokens.indexOf(BOUNDARY);
+  return boundary === -1 ? tokens : tokens.slice(0, boundary);
+}
 
 /** `tsc` as a command word — not `tsc-built`, not `@types/tsc-foo`. */
 const TSC_COMMAND = /(?<![A-Za-z0-9_$.-])tsc(?![A-Za-z0-9_$-])/g;
@@ -97,6 +191,114 @@ const TSC_COMMAND = /(?<![A-Za-z0-9_$.-])tsc(?![A-Za-z0-9_$-])/g;
  */
 const PRECEDING_COMMAND =
   /(^|&&|\|\||;|\||npx(\.cmd)?|pnpm|yarn|bunx|npm\s+exec(\s+--)?|["'[(])\s*$/;
+
+/**
+ * A `-p` target counts as a real project only when its config selects its own
+ * sources. Directories resolve the way `tsc` resolves them (`./tsconfig.json`).
+ * Anything unreadable or unparsable returns false so the caller stays
+ * fail-closed.
+ */
+function projectTargetSelectsSources(target: string): boolean {
+  const cleaned = target.trim().replace(/^["'`]+|["'`]+$/g, "");
+  if (cleaned === "") {
+    return false;
+  }
+  const resolved = resolve(WEB_ROOT, cleaned);
+  let configPath = resolved;
+  try {
+    if (statSync(resolved).isDirectory()) {
+      configPath = join(resolved, "tsconfig.json");
+    }
+  } catch {
+    return false; // does not exist — fail closed
+  }
+  try {
+    return selectsOwnSources(JSON.parse(readFileSync(configPath, "utf8")) as TsConfigShape);
+  } catch {
+    return false; // not a readable JSON config — fail closed
+  }
+}
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** `${expr}` / `$VAR` placeholders, as they appear after regex escaping. */
+const INTERPOLATION = /\\\$\\\{[^}]*\\\}|\\\$[A-Za-z_][A-Za-z0-9_]*/g;
+
+/** Every tsconfig in the package (top level and nested), ignoring build output. */
+function allTsConfigs(): string[] {
+  const found: string[] = [];
+  walkFiles(WEB_ROOT, found);
+  return found.filter(
+    (file) => /(^|[\\/])tsconfig[^\\/]*\.json$/.test(file) && !file.includes("node_modules"),
+  );
+}
+
+/**
+ * `scripts/build-lib-packages.mjs` legitimately builds one project per lib
+ * package by interpolating the package name into the config path, so the target
+ * is not a literal we can stat. Turn the interpolation into a wildcard, then
+ * require that the pattern matches at least one config and that EVERY config it
+ * can denote selects sources — fail closed otherwise.
+ */
+function dynamicTargetSelectsSources(target: string): boolean {
+  const normalized = target.trim().replace(/^["'`]+|["'`]+$/g, "").replaceAll("\\", "/");
+  const escaped = escapeRegExp(normalized);
+  const wildcarded = escaped.replace(INTERPOLATION, "[^/]*");
+  if (wildcarded === escaped) {
+    return false; // no interpolation to resolve — stay fail-closed
+  }
+  const pattern = new RegExp(`^${wildcarded}$`);
+  const matches = allTsConfigs()
+    .map((file) => relative(WEB_ROOT, file).replaceAll("\\", "/"))
+    .filter((relativePath) => pattern.test(relativePath));
+  return (
+    matches.length > 0 &&
+    matches.every((relativePath) => projectTargetSelectsSources(relativePath))
+  );
+}
+
+/** Resolve a `-p` target, literal or interpolated. */
+function projectTargetIsRealCheck(target: string): boolean {
+  return /[$`]/.test(target)
+    ? dynamicTargetSelectsSources(target)
+    : projectTargetSelectsSources(target);
+}
+
+/**
+ * True when the command remainder after `tsc` describes a call that cannot fail
+ * a type check. `-b` is sufficient; otherwise at least one `-p` target must be
+ * a config that selects its own sources.
+ */
+function tscCallChecksNothing(remainder: string): boolean {
+  const tokens = tscCallTokens(remainder);
+  if (tokens.includes("-b") || tokens.includes("--build")) {
+    return false;
+  }
+  return !projectTargetsFrom(tokens).some(projectTargetIsRealCheck);
+}
+
+/**
+ * GOAL-010 · regression table. Every row is a command form that has either been
+ * seen in this repo or is one flag away from the vacuous forms that were.
+ * `vacuous: true` means the guard must flag it.
+ */
+const COMMAND_FORMS: Array<{ command: string; vacuous: boolean; note: string }> = [
+  { command: "tsc --noEmit", vacuous: true, note: "bare: compiles the empty root program" },
+  { command: "npx tsc --noEmit --pretty false", vacuous: true, note: "flags add no files" },
+  { command: "tsc --noEmit -p tsconfig.json", vacuous: true, note: "GOAL-010: -p at the solution-style root" },
+  { command: "tsc --noEmit --project tsconfig.json", vacuous: true, note: "long form of the same mistake" },
+  { command: "tsc --noEmit --project=tsconfig.json", vacuous: true, note: "= form of the same mistake" },
+  { command: "tsc --noEmit -p .", vacuous: true, note: "directory resolves to the root config" },
+  { command: "tsc --noEmit -p tsconfig.missing.json", vacuous: true, note: "unreadable target fails closed" },
+  { command: "tsc --noEmit -p", vacuous: true, note: "missing target fails closed" },
+  { command: "npm exec -- tsc --noEmit -p tsconfig.json", vacuous: true, note: "runner prefix does not help" },
+  { command: "tsc -p tsconfig.app.json --noEmit", vacuous: false, note: "app config selects src" },
+  { command: "tsc -p e2e/tsconfig.json", vacuous: false, note: "e2e config selects ./**/*.ts" },
+  { command: "tsc -b", vacuous: false, note: "build mode walks references" },
+  { command: "tsc --build", vacuous: false, note: "long form" },
+  { command: "tsc -b && tsc -p e2e/tsconfig.json", vacuous: false, note: "the typecheck script" },
+  { command: "tsc --noEmit -p tsconfig.json && tsc -p e2e/tsconfig.json", vacuous: true, note: "first call still vacuous" },
+  { command: "验证方式：tsc 全产物检查", vacuous: false, note: "prose mention is not an invocation" },
+];
 
 /**
  * Reports non-checking `tsc` usages on one line. Flags may sit anywhere after
@@ -112,7 +314,7 @@ function nonCheckingTscOnLine(line: string): string[] {
       continue; // prose mention, not an invocation
     }
     const remainder = line.slice(match.index + match[0].length);
-    if (!CHECKING_FLAG.test(remainder)) {
+    if (tscCallChecksNothing(remainder)) {
       offenders.push(line.trim());
     }
   }
@@ -195,9 +397,9 @@ describe("GOAL-008 · type-check evidence convention", () => {
     const typecheck = scripts.typecheck;
     expect(typecheck, "package.json is missing a typecheck script").toBeTypeOf("string");
     expect(
-      CHECKING_FLAG.test(typecheck),
-      `typecheck must use -b or -p (got: ${typecheck})`,
-    ).toBe(true);
+      nonCheckingTscOnLine(typecheck ?? ""),
+      `typecheck must run a checking tsc form (got: ${typecheck})`,
+    ).toEqual([]);
   });
 
   // The e2e specs live in their own project (e2e/tsconfig.json) which is NOT in
@@ -224,9 +426,32 @@ describe("GOAL-008 · type-check evidence convention", () => {
     const build = scripts.build ?? "";
     expect(build).toContain("tsc");
     expect(
-      CHECKING_FLAG.test(build),
+      nonCheckingTscOnLine(build),
       `build must run a checking tsc form (got: ${build})`,
-    ).toBe(true);
+    ).toEqual([]);
+  });
+
+  // GOAL-010 · the `-p` target itself has to select sources. Without this the
+  // guard accepts `tsc --noEmit -p tsconfig.json`, which compiles the empty root
+  // program and exits 0 — GOAL-008 A-002 F-001.
+  it("rejects every vacuous command form, including -p at the root config", () => {
+    const wrong = COMMAND_FORMS.filter(
+      (form) => nonCheckingTscOnLine(form.command).length > 0 !== form.vacuous,
+    ).map((form) => `${form.command} -> expected vacuous=${form.vacuous} (${form.note})`);
+    expect(wrong, "command forms judged incorrectly").toEqual([]);
+    // The table must keep covering both directions.
+    expect(COMMAND_FORMS.some((form) => form.vacuous)).toBe(true);
+    expect(COMMAND_FORMS.some((form) => !form.vacuous)).toBe(true);
+  });
+
+  it("resolves -p targets by config content, not by the flag being present", () => {
+    expect(projectTargetSelectsSources("tsconfig.json")).toBe(false);
+    expect(projectTargetSelectsSources(".")).toBe(false);
+    expect(projectTargetSelectsSources("./tsconfig.json")).toBe(false);
+    expect(projectTargetSelectsSources("tsconfig.app.json")).toBe(true);
+    expect(projectTargetSelectsSources("e2e/tsconfig.json")).toBe(true);
+    expect(projectTargetSelectsSources("tsconfig.nope.json")).toBe(false);
+    expect(projectTargetSelectsSources("")).toBe(false);
   });
 
   it("uses no non-checking tsc invocation in any executable surface", () => {
