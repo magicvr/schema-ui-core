@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.7.0
+version: 1.8.0
 ---
 
 # 执行台账 · GOAL-001-admin-workflow-continuity
@@ -35,12 +35,13 @@ version: 1.7.0
 | E-017 | 2026-09-18 | R6 C5 实现/回归完成并保持 Root 开放 | recorded | [E-017-r6-c5-projection.md](02-execution/E-017-r6-c5-projection.md) |
 | E-018 | 2026-09-18 | R6 C7 控制位纠偏完成并保持 Root 开放 | recorded | [E-018-r6-c7-projection.md](02-execution/E-018-r6-c7-projection.md) |
 | E-019 | 2026-09-18 | R6 C8 控制高度与折叠开关语义完成并保持 Root 开放 | recorded | [E-019-r6-c8-projection.md](02-execution/E-019-r6-c8-projection.md) |
+| E-020 | 2026-09-18 | 开设整改子目标 GOAL-008 并记录 R6 C6 审计结论 | recorded | [E-020-open-typecheck-evidence-goal.md](02-execution/E-020-open-typecheck-evidence-goal.md) |
 
 ## 当前事实
 
 - 已完成：VP-037 `planned → active` v0.2.0；lead = `workspace-037-admin-workflow-continuity`；激活审视 = VRev-095 self `pass`。
 - 已创建：`workspace.md`、`goal-tree.md`、Root 五件套、`01-decision/`、`02-execution/`、`03-audit/` 与 `attachments/`。
-- 当前 Root `GOAL-001-admin-workflow-continuity` 为 `active · 4/6`；R1 子目标 `done · 3/3`，R2 子目标 `done · 4/4`，R3 子目标 `done · 4/4`，R4 子目标 `done · 4/4`，R5 子目标 `active · 3/4`，R6 子目标 `active · 7/8`；R1～R4 的阶段审计已闭合，R6 C5 布局修订、C7 控制位纠偏与 C8 控件语义均已完成，C6 修订审计待完成。
+- 当前 Root `GOAL-001-admin-workflow-continuity` 为 `active · 4/6`；R1 子目标 `done · 3/3`，R2 子目标 `done · 4/4`，R3 子目标 `done · 4/4`，R4 子目标 `done · 4/4`，R5 子目标 `active · 3/4`，R6 子目标 `active · 7/8`，整改子目标 `GOAL-008` `active · 2/4`（非纲领，不计入 Root 分母）；R1～R4 的阶段审计已闭合，R6 C5/C7/C8 已完成且 C6 审计 A-002 已记录，Root/VP 待 R5-I-004 用户确认。
 - 已开设 `GOAL-002-r1-scope-semantics-freeze`，并记录 24 个列表表面、58 个表单节点、状态/反馈基线矩阵和 D-003～D-005 语义决策；R1 审计已关闭，R2/R3 实现证据已由对应目标承接，R4 实现证据待补。
 - 2026-09-17 用户确认 Saved View 采用浏览器 `localStorage`，按 `user.id + pageId + tableId` 隔离；工作树另有语义记录后形成的未提交 Saved Views/dirty-state 实现切片，由 R2/R3 目标承接，不在 R1 投影中计为完成。
 - Admin freshness 继承当前 HEAD 基线并通过。
@@ -52,6 +53,7 @@ version: 1.7.0
 - 2026-09-18，用户对 R6 实现提出布局修订并选择 D-012 方案 A；按 E-016 回开 GOAL-007 为 `active · 4/6`，Root 当前投影回 `active · 4/6`。本事实不关闭 R5-I-004、Root 或 VP。
 - 2026-09-18，用户在 C5 交付后追加三项 UI 反馈（图标强调、搜索配对回调、视图表单归属）；按 D-003 在同一 GOAL-007 内追加 C7 并完成实现与回归（E-005），R6 检查点由 6 项扩为 7 项、当前 `active · 6/7`。Root 六阶段分母不变，仍为 `active · 4/6`；R5-I-004、Root 与 VP 保持开放。
 - 2026-09-18，用户追加三项控件层反馈（页面 actions 高度、折叠开关样式与语义 token、空展开抑制）；按 D-004 在同一 GOAL-007 内追加 C8 并完成实现与回归（E-006），R6 检查点扩为 8 项、当前 `active · 7/8`。C8 新增语义 token `--control`/`--control-foreground`，属对 D-002 §5 边界的局部修订并已留痕；Root 仍为 `active · 4/6`。
+- 2026-09-18，R6 完成 C6 修订审计并记录 `A-002`（self · `conditional`）：F-001（vision 层投影落后）已闭合，F-002/F-004 已 `fixed`，F-003 recommended 保持 open；F-005（high，裸 `tsc --noEmit` 类型校验空转）本目标条目已更正为 `tsc -b`，跨工作区部分按用户 P-004 裁决（方案 A）移交新开设的整改子目标 `GOAL-008-typecheck-evidence-convention`（`active · 2/4`，非纲领阶段，不计入 Root 分母）。R6 按用户裁决保持 `active · 7/8`，完成投影待 GOAL-008 处置落定后单独执行；Root 仍 `active · 4/6`。
 
 ## 事实边界
 

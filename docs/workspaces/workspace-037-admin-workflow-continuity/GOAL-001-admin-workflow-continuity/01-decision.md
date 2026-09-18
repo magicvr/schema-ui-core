@@ -5,7 +5,7 @@ status: active
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.2.0
+version: 1.3.0
 ---
 
 # 决策台账 · GOAL-001-admin-workflow-continuity
@@ -40,6 +40,7 @@ version: 1.2.0
 | D-010 | 2026-09-17 | R4 关门、Root 投影并开设 R5 组合验收 | accepted | [D-010-r4-close-and-open-r5.md](01-decision/D-010-r4-close-and-open-r5.md) |
 | D-011 | 2026-09-18 | 保持 R5/Root/VP 开放并开设 R6 列表页视觉收敛 | accepted | [D-011-open-r6-list-page-visual-alignment.md](01-decision/D-011-open-r6-list-page-visual-alignment.md) |
 | D-012 | 2026-09-18 | 用户选择回开 R6 并追加列表布局修订 | accepted | [D-012-reopen-r6-layout-revision.md](01-decision/D-012-reopen-r6-layout-revision.md) |
+| D-013 | 2026-09-18 | 用户裁决 F-005 处置路径并开设整改子目标 GOAL-008 | accepted | [D-013-open-typecheck-evidence-goal.md](01-decision/D-013-open-typecheck-evidence-goal.md) |
 
 ## 当前投影
 

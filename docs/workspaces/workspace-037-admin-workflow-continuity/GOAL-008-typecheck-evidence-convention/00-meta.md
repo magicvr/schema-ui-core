@@ -1,0 +1,68 @@
+---
+id: GOAL-008-typecheck-evidence-convention
+title: 类型检查证据约定纠偏与防复发
+status: active
+parent: GOAL-001-admin-workflow-continuity
+created: 2026-09-18
+updated: 2026-09-18
+version: 0.1.0
+progress: 2/4
+plan_refs:
+  - VP-037-admin-workflow-continuity
+primary_plan: VP-037-admin-workflow-continuity
+vision_ref: schema-ui-core-admin-foundation@0.4.0
+---
+
+# GOAL-008 · 类型检查证据约定纠偏与防复发
+
+## 概述
+
+承接 R6 C6 审计 A-002 的 **F-005**（high required）：`apps/web/tsconfig.json` 是 solution-style 配置（`{"files": [], "references": [...]}`），因此**裸 `tsc --noEmit` 不检查任何源文件**，恒返回 exit 0。仓库内多处阶段性验证却以该命令作为「类型检查通过」的证据，属空转证据。
+
+用户于 2026-09-18 按 P-004 裁决处置路径为 **方案 A：立独立目标系统性处置**（不追溯式加注、不记为残余）。本目标即该独立目标，承接「纠正口径 + 固化正确入口 + 防复发」，不重开 R6。
+
+## 范围与边界
+
+- 确立并固化**正确的类型检查口径**（`tsc -b`，与 `apps/web/package.json` 的 `build` 脚本及 `apps/web/README.md` 既有约定一致）。
+- 让正确入口**可发现、可复用**（脚本入口 + 文档），使后续阶段不会因为「随手敲的命令恰好空转」而再次产生失实证据。
+- 登记受影响的历史条目范围，作为可追溯清单；**是否为其他工作区追溯更正**留待后续决策或用户另行路由。
+- 防复发机制（守卫/检查）的形态在本目标 C3 决策后确定。
+
+明确非目标：不修改 `docs/workspaces/workspace-002|009|010|011` 等其他工作区的 canonical 台账（AGENTS §6c 禁止跨区写入）；不改 `tsconfig` 的项目引用结构或编译目标；不改 `apps/api`（Go）验证口径；不重开 R6 `GOAL-007` 的视觉范围。
+
+## 高层路线图
+
+1. **C1 · 影响面与正确口径基线**：确认 `tsconfig` 结构、证明空转、确定正确口径与受影响条目范围。已完成，证据见 `D-001`、`E-001`。
+2. **C2 · 固化正确类型检查入口**：在 `apps/web` 提供显式 `typecheck` 脚本并在 README 记录约定，使正确命令成为默认可发现入口。已完成，证据见 `E-002`。
+3. **C3 · 防复发守卫**：确定并实施守卫形态（结构断言 / CI 引用 / 约定文档权威化三选一或组合），使空转口径无法再被无声沿用。待决策。
+4. **C4 · 审计与交付**：完成 self 审计、响应 required finding，并向 Root 投影。待审计。
+
+## 成功检查点
+
+- [x] C1：`tsconfig` solution-style 结构、空转证明（注入类型错误对比 `tsc --noEmit` exit 0 vs `tsc -b` exit 2）与受影响范围已形成可核对基线。
+- [x] C2：`apps/web` 提供 `npm run typecheck`（`tsc -b`）并在 README 记录；实测该入口对真实类型错误返回非零。
+- [ ] C3：防复发守卫已实施并可核对，空转口径不再可能被无声沿用。
+- [ ] C4：self 审计与 Root 投影完成。
+
+## 信息就绪与未知项（P-005）
+
+| ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
+|----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
+| I-008-001 | required | `tsconfig` 结构与裸 `tsc --noEmit` 是否真的空转？ | C1/C2 | C1 | 读取 `apps/web/tsconfig*.json`；注入类型错误对比两条命令的退出码与输出 | verified | 2026-09-18 已完成 | `D-001`、`E-001` |
+| I-008-002 | required | 受影响的历史条目范围有多大？ | C1/C3 | C1 | 全仓检索裸 `tsc --noEmit`；追溯 `tsconfig.json` 引入时点 | verified | 2026-09-18 已完成；跨区条目只登记不代改 | `E-001` |
+| I-008-003 | required | 防复发守卫应采用什么形态？ | C3 | C3 前 | 评估结构断言 / CI 引用 / 约定权威化；必要时问用户 | collecting | 责任人：本目标；C3 决策时定 | 待确认 |
+| I-008-004 | non-blocking | 其他工作区历史条目是否追溯更正？ | 范围外 | 用户路由时 | 用户另行决定；本目标不跨区写入 | deferred | 理由：跨区边界（AGENTS §6c）；触发：用户明确要求 | 待确认 |
+
+## 父目标
+
+- `[workspace-037-admin-workflow-continuity]` `GOAL-001-admin-workflow-continuity`。
+
+## 台账布局
+
+本目标从第一条记录起使用平铺 ledger：`01-decision/`、`02-execution/`、`03-audit/`，并保留 `attachments/`。
+
+## 备注
+
+- 本目标**不是** Root 的纲领阶段，不改变 Root 六阶段分母与 `progress: 4/6`；它是 Root 下的整改子目标，与 R6 的视觉范围相互独立。
+- R6 `GOAL-007` 保持 `active · 7/8`；其 C6 的 F-005 处置路径已按用户裁决落定并移交本目标，R6 完成投影待下一轮。
+- R5 `GOAL-006` 的 `R5-I-004` 用户书面关门确认仍开放，本目标不替代、不关闭它。

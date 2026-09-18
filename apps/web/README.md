@@ -18,6 +18,7 @@ npm run dev
 # Override with WEB_PORT (dev web) and/or HTTP_ADDR (API) when another port is
 # needed, e.g. $env:WEB_PORT=3000; npm run dev
 npm test        # vitest run
+npm run typecheck  # tsc -b  — the ONLY valid type-check entrypoint (see below)
 npm run test:e2e        # Playwright Chromium, sqlite dialect (default)
 npm run test:e2e:postgres  # same suite against a dedicated scratch PostgreSQL
 # Bash: run the runtime profiles against the same Web code (demo = non-production)
@@ -26,6 +27,23 @@ npm run test:e2e:postgres  # same suite against a dedicated scratch PostgreSQL
 # ranges; override via HTTP_ADDR / WEB_PORT if a port is taken.
 npm run build   # tsc -b && vite build
 ```
+
+### 类型检查口径（GOAL-008 · 必读）
+
+**类型检查只用 `npm run typecheck`（即 `tsc -b`）。**
+
+`tsconfig.json` 是 solution-style 配置（`{"files": [], "references": [...]}`），
+本身不含任何源文件——真正的编译选项在 `tsconfig.app.json` / `tsconfig.node.json`。
+因此**不带 `-b` 的 `tsc --noEmit` 不检查任何文件、恒返回 exit 0**，它看起来「通过」
+只是因为没有任何输入，**不构成类型检查证据**。
+
+```bash
+npm run typecheck          # 正确：走 project references，真正检查 src/**
+npx tsc -b                 # 等价写法
+npm run build              # 同样包含 tsc -b
+```
+
+`tsc -b` 在发现真实类型错误时返回非零（例如 `TS2322`），可用于门禁与 CI。
 
 ### 浏览器 E2E 双数据库方言（W24 / GOAL-035）
 
