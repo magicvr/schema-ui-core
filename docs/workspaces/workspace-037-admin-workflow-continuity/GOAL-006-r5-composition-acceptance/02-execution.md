@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
-updated: 2026-09-17
-version: 0.5.0
+updated: 2026-09-18
+version: 0.6.0
 ---
 
 # 执行台账 · GOAL-006 R5
@@ -19,6 +19,7 @@ version: 0.5.0
 | E-003 | 2026-09-17 | 首波边界与递归对齐核对 | recorded | [E-003-r5-boundary-and-alignment.md](02-execution/E-003-r5-boundary-and-alignment.md) |
 | E-004 | 2026-09-17 | R5 最终验证与关门就绪 | recorded | [E-004-r5-final-validation.md](02-execution/E-004-r5-final-validation.md) |
 | E-005 | 2026-09-17 | 响应 A-002 与投影卫生修正 | recorded | [E-005-r5-independent-audit-response.md](02-execution/E-005-r5-independent-audit-response.md) |
+| E-006 | 2026-09-18 | 关门证据一页与投影滞后修正 | recorded | [E-006-r5-closeout-evidence-digest.md](02-execution/E-006-r5-closeout-evidence-digest.md) |
 
 ## 当前事实
 
@@ -30,6 +31,7 @@ version: 0.5.0
 - 2026-09-17，E-004 完成 C3：全量 Vitest 110/1408、TypeScript、diff check 与六目标结构扫描通过；R4 checkpoint `89666e5c` 可回溯，用户 `.claude/settings.local.json` 未纳入。
 - C3 完成后 R5 派生进度为 `active · 3/4`；C4 审计与用户确认尚未完成。
 - R5 的 C4 尚未宣称完成；R5-I-001～R5-I-003 已在 C1～C3 verified，R5-I-004 必须在审计完成后取得用户书面确认。
+- 2026-09-18，E-006 应你的要求产出关门证据一页（`attachments/r5-closeout-evidence-digest.md`）并刷新裁决前证据：`npm run typecheck` exit 0、Vitest 112/1426、`list-visual-surface` e2e 在 `admin`（32.9s）与 `mvp`（33.3s）各 2 passed、`git diff --check` 通过、`apps/api` 自 `89666e5c` 起零漂移。同时修正两处目标内当前态滞后（00-meta 父目标行 Root `5/6`、GOAL-008 备注 `progress`）。R5-I-004 仍 `collecting`，C4 仍未勾选，Root/VP 未关门。
 - 本文件只记录已发生的组合核对、验证、审计与投影事实；计划与待确认事项留在 `00-meta.md`/`01-decision.md`。
 
 ## 事实边界

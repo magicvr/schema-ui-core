@@ -4,8 +4,8 @@ title: R5 组合验收与关门准备
 status: active
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
-updated: 2026-09-17
-version: 0.4.0
+updated: 2026-09-18
+version: 0.5.0
 progress: 3/4
 plan_refs:
   - VP-037-admin-workflow-continuity
@@ -50,12 +50,12 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 | R5-I-001 | required | R1～R4 是否均有完整五件套、阶段检查点与无开放 required finding？ | C1/C4 | C1 | 扫描各目标 `00-meta`/`goal-tree`/`03-audit` 与审计索引 | verified | 2026-09-17 开设；C1 已核对 | [E-002-r5-stage-evidence-inventory.md](02-execution/E-002-r5-stage-evidence-inventory.md)；R1～R4 审计台账均无开放 required |
 | R5-I-002 | required | 首波方向退出判据、非目标边界与 Charter→VP→workspace→Root 链是否一致？ | C2/C4 | C2 | 对照 Charter、VP-037、workspace.md、Root 与各阶段决策 | verified | 2026-09-17 开设；C2 已核对 | [E-003-r5-boundary-and-alignment.md](02-execution/E-003-r5-boundary-and-alignment.md)；未发现机读或语义冲突 |
 | R5-I-003 | required | 最终测试、类型检查、checkpoint 与用户工作树边界是否可复核？ | C3/C4 | C3 | 复跑验证，检查 `git status`/checkpoint 路径，排除用户文件 | verified | 2026-09-17 开设；C3 已核对 | [E-004-r5-final-validation.md](02-execution/E-004-r5-final-validation.md)；110/1408、tsc、diff check 与结构扫描通过 |
-| R5-I-004 | required | 用户是否书面确认 Root/VP 关门？ | C4 | 完成审计与响应后向用户明确请求并留痕 | collecting | 到 C4 才请求；未确认不得关门 | 待用户确认 |
+| R5-I-004 | required | 用户是否书面确认 Root/VP 关门？ | C4 | 完成审计与响应后向用户明确请求并留痕 | collecting | 到 C4 才请求；未确认不得关门 | 2026-09-18 已按用户要求提供关门证据一页（`attachments/r5-closeout-evidence-digest.md`、`E-006`）；待用户裁决 |
 | R5-I-005 | non-blocking | F-002 Host/resource 直接对照与 I-037-005 协作需求是否需要后续波次？ | 后续 UX / `/vision` | C2/C4 | 保留 bounded recommended/deferred，真实触发时 `/vision` 复核 | deferred | owner=`/vision`；真实需求或支持场景触发复核 | 不进入 VP-037 首波关门硬门禁 |
 
 ## 父目标
 
-- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 4/5`；R1～R4 已完成，本目标承载 R5 组合验收）。
+- `GOAL-001-admin-workflow-continuity`（Root 当前 `active · 5/6`；R1～R4 与 R6 已完成，本目标承载 R5 组合验收）。
 
 ## 台账布局
 
