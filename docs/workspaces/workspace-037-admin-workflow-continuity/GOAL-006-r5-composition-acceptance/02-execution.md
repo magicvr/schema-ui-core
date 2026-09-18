@@ -1,11 +1,11 @@
 ---
 id: GOAL-006-r5-composition-acceptance
 doc: execution
-status: active
+status: done
 parent: GOAL-001-admin-workflow-continuity
 created: 2026-09-17
 updated: 2026-09-18
-version: 0.6.0
+version: 0.7.0
 ---
 
 # 执行台账 · GOAL-006 R5
@@ -20,6 +20,7 @@ version: 0.6.0
 | E-004 | 2026-09-17 | R5 最终验证与关门就绪 | recorded | [E-004-r5-final-validation.md](02-execution/E-004-r5-final-validation.md) |
 | E-005 | 2026-09-17 | 响应 A-002 与投影卫生修正 | recorded | [E-005-r5-independent-audit-response.md](02-execution/E-005-r5-independent-audit-response.md) |
 | E-006 | 2026-09-18 | 关门证据一页与投影滞后修正 | recorded | [E-006-r5-closeout-evidence-digest.md](02-execution/E-006-r5-closeout-evidence-digest.md) |
+| E-007 | 2026-09-18 | R5 关门与 Root/VP 投影（用户书面确认） | recorded | [E-007-r5-closeout-and-projection.md](02-execution/E-007-r5-closeout-and-projection.md) |
 
 ## 当前事实
 
@@ -33,6 +34,7 @@ version: 0.6.0
 - R5 的 C4 尚未宣称完成；R5-I-001～R5-I-003 已在 C1～C3 verified，R5-I-004 必须在审计完成后取得用户书面确认。
 - 2026-09-18，E-006 应你的要求产出关门证据一页（`attachments/r5-closeout-evidence-digest.md`）并刷新裁决前证据：`npm run typecheck` exit 0、Vitest 112/1426、`list-visual-surface` e2e 在 `admin`（32.9s）与 `mvp`（33.3s）各 2 passed、`git diff --check` 通过、`apps/api` 自 `89666e5c` 起零漂移。同时修正两处目标内当前态滞后（00-meta 父目标行 Root `5/6`、GOAL-008 备注 `progress`）。R5-I-004 仍 `collecting`，C4 仍未勾选，Root/VP 未关门。
 - 本文件只记录已发生的组合核对、验证、审计与投影事实；计划与待确认事项留在 `00-meta.md`/`01-decision.md`。
+- 2026-09-18，E-007 完成 R5 关门：用户书面确认落盘（`D-002`），`R5-I-004` → `verified`，`A-001 R5-GATE-001`/`A-002 F-001` → `fixed`；C4 勾选，`GOAL-006` 投影 `done · 4/4`；Root `GOAL-001` 投影 `done · 6/6`；VP-037 填写 Closeout 并关门。关门前的最终验证：Vitest 113/1434、`npm run typecheck` exit 0、`list-visual-surface` e2e 3 passed × admin/mvp、`git diff --check` 通过。
 
 ## 事实边界
 

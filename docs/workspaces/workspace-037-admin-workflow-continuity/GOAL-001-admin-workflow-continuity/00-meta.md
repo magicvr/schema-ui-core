@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-admin-workflow-continuity
 title: Admin 工作流连续性与安全反馈交付
-status: active
+status: done
 parent: null
 created: 2026-09-16
 updated: 2026-09-18
-version: 1.7.0
-progress: 5/6
+version: 2.0.0
+progress: 6/6
 plan_refs:
   - VP-037-admin-workflow-continuity
 primary_plan: VP-037-admin-workflow-continuity
@@ -19,7 +19,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 在现有 Admin 导航、发现入口、设计系统、locale/settings 与横切契约之上，交付 VP-037 的工作流连续性与列表体验收敛：用户级 Saved Views、未保存变更保护、统一 Toast/错误恢复，以及用户明确追加的通用列表页视觉与筛选布局改造。Root 只承接 VP-037 的实现层路线图，不把实体全文搜索、批量结果中心、组织/数据权限、新业务域或架构 gated 项写入本目标。
 
-工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护、R4 统一反馈与恢复以及 R6 列表页视觉收敛已完成并通过各自 Goal 审计。R5 组合验收仍有用户书面确认门禁；三个整改子目标（`GOAL-008-typecheck-evidence-convention`、`GOAL-009-list-visual-e2e-guard`、`GOAL-010-typecheck-guard-hardening`，均为非纲领阶段）已 `done`，使 R6 的 A-002 F-003/F-005 与 GOAL-008 守卫缺口 F-001 全部闭环。当前 `progress: 5/6` 是显式检查点的派生展示。Root/VP 继续保持 active。
+工作区与 Root 已建立；R1 信息与语义冻结、R2 Saved Views、R3 未保存变更保护、R4 统一反馈与恢复、R6 列表页视觉收敛以及 R5 组合验收均已完成并通过各自 Goal 审计。四个整改子目标（`GOAL-008-typecheck-evidence-convention`、`GOAL-009-list-visual-e2e-guard`、`GOAL-010-typecheck-guard-hardening`、`GOAL-011-pagination-page-size-contract`，均为非纲领阶段）亦已 `done`。用户于 2026-09-18 给出书面 Root/VP 关门确认（`GOAL-006` `D-002`），Root 据此以 **`done · 6/6`** 关门，VP-037 同步 `closed`。当前 `progress: 6/6` 是显式检查点的派生展示。
 
 ## 愿景对齐
 
@@ -54,7 +54,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **R2 Saved Views**：在首波分母内完成保存、选择、恢复、更新、删除、空态/错误态与无效/越权 fail-closed 闭环；由 `GOAL-003-r2-saved-views` 承载并以 `done · 4/4` 完成，A-001/A-002/A-003 pass，Git checkpoint `39c744ef` 已记录。
 - [x] **R3 未保存变更保护**：内部导航、浏览器离开/刷新、提交成功、重置和取消路径可验证，确认不会丢失修改或绕过提交结果；由 `GOAL-004-r3-unsaved-change-protection` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `d2b39189` 已记录。
 - [x] **R4 统一反馈与恢复**：成功/失败/重试/维护反馈统一、可访问且不重复提交、不吞服务端错误、不泄露敏感信息；由 `GOAL-005-r4-unified-feedback-recovery` 承载并以 `done · 4/4` 完成，A-003 independent recheck、A-004 self 与 checkpoint `89666e5c` 已记录。
-- [ ] **R5 组合验收与关门准备**：非目标边界、阶段事实、Goal 审计、必要独立意见与 VP 投影闭合；当前由 `GOAL-006-r5-composition-acceptance` 承载（`active · 3/4`，C1～C3 已完成），用户确认后才可将 Root/VP 关门。
+- [x] **R5 组合验收与关门准备**：非目标边界、阶段事实、Goal 审计、必要独立意见与 VP 投影闭合；由 `GOAL-006-r5-composition-acceptance` 承载并以 `done · 4/4` 完成，用户于 2026-09-18 给出书面关门确认（`GOAL-006` `D-002`，前置条件由整改子目标 `GOAL-011` 完成），Root/VP 据此关门。
 - [x] **R6 列表页视觉与筛选体验收敛**：参考 `raw/new-table` 收敛通用列表、筛选、页面级按钮、视图布局与分页展示；由 `GOAL-007-list-page-visual-alignment` 承载并以 `done · 8/8` 完成（C1～C8 全部完成；C6 审计 A-002 `conditional`，其 F-005 跨区部分经整改子目标 `GOAL-008` 闭环）；不改变 shell 与既有查询/重置合同。
 
 ## 信息就绪与未知项（P-005）
@@ -81,6 +81,7 @@ I-037-001～004 的 R1 信息冻结已关闭；R2、R3、R4 已分别以实现/�
 
 ## 备注
 
-- workspace/Root scaffold、R1、R2、R3、R4 与 R6 子目标已完成是已发生事实；R5 尚未完成。
-- `progress: 5/6` 只由上方 6 个显式检查点派生；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010` 为非纲领阶段、不计入分母，也不放行阶段、不关闭 finding、不覆盖 status。R5 的 `R5-I-004` 用户书面确认未闭合，故 Root/VP 仍为 `active`。
-- Vision Review `VRev-094`/`VRev-095` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。
+- workspace/Root scaffold、R1、R2、R3、R4、R6 与 R5 子目标全部完成是已发生事实；Root 于 2026-09-18 以 `done · 6/6` 关门，VP-037 同步 `closed`。
+- `progress: 6/6` 只由上方 6 个显式检查点派生；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010`/`GOAL-011` 为非纲领阶段、不计入分母，也不放行阶段、不关闭 finding、不覆盖 status。
+- 关门不改变以下仍开放的项：`GOAL-008 A-002 F-002`（全仓 `tsc` 简写未逐条裁定，recommended）、`GOAL-009 A-001 F-001/F-002`（暗色开关计算背景未断言、仅 roles 页覆盖，recommended）、`GOAL-006 R5-I-005` / `A-002 F-003`（Host/resource 直接对照，non-blocking deferred）、`I-037-005`（协作/收藏，deferred）、`V-F124`（recommended）。这些不因关门被标为已验证。
+- Vision Review `VRev-094`/`VRev-095` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。VP-037 关门 Vision Review = `VRev-096`。

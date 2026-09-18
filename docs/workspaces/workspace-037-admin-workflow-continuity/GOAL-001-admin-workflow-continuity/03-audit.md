@@ -1,11 +1,11 @@
 ---
 doc_type: goal-audit-index
 id: GOAL-001-admin-workflow-continuity-audits
-status: active
+status: done
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 0.12.0
+version: 1.0.0
 ---
 
 # 审计台账 · GOAL-001-admin-workflow-continuity
@@ -32,7 +32,10 @@ version: 0.12.0
 | A-003 | 2026-09-17 | self | Root R3 stage projection from GOAL-004 close-out | pass | 无 | [A-003-r3-stage-projection.md](03-audit/A-003-r3-stage-projection.md) |
 | A-004 | 2026-09-17 | self | Root R4 stage projection from GOAL-005 close-out | pass | 无 | [A-004-r4-stage-projection.md](03-audit/A-004-r4-stage-projection.md) |
 | A-005 | 2026-09-18 | self | Root R6 stage projection from GOAL-007 close-out (historical: pre-D-012 R6 `done · 4/4`) | pass | 无 | [A-005-r6-stage-projection.md](03-audit/A-005-r6-stage-projection.md) |
+| A-006 | 2026-09-18 | self | Root 关门审计（六阶段完成、finding 闭合、信息门禁、投影同步、用户确认） | pass | 无 | [A-006-root-closeout.md](03-audit/A-006-root-closeout.md) |
 
 ## 结论状态
 
-Root 当前为 `active · 5/6`；R1 子目标 GOAL-002 已 `done · 3/3`，R2 子目标 GOAL-003 已 `done · 4/4`，R3 子目标 GOAL-004 已 `done · 4/4`，R4 子目标 GOAL-005 已 `done · 4/4`，R5 GOAL-006 仍 `active · 3/4`，R6 GOAL-007 已经 C5/C7/C8 三轮纠偏后以 `done · 8/8` 关门（其 C6 审计 A-002 为 `conditional`，F-005 跨区部分经整改子目标 GOAL-008 闭环，A-001 `pass`）。A-001～A-004 完成 R1～R4 阶段投影核对；A-005 记录的是 R6 原版本 `done · 4/4` 时的投影，**在 D-012 回开 R6 后已不代表当前 R6 状态**，故其 scope 已限定为历史版本证据。当前 Root 台账无新的开放 required finding，但 R5-I-004 用户书面确认仍是 R5/Root/VP 关门门禁。Vision 层 VRev-095 的 `pass` 只支持 VP 激活与工作区建立，不支持实现阶段或关门完成。
+**Root 已于 2026-09-18 关门**：`GOAL-001-admin-workflow-continuity` 为 **`done · 6/6`**，VP-037 同步 `closed`（`VRev-096` self `pass`）。R1 子目标 GOAL-002 `done · 3/3`，R2 GOAL-003 `done · 4/4`，R3 GOAL-004 `done · 4/4`，R4 GOAL-005 `done · 4/4`，R5 GOAL-006 `done · 4/4`，R6 GOAL-007 经 C5/C7/C8 三轮纠偏后 `done · 8/8`；四个非纲领整改子目标 GOAL-008/009/010/011 均 `done · 4/4`。A-001～A-004 完成 R1～R4 阶段投影核对；A-005 记录的是 R6 原版本 `done · 4/4` 时的投影（D-012 回开 R6 后已不代表当前 R6 状态，scope 限为历史版本证据）；A-006 为关门审计（`pass`）。
+
+关门时开放 required finding = 0。R5 的 `A-001 R5-GATE-001` / `A-002 F-001` 由用户 2026-09-18 书面确认（`GOAL-006` `D-002`）按 `fixed` 闭合；`GOAL-011`（分页契约与跳转文案）在关门前完成并 self `pass`。仍开放项：`GOAL-008 A-002 F-002`、`GOAL-009 A-001 F-001/F-002`、`GOAL-006` `A-002 F-003`/`R5-I-005`、`I-037-005`、`V-F124`（均 recommended / deferred，不阻断关门，不被标为已验证）。Vision 层 VRev-095 只支持 VP 激活与工作区建立；关门由 VRev-096 与 `GOAL-006` 证据共同支持。

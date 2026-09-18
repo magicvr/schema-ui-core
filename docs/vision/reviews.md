@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-09-16
+updated: 2026-09-18
 parent: null
-version: 1.4.1
+version: 1.5.0
 ---
 
 # Vision Review 台账
@@ -30,6 +30,7 @@ version: 1.4.1
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-096（self · `/vision` · 2026-09-18，`pass`）**：**VP-037 关门**——方向级退出判据 1～7 全部 verified；lead workspace Root `GOAL-001-admin-workflow-continuity` **`done · 6/6`**；R6 `A-002` 的 F-001～F-005 与 `GOAL-008 A-002 F-001` 全部合法闭合，R5 `A-001 R5-GATE-001`/`A-002 F-001` 经用户书面确认 `fixed`；Root `A-006` 关门审计 `pass`；**用户书面确认**（2026-09-18，前置条件=整改子目标 `GOAL-011` 修正两个使用中发现的分页/文案缺陷）已留痕；组合投影（`goal-tree`/`workspace`/`roadmap`/`workspaces`/Charter 快照/本台账）同步；**VP-037 `active → closed` v1.7.0**；残余 `V-F124`、`R5-I-005`、`I-037-005`、`GOAL-008 A-002 F-002`、`GOAL-009 A-001 F-001/F-002` 保持开放，gated 非目标未解除。 |
 | — | — | — | **无** | **VRev-095（self · `/vision` · 2026-09-16，`pass`）**：VP-037 激活就绪——Charter `@0.4.0`、VP/Workspace/Root 绑定一致；Admin freshness PASS；I-037-006 verified；Root 初始 `active · 0/5`；V-F124 继续为 recommended，不阻断激活。 |
 | — | — | — | **无** | **VRev-094（self · `/vision` · 2026-09-16，`pass`）**：VP-037 计划阶段意图审视——Charter `@0.4.0` 对齐；Saved Views、未保存变更保护、统一 Toast/错误恢复的首波边界与方向级退出判据可判定；实体全文检索、批量结果中心、组织/权限域、新业务域保持排除；0 required；V-F124 recommended（激活/R1 前形成页面/状态/权限/持久化矩阵）不阻断 `planned`。**不是激活许可**。 |
 | — | — | — | **无** | **VRev-093（self · `/vision` · 2026-09-14，`pass`）**：VP-036 关门——七条方向级退出判据 verified；workspace-036 Root `done · 4/4`；A-008 self + A-009 grok independent + A-010 response，Goal/Vision open required = 0；VP-036 `active → closed` v0.3.0；V-F123 fixed；I-036-005 deferred non-blocking。 |
@@ -50,6 +51,7 @@ version: 1.4.1
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-096 | 2026-09-18 | self | VP-037 关门就绪 · 判据 1～7 / required 闭合 / 用户确认 / 投影同步 | pass | 0 | Root `done · 6/6`；判据 1～7 全 verified；R6 A-002 与 GOAL-008 A-002 的 finding 全部闭合；用户书面确认（前置条件=GOAL-011 两个缺陷已修正）；投影同步完成；支持 VP-037 `active → closed` v1.7.0 | [VRev-096-vp037-admin-workflow-continuity-closeout.md](reviews/VRev-096-vp037-admin-workflow-continuity-closeout.md) |
 | VRev-095 | 2026-09-16 | self | VP-037 激活就绪 · Admin freshness / Workspace-Root 绑定 / P-005 | pass | 0 | 用户确认 workspace/Root slug；Admin freshness PASS；I-037-006 verified；Root active · 0/5；V-F124 recommended，不阻断激活 | [VRev-095-vp037-admin-workflow-continuity-activation.md](reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) |
 | VRev-094 | 2026-09-16 | self | VP-037 planned · Admin 工作流连续性与安全反馈 | pass | 0 | Charter `@0.4.0` 对齐；首波范围/退出判据/P-005 信息门禁成立；V-F124 recommended，不阻断 planned；不是激活许可 | [VRev-094-vp037-admin-workflow-continuity-planned.md](reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) |
 | VRev-001 | 2026-07-31 | self | Charter 初建与 VP-001 | conditional | 0 | Charter/VP-001 初建 conditional；F-V001/F-V002 fixed | [VRev-001-charter-init-vp001.md](reviews/VRev-001-charter-init-vp001.md) |

@@ -1,11 +1,11 @@
 ---
 doc_type: goal-execution-index
 id: GOAL-001-admin-workflow-continuity-execution
-status: active
+status: done
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.10.0
+version: 1.11.0
 ---
 
 # 执行台账 · GOAL-001-admin-workflow-continuity
@@ -40,12 +40,14 @@ version: 1.10.0
 | E-022 | 2026-09-18 | 开设并关闭整改子目标 GOAL-009（列表视觉 e2e 守卫） | recorded | [E-022-list-visual-e2e-guard.md](02-execution/E-022-list-visual-e2e-guard.md) |
 | E-023 | 2026-09-18 | 跨工作区类型检查空转勘误执行（用户授权） | recorded | [E-023-cross-workspace-typecheck-errata.md](02-execution/E-023-cross-workspace-typecheck-errata.md) |
 | E-024 | 2026-09-18 | 开设 GOAL-010 并完成守卫加固 C1～C3 | recorded | [E-024-open-typecheck-guard-hardening.md](02-execution/E-024-open-typecheck-guard-hardening.md) |
+| E-025 | 2026-09-18 | 开设 GOAL-011 并完成分页与跳转文案修正（含关门授权） | recorded | [E-025-pagination-fix-and-closeout-authorization.md](02-execution/E-025-pagination-fix-and-closeout-authorization.md) |
+| E-026 | 2026-09-18 | Root/VP 关门投影执行（`done · 6/6`） | recorded | [E-026-root-vp-closeout-execution.md](02-execution/E-026-root-vp-closeout-execution.md) |
 
 ## 当前事实
 
 - 已完成：VP-037 `planned → active` v0.2.0；lead = `workspace-037-admin-workflow-continuity`；激活审视 = VRev-095 self `pass`。
 - 已创建：`workspace.md`、`goal-tree.md`、Root 五件套、`01-decision/`、`02-execution/`、`03-audit/` 与 `attachments/`。
-- 当前 Root `GOAL-001-admin-workflow-continuity` 为 `active · 5/6`；R1 子目标 `done · 3/3`，R2 子目标 `done · 4/4`，R3 子目标 `done · 4/4`，R4 子目标 `done · 4/4`，R5 子目标 `active · 3/4`，R6 子目标 `done · 8/8`，整改子目标 `GOAL-008` `done · 4/4`、`GOAL-009` `done · 4/4`（非纲领，不计入 Root 分母）；R1～R4 与 R6 的阶段审计已闭合，Root/VP 待 R5-I-004 用户确认。
+- Root `GOAL-001-admin-workflow-continuity` 已以 **`done · 6/6`** 关门（2026-09-18）：R1 `done · 3/3`、R2 `done · 4/4`、R3 `done · 4/4`、R4 `done · 4/4`、R5 `done · 4/4`、R6 `done · 8/8`；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010`/`GOAL-011` 均 `done · 4/4`（非纲领，不计入 Root 分母）；VP-037 同步 `closed`（`VRev-096`）。关门审计见 `A-006`，投影见 `E-026`。
 - 已开设 `GOAL-002-r1-scope-semantics-freeze`，并记录 24 个列表表面、58 个表单节点、状态/反馈基线矩阵和 D-003～D-005 语义决策；R1 审计已关闭，R2/R3 实现证据已由对应目标承接，R4 实现证据待补。
 - 2026-09-17 用户确认 Saved View 采用浏览器 `localStorage`，按 `user.id + pageId + tableId` 隔离；工作树另有语义记录后形成的未提交 Saved Views/dirty-state 实现切片，由 R2/R3 目标承接，不在 R1 投影中计为完成。
 - Admin freshness 继承当前 HEAD 基线并通过。

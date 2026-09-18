@@ -8,7 +8,7 @@ lead_workspace: workspace-037-admin-workflow-continuity
 created: 2026-09-16
 updated: 2026-09-18
 parent: null
-version: 1.6.0
+version: 1.7.0
 ---
 
 # VP-037 · Admin 工作流连续性与安全反馈
@@ -23,9 +23,9 @@ version: 1.6.0
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-18 · v1.6.0；R1 C3、R2 C4、R3 C4、R4 C4 已完成；R5 `GOAL-006` 当前 `active · 3/4`；R6 `GOAL-007` 经 C5/C7/C8 三轮纠偏后 `done · 8/8`（C6 审计 A-002 全部 finding 已处置：F-005 经 `GOAL-008`、F-003 经 `GOAL-009` 闭环）；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010` 均 `done · 4/4`（非纲领）；Root `active · 5/6`；lead `workspace-037-admin-workflow-continuity`） |
+| status | **`closed`**（2026-09-18 · v1.7.0；R1/R2/R3/R4/R5/R6 全部 `done`；Root `GOAL-001-admin-workflow-continuity` **`done · 6/6`**；整改子目标 `GOAL-008`/`GOAL-009`/`GOAL-010`/`GOAL-011` 均 `done · 4/4`（非纲领）；关门 Vision Review `VRev-096` self `pass`；用户书面确认见 `GOAL-006` `D-002`；lead `workspace-037-admin-workflow-continuity`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-036 之后的工作流连续性下一拍 |
-| Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；当前 open required = 0 |
+| Vision Review | 计划阶段 [VRev-094](../reviews/VRev-094-vp037-admin-workflow-continuity-planned.md) self `pass`；激活就绪 [VRev-095](../reviews/VRev-095-vp037-admin-workflow-continuity-activation.md) self `pass`；**关门 [VRev-096](../reviews/VRev-096-vp037-admin-workflow-continuity-closeout.md) self `pass`**；开放 required = 0 |
 | 激活门禁 | Admin 类 freshness PASS；I-037-006 verified；用户确认 workspace/Root 命名；V-F124 保持 recommended，不阻断激活 |
 | 实现边界 | Root `GOAL-001-admin-workflow-continuity` active · 5/6；R1 已冻结、R2/R3/R4 已实现并通过阶段审计，R6 由 `GOAL-007-list-page-visual-alignment` 承载并以 `done · 8/8` 完成（原 C1～C4 后经 C5 布局修订、C7 控制位纠偏、C8 控件语义/高度三轮纠偏）；其 C6 审计 A-002 的 finding 已全部处置（F-001/F-002/F-004 fixed；F-005 经 `GOAL-008`、F-003 经 `GOAL-009` 闭环，二者均为非纲领整改子目标）；`GOAL-008` 自身新发现的守卫缺口 F-001 经第三个整改子目标 `GOAL-010-typecheck-guard-hardening` 以 `done · 4/4` 闭合（self + grok 4.6（xhigh）独立审计 + finding-closure 复审均 `pass`） |
 
@@ -109,7 +109,29 @@ version: 1.6.0
 - 2026-09-18：F-005 承接范围内闭环后，用户设定的 R6 关门前置条件解除；按 Root E-021 投影 R6 `GOAL-007` 为 `done · 8/8`、Root 为 `active · 5/6`。R5-I-004 用户确认门禁仍开放，Root/VP 继续保持 `active`。
 - 2026-09-18：用户授权跨工作区类型检查空转条目追溯更正后（Root `D-015`/`E-023`，11 处勘误注记），实测发现守卫自身的 `-p` 判定缺口（`GOAL-008 A-002 F-001`）；按 Root `D-016` 开设第三个整改子目标 `GOAL-010-typecheck-guard-hardening`，同日以 `done · 4/4` 关门（self + grok 4.6（xhigh）独立审计 + finding-closure 复审均 `pass`，开放 required = 0），`GOAL-008 A-002 F-001` 转 `fixed`。VP 版本推进为 v1.6.0；不改变 Root 六阶段分母、`vision_ref` 或 `R5-I-004` 门禁。
 - 2026-09-18：用户指示「先做列表视觉的 e2e 守卫」；按 Root D-014 开设整改子目标 `GOAL-009-list-visual-e2e-guard`（非纲领），承接 R6 A-002 F-003 并同日关闭为 `done · 4/4`：新增 `apps/web/e2e/list-visual-surface.spec.ts`，在真实浏览器断言 C5/C7/C8 列表视觉合同，mvp/admin 两 profile 各 2 passed，6/6 变异捕获（其中两类复现了当年由用户而非测试发现的回归）。至此 R6 A-002 的 finding 全部处置；Root 仍 `active · 5/6`。
+- 2026-09-18：用户报告两个使用中发现的缺陷——每页条数下拉默认显示 10 而实际生效 20（且选 10 不生效）、页码跳转确认按钮显示为「搜索」；并授权「修改这两个问题后，授权走根目标关闭流程」。按 Root `D-017` 开设第四个整改子目标 `GOAL-011-pagination-page-size-contract`：同日修正（默认值统一为 20、10 真正生效、按钮改为「跳转 / Go」、清理同类字面量），新增跨层断言（单元/组件/前后端常量结构守卫/真实浏览器 e2e），以 `done · 4/4` 关门（self `A-001` `pass`，开放 required = 0）。
+- 2026-09-18：**VP-037 关门**。用户授权构成 `GOAL-006 R5-I-004` 的书面确认（前置条件即上述两个缺陷的修正，已完成）；`A-001 R5-GATE-001` / `A-002 F-001` 按 P-003 `fixed` 闭合；`GOAL-006` → `done · 4/4`，Root `GOAL-001` → **`done · 6/6`**，VP-037 → **`closed`** v1.7.0。关门 Vision Review = `VRev-096` self `pass`（方向级退出判据 1～7 逐条 verified）。仍开放（不因关门改变）：`GOAL-008 A-002 F-002`、`GOAL-009 A-001 F-001/F-002`、`GOAL-006 A-002 F-003`/`R5-I-005`、`I-037-005`、`V-F124`；gated 非目标保持 gated。
 
-## Closeout placeholder
+## Closeout（2026-09-18 关门）
 
-本节在进入关门审计前填写：方向级退出判据逐条证据、workspace/Root 状态、Goal 审计与独立意见（如风险要求）、required finding 闭合、用户书面确认、`roadmap.md` / `workspaces.md` / revisions / reviews 投影同步。当前不代表已完成。
+**状态**：`closed` v1.7.0 · 关门依据 = 用户书面确认 + `VRev-096` self `pass` + 开放 required finding = 0。
+
+**方向级退出判据逐条证据**
+
+| # | 判据 | 状态 | 证据 |
+|---|------|------|------|
+| 1 | Saved Views 分母/隔离/序列化/恢复失效与权限边界矩阵；未偷偷纳入共享/协作 | verified | `GOAL-002` `D-003`（localStorage 方案 A，用户确认）、`D-004`/`D-005`、`attachments/r1-denominator-matrix.json`（24/58）、`r1-form-matrix.json`；`A-002` independent 独立复算 |
+| 2 | Saved Views CRUD 与空态/错误态闭环；无效或越权 fail closed | verified | `apps/web/src/renderer/saved-views.ts` + `saved-views.test.ts`/`saved-views.ui.test.tsx`；`attachments/r2-saved-view-acceptance-matrix.md`；`GOAL-003` `A-002` independent `pass`；checkpoint `39c744ef` |
+| 3 | dirty-state 覆盖内部导航、刷新/关闭、提交、重置、取消，且可回归 | verified | `renderer/dirty-state.ts` + `dirty-state.test.ts`/`r3-dirty-state.ui.test.tsx`/`App.integration.test.tsx`；`attachments/r3-dirty-state-acceptance-matrix.md`；`GOAL-004` `A-003` independent recheck `pass`；checkpoint `d2b39189` |
+| 4 | 统一反馈语义、可访问、不重复提交、不吞错、不泄密 | verified | `components/ui/feedback.tsx` + `renderer/feedback-policy.ts` + `feedback.test.tsx`/`feedback-policy.test.ts`/`representative-pages.integration.test.tsx`；`GOAL-005` `A-002 F-001` fixed + `A-003` independent recheck `pass`；checkpoint `89666e5c` |
+| 5 | 首波不解除 gated 项，边界证据可追溯 | verified | `GOAL-006` `E-003`（边界与对齐核对）；Root `00-meta` 非目标；`apps/api` 在 R5 之后仅本轮改动之外无漂移 |
+| 6 | 阶段链、Goal 审计、required 信息与 Vision Review 全闭合；关门前投影同步；开放 required = 0 | verified | `GOAL-006` `A-001`/`A-002`/`A-003`；`D-002`（用户确认）；`E-007`；Root `A-006`（关门审计 `pass`）；`VRev-096` |
+| 7 | 列表页视觉/交互基线由共享实现覆盖；顶部功能栏/左导航不变、查询/重置合同不变；单页有效列表仍显示分页区域 | verified | `GOAL-007` `done · 8/8`（C5/C7/C8）；`GOAL-009` 浏览器级守卫；`GOAL-011` 分页默认值/跳转文案修正（含真实请求断言） |
+
+**关门时的组合证据**：`GOAL-006` 组合台账 + Root `A-006`；整改子目标 `GOAL-008`/`009`/`010`/`011` 全部 `done · 4/4`；R6 `A-002` 的 F-001～F-005 全部合法闭合。
+
+**残余（保持开放，不因关门改变）**：`V-F124`（recommended）、`R5-I-005`/`A-002 F-003`（Host/resource 直接对照，non-blocking deferred，触发=真实支持需求）、`I-037-005`（协作/收藏，deferred，owner `/vision`）、`GOAL-008 A-002 F-002`（全仓 `tsc` 简写未逐条裁定）、`GOAL-009 A-001 F-001/F-002`（暗色开关计算背景未断言、仅 roles 页覆盖）。
+
+**gated 非目标**：实体全文检索 / `RT-X01`/`RT-X02`、批量结果中心、组织·部门·岗位与 `org` 数据权限、新业务域、Redis/MQ/多实例/第二持久化栈、跨用户共享视图与协作权限。
+
+**投影同步**：`docs/vision/roadmap.md`、`docs/vision/workspaces.md`、Charter 组合快照、`docs/vision/reviews.md`（`VRev-096`）、`goal-tree.md`、`workspace.md` 均已同步。
