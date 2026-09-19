@@ -29,8 +29,9 @@ Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检
 |----|---------|--------|----------|
 | GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | **done** | 4/4 |
 | GOAL-003-r2-generic-job-read-surface | R2 通用作业读面 | **done** | 4/4 |
+| GOAL-004-r3-async-batch-operation | R3 批量操作异步承接 | active | 0/4 |
 
-R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。R2 于同日立项并关门（`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，开放 required = 0）；R2 交付 `admin.jobs` 模块与跨 actor 管理读面。R3～R5 子目标在对应阶段立项。
+R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。R2 于同日立项并关门（`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，开放 required = 0）；R2 交付 `admin.jobs` 模块与跨 actor 管理读面。**R3 于同日按 P-001 立项**（`GOAL-004`，`cross`），承接 `D-001` §5 的 T-5/T-6 与 `jobs.write`；R4/R5 子目标在对应阶段立项。
 
 ## 愿景对齐
 
