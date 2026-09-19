@@ -4,7 +4,7 @@ status: draft
 created: 2026-09-19
 updated: 2026-09-19
 parent: null
-version: 0.3.0
+version: 0.3.1
 ---
 
 # R1 侦察 · 批量操作与长操作清单（I-038-003）
@@ -18,13 +18,21 @@ version: 0.3.0
 > - **v0.3.0**：并入其余模块全量扫描（scheduledtasks / recyclebin / mfa / users / roles /
 >   datadictionary / filelibrary / systemmonitoring / operationlog / notifications / settings），
 >   新增 §2.9 后台周期任务全表；关闭 U-01、U-03～U-08；新增 3 个此前遗漏的长操作候选。
+> - **v0.3.1**：响应 `GOAL-002` 独立审计 `A-002 F-001`——更正批量路由计数
+>   （「4 处 / 6 条路由」→ **4 个模块 / 5 条路由 / 5 个非只读 Resource ID**）。结论方向不变。
 
 ## 0. 结论摘要
 
 1. 全仓库实现 `DeleteBatch` 的实体**只有 2 个**：`usersEntity`、`rolesEntity`。
-2. 通用工厂把 `POST {path}/batch-delete` 挂在**每一个非只读资源**上，注册面 **4 处 / 6 条路由**；
-   其余（dict-types、dict-entries、scheduled-tasks）**没有** `DeleteBatch`，走**顺序删除回退路径**
+2. 通用工厂把 `POST {path}/batch-delete` 挂在**每一个非只读资源**上，注册面 = **4 个模块 / 5 条路由 /
+   5 个非只读 Resource ID**（users、roles、dict-types、dict-entries、scheduled-tasks）；其余 `ResourceRoutes`
+   调用点（files、task-runs、monitoring-errors、operations）均 `ReadOnly: true`，不挂批量路由。
+   其中 dict-types、dict-entries、scheduled-tasks **没有** `DeleteBatch`，走**顺序删除回退路径**
    （非原子、首个失败即停、已删行不回滚）。
+
+   > **v0.3.1 更正（2026-09-19，响应 `GOAL-002 A-002 F-001`）**：v0.1.0～v0.3.0 的「4 处 / 6 条路由」为**计数错误**
+   > （多计 1 条，源自把 §1.2 的 catch-all 空行当作实际路由）。经独立审计复验，正确数字为
+   > **4 个模块 / 5 条路由 / 5 个非只读 Resource ID**。见 `GOAL-002/03-audit/A-002-…` F-001 与 `A-003` 响应。
 3. **生产页面 schema 没有任何批量动作**——`batchMapping` / `requiresSelection` 只出现在
    `dev.examples` 的 `admin-list-batch` 范例（且该模块**仅在 `demo` profile**）。
    ⇒ **批量 UI 的已交付分母为 0 个生产页面**。后端能力先于前端页面落地。
@@ -629,7 +637,7 @@ func (r *Repository) PurgeAllUnrestored() (int, error) {
 > **推论（对 I-038-003 重要）**：`batch-delete` 的**后端 + 协议能力已交付**，
 > 但**生产页面尚未有任何一处使用它**。因此「批量 UI 的既有分母 = 0 个生产页面」，
 > 首波筛选若以「已有批量 UI 的页面」为分母会得到空集；分母应改为
-> **「已挂载 batch-delete 路由的资源」= 4 个资源 / 6 条路由**（§1.2），
+> **「已挂载 batch-delete 路由的资源」= 4 个模块 / 5 条路由 / 5 个非只读 Resource ID**（§1.2；v0.3.1 更正），
 > 或「具备 `table.selection` + `actions.batch.request` 能力声明的页面」。
 
 ### 3.2 渲染器运行时行为（协议能力已实现）
@@ -873,7 +881,7 @@ func (r *Repository) PurgeAllUnrestored() (int, error) {
 ## 7. 对首波筛选的直接影响（供 I-038-003 决策）
 
 1. **分母必须先修正**：生产页面**零**批量动作（§3.1）。可选分母口径：
-   （a）已挂载 `batch-delete` 路由的 **4 个资源 / 6 条路由**；
+   （a）已挂载 `batch-delete` 路由的 **4 个模块 / 5 条路由 / 5 个非只读 Resource ID**（v0.3.1 更正）；
    （b）已具备 `table.selection` + `actions.batch.request` 能力声明的页面；
    （c）§2 中的**非批量类长操作**（导出/导入/purge-all/settings reset）。
 2. **最强的 3 个异步候选**（§4 #5/#6/#7）：**导出**、**导入**、**recycle-bin purge-all**。

@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/5
+version: 0.2.0
+progress: 1/5
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -27,9 +27,9 @@ Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检
 
 | id | 纲领阶段 | status | progress |
 |----|---------|--------|----------|
-| GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | active | 0/4 |
+| GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | **done** | 4/4 |
 
-R2～R5 子目标在 R1 冻结后按 P-001 逐阶段立项。
+R2～R5 子目标在 R1 冻结后按 P-001 逐阶段立项。R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。
 
 ## 愿景对齐
 
@@ -62,7 +62,7 @@ R2～R5 子目标在 R1 冻结后按 P-001 逐阶段立项。
 
 以下 5 个检查点构成 Root 的派生 progress 来源；纲领阶段按 R1 → R2 → R3 → R4 → R5 串行推进。
 
-- [ ] **R1 分母与契约冻结**：Job 种类×作用域矩阵、批量异步契约（含同步 `batch-delete` 兼容口径与协议面影响判定）、首波批量操作分母（保持同步 / 改异步 / 不进首波）、权限/Profile 边界与排除项冻结；`I-038-001`～`003` 关闭。
+- [x] **R1 分母与契约冻结**：Job 种类×作用域矩阵、批量异步契约（含同步 `batch-delete` 兼容口径与协议面影响判定）、首波批量操作分母（保持同步 / 改异步 / 不进首波）、权限/Profile 边界与排除项冻结；`I-038-001`～`003` 关闭。→ 由 `GOAL-002-r1-denominator-and-contract-freeze` 交付（**`done · 4/4`**，2026-09-19）。
 - [ ] **R2 通用作业读面**：Job 列表/详情/结果读取 API + 权限与作用域过滤 + fail-closed；不改变 Job 六态合同。
 - [ ] **R3 批量操作异步承接**：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 既有语义与回归不退化。
 - [ ] **R4 结果中心与体验收敛**：列表/详情/进度/终态/过期/重试/取消/下载；中英文、浅色深色、加载空态错误态、可访问。

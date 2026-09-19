@@ -19,7 +19,8 @@ frozen_by: D-001-r1-contract-and-denominator-freeze
 | 口径 | 值 | 证据 |
 |------|-----|------|
 | ❌ 原口径「已有批量 UI 的生产页面」 | **0 个页面** | 全量扫描 `apps/api/modules/**/schema/*.json`（27 个文件），`batchMapping`/`requiresSelection` 仅命中 dev 范例 `dev/examples/schema/admin-list-batch.json:75-81` |
-| ✅ 后端批量路由分母 | **4 个资源 / 6 条路由** | users、roles、dict-types、dict-entries、scheduled-tasks（`modules/*/provider.go`；工厂 `resources.go:302-309`） |
+| ✅ 后端批量路由分母 | **4 个模块 / 5 条 `POST …/batch-delete` / 5 个非只读 Resource ID** | 5 个 Resource ID：users、roles、dict-types、dict-entries、scheduled-tasks（`handler/dictionary.go:284,304`；`scheduledtasks.go:344`；`modules/users/provider.go:70`；`roles/provider.go:63`；工厂挂载条件 `resources.go:302-309`）。provider / `kernel/profile.go` 声明同为 5 条（`kernel/profile.go:166,167,189,193`） |
+| 其余 `ResourceRoutes` 调用点 | **均 `ReadOnly: true`，不挂批量路由** | `files`（`filelibrary.go:166-169`）、`task-runs`（`scheduledtasks.go:429-431`）、`monitoring-errors`（`systemmonitoring.go:85-88`）、`operations`（`operations.go:15-18`） |
 | ✅ **首波分母（冻结）** | **1 条新建操作** | §2 |
 
 **关键澄清**：Root/VP-038 文本中「批量操作已在 users/roles/data-dictionary/scheduled-tasks 落地」指**后端路由 + 协议能力**，**不是页面 UI**。两者必须区分——首波要兑现的是「真实批量操作」的**端到端**路径。
@@ -52,15 +53,16 @@ frozen_by: D-001-r1-contract-and-denominator-freeze
 |---|------|------|------|-------------|
 | X-1 | 回收站 `purge-all` | `recyclebin.go:131` | 同步 | 唯一无界 `DELETE`（`repository.go:230`）、不可逆；且是「全量」而非「所选批量」，不契合首波形态 |
 | X-2 | CSV 导入 | `import.go:45` | 同步 | 单文件上传，非选择集批量；逐行 no-rollback 语义需专门设计 |
-| X-3 | 操作日志导出 | `operations_export.go:19-24` | 同步 | 与 data-transfer 导出同形态同上限；首波只做「所选批量」这一条形态 |
-| X-4 | `settings` 重置 | `settings.go:41` | 同步 | 品牌资源实际数量小，收益有限 |
-| X-5 | `scheduled-tasks` 手动触发 | `scheduledtasks.go:446` | 同步（204） | 改异步 = BREAKING（测试与前端依赖 204） |
-| X-6 | notifications `read-all` | `notifications.go:52` | 同步 | 单条 UPDATE + 每用户 500 行硬上限 |
-| X-7 | wallet 代金券批量生成 | `wallet.go:484` | 同步 | `count > 1000` 直接拒绝，行数有界 |
-| X-8 | wallet reconcile | `wallet.go:357` | **已异步** | 已是先例/模板，非候选 |
-| X-9 | 单目标操作（enable/disable/unlock、MFA reset、invites、角色分配） | `users_state.go:43-45` 等 | 同步 | 批量变体**不存在**；属新功能 |
-| X-10 | filelibrary 上传/下载/删除/列表 | `filelibrary.go:106/181/218/255` | 同步 | 单文件；但列表无界扫描（`:106-125`）与 `quotaReached` O(files) 是独立性能观察项 |
-| X-11 | 4 个后台周期任务（cron 30s / 日志保留 1h / Job 轮询 10s / Telegram 租约 1s） | 见 `r1-job-kind-scope-matrix.md` §5 | 后台 | 非用户触发；首波不迁移进 `jobs` |
+| X-3 | **既有 data-transfer 导出** `GET /api/export/{resource}` | `export.go:44` | 同步 | 侦察 §2.1 列为长操作（内存拼装非流式 `export.go:191-214`、上限 10000 行 `:25`）。首波只做 W-1「**所选**批量导出」这一条形态；既有全量导出**保持同步**，不改端点（改 202 即 BREAKING，前端 `export.users`/`export.roles` 自定义处理器直接触发下载） |
+| X-4 | 操作日志导出 | `operations_export.go:19-24` | 同步 | 与 X-3 同形态同上限；首波不做 |
+| X-5 | `settings` 重置 | `settings.go:41` | 同步 | 品牌资源实际数量小，收益有限 |
+| X-6 | `scheduled-tasks` 手动触发 | `scheduledtasks.go:446` | 同步（204） | 改异步 = BREAKING（测试与前端依赖 204） |
+| X-7 | notifications `read-all` | `notifications.go:52` | 同步 | 单条 UPDATE + 每用户 500 行硬上限 |
+| X-8 | wallet 代金券批量生成 | `wallet.go:484` | 同步 | `count > 1000` 直接拒绝，行数有界 |
+| X-9 | wallet reconcile | `wallet.go:357` | **已异步** | 已是先例/模板，非候选 |
+| X-10 | 单目标操作（enable/disable/unlock、MFA reset、invites、角色分配） | `users_state.go:43-45` 等 | 同步 | 批量变体**不存在**；属新功能 |
+| X-11 | filelibrary 上传/下载/删除/列表 | `filelibrary.go:106/181/218/255` | 同步 | 单文件；但列表无界扫描（`:106-125`）与 `quotaReached` O(files) 是独立性能观察项 |
+| X-12 | 4 个后台周期任务（cron 30s / 日志保留 1h / Job 轮询 10s / Telegram 租约 1s） | 见 `r1-job-kind-scope-matrix.md` §5 | 后台 | 非用户触发；首波不迁移进 `jobs` |
 
 ## 5. Breaking-change 冻结标记
 
@@ -68,7 +70,7 @@ frozen_by: D-001-r1-contract-and-denominator-freeze
 |------|------|------|
 | users / roles `batch-delete` → 异步 | **BREAKING** | 前端 `onSuccess.behavior="reload"` 依赖响应即终态；原子回滚语义无法同步返回；协议 fixture 钉住批量构造 |
 | `scheduled-tasks POST /{id}/run` → 异步 | **BREAKING** | 现 204；`scheduledtasks_test.go:54,133` 与前端 `scheduled-tasks.json:289-303` 依赖 |
-| 导出 / 导入 / 操作日志导出 / `purge-all` → 异步 | **改旧端点即 BREAKING；新增端点则纯增量** | 导出为裸 CSV 附件（`export.go:210-214`）、导入为 `{applied,failed,total,errors,fieldErrors}` envelope（`import.go:74-92`）、`purge-all` 返回 `{"purged": n}` |
+| 导出 / 导入 / 操作日志导出 / `purge-all` → 异步 | **改旧端点即 BREAKING；新增端点则纯增量** | 导出为裸 CSV 附件（`export.go:210-214`）、导入为 `{applied,failed,total,errors,fieldErrors}` envelope（`import.go:74-92`）、`purge-all` 返回 `{"purged": n}`；前端 `export.users`/`export.roles` 自定义处理器（`render.tsx:352-354`）与 `activity-export.tsx:43` 直接触发下载 |
 | 首波 W-1（新建批量导出所选） | **纯增量** | 新增页面批量入口 + 新端点，不改任何既有路由 |
 
 ## 6. 首波回归面（冻结，不得破坏）
@@ -87,4 +89,6 @@ frozen_by: D-001-r1-contract-and-denominator-freeze
 
 ## 7. 承接 `V-F126`
 
-`V-F126`（`open · recommended`，由 `I-038-003` 承接）的意图是「首波批量操作分母必须明确」。本矩阵以「首波 1 条 + 明确排除清单 X-1～X-11 + 保持同步 S-1～S-5」给出明确分母，**承接动作已完成**。`V-F126` 的闭合登记属愿景层（`/vision`），不在本目标台账内自行改判。
+`V-F126`（`open · recommended`，由 `I-038-003` 承接）的意图是「首波批量操作分母必须明确」。本矩阵以「首波 1 条 + 明确排除清单 X-1～X-12 + 保持同步 S-1～S-5」给出明确分母，**承接动作已完成**。`V-F126` 的闭合登记属愿景层（`/vision`），不在本目标台账内自行改判。
+
+**交接项（登记，供 R5 关门时回看）**：`V-F126` 的闭合动作 = `/vision` 在 VP-038 关门审视中把该 recommended 项登记为 `fixed`（依据本矩阵 §1～§4 的明确分母）。责任方 `/vision`；触发点 = VP-038 关门审视（Root R5）。

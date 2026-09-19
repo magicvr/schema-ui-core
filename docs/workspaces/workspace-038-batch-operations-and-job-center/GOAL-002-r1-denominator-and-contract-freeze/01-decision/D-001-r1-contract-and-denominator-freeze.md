@@ -10,7 +10,7 @@ version: 1.0.0
 
 # D-001 · R1 分母与契约冻结
 
-> 本决策关闭 `I-038-001` / `I-038-002` / `I-038-003`（GOAL-002 C1～C3）。证据来源：三份只读侦察报告（`../attachments/R1-recon-I-038-00{1,2,3}-*.md`）与 Root `../../GOAL-001-batch-operations-and-job-center/02-execution/E-002-r1-recon.md`。
+> 本决策关闭 `I-038-001` / `I-038-002` / `I-038-003`（GOAL-002 C1～C3）。证据来源：三份只读侦察报告（位于 Root 目标 `../../GOAL-001-batch-operations-and-job-center/attachments/R1-recon-I-038-00{1,2,3}-*.md`）与 Root `../../GOAL-001-batch-operations-and-job-center/02-execution/E-002-r1-recon.md`；本目标自有的两份冻结矩阵在 `../attachments/r1-*-matrix.md`。
 > **用户 P-004 裁决（2026-09-19）**：C2 = **方案 B**；C3 首波 = **仅「新建批量导出所选」**；C1 = **管理作用域 + 新 `jobs.read` 权限**。以下 §1～§3 为该裁决的落盘；§4 记录未选方案；§5 记录**派生项**与**未定项**（后者不冒充已裁决）。
 
 ---
@@ -105,6 +105,7 @@ version: 1.0.0
 |------|------|------|------|
 | 回收站 `purge-all` | `recyclebin.go:131` | **不进首波** | 唯一无界 `DELETE`（`repository.go:230`），不可逆；保持同步 |
 | CSV 导入 | `import.go:45` | **不进首波** | 保持同步（逐行 no-rollback 语义） |
+| **既有 data-transfer 导出** `GET /api/export/{resource}` | `export.go:44` | **不进首波** | 侦察列为长操作（非流式、10000 行上限）；首波只做 W-1「所选批量导出」，既有全量导出保持同步 |
 | 操作日志导出 | `operations_export.go:19-24` | **不进首波** | 与 data-transfer 导出同形态同上限；保持同步 |
 | `settings` 重置 | `settings.go:41` | **不进首波** | 保持同步 |
 | `scheduled-tasks` 手动触发 | `scheduledtasks.go:446` | **不进首波** | 改异步即 BREAKING（现 204，测试与前端依赖） |
@@ -122,7 +123,7 @@ Vision Review `V-F126`（`open · recommended`，由 `I-038-003` 承接）的意
 
 | 决策点 | 未选 | 未选理由（证据） |
 |--------|------|-----------------|
-| C2 契约形态 | **方案 A**（扩展 ADR-0022 增加异步变体） | 上游 `action.schema.json` / `node.schema.json` 为 `additionalProperties:false` 严格校验；新增字段 = 改 pinned 工件 = 上游协议变更，须重 pin 并更新 `stage3-fixtures.test.ts` 哈希；且直接改写唯一已交付批量路径（4 个资源共用），回归风险中高 |
+| C2 契约形态 | **方案 A**（扩展 ADR-0022 增加异步变体） | 上游 `action.schema.json` / `node.schema.json` 为 `additionalProperties:false` 严格校验；新增字段 = 改 pinned 工件 = 上游协议变更，须重 pin 并更新 `stage3-fixtures.test.ts` 哈希；且直接改写唯一已交付批量路径（5 个非只读资源共用），回归风险中高 |
 | C2 契约形态 | **方案 C**（本地扩展位挂在批量工具栏） | 与 B 的差别仅在前端触发形态；用户选择以 B 的**本地契约**为准，触发形态作为 R2 方案项（§1.3 O-1）另行冻结 |
 | C3 首波 | `purge-all` / 导入 / 操作日志导出 改异步 | 三者均为「改造既有同步端点」或「全量而非所选批量」；首波聚焦「真实**所选批量**操作 + 可下载结果」这一条最贴合 VP-038 判据 3 的路径 |
 | C1 作用域 | **复用既有权限**（如 `operations.read`） | 语义不精确：作业中心与操作日志是不同产品面，权限键混用会使授权矩阵无法表达「可读作业但不可读操作日志」 |
