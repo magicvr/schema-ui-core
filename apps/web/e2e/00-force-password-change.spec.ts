@@ -7,6 +7,16 @@ import { E2E_INITIAL_PASSWORD, E2E_PASSWORD } from "./sign-in";
 // allowed. This spec runs first (lexicographic) so the forced-change surface is
 // guaranteed on a clean SQLite; later specs reuse E2E_PASSWORD through their
 // sign-in helper fallback branch.
+//
+// R5 (workspace-038 · GOAL-006) — why the "00-" prefix:
+// The ordering assumption above silently broke once VP-036 added
+// `command-palette.spec.ts`. Every spec shares ONE scratch database, and that
+// file sorts before this one, so its sign-in helper consumed the fresh-seed
+// state (the helper performs the forced change itself); this spec then failed
+// with "invalid username or password" for admin/admin. Verified both ways: it
+// passes in isolation (`npx playwright test 00-force-password-change.spec.ts`)
+// and failed inside the full run before the rename. The prefix makes the
+// documented order real instead of aspirational.
 test("fresh seed forces initial password change before business access", async ({ page, request }) => {
   const profile = (process.env.APP_PROFILE || "mvp").trim().toLowerCase();
   const home = profile === "demo" ? "Overview" : "Dashboard";
