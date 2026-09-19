@@ -1,12 +1,12 @@
 ---
 id: GOAL-004-r3-version-and-diagnostics
 title: R3 版本提示与诊断摘要
-status: active
+status: done
 parent: GOAL-001-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 plan_refs:
   - VP-039-version-maintenance-diagnostics
 primary_plan: VP-039-version-maintenance-diagnostics
@@ -21,10 +21,10 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 成功检查点
 
-- [ ] **C1** 权限门：无 `monitoring.read` 不渲染、不请求 status
-- [ ] **C2** 版本 chip：从 `/api/system-monitoring/status` 读 `version`（非 commit）
-- [ ] **C3** 升级链接 + 诊断入口（QUICKSTART blob；导航 `/system-monitoring`）
-- [ ] **C4** self + grok independent，开放 required = 0
+- [x] **C1** 权限门：无 `monitoring.read` 不渲染、不请求 status
+- [x] **C2** 版本 chip：从 `/api/system-monitoring/status` 读 `version`（非 commit）
+- [x] **C3** 升级链接 + 诊断入口（QUICKSTART blob；导航 `/system-monitoring`）
+- [x] **C4** A-001 self pass + A-002 grok independent pass + A-003；开放 required = 0
 
 ## 审计模式
 

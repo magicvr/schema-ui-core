@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.3.0
-progress: 2/4
+version: 0.4.0
+progress: 3/4
 plan_refs:
   - VP-039-version-maintenance-diagnostics
 primary_plan: VP-039-version-maintenance-diagnostics
@@ -49,7 +49,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 - [x] **R1 范围与信息冻结**：`GOAL-002` `done · 4/4`；`I-039-001`～`003` verified；C4 cross 开放 required = 0。
 - [x] **R2 维护横幅**：`GOAL-003` `done · 4/4`；Host 生产者折叠 + `/me.runtimeMode` + Shell 三分横幅。
-- [ ] **R3 版本提示与诊断摘要**：授权可见版本/入口；只读摘要不扩 VP-015 residual 指标。
+- [x] **R3 版本提示与诊断摘要**：`GOAL-004` `done · 4/4`；`monitoring.read` 版本 chip + QUICKSTART + 既有监控页入口。
 - [ ] **R4 回归与关门准备**：Profile×权限×主题矩阵、浏览器/自动化回归、Goal 审计与必要独立意见；开放 required = 0，用户确认关门。
 
 ## 信息就绪与未知项（P-005）
@@ -74,4 +74,4 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 ## 备注
 
 - 工作区建立与 Root 设立是已发生事实。R1 子目标 `GOAL-002` 已立项（侦察完成，冻结等 P-004）；R2～R4 尚未立项。
-- `progress: 2/4` 只由上方 4 个显式检查点派生。R1、R2 已完成。
+- `progress: 3/4` 只由上方 4 个显式检查点派生。R1–R3 已完成。

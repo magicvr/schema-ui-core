@@ -70,6 +70,32 @@ describe("VersionChip", () => {
     expect(upgrade).not.toBeNull();
   });
 
+  it("calls onOpenDiagnostics when the diagnostics control is used", async () => {
+    const fetcher = vi.fn(async () =>
+      new Response(JSON.stringify({ items: [{ version: "1.0.0" }], total: 1 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const onOpenDiagnostics = vi.fn();
+    const container = await renderChip({
+      canReadMonitoring: true,
+      fetcher: fetcher as unknown as typeof fetch,
+      onOpenDiagnostics,
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const button = Array.from(container.querySelectorAll("button")).find((node) =>
+      node.textContent === "Diagnostics",
+    );
+    expect(button).toBeDefined();
+    await act(async () => {
+      button?.click();
+    });
+    expect(onOpenDiagnostics).toHaveBeenCalledTimes(1);
+  });
+
   it("hides the chip when status fetch fails", async () => {
     const fetcher = vi.fn(async () => new Response("", { status: 403 }));
     const container = await renderChip({
