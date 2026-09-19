@@ -70,6 +70,7 @@ import { SchemaTable } from "@/renderer/schema-table.tsx";
 import { PageListActionsProvider } from "@/renderer/list-surface";
 import { HostFailureScreen } from "@/app/HostFailureScreen";
 import { RuntimeBanner } from "@/app/runtime-banner";
+import { hasMonitoringRead, VersionChip } from "@/app/version-chip";
 import type { RuntimeMode } from "@/account/auth-client";
 import { NotificationBell } from "@/app/notification-bell";
 import { nextFailureId, type HostFailure } from "@/host/failure";
@@ -122,7 +123,7 @@ export interface AppProps {
   /** Injectable fetch for table data sources such as `/api/users` (GOAL-011). */
   resourceFetcher?: typeof fetch;
   /** Authenticated user rendered in the header; present → show a sign-out button. */
-  currentUser?: { id: string; name?: string; avatarUrl?: string } | null;
+  currentUser?: { id: string; name?: string; avatarUrl?: string; permissions?: string[] } | null;
   /** Process runtime.mode from /me (VP-039 R2). Never from Host availability.mode. */
   runtimeMode?: RuntimeMode;
   /** Revokes the session (AuthProvider flips to the login page). */
@@ -1343,6 +1344,15 @@ export function App({
             </button>
             {/* W13 T-04: theme toggle on the left, language switcher on the right;
                 workspace-020 R2: timezone switcher shares the header locale channel. */}
+            <VersionChip
+              canReadMonitoring={hasMonitoringRead(currentUser?.permissions)}
+              fetcher={resourceFetcher}
+              onOpenDiagnostics={
+                manifest.pages.some((page) => page.pageId === "system-monitoring")
+                  ? () => onNavigate("/system-monitoring")
+                  : undefined
+              }
+            />
             <ThemeToggle />
             <LocaleSwitcher className="inline-flex" />
             <TimezoneSwitcher className="inline-flex" />
