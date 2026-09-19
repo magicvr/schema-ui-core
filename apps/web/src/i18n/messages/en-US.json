@@ -375,6 +375,7 @@
   "schema.jobs.batchExport.done": "Download started",
   "schema.jobs.batchExport.failed": "Export failed",
   "schema.jobs.batchExport.error": "Could not start the export",
+  "schema.jobs.batchExport.unavailable": "Batch export is not available in this deployment (the admin.jobs module is not enabled)",
   "error.jobNotFound": "no such job",
   "error.jobNotCancellable": "this job can no longer be cancelled",
   "error.jobNotRetryable": "this job cannot be retried",

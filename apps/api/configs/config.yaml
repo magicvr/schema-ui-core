@@ -68,6 +68,13 @@ app:
       - admin.data-permission
       - admin.mfa
       - admin.wallet
+      # VP-038 (workspace-038 GOAL-003/GOAL-004): admin.jobs — the async Job
+      # management read surface + the batch-export submit route the list pages'
+      # 「导出所选」 button calls. It is part of the admin preset (kernel/profile.go),
+      # and this list mirrors that preset, so it MUST be enumerated here: with it
+      # missing, POST /api/jobs/batch-export is never mounted and the button fails
+      # with a bare 404 (NOT_FOUND / 「未找到」) instead of exporting.
+      - admin.jobs
       - channel.telegram
       # VP-031 (workspace-031): biz.digital-offer — digital offers + thin
       # purchases + entitlements. Deliberately NOT in any default profile

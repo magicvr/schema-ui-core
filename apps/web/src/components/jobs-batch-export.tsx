@@ -58,13 +58,54 @@ function stringProp(props: unknown, key: string, fallback: string): string {
   return fallback;
 }
 
-export function JobsBatchExport({ node }: CustomComponentProps) {
+/**
+ * Whether the signed-in principal can actually use the async batch export.
+ *
+ * The submit route enforces TWO independent gates server-side — `jobs.write`
+ * (authorizes mutating the async runtime) and `data.export` (authorizes moving
+ * row data out). Both are contributed by modules that are absent from the
+ * `mvp` / `demo` presets (`admin.jobs` contributes jobs.write,
+ * `admin.data-transfer` contributes data.export), while the schema node itself
+ * ships with the users/roles module and is therefore served in every profile.
+ * Without this check the trigger looks usable where its route is not even
+ * mounted, and pressing it produces a bare 404 (NOT_FOUND / 「未找到」) instead of
+ * an export (user report 2026-09-19). Requiring the same two grants the route
+ * requires covers both failure shapes at once: route absent (module not
+ * enabled) and caller unauthorized (missing grant).
+ *
+ * The control is DISABLED rather than hidden. W33 D-001 §3 froze this entry
+ * point as fail-open: silently removing an operation entry point is a worse
+ * failure mode than showing it unavailable, and hiding it would also leave the
+ * slot host rendered empty (the e2e list-surface contract requires every
+ * page-action child to carry the same control height).
+ *
+ * Fail-open on an unknown context: when permissions cannot be read at all (a
+ * bare test harness, an older host), the component keeps its pre-existing
+ * behaviour rather than disabling a working operation entry point.
+ */
+function canBatchExport(context: Record<string, unknown> | undefined): boolean {
+  if (context === undefined) {
+    return true;
+  }
+  const user = context.user;
+  if (!isRecord(user)) {
+    return true;
+  }
+  const permissions = user.permissions;
+  if (!Array.isArray(permissions)) {
+    return true;
+  }
+  return permissions.includes("jobs.write") && permissions.includes("data.export");
+}
+
+export function JobsBatchExport({ node, context }: CustomComponentProps) {
   const t = useTranslate();
   const crud = useSchemaCrud();
   const fetcher = crud?.fetcher ?? globalThis.fetch;
 
   const targetTable = stringProp(node.props, "targetTable", "users-table");
   const resource = stringProp(node.props, "resource", "users");
+  const permitted = canBatchExport(context);
 
   const selection = crud?.selection(targetTable);
   const keys = selection?.keys ?? [];
@@ -122,7 +163,7 @@ export function JobsBatchExport({ node }: CustomComponentProps) {
   }, [fetcher, job?.id, job?.status]);
 
   const submit = useCallback(async () => {
-    if (keys.length === 0) {
+    if (keys.length === 0 || !permitted) {
       return;
     }
     setSubmitting(true);
@@ -138,7 +179,15 @@ export function JobsBatchExport({ node }: CustomComponentProps) {
         | (JobProjection & { message?: string })
         | null;
       if (response.status !== 202 || body?.id === undefined) {
-        setError(body?.message ?? t("schema.jobs.batchExport.error"));
+        // A 404 here is not a data problem: the route only exists when the
+        // `admin.jobs` module is enabled. Say so, instead of surfacing the
+        // server's bare NOT_FOUND (「未找到」), which reads as a missing row and
+        // sent the 2026-09-19 investigation down the wrong path.
+        setError(
+          response.status === 404
+            ? t("schema.jobs.batchExport.unavailable")
+            : (body?.message ?? t("schema.jobs.batchExport.error")),
+        );
         return;
       }
       // 202 + jobId: hand over to the poller. No reloadList() — it would clear
@@ -149,7 +198,7 @@ export function JobsBatchExport({ node }: CustomComponentProps) {
     } finally {
       setSubmitting(false);
     }
-  }, [fetcher, keys, resource, t]);
+  }, [fetcher, keys, permitted, resource, t]);
 
   const download = useCallback(async () => {
     const jobId = job?.id;
@@ -183,14 +232,22 @@ export function JobsBatchExport({ node }: CustomComponentProps) {
       <button
         type="button"
         onClick={() => void submit()}
-        disabled={count === 0 || submitting || running}
+        disabled={!permitted || count === 0 || submitting || running}
+        title={permitted ? undefined : t("schema.jobs.batchExport.unavailable")}
         className="inline-flex h-8 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         data-jobs-batch-export-submit
+        data-jobs-batch-export-unavailable={permitted ? undefined : "true"}
       >
         {submitting || running ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
         {t("schema.jobs.batchExport.action")}
         {count > 0 ? ` (${count})` : ""}
       </button>
+
+      {!permitted ? (
+        <span className="text-muted-foreground" role="status" data-jobs-batch-export-unavailable-note>
+          {t("schema.jobs.batchExport.unavailable")}
+        </span>
+      ) : null}
 
       {running ? (
         <span className="text-muted-foreground" role="status" data-jobs-batch-export-progress>

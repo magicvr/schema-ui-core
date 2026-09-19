@@ -375,6 +375,7 @@
   "schema.jobs.batchExport.done": "已开始下载",
   "schema.jobs.batchExport.failed": "导出失败",
   "schema.jobs.batchExport.error": "无法启动导出",
+  "schema.jobs.batchExport.unavailable": "当前部署未启用批量导出（未装配 admin.jobs 模块）",
   "error.jobNotFound": "作业不存在",
   "error.jobNotCancellable": "该作业已无法取消",
   "error.jobNotRetryable": "该作业不可重试",
