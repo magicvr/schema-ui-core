@@ -20,14 +20,14 @@ workspace_id: workspace-038-batch-operations-and-job-center
 ```text
 GOAL-001-batch-operations-and-job-center [active] (1/5) · 纲领容器
 ├── GOAL-002-r1-denominator-and-contract-freeze [done · 4/4] · R1 分母与契约冻结
-└── GOAL-003-r2-generic-job-read-surface [active · 0/4] · R2 通用作业读面
+└── GOAL-003-r2-generic-job-read-surface [active · 3/4] · R2 通用作业读面
 ```
 
 ## 纲领路线图
 
 ```text
 R1 分母与契约冻结 [done · GOAL-002 · 4/4]
-   → R2 通用作业读面 [active · GOAL-003 · 0/4]
+   → R2 通用作业读面 [active · GOAL-003 · 3/4 · C4 审计待跑]
       → R3 批量操作异步承接 [pending]
          → R4 结果中心与体验收敛 [pending]
             → R5 证据与关门 [pending]
@@ -41,7 +41,7 @@ R1 分母与契约冻结 [done · GOAL-002 · 4/4]
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-batch-operations-and-job-center | Admin 批量操作与异步结果中心交付 | null | active | 1/5 | 2026-09-19 |
 | GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | GOAL-001-batch-operations-and-job-center | **done** | 4/4 | 2026-09-19 |
-| GOAL-003-r2-generic-job-read-surface | R2 通用作业读面 | GOAL-001-batch-operations-and-job-center | active | 0/4 | 2026-09-19 |
+| GOAL-003-r2-generic-job-read-surface | R2 通用作业读面 | GOAL-001-batch-operations-and-job-center | active | 3/4 | 2026-09-19 |
 
 ## 说明
 

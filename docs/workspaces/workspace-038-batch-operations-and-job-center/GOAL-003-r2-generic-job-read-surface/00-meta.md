@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -44,11 +44,11 @@ R2 是本 VP 的第一段实现代码；`admin.jobs` 模块此前不存在（现
 
 ## 成功检查点
 
-以下 4 个检查点构成 `progress: 0/4` 的派生来源。
+以下 4 个检查点构成 `progress: 3/4` 的派生来源。
 
-- [ ] **C1 模块与权限接线**：`admin.jobs` 模块建立并进 admin 默认集；`jobs.read`（+ 写权限）声明、接线、入 catalog；模块/组合测试与计数断言全绿。
-- [ ] **C2 查询与索引**：`internal/jobs` 新增查询方法（过滤/分页/total/排序）落地并有 repository 测试；O-3 索引决策冻结并实施（含两处冻结断言的同步）。
-- [ ] **C3 读面 API 与作用域**：列表/详情/结果读取 API 落地；管理作用域由 `jobs.read` 门控；越权/不存在 fail-closed；**既有 actor 隔离测试语义不变**。
+- [x] **C1 模块与权限接线**：`admin.jobs` 模块建立并进 admin 默认集；`jobs.read` 声明、接线、入 catalog；模块/组合测试与计数断言全绿。
+- [x] **C2 查询与索引**：`internal/jobs` 新增查询方法（过滤/分页/total/排序）落地并有 repository 测试；O-3 索引决策冻结并实施（含两处冻结断言的同步）。
+- [x] **C3 读面 API 与作用域**：列表/详情/结果读取 API 落地；管理作用域由 `jobs.read` 门控；越权/不存在 fail-closed；**既有 actor 隔离测试语义不变**。
 - [ ] **C4 R2 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R2 检查点可投影。
 
 ## 审计模式（P-002 实施前确定）

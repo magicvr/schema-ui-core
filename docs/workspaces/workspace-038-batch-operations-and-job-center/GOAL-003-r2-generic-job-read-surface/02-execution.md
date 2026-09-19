@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | E-001 | 2026-09-19 | R2 立项与模块接线基线侦察 | recorded | `02-execution/E-001-r2-establishment.md` |
+| E-002 | 2026-09-19 | R2 C1～C3 实施（模块 / 查询与索引 / 读面 API） | recorded | `02-execution/E-002-r2-c1-c3-implementation.md` |
 
 ## 事实边界
 
