@@ -46,7 +46,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 - [x] **C1 方案冻结**：`D-001` 落盘（插槽属性/语义/回落、两页改动清单、授权范围）；`I-045-001`/`002` 关闭为 `verified`。
 - [x] **C2 实施**：渲染器左侧插槽可用；users 按钮落到插槽；roles 页具备选择集与触发面。证据：`02-execution/E-001` §2。
-- [x] **C3 回归与证据**：插槽 6 例 + roles 交互 2 例；变异验证（slot 拼写错 → 2 例红）；全量 vitest **121 files / 1476 tests 全绿**、typecheck/build exit 0、e2e 双 profile 全绿（mvp 16/5/0、admin 17/4/0）；roadmap 登记完成。
+- [x] **C3 回归与证据**：插槽 6 例 + roles 交互 2 例；变异验证（slot 拼写错 → 2 例红）；全量 vitest **121 files / 1476 tests 全绿**、typecheck/build exit 0、e2e 双 profile 全绿（mvp **17 passed / 5 skipped / 0 failed**、admin **18 passed / 4 skipped / 0 failed**，含新增 console-health 守卫）；**用户报告的控制台循环已定位（先于本波次存在）、修复并加永久守卫**（E-001 §5）；roadmap 登记完成。
 - [x] **C4 审计与投影**：self `A-001` `pass`（0 required + 3 recommended）→ `A-002` 响应（2 fixed + 1 accepted-residual），开放 required = 0；`goal-tree.md`/`workspace.md` 同步；Root 保持 active 程序容器。
 
 ## 信息就绪与未知项（P-005）

@@ -18,8 +18,9 @@ version: 0.1.0
 | 1 | `A-001` F-001：未知 `slot` 值静默等同未声明 | **fixed（登记制）** | `docs/vision/roadmap.md`「未决项统一登记 · 一、有界残余」的「本地扩展登记」项补记：**支持的本地扩展清单与取值**（`valueLabels`、`badgeStyleField`、`truncate`、`width`/`minWidth`、`slot: "list-page-actions"`），并注明「未知 slot 值 fail-open 原地渲染、无提示」这一约定 |
 | 2 | `A-001` F-002：左段/右段顺序未固定为结构约束 | **fixed（测试已锁 + 说明）** | 既有断言 `row.firstElementChild === left` 即该约束的回归锁（`list-actions-slot.test.tsx`）；`D-001` §4 明写「左段在前、右段在既有位置」。补记于本条，避免后续移动端排版改动误移顺序 |
 | 3 | `A-001` F-003：窄屏/移动端未做视觉验证 | **accepted-residual（用户可按需复核）** | 桌面视口 e2e + `list-visual-surface` 既有移动端用例已覆盖既有控件；左/右两段在窄屏的换行观感未验证。范围仅限视觉排布、可逆，且 `flex-wrap` 不会导致控件不可用。**触发复核**：用户实机反馈或后续符合性波次的移动端审视 |
+| 4 | `A-001` F-004：测试矩阵对控制台错误完全盲（运行期 `Maximum update depth exceeded` 刷屏而全套件长期全绿） | **fixed** | ① 定位并修复**先于本波次存在**的 claim 效应自激循环（浏览器探针 + 插桩计数 + **W33 前基线对照**；见 `E-001` §5）；② 新增永久守卫 `apps/web/e2e/console-health.spec.ts`（真实外壳逐页走查，任何 console.error/pageerror 即失败，仅静态资源白名单、网络错误带 URL）；③ **变异验证**：把 `availabilityVersion` 加回 claim 依赖 → 守卫立即失败；还原后两 profile 全绿 |
 
-**开放 required = 0**；三条 recommended 全部处置（2 fixed + 1 accepted-residual，后者为可逆视觉项且已注明触发条件）。
+**开放 required = 0**；四条 recommended 全部处置（2 fixed + 1 fixed（守卫）+ 1 accepted-residual，后者为可逆视觉项且已注明触发条件）。
 
 ## C4 投影
 

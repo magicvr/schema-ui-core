@@ -3464,23 +3464,19 @@ function dispatchParsedNode({
       if (node.type === "chart") {
         return <ChartView node={node} />;
       }
+      // W33 (GOAL-045): the table is rendered IN PLACE, without a key. Keying it
+      // by node id was tried first (to stop one SchemaTable instance carrying
+      // the previous table's visible columns across a navigation) but was
+      // withdrawn: the state bleed is fixed inside SchemaTable instead — by
+      // resetting table-scoped state when the table's identity changes — and
+      // adding a key to one element of an otherwise unkeyed children array is a
+      // reconciliation change with no benefit here.
       return (
-        // W33 (GOAL-045): a table node is KEYED BY ITS ID so two different
-        // tables never share one component instance. Page trees can align their
-        // table node at the same child index (the roles page gained a custom
-        // node, which put its table where the users table sits), and React then
-        // reuses the mounted SchemaTable across the navigation — carrying the
-        // previous table's local state (visible columns, saved-view load, local
-        // query) into a different schema. Symptom found in browser E2E: the
-        // users table came back showing only the columns the two schemas have in
-        // common. A different table is a different surface; remount it.
-        <Fragment key={node.id ?? "table"}>
-          {tableRenderer?.(node) ?? (
-            <p className="text-sm text-muted-foreground">
-              table node rendered without a tableRenderer (the app wires SchemaTable)
-            </p>
-          )}
-        </Fragment>
+        tableRenderer?.(node) ?? (
+          <p className="text-sm text-muted-foreground">
+            table node rendered without a tableRenderer (the app wires SchemaTable)
+          </p>
+        )
       );
     }
   }

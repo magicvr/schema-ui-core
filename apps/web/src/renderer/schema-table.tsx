@@ -612,22 +612,44 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
     translate: (key, params) => t(key, params),
   });
 
+  // W33 (GOAL-045): claim the page-list-actions host ONCE per host element.
+  //
+  // The previous version listed `availabilityVersion` as a dependency, and that
+  // is a self-sustaining loop: the effect claims the host, its cleanup releases
+  // it, `release` bumps `availabilityVersion` to notify other tables, the bump
+  // changes this effect's dependencies, so it cleans up and re-claims — forever.
+  // React reported it as "Maximum update depth exceeded" hundreds of times on
+  // every list page (found while probing the running app for console errors; it
+  // predates this wave). Splitting the two concerns fixes it:
+  //   * the claim effect depends only on the host ELEMENT and the table id, so
+  //     provider state churn no longer re-runs it;
+  //   * a separate retry effect bumps `claimRetry` when the host is free again,
+  //     which is what `availabilityVersion` was for (a second table on the same
+  //     page claims the host after the first one releases it).
+  const hostElement = pageListActionsHost?.element ?? null;
+  const hostActiveOwner = pageListActionsHost?.activeOwner ?? null;
+  const hostRef = useRef(pageListActionsHost);
+  hostRef.current = pageListActionsHost;
+  const [claimRetry, setClaimRetry] = useState(0);
+
   useEffect(() => {
-    const host = pageListActionsHost;
-    if (host === null || host.element === null) {
+    if (hostElement === null || hostActiveOwner !== null) {
+      return;
+    }
+    setClaimRetry((current) => current + 1);
+  }, [hostElement, hostActiveOwner]);
+
+  useEffect(() => {
+    if (hostElement === null) {
       setPageActionsPortalReady(false);
       return;
     }
-    const claimed = host.claim(tableId);
+    const claimed = hostRef.current?.claim(tableId) ?? false;
     setPageActionsPortalReady(claimed);
-    return claimed ? () => host.release(tableId) : undefined;
-  }, [
-    pageListActionsHost?.availabilityVersion,
-    pageListActionsHost?.claim,
-    pageListActionsHost?.element,
-    pageListActionsHost?.release,
-    tableId,
-  ]);
+    return () => {
+      hostRef.current?.release(tableId);
+    };
+  }, [claimRetry, hostElement, tableId]);
 
   const formFilterFields = useMemo(
     () => (crud?.tableFilterFields !== undefined ? crud.tableFilterFields(tableId) : []),
@@ -684,6 +706,23 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
     columns.map((column) => column.field),
   );
+  // W33 (GOAL-045): table-scoped state must not survive into a DIFFERENT table.
+  // Two page documents can align their table node at the same child index (the
+  // roles page gained a custom node, which put its table exactly where the users
+  // table sits), and React then reuses this mounted instance across the
+  // navigation. Without this reset the previous table's `visibleColumns` survive
+  // and the "narrow to the allowed fields" effect below intersects them with the
+  // new schema — the users table came back showing only the columns users and
+  // roles have in common (found in browser E2E). Adjusting state during render is
+  // React's documented pattern for "state derived from props changed": it
+  // re-renders immediately instead of committing the stale output.
+  const columnFields = columns.map((column) => column.field);
+  const tableIdentity = `${tableId}::${columnFields.join("|")}`;
+  const tableIdentityRef = useRef(tableIdentity);
+  if (tableIdentityRef.current !== tableIdentity) {
+    tableIdentityRef.current = tableIdentity;
+    setVisibleColumns(columnFields);
+  }
   const [savedViewLoad, setSavedViewLoad] = useState<{
     status: "disabled" | "loading" | "ready" | "error";
     views: SavedViewRecord[];
