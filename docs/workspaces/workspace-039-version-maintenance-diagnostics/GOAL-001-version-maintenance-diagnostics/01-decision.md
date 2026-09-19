@@ -16,9 +16,9 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-039-001 | required | 版本身份权威字段与升级说明入口 | R1、R3 | R1 | 扫描 `pkg/version` 与 system-monitoring | open | — | 待确认 |
-| I-039-002 | required | 四种 runtime.mode 投影 | R1、R2 | R1 | 对照 bootstrap / operational / feedback-policy | open | — | 待确认 |
-| I-039-003 | required | 诊断摘要字段分母 | R1、R3 | R1 | 对照 healthz/readyz/status | open | — | 待确认 |
+| I-039-001 | required | 版本身份权威字段与升级说明入口 | R1、R3 | R1 | 扫描 `pkg/version` 与 system-monitoring | **verified** | — | GOAL-002 D-001 §2 |
+| I-039-002 | required | 四种 runtime.mode 投影 | R1、R2 | R1 | 对照 bootstrap / operational / feedback-policy | **verified** | — | GOAL-002 D-001 §1 |
+| I-039-003 | required | 诊断摘要字段分母 | R1、R3 | R1 | 对照 healthz/readyz/status | **verified** | — | GOAL-002 D-001 §3 |
 | I-039-004 | required | 承载面与默认集 | 激活、`go` | 激活前 | 默认候选核验 | **verified** | 改新模块须复核 `go` | D-001；VRev-102 |
 | I-039-005 | required | Admin 类 freshness | 激活与开区 | 激活前 | 五域 freshness | **verified** | 下次基线变更复核 | D-001；VRev-102 |
 | I-039-006 | non-blocking | runtime.mode 热切换 | 不进首波 | — | `/vision` 复核 | deferred | 责任人 `/vision` | 首波不承诺 |

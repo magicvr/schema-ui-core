@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-denominator-and-contract-freeze
 title: R1 范围与信息冻结
-status: active
+status: done
 parent: GOAL-001-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.2.0
-progress: 3/4
+version: 0.3.0
+progress: 4/4
 plan_refs:
   - VP-039-version-maintenance-diagnostics
 primary_plan: VP-039-version-maintenance-diagnostics
@@ -41,7 +41,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **C1 版本身份与升级入口**：`I-039-001` 关闭（QUICKSTART 链接；Shell 版本仅 monitoring.read）。
 - [x] **C2 模式投影矩阵**：`I-039-002` 关闭（maintenance Host 生产者改 degraded；精确模式经 `/me.runtimeMode`）。
 - [x] **C3 诊断字段分母**：`I-039-003` 关闭（复用 system-monitoring；横幅全登录）。
-- [ ] **C4 R1 审计与投影**：self + independent 落盘，开放 required = 0，Root R1 可投影。
+- [x] **C4 R1 审计与投影**：A-001 self pass + A-002 grok independent pass + A-003 响应；开放 required = 0。
 
 ## 审计模式（P-002）
 
@@ -67,4 +67,4 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 备注
 
-- `progress: 0/4` 由上方 4 个检查点派生。侦察报告不是决策。
+- `progress: 4/4` 由上方 4 个检查点派生。侦察报告不是决策。本目标已关门；R2 按 D-001 §5 移交。

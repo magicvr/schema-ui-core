@@ -1,7 +1,7 @@
 ---
 id: GOAL-002-r1-denominator-and-contract-freeze
 doc: decision
-status: active
+status: done
 parent: GOAL-001-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19

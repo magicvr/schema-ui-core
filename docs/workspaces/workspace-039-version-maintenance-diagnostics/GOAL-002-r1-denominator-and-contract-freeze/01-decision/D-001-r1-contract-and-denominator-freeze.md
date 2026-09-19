@@ -63,7 +63,7 @@ mvp/demo 无 system-monitoring：仍能看到模式横幅（经 `/me.runtimeMode
 | ID | 移交 |
 |----|------|
 | T-1 | bootstrap 生产者：maintenance→Host `degraded` + 回归（含 bootstrap 单测） |
-| T-2 | `/api/accounts/me` additive `runtimeMode` + 测试 |
-| T-3 | Shell 已登录横幅（三分文案、i18n、浅色深色、不挡登录页） |
+| T-2 | `/api/accounts/me` additive `runtimeMode` + 测试；**Web `fetchMe`/`AuthSession` 必须投影该字段**（A-002 F-002） |
+| T-3 | Shell 已登录横幅（三分文案、i18n、浅色深色、不挡登录页）；**只读 `/me.runtimeMode`，禁止用 Host `availability.mode`**（A-001/A-002 F-001） |
 | T-4 | `monitoring.read` 版本 chip + QUICKSTART 链接 |
 | T-5 | HostFailureScreen maintenance 路径保持协议实现，但本仓生产 bootstrap 不再发出 `maintenance` 模式 |

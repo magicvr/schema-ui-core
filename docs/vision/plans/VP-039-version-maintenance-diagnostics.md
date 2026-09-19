@@ -98,9 +98,9 @@ R1 范围与信息冻结：模式×横幅×错误码矩阵、版本身份与升�
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|--------------|------|----------|----------|------------------|------|-------------|-------------|
-| I-039-001 | 版本身份的权威字段与升级说明入口是什么？（`pkg/version`、系统监控行、包/CLI 版本是否同一分母） | required | R1 范围冻结、R3 版本提示 | R1 | 扫描 `pkg/version`、system-monitoring status、发布/changelog 入口；冻结「看得到什么 / 链到哪里」 | open | — | — |
-| I-039-002 | 四种 `runtime.mode` 在横幅、Host bootstrap、写门禁错误码上如何一一投影？read-only 继续映射 Host `degraded` 是否保持？ | required | R1/R2 | R1 | 对照 `bootstrap.go`、`operational.go`、error catalog、前端 feedback-policy | open | — | — |
-| I-039-003 | 诊断摘要的字段分母是什么？哪些已有 system-monitoring 字段直接复用，哪些不进首波？ | required | R1/R3 | R1 | 对照 `/healthz` `/readyz` 与 status 行；显式排除 Grafana/Sentry/VP-015 residual 指标 | open | — | — |
+| I-039-001 | 版本身份的权威字段与升级说明入口是什么？（`pkg/version`、系统监控行、包/CLI 版本是否同一分母） | required | R1 范围冻结、R3 版本提示 | R1 | 扫描 `pkg/version`、system-monitoring status、发布/changelog 入口；冻结「看得到什么 / 链到哪里」 | **verified** | — | workspace-039 GOAL-002 D-001 §2（QUICKSTART 链接；Shell 版本仅 monitoring.read） |
+| I-039-002 | 四种 `runtime.mode` 在横幅、Host bootstrap、写门禁错误码上如何一一投影？read-only 继续映射 Host `degraded` 是否保持？ | required | R1/R2 | R1 | 对照 `bootstrap.go`、`operational.go`、error catalog、前端 feedback-policy | **verified** | — | GOAL-002 D-001 §1：用户裁决 B；生产者 maintenance→Host `degraded`；精确模式 `/me.runtimeMode` |
+| I-039-003 | 诊断摘要的字段分母是什么？哪些已有 system-monitoring 字段直接复用，哪些不进首波？ | required | R1/R3 | R1 | 对照 `/healthz` `/readyz` 与 status 行；显式排除 Grafana/Sentry/VP-015 residual 指标 | **verified** | — | GOAL-002 D-001 §3；`r1-diagnostic-field-matrix.md` |
 | I-039-004 | 承载面：Shell 横幅 vs 复用 `admin.system-monitoring` vs 新模块？是否进默认集？ | required | 激活、`go` 消费 | 激活前 | 默认候选 = Shell 横幅 + 复用 system-monitoring、不新增模块、不改默认集 | **verified** | 实施期若改新模块进默认集须复核 `go` | 2026-09-19 用户「走流程激活」接受默认候选；VRev-102 |
 | I-039-005 | 激活时当前代码候选是否仍满足 Admin 类 freshness 与 VP-008 `go` 消费有效性？ | required | 激活与开区 | 激活前 | `/vision` 复核协议 pin、依赖锁、迁移台账、Profile 默认集、provenance 与区间变更 | **verified** | 下次涉及 Admin 类基线/默认集/协议身份的区间变更时复核 | `7e5ce891` → `6197e802` 五域 PASS（区间 = VP-038 已审结目 + W32–W34）；VRev-102 |
 | I-039-006 | 是否需要管理员在运行中切换 `runtime.mode`（相对重启生效）？ | non-blocking | 不进首波 | — | 热切换 = 配置热加载类能力，与 VP-016/025 红线同类 | deferred | 真实运维需求出现时由 `/vision` 复核 | 首波不承诺热切换 |
