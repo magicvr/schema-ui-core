@@ -45,10 +45,19 @@ type JobBatchSubmitter interface {
 	SubmitBatchExport(ctx context.Context, resource string, ids []string, actorID, correlationID string) (*jobs.Job, error)
 }
 
+// JobActions is the management-scope write surface (GOAL-005 R4): cancelling
+// and retrying another actor's job. It is separate from the actor-scoped wallet
+// JobService so those frozen paths stay untouched.
+type JobActions interface {
+	CancelAny(ctx context.Context, id string) (*jobs.Job, error)
+	RetryAny(ctx context.Context, id string) (*jobs.Job, error)
+}
+
 // JobsRoutes returns the admin.jobs HTTP surface: the management-scope read
-// routes (R2) plus, when submitter is non-nil, the batch-export submit route
-// (R3). Every route is permission gated and fail-closed.
-func JobsRoutes(a *auth.Authenticator, reader JobReader, submitter JobBatchSubmitter, moduleID string) []kernel.RouteContribution {
+// routes (R2), the batch-export submit route (R3, when submitter is non-nil)
+// and the management-scope cancel/retry actions (R4, when actions is non-nil).
+// Every route is permission gated and fail-closed.
+func JobsRoutes(a *auth.Authenticator, reader JobReader, submitter JobBatchSubmitter, actions JobActions, moduleID string) []kernel.RouteContribution {
 	h := &jobsHandler{reader: reader, submitter: submitter}
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, handler http.Handler) {
@@ -58,6 +67,35 @@ func JobsRoutes(a *auth.Authenticator, reader JobReader, submitter JobBatchSubmi
 			Pattern:              pattern,
 			Handler:              a.Middleware(handler),
 		})
+	}
+
+	// Result-center write actions (R4). Both are management-scope operations on
+	// jobs that may belong to another actor, so they gate on jobs.write — the
+	// same key that authorizes submitting an async job. The state sets and
+	// error codes mirror the actor-scoped contract exactly (GOAL-005 D-001 §2).
+	if actions != nil {
+		add("POST", JobsBasePath+"/{id}/cancel", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := requirePermission(w, r, "jobs.write"); !ok {
+				return
+			}
+			job, err := actions.CancelAny(r.Context(), r.PathValue("id"))
+			if err != nil {
+				writeJobActionError(w, r, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, jobToMap(*job))
+		}))
+		add("POST", JobsBasePath+"/{id}/retry", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := requirePermission(w, r, "jobs.write"); !ok {
+				return
+			}
+			job, err := actions.RetryAny(r.Context(), r.PathValue("id"))
+			if err != nil {
+				writeJobActionError(w, r, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, jobToMap(*job))
+		}))
 	}
 
 	// Batch export (R3): a real batch operation carried by the Job runtime.
@@ -272,6 +310,12 @@ func (h *jobsHandler) list(w http.ResponseWriter, r *http.Request) {
 // jobToMap is the management-scope Job projection. Like the wallet projection
 // it deliberately does not embed payload/result (VP-012 D-002 §6); a succeeded
 // job advertises its download address through the shared ResultURL derivation.
+//
+// R4 (GOAL-005 D-001 §2) adds the result center's operability fields. They are
+// DERIVED HERE, on the server, so the row actions' enabled/disabled state is by
+// construction the same rule the write routes enforce — a second copy of the
+// state machine in the browser could drift, this cannot. The additions are
+// purely additive: no R2 field's name or meaning changes.
 func jobToMap(job jobs.Job) map[string]any {
 	row := map[string]any{
 		"id": job.ID, "kind": job.Kind, "status": job.Status,
@@ -280,9 +324,21 @@ func jobToMap(job jobs.Job) map[string]any {
 		"correlationId": job.CorrelationID,
 		"createdAt":     job.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 		"updatedAt":     job.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		// Action availability, mirroring the write contract exactly
+		// (internal/jobs/actions.go): cancel accepts queued|running, retry
+		// accepts failed WITH remaining attempt budget, and only a succeeded job
+		// has a result to download (an expired one has already lost it).
+		"cancellable":  job.Status == jobs.StatusQueued || job.Status == jobs.StatusRunning,
+		"retryable":    job.Status == jobs.StatusFailed && job.Attempt < job.MaxAttempts,
+		"downloadable": job.Status == jobs.StatusSucceeded,
+		"statusStyle":  jobStatusStyle(job.Status),
 	}
 	if job.ErrorCode != "" {
 		row["error"] = map[string]any{"code": job.ErrorCode, "message": job.ErrorMessage}
+		// Flat mirrors for the schema surfaces: a table column and a recordView
+		// field both address top-level row keys (dotted paths are not resolved).
+		row["errorCode"] = job.ErrorCode
+		row["errorMessage"] = job.ErrorMessage
 	}
 	if job.FinishedAt != nil {
 		row["finishedAt"] = job.FinishedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
@@ -294,6 +350,26 @@ func jobToMap(job jobs.Job) map[string]any {
 		row["resultUrl"] = jobs.ResultURL(JobsBasePath, job.ID)
 	}
 	return row
+}
+
+// jobStatusStyle maps the six frozen job states onto the renderer's badge
+// presets (schema-table badgeClassesFor: success/warning/destructive/info, with
+// anything else neutral). Exhaustive by construction: the default branch is
+// unreachable for a valid Job and therefore falls back to the neutral badge
+// rather than inventing a colour.
+func jobStatusStyle(status jobs.Status) string {
+	switch status {
+	case jobs.StatusQueued:
+		return "info"
+	case jobs.StatusRunning:
+		return "warning"
+	case jobs.StatusSucceeded:
+		return "success"
+	case jobs.StatusFailed:
+		return "destructive"
+	default: // cancelled, expired
+		return "neutral"
+	}
 }
 
 func isJobStatus(value string) bool {
@@ -336,4 +412,20 @@ func writeJobReadError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not read job")
+}
+
+// writeJobActionError maps a cancel/retry failure to the frozen Job codes
+// (shared by the R4 management-scope actions; the wallet surface has its own
+// mapper because it also handles wallet-specific codes).
+func writeJobActionError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, jobs.ErrNotFound):
+		writeLocalizedError(w, r, http.StatusNotFound, "JOB_NOT_FOUND", "job not found")
+	case errors.Is(err, jobs.ErrNotCancellable):
+		writeLocalizedError(w, r, http.StatusConflict, "JOB_NOT_CANCELLABLE", "job cannot be cancelled")
+	case errors.Is(err, jobs.ErrNotRetryable):
+		writeLocalizedError(w, r, http.StatusConflict, "JOB_NOT_RETRYABLE", "job cannot be retried")
+	default:
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not update job")
+	}
 }

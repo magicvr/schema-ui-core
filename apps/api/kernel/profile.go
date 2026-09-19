@@ -217,7 +217,10 @@ func BuiltinModules() []Module {
 		// R3 (GOAL-004): the same module carries the first real batch operation
 		// (batch export) behind jobs.write; the route is paired with
 		// data.export at the handler so it cannot widen data egress.
-		{ID: "admin.jobs", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/jobs", "GET /api/jobs/{id}", "GET /api/jobs/{id}/result", "POST /api/jobs/batch-export"}, Pages: []string{"jobs"}, Navigation: []string{"menu_jobs"}, Permissions: []string{"jobs.read", "jobs.write"}, Fragments: []string{"jobs"}}},
+		// R4 (GOAL-005): it also carries the management-scope cancel/retry
+		// actions of the result center, behind the same jobs.write key; the
+		// accepted state sets mirror the actor-scoped wallet contract exactly.
+		{ID: "admin.jobs", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/jobs", "GET /api/jobs/{id}", "GET /api/jobs/{id}/result", "POST /api/jobs/batch-export", "POST /api/jobs/{id}/cancel", "POST /api/jobs/{id}/retry"}, Pages: []string{"jobs"}, Navigation: []string{"menu_jobs"}, Permissions: []string{"jobs.read", "jobs.write"}, Fragments: []string{"jobs"}}},
 		// VP-030 (GOAL-003/GOAL-004): channel.telegram — Telegram bot channel runtime.
 		// Exposes the public webhook, authenticated settings endpoints, the
 		// authenticated console-session polling lease, and the operator console

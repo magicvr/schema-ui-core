@@ -63,7 +63,7 @@ func mountJobsExportRoutes(t *testing.T, env *authTestEnv) (*jobs.Repository, *r
 	t.Helper()
 	repository := jobs.NewRepository(env.st)
 	submitter := &recordingBatchSubmitter{repository: repository, supported: []string{"users", "roles"}}
-	for _, route := range JobsRoutes(env.a, repository, submitter, "admin.jobs") {
+	for _, route := range JobsRoutes(env.a, repository, submitter, nil, "admin.jobs") {
 		env.mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
 	return repository, submitter

@@ -14,10 +14,12 @@ import (
 )
 
 // mountJobsRoutes wires the admin.jobs read surface over the shared Job
-// repository (GOAL-003 R2).
+// repository (GOAL-003 R2). No submitter, no actions: this file covers the read
+// contract, and the descriptor-consistency of the optional surfaces is asserted
+// by the export/actions tests and the module's own Descriptor test.
 func mountJobsRoutes(t *testing.T, env *authTestEnv, repository *jobs.Repository) {
 	t.Helper()
-	for _, route := range JobsRoutes(env.a, repository, nil, "admin.jobs") {
+	for _, route := range JobsRoutes(env.a, repository, nil, nil, "admin.jobs") {
 		env.mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
 }
@@ -263,6 +265,136 @@ func TestJobsDetailAndResult(t *testing.T) {
 	}
 	if done["progress"] != float64(100) {
 		t.Fatalf("progress = %v, want 100", done["progress"])
+	}
+}
+
+// C2 (R4 · GOAL-005 D-001 §2): the projection's derived operability fields must
+// be exactly the write contract's preconditions. These are what the browser
+// enables/disables the row actions with, so a drift here would offer an action
+// the API then refuses (or hide one it would accept).
+func TestJobsProjectionDerivesActionAvailability(t *testing.T) {
+	env := newAuthTestEnv(t)
+	repository := newJobsTestRepository(t, env)
+	mountJobsRoutes(t, env, repository)
+	token := adminToken(t, env)
+	now := time.Now().UTC()
+
+	fetch := func(id string) map[string]any {
+		t.Helper()
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, token, http.MethodGet, "/api/jobs", ""))
+		if rr.Code != http.StatusOK {
+			t.Fatalf("list = %d body=%s", rr.Code, rr.Body.String())
+		}
+		var envelope struct {
+			Items []map[string]any `json:"items"`
+		}
+		if err := json.Unmarshal(rr.Body.Bytes(), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		for _, item := range envelope.Items {
+			if item["id"] == id {
+				return item
+			}
+		}
+		t.Fatalf("job %s missing from the list", id)
+		return nil
+	}
+
+	// queued: cancellable, not retryable, nothing to download.
+	queued := seedJob(t, repository, "job-p-queued", "jobs.batch-export", "user-1", now)
+	row := fetch(queued.ID)
+	if row["cancellable"] != true || row["retryable"] != false || row["downloadable"] != false {
+		t.Fatalf("queued availability = %v/%v/%v, want true/false/false",
+			row["cancellable"], row["retryable"], row["downloadable"])
+	}
+	if row["statusStyle"] != "info" {
+		t.Fatalf("queued statusStyle = %v, want info", row["statusStyle"])
+	}
+
+	// running: still cancellable, still not retryable.
+	running := seedJob(t, repository, "job-p-running", "jobs.batch-export", "user-1", now.Add(time.Second))
+	if _, _, err := repository.Claim(context.Background(), running.ID, "worker-1", now.Add(2*time.Second), time.Minute); err != nil {
+		t.Fatalf("claim: %v", err)
+	}
+	row = fetch(running.ID)
+	if row["cancellable"] != true || row["retryable"] != false || row["statusStyle"] != "warning" {
+		t.Fatalf("running row = %v", row)
+	}
+
+	// failed WITH budget: retryable only.
+	failed := seedJob(t, repository, "job-p-failed", "jobs.batch-export", "user-1", now.Add(3*time.Second))
+	_, lease, err := repository.Claim(context.Background(), failed.ID, "worker-1", now.Add(4*time.Second), time.Minute)
+	if err != nil {
+		t.Fatalf("claim: %v", err)
+	}
+	if err := repository.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", "boom", now.Add(4*time.Second)); err != nil {
+		t.Fatalf("fail: %v", err)
+	}
+	row = fetch(failed.ID)
+	if row["cancellable"] != false || row["retryable"] != true || row["downloadable"] != false {
+		t.Fatalf("failed availability = %v/%v/%v, want false/true/false",
+			row["cancellable"], row["retryable"], row["downloadable"])
+	}
+	if row["statusStyle"] != "destructive" || row["errorCode"] != "JOB_HANDLER_FAILED" {
+		t.Fatalf("failed row = %v", row)
+	}
+
+	// An exhausted failure is NOT retryable: the attempt budget is the same
+	// budget the retry route checks.
+	exhausted := seedJob(t, repository, "job-p-exhausted", "jobs.batch-export", "user-1", now.Add(5*time.Second))
+	_, lease, err = repository.Claim(context.Background(), exhausted.ID, "worker-1", now.Add(6*time.Second), time.Minute)
+	if err != nil {
+		t.Fatalf("claim: %v", err)
+	}
+	if err := repository.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", "boom", now.Add(6*time.Second)); err != nil {
+		t.Fatalf("fail: %v", err)
+	}
+	assertRetryBudgetExhausted(t, env, repository, exhausted.ID, now.Add(7*time.Second), fetch)
+}
+
+// assertRetryBudgetExhausted burns the remaining attempts directly (the row is
+// already failed) and asserts the projection stops advertising retry.
+func assertRetryBudgetExhausted(
+	t *testing.T,
+	env *authTestEnv,
+	repository *jobs.Repository,
+	id string,
+	now time.Time,
+	fetch func(string) map[string]any,
+) {
+	t.Helper()
+	// max_attempts defaults to the runtime default (3) for a seeded job; drive
+	// the same transition twice more so attempt reaches the ceiling.
+	for i := 0; i < 4; i++ {
+		job, err := repository.GetJob(context.Background(), id)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		if job.Attempt >= job.MaxAttempts {
+			break
+		}
+		if _, err := repository.RetryAny(context.Background(), id, now); err != nil {
+			t.Fatalf("retry %d: %v", i, err)
+		}
+		_, lease, err := repository.Claim(context.Background(), id, "worker-1", now.Add(time.Second), time.Minute)
+		if err != nil {
+			t.Fatalf("claim %d: %v", i, err)
+		}
+		if err := repository.Fail(context.Background(), lease, "JOB_HANDLER_FAILED", "boom", now.Add(time.Second)); err != nil {
+			t.Fatalf("fail %d: %v", i, err)
+		}
+	}
+	job, err := repository.GetJob(context.Background(), id)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if job.Attempt < job.MaxAttempts {
+		t.Fatalf("attempt = %d/%d, want the budget exhausted", job.Attempt, job.MaxAttempts)
+	}
+	row := fetch(id)
+	if row["retryable"] != false || row["cancellable"] != false {
+		t.Fatalf("an exhausted failure still advertises an action: %v", row)
 	}
 }
 

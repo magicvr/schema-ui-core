@@ -1,7 +1,8 @@
 // Package jobs provides the admin.jobs module surface as a kernel.Provider
-// (GOAL-003 R2 · VP-038): the management-scope read surface over the durable
-// async Job runtime — a cross-actor job list, job detail and result download,
-// gated by jobs.read.
+// (GOAL-003 R2 · VP-038): the management-scope surface over the durable async
+// Job runtime — a cross-actor job list, job detail and result download gated by
+// jobs.read, the batch-export submit route (R3) and the management-scope
+// cancel/retry actions (R4) gated by jobs.write.
 //
 // Scope boundary (GOAL-002 D-001 §2.1): this module answers "every job" for an
 // operator. It does NOT replace the actor-scoped admin.wallet job routes
@@ -31,18 +32,19 @@ type Provider struct {
 	a         *auth.Authenticator
 	reader    handler.JobReader
 	submitter handler.JobBatchSubmitter
+	actions   handler.JobActions
 }
 
-// New constructs the jobs provider over the shared Job read surface. submitter
-// may be nil for a read-only composition; the batch-export route is then
-// omitted from the contribution set entirely (rather than mounted and failing
-// at request time), so the declared routes always match what is served.
-func New(a *auth.Authenticator, reader handler.JobReader, submitter ...handler.JobBatchSubmitter) *Provider {
-	p := &Provider{a: a, reader: reader}
-	if len(submitter) > 0 {
-		p.submitter = submitter[0]
-	}
-	return p
+// New constructs the jobs provider over the shared Job read surface.
+//
+// submitter (R3 batch export) and actions (R4 cancel/retry) may each be nil for
+// a composition that only reads; the corresponding routes are then omitted from
+// the contribution set entirely — rather than mounted and failing at request
+// time — so the routes the descriptor declares always match the routes served.
+// The parameters are typed on purpose: an adapter that does not satisfy the
+// seam is a compile error, not a silently missing route.
+func New(a *auth.Authenticator, reader handler.JobReader, submitter handler.JobBatchSubmitter, actions handler.JobActions) *Provider {
+	return &Provider{a: a, reader: reader, submitter: submitter, actions: actions}
 }
 
 func (p *Provider) Descriptor() kernel.Module {
@@ -53,8 +55,16 @@ func (p *Provider) Descriptor() kernel.Module {
 	}
 	permissions := []string{"jobs.read"}
 	if p.submitter != nil {
-		// R3 (GOAL-004): the batch-export submit route and its write key.
+		// R3 (GOAL-004): the batch-export submit route.
 		routes = append(routes, "POST /api/jobs/batch-export")
+	}
+	if p.actions != nil {
+		// R4 (GOAL-005): management-scope cancel/retry (result center).
+		routes = append(routes, "POST /api/jobs/{id}/cancel", "POST /api/jobs/{id}/retry")
+	}
+	if p.submitter != nil || p.actions != nil {
+		// jobs.write authorizes mutating the async runtime: submitting a job,
+		// cancelling one, or retrying one. Declared once, shared by both.
 		permissions = append(permissions, "jobs.write")
 	}
 	return kernel.Module{
@@ -78,7 +88,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.JobsRoutes(p.a, p.reader, p.submitter, ModuleID) {
+	for _, route := range handler.JobsRoutes(p.a, p.reader, p.submitter, p.actions, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
@@ -106,10 +116,12 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 		PolicyID:             authsessiondata.PolicyAdmin,
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
 	}}
-	if p.submitter != nil {
-		// jobs.write authorizes submitting an async job. It is deliberately
-		// paired with data.export at the route, so this key alone cannot move
-		// data out (GOAL-004 D-001 §1).
+	if p.submitter != nil || p.actions != nil {
+		// jobs.write authorizes mutating the async runtime: submitting an async
+		// job (R3), cancelling one or retrying one (R4). It is deliberately
+		// paired with data.export at the submit route, so this key alone cannot
+		// move data out (GOAL-004 D-001 §1); cancel/retry gate on this key alone
+		// because they neither read nor move row data (GOAL-005 D-001 §2).
 		contributions = append(contributions, kernel.PermissionContribution{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "jobs.write"},
 			Permission:           "jobs.write",

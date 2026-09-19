@@ -630,7 +630,12 @@ func newMuxWithExtraProviders(
 		if err != nil {
 			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: jobsmodule.ModuleID, Detail: fmt.Sprintf("register batch export: %v", err)}
 		}
-		providers = append(providers, jobsmodule.New(a, jobRuntime.repository, handler.NewBatchExportSubmitter(exportService, jobRuntime.runner)))
+		// R4 (GOAL-005 D-001 §2): the result center's cancel/retry actions. The
+		// runner's CancelAny/RetryAny already satisfy handler.JobActions — they
+		// are the management-scope twins of Cancel/Retry in internal/jobs
+		// (same state sets, same error codes, no actor predicate), so binding
+		// the runner directly here adds no second implementation to audit.
+		providers = append(providers, jobsmodule.New(a, jobRuntime.repository, handler.NewBatchExportSubmitter(exportService, jobRuntime.runner), jobRuntime.runner))
 	}
 	// VP-031 (workspace-031 GOAL-003 · GOAL-002 D-002 v1.0.0): biz.digital-offer —
 	// digital offers + thin purchases over the wallet money primitives +
