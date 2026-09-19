@@ -71,7 +71,7 @@ version: 1.0.0
 1. **能力声明追加**：`actions.row.request`、`actions.page.trigger`、`permissions.inheritance`、`record.view.load`（均由本页实际使用触发，`capability-declaration.guard.test.ts` 的 marker 全部命中）。
 2. **页级 actions**：`cancelJob`（POST `/api/jobs/{id}/cancel`）、`retryJob`（POST `/api/jobs/{id}/retry`）、`downloadJobResult`（`type: custom`，`handler: jobs.downloadResult`）。
 3. **表级 `permissions`**：`edit` = `$context.user.permissions contains "jobs.write"`（cancel/retry 的 `permissionIntent: "edit"`）。
-4. **行操作**（`props.actions`）：cancel（带 `confirm`）、retry、download；三者均有 `requestMapping.path.id = "$row.id"`（download 由 custom handler 的 `{id}` 槽解析）与 §2 的 `disabledWhen`。行操作数 3 > `MAX_INLINE_ROW_ACTIONS`(2)，第 3 项落入既有 overflow 菜单，不新增渲染能力。
+4. **行操作**（`props.actions`）：cancel（带 `confirm`）、retry、download；cancel/retry 以 `requestMapping.path.id = "$row.id"` 绑定行 id，download 由 custom handler 的 `{id}` 槽从行上下文解析（其动作对象**不带** `requestMapping`——`CustomAction` 不接受该字段，见 §3.3）；三者均有按 §2 派生字段的 `disabledWhen`。行操作数 3 > `MAX_INLINE_ROW_ACTIONS`(2)，第 3 项落入既有 overflow 菜单，不新增渲染能力。
 5. **列追加**：`error.code`（错误码）、`resultExpiresAt`、`correlationId`；`status` 列加 `badgeStyleField: "statusStyle"`。
 6. **`recordView` 详情节点** `job-detail`：展示六态共 12 个字段（含 `error.message`、`resultUrl`、`correlationId`），闭包"六类状态可读"。
 

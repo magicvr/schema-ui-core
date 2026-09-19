@@ -44,7 +44,7 @@ R1～R3 已冻结并交付：契约归本地（方案 B，ADR-0022 冻结）、`
 
 - [x] **C1 写操作面**：管理作用域取消/重试路由 + 仓储方法（`jobs.write` 门控、fail-closed）；既有 actor 隔离写路径逐字不变。证据：`02-execution/E-001-r4-implementation.md` §1/§3；`internal/jobs/actions_test.go` 反向钉住 `RequestCancel`/`Retry` 对非本人仍 `ErrNotFound`。
 - [x] **C2 结果中心呈现**：六类状态 + 进度 + 下载 + 重试 + 取消在 UI 可用；空态/加载态/错误态与既有约定一致。证据：`modules/jobs/schema/jobs.json`；`renderer/jobs-result-center.test.tsx`（9 例，渲染真实 `jobs.json`）。
-- [x] **C3 体验与测试收敛**：中英文、浅色/深色、可访问性；前端交互级测试落地；`I-038-013` 关闭；全量回归绿。证据：i18n 双目录 1220 键对齐；主题 token 整页断言；`jobs-batch-export.test.tsx`（R3 遗留 4 例）；`job-result-download.test.ts`（`I-038-013` 单源守卫）；vitest 117 files / 1455 tests 全绿 + `go test ./...` 全绿。
+- [x] **C3 体验与测试收敛**：中英文、浅色/深色、可访问性；前端交互级测试落地；`I-038-013` 关闭；全量回归绿。证据：i18n 双目录键数对齐（含 `error.job*` 写面错误键）；主题 token 整页断言；`jobs-batch-export.test.tsx`（R3 遗留 4 例）；`job-result-download.test.ts`（`I-038-013` 单源守卫）；`renderer/jobs-result-center.test.tsx`（10 例，含 exhausted-failed 判别行与 API messageKey 本地化例）；vitest 117 files / 1458 tests 全绿 + `go test ./...` 全绿。
 - [ ] **C4 R4 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R4 检查点可投影。
 
 ## 审计模式（P-002 实施前确定）
@@ -60,11 +60,16 @@ R1～R3 已冻结并交付：契约归本地（方案 B，ADR-0022 冻结）、`
 | I-038-016 | non-blocking | 结果过期后的呈现与「下载」入口的失效语义（410 `JOB_RESULT_EXPIRED` 在 UI 上的呈现） | C2 | R4 前 | 对照既有错误呈现约定 | **verified** | — | 由 `jobToMap` 派生 `downloadable`（仅 `succeeded`）关闭：过期态按钮禁用，410 仅在直接访问 URL 时兜底。见 `D-001` §4 |
 | I-038-013 | non-blocking | 导出文件名/格式与两个导出入口的 UI 文案一致性 | C3 | R4（C3） | 对照同步导出与异步导出的命名/格式 | **verified** | — | 唯一实现 `apps/web/src/lib/job-result-download.ts`（CSV 用服务端 `fileName`，否则 JSON），R3 组件与渲染器分支共用；守卫 `job-result-download.test.ts`（4 例） |
 
-R3 已关闭的 `I-038-011`/`012` 不再重复登记；`I-038-013` 已由本目标 C3 关闭为 `verified`；`I-038-006` 保持 `deferred · non-blocking`；`I-038-010`（导航与 i18n 键位）已由本目标 C3 承接（双目录键集合对齐 1220/1220，`schema-keys.structural` + 能力声明 guard 全绿）。
+R3 已关闭的 `I-038-011`/`012` 不再重复登记；`I-038-013` 已由本目标 C3 关闭为 `verified`；`I-038-006` 保持 `deferred · non-blocking`；`I-038-010`（导航与 i18n 键位）已由本目标 C3 承接（双目录键集合对齐，`schema-keys.structural` + 能力声明 guard 全绿）。
 
 ## 审计意见状态
 
-尚无审计条目（C4 待跑：self + grok build independent，模式 `cross`）。
+| A-ID | source | verdict | 开放 required | 备注 |
+|------|--------|---------|---------------|------|
+| `A-001` | self | **pass** | 0 | 4 recommended（F-001 门禁可判别性、F-002 状态列口径、F-003 自动刷新前提、F-004 轮询取舍） |
+| `A-002` | independent（grok-4.6 · high · `/audit`） | **pass** | 0 | 4 recommended（F-001 门禁可判别性残余、F-002 客户端 error.job* 目录、F-003 前端夹具 attempt 预算、F-004 文档索引漂移） |
+
+响应与闭合见 `03-audit/A-003-*.md`。
 
 ## 父目标
 
@@ -76,6 +81,7 @@ R3 已关闭的 `I-038-011`/`012` 不再重复登记；`I-038-013` 已由本目�
 
 ## 备注
 
-- `progress: 0/4` 只由上方 4 个显式检查点派生；不放行阶段、不关闭 finding、不覆盖 status。
+- `progress: 3/4` 只由上方 4 个显式检查点派生；不放行阶段、不关闭 finding、不覆盖 status。
 - 本目标是**最后一个实现阶段**；R5 只做证据、审计与关门。
-- `I-038-014` 是结构选型，按用户指令属**关键决策**，须询问用户（不得静默）。
+- `I-038-014` 是结构选型，按用户指令属**关键决策**，不得静默——已由用户 P-004 裁决为方案 A（`D-001` §0）。
+- 全量回归数字以最终命令输出为准（`go test ./...` 全绿；vitest 117 files / 1458 tests），不在多处复制历史计数。

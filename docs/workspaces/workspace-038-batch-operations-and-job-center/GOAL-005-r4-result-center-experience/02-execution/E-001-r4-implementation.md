@@ -70,7 +70,7 @@ version: 0.1.0
 | `go test ./...`（apps/api） | **全绿**（含 `internal/jobs`、`internal/handler`、`internal/composition`、`kernel`、`modules/jobs`） |
 | `npm run typecheck`（tsc -b + e2e tsconfig） | exit 0 |
 | `npm run build`（vite） | exit 0 |
-| `npm test`（vitest） | **117 files / 1455 tests 全绿**（R3 基线 114/1440 → +3 files / +15 tests） |
+| `npm test`（vitest） | **117 files / 1458 tests 全绿**（R3 基线 114/1440；含 A-003 响应新增的判别行与本地化例） |
 
 **新增测试覆盖**
 
@@ -107,9 +107,13 @@ version: 0.1.0
 | `ea6e4006` | R4 C1 后端写面（actions/handler/provider/profile/composition + 后端测试） |
 | `f1351534` | R4 C2 前端结果中心（jobs.json/下载助手/渲染器/自动刷新/i18n/夹具） |
 | `bafb766f` | R4 C3 交互级与单源测试（3 个新测试文件） |
+| `ab215ebc` | 自审 F-001 加固（门禁可判别性 + 嵌套守卫） |
+| `b44c5ea6` | C4 self 审计落盘（`A-001` + grok 任务书） |
+
+> 后续 A-003 响应（独立审计 F-001～F-004 闭合）的 checkpoint 与最终全量回归计数在 `A-003` 与 `03-audit.md` 登记。
 
 ### 6. 未做（移交 C4）
 
-- **未**执行审计：C4 待跑（self + grok build independent，模式 `cross`）。
-- **未**投影 Root R4 检查点（Root 仍 `active · 3/5`）。
+- **未**投影 Root R4 检查点（Root 仍 `active · 3/5`；须待 C4 审计闭合后）。
 - **未**在真实浏览器会话验证（R5 退出矩阵/自动化回归承接）。
+- C4 的 independent 腿已由 grok build 执行并落盘为 `A-002`（pass，0 required + 4 recommended）；响应见 `A-003`。
