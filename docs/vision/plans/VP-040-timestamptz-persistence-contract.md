@@ -1,0 +1,116 @@
+---
+doc_type: vision-plan
+id: VP-040-timestamptz-persistence-contract
+title: DB 时间列 timestamptz 持久化合同
+status: planned
+vision_ref: schema-ui-core-admin-foundation@0.4.0
+lead_workspace:
+created: 2026-09-19
+updated: 2026-09-19
+version: 0.1.0
+parent: null
+---
+
+# VP-040 · DB 时间列 timestamptz 持久化合同
+
+## 状态、激活与关门门禁
+
+| 项 | 值 |
+|-----|-----|
+| status | **`planned`**（2026-09-19 · v0.1.0 · 0 区 · **停放至 VP-039 波次之后**） |
+| 组合位置 | **架构分支 · C1**（`RES-T03-tz` / `RT-T03`）；承接 VP-035 标为「现在修」、因当时红线禁止改 schema 而只登记的时间列合同 |
+| 计划阶段 Vision Review | [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md) self `pass`（0 required；本 VP 为同审查的停放意图） |
+| 激活门禁 | **硬门禁**：不得在 [VP-039](VP-039-version-maintenance-diagnostics.md) 仍为 `planned` 或 `active` 时激活，**除非用户书面改序**。此外须：架构类 freshness、方言物理类型（`I-040-001`）在激活前至少有默认候选、激活就绪 self Review、slug 确认。**本文件不是激活许可。** |
+| 基础设施边界 | 不消耗 A3 多实例、Redis、MQ、搜索引擎 trigger；不引入 ORM / 第三库；不重开 VP-013 方言决策 |
+| 与 VP-039 | **正交、串行**。用户 2026-09-19 裁决：先 VP-039，本 VP 本波之后再激活；禁止把 schema 迁移并进维护提示 VP |
+
+## 用户已裁决（2026-09-19 · P-004）
+
+| 项 | 裁决 |
+|----|------|
+| 结构 | **另立本 VP**，不并入 VP-039，不塞 VP-010 |
+| 激活时机 | **VP-039 波次之后**（VP-039 `closed` 或用户书面改序） |
+| 方言物理类型 | **未冻结**（`I-040-001`）；SQLite 无真 `timestamptz`，不得把「改一列类型」当成已验证方案 |
+
+## 意图
+
+Admin 时区 / 数字 / 货币**展示与输入**已由 VP-020 交付，但持久化层时间列仍普遍为 SQLite 兼容的 `INTEGER` epoch。VP-035 R2/R3 核对：`apps/api` 内 `timestamptz` 命中 0；`RT-T03` 保持 `registered`。这不是符合性漏做（从未写入已交付分母），而是架构分支未立项的持久化合同。
+
+本 VP 冻结并交付 **Store 时间列合同**：生产权威 PostgreSQL 使用 `timestamptz`（或与之合同平等的物理类型）；SQLite 内嵌默认必须合同平等、不得残缺；双方言走同一不可变迁移台账；handler / 模块公共契约继续只打本模块 Repository，禁止把驱动时间类型泄漏进公共面。
+
+本 VP 是架构合同，不是 Admin 时区 UX 重做，也不是 PITR / 多实例 / ORM。
+
+## 首波范围与边界
+
+| 范围 | 本 VP 首波 | 不在本 VP |
+|------|-----------|-----------|
+| 合同 | 时间列逻辑语义（UTC 绝对时刻）、PG 物理类型、SQLite 对等物理类型、读写编解码 | 把 SQLite 假装成有原生 `timestamptz`；第三库 |
+| 迁移 | 纳入首波分母的既有 `*_at` / 过期类时间列，双方言 checksum 台账可 apply | 一次性改所有 INTEGER（含金额、开关、version、bot_id）；无回滚搬运器承诺须在 R1 显式声明 |
+| 代码面 | Store / 模块 Persistence 编解码与回归；公共契约不出现 `pgtype` / driver 时间类型 | 重开 VP-013 端口形状；把业务 handler 改成直接扫 `*sql.Tx` |
+| 与 VP-020 | 消费已交付的展示/输入时区合同；核对持久化时刻与展示时区不漂移 | 重做 locale 数字/货币；改用户时区偏好存储格式（除非 R1 证明必须） |
+| 基础设施 | 单进程 + 双方言基线 | Redis / MQ / 多实例 / KMS / PITR |
+
+## 与相邻 VP / 路线图的边界
+
+| VP / 方向 | 关系 |
+|-----------|------|
+| **VP-013** | **消费**双方言端口与全局 checksum 台账，**不重开** A1；不引入 ORM |
+| **VP-020** | 展示/输入已交付；本 VP 只补持久化层。漂移问题归本 VP 回归，不重开 VP-020 |
+| **VP-035** | 评估来源；本 VP 实施 C1，不重做 as-built 矩阵 |
+| **VP-039** | 产品面维护提示；时间列合同不进 039 退出分母 |
+| **VP-010** | 不是 as-designed 漏实现；若迁移中发现符合性文档分叉，转 VP-010 文档卫生 |
+| **VP-009** | 迁移安全/注入/备份面缺陷归 009 |
+| **RT-P05 / PITR** | 仍 gated；本 VP 只要求既有 dump/restore 路径在类型变更后仍能启动鉴权（范围由 R1 冻结） |
+
+## 方向级退出判据
+
+在同时满足下列方向时，本 VP **可以**有界或完整关门（证据必须在工作区目标内）：
+
+1. **合同冻结**：PG 物理类型、SQLite 对等物理类型、UTC 语义、NULL/零值、编解码、禁止泄漏进公共契约——均已书面冻结（`I-040-001`）。
+2. **分母迁移**：R1 冻结的时间列双方言均已迁移 + checksum；未纳入分母的 INTEGER（金额、flag、version 等）显式排除。
+3. **读写正确性**：写入的绝对时刻与读回一致；VP-020 时区展示不因存储形状改变而漂移；双方言回归（含至少一条 PG 路径）。
+4. **备份面有界核对**：在 R1 冻结范围内，既有 SQLite 快照 / PG dump 路径要么可升级后恢复，要么有书面 residual（无产品搬运器须点名）。
+5. **范围保持**：未引入 ORM / 第三库 / Redis / MQ / 多实例；未把 Admin 维护提示或业务域混入。
+6. **证据与审计**：退出矩阵与必要独立意见已落盘，开放 required = 0，并经用户确认关门。
+
+## 纲领路线图（实现层由 `/govern` 承接；**激活前不建区**）
+
+```text
+R1 合同与分母冻结：方言物理类型、列清单、零值、备份 residual
+  → R2 双方言迁移 + Store 编解码
+  → R3 读写/时区回归 + 备份有界核对 + 证据与关门
+```
+
+## 信息需求（P-005）
+
+| id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
+|----|--------------|------|----------|----------|------------------|------|-------------|-------------|
+| I-040-001 | SQLite 用什么物理类型与 PG `timestamptz` 合同平等？（TEXT RFC3339 / INTEGER epoch+约定 / 其他） | required | 阻断 R1 冻结与 R2 迁移；**建议激活前有默认候选** | R1 | 对照 VP-013 合同平等原则与现有 INTEGER 读写；禁止「PG 改了、SQLite 残缺」 | open | — | 未冻结 |
+| I-040-002 | 哪些列进首波分母？`created_at`/`updated_at`/`expires_at`/`deleted_at`/`archived_at` 是否全覆盖？金额/flag/version 如何排除？ | required | 阻断 R1/R2 | R1 | 全仓扫描 INTEGER 时间列 vs 非时间 INTEGER | open | — | — |
+| I-040-003 | 存量库升级策略与备份 residual？无产品搬运器是否再次声明？ | required | 阻断 R1 方案与判据 4 | R1 | 对照 VP-013/016 dump 路径；用户书面接受或不接受 residual | open | — | — |
+| I-040-004 | 与 VP-020 展示合同的回归矩阵（会话时区、UTC 存储） | required | 阻断 R3 | R1 | 复用 VP-020 验收用例，补存储形状变更对照 | open | — | — |
+| I-040-005 | 激活前架构类 freshness；且 VP-039 已 `closed` 或用户书面改序 | required | **阻断激活** | 激活前 | `/vision` 核对 VP-039 status + 五域 freshness | open | 用户可书面改序 | 不阻断 `planned` |
+
+## 工作区绑定
+
+| workspace_id | root_goal | role | joined | notes |
+|--------------|-----------|------|--------|-------|
+| — | — | delivery | — | `planned` · 0 区 · **停放**；VP-039 波次后再交 `/vision` 激活 |
+
+## 关门记录
+
+（仅 `closed` / `abandoned` 时填写。）
+
+| date | outcome | summary | evidence_links | residuals |
+|------|---------|---------|----------------|-----------|
+| — | — | — | — | — |
+
+## 规划修订短史
+
+| date | change |
+|------|--------|
+| 2026-09-19 | 初创 `planned` v0.1.0 · 0 区 · 停放。用户确认：C1 另立本 VP，不并入 VP-039，不塞 VP-010；激活硬门禁 = VP-039 波次之后（或书面改序）。计划阶段 self = [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md)。 |
+
+## 声明
+
+本文件是已确认的 Vision Plan 意图，不是 Goal 五件套、实现事实或 progress 权威。**不得**把 `planned` 当成可实施许可。激活前必须关闭 `I-040-005`。

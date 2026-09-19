@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-19
 parent: null
-version: 0.92.0
+version: 0.94.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -56,6 +56,8 @@ version: 0.92.0
 | 36 | [VP-036-admin-command-palette](plans/VP-036-admin-command-palette.md) | Admin 功能 · **全局检索与 Command Palette**：以 `SearchableItem` / provider 接缝提供权限安全的页面、导航项与声明式动作检索；快捷键、键盘操作、直接跳转与导航分组联动。实体全文搜索不进首波。 | 继承 VP-034 导航分组、VP-003/004 模块贡献与 VP-005/007 体验基线；与 VP-009/010 正交；`RT-X01`/`RT-X02`、Redis/MQ/多实例仍 gated | **closed**（2026-09-14 · v0.3.0；VRev-093 self `pass`；七条方向级退出判据 verified；lead: `workspace-036-admin-command-palette`；Root `GOAL-001-admin-command-palette` done 4/4；open required = 0） |
 | 37 | [VP-037-admin-workflow-continuity](plans/VP-037-admin-workflow-continuity.md) | Admin 功能 · **工作流连续性与安全反馈**：Saved Views（用户级列表视图保存与恢复）+ 未保存变更保护 + 统一 Toast/错误恢复 + 通用列表页视觉/筛选体验收敛；不承载实体全文检索、批量结果中心或业务域。 | 继承 VP-034 导航分组、VP-036 发现入口、VP-005/007 体验基线与 VP-012 横切契约；激活前须 Admin 类 freshness / VP-008 `go` 消费有效性；与 VP-009/010 正交；R6 不改变 shell、查询/重置合同或 Saved View 存储格式 | **closed**（2026-09-18 · v1.7.0 · 用户书面确认 · VRev-096 self `pass`；lead: `workspace-037-admin-workflow-continuity`；Root `GOAL-001-admin-workflow-continuity` **done · 6/6**；R1～R6 全部 done；非纲领整改子目标 GOAL-008/009/010/011 均 done · 4/4；open required = 0；关门后残余已统一收口/登记，见下节「未决项统一登记」） |
 | 38 | [VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md) | Admin 功能 · **批量操作与异步结果中心**：把 VP-012 显式排除的「通用 Job 管理页」与 roadmap「体验增强」未立项的「批量结果中心」收口为有界产品能力——已注册 Job 种类的列表/详情/进度/结果读取，**至少一条**真实批量操作以异步 Job 承接（202 + jobId），结果中心体验与权限/Profile 过滤；不重开 VP-012，不改同步 `batch-delete` 已交付语义。 | 继承 VP-012 Job 六态运行时与 `wallet.reconcile` 先例、VP-011 批量/导出导入面、VP-037 统一反馈与列表基线、VP-005/007 体验基线；**`I-038-004` 用户 2026-09-19 裁决 = 新建 `admin.jobs` 进 admin 默认集（Profile 内容扩展，不改装配语义，不暂挂 `go`）** + Admin 类 freshness PASS；与 VP-009/010 正交；Redis/MQ/多实例/搜索引擎仍 gated | **closed**（2026-09-19 激活并**同日关门** · v1.0.0 · **用户书面确认**；计划 self = VRev-098 `pass` · 激活 self = VRev-099 `pass` · 补做关门 Vision Review = VRev-100 self `conditional` → 报告内响应 `fixed` 后开放 required = 0；lead: `workspace-038-batch-operations-and-job-center` · Root `GOAL-001-batch-operations-and-job-center` **`done · 5/5`**；freshness `0c29c08` → `7e5ce891` PASS；关门后残余登记于「未决项统一登记」） |
+| 39 | [VP-039-version-maintenance-diagnostics](plans/VP-039-version-maintenance-diagnostics.md) | Admin 功能 · **版本更新、维护提示与诊断报告**：承接 VP-012「运行时管理 UI 可后置」——维护/降级/只读持久横幅 + 版本身份/升级入口 + 已交付探活/就绪/状态字段的轻量诊断摘要。不重开 VP-012/015/025。 | 继承 VP-012 四模式写门禁与 Host 投影、VP-007 locale、VP-037 统一反馈、已有 `admin.system-monitoring` 状态行；**`I-039-004` 接受默认候选（不新模块、不改默认集，不暂挂 `go`）**；与 VP-009/010 正交；不并入 C1 | **active**（2026-09-19 · v0.2.0；计划 self = VRev-101 `pass` · 激活 self = VRev-102 `pass`；lead `workspace-039-version-maintenance-diagnostics`；freshness `7e5ce891` → `6197e802` PASS） |
+| 40 | [VP-040-timestamptz-persistence-contract](plans/VP-040-timestamptz-persistence-contract.md) | 架构 · **C1 DB 时间列 timestamptz 持久化合同**（`RES-T03-tz` / `RT-T03`）：PG 生产权威时间类型 + SQLite 合同平等物理类型 + 纳入分母的时间列双方言迁移；不引入 ORM/第三库。 | 继承 VP-013 双方言端口与 checksum 台账、VP-020 展示/输入时区合同、VP-035 评估；**激活硬门禁 = VP-039 波次之后**（或用户书面改序）；与 VP-009/010 正交；不消耗 A3/Redis/MQ | **planned**（2026-09-19 · v0.1.0 · 0 区 · **停放**；计划 self = VRev-101 `pass`；`I-040-001` SQLite 物理类型未冻结） |
 
 ## 组合门闩（用户 2026-08-08）
 
@@ -255,7 +257,7 @@ version: 0.92.0
 |----|----|------|------|------|
 | RT-T01 | 请求级 ID | VP-012 | **delivered** | |
 | RT-T02 | 分布式 ID / 时间权威 | 应用侧 UUID/随机 token | **trigger-gated** | 多实例写入热点时再评 |
-| RT-T03 | 时区在持久化层的合同 | locale 在 Admin 功能面；DB `timestamptz` 未做 | **registered** | Admin 面「时区/数字/货币」= [VP-020](plans/VP-020-timezone-number-currency-formatting.md)（`closed` v0.3.0 · 2026-08-27）；DB `timestamptz` 仍属架构、本行保持 registered |
+| RT-T03 | 时区在持久化层的合同 | locale 在 Admin 功能面；DB `timestamptz` 未做 | **planned** | Admin 面「时区/数字/货币」= [VP-020](plans/VP-020-timezone-number-currency-formatting.md)（`closed` v0.3.0 · 2026-08-27）；DB 合同 = [VP-040-timestamptz-persistence-contract](plans/VP-040-timestamptz-persistence-contract.md) `planned`（停放至 VP-039 波次之后；SQLite 物理类型 `I-040-001` 未冻结） |
 
 ### 9. 出站消息
 
@@ -310,18 +312,18 @@ A7  优雅停机 / 连接排空合同（RT-D02 → VP-021 closed v0.3.0，2026-0
     单进程基线先行，不与 A3 绑定）
 ```
 
-**新增候选（未立项；2026-09-10 VP-035 R3 登记）**：
+**新增候选 C1（2026-09-10 VP-035 R3 登记 → 2026-09-19 立项停放）**：
 
 ```text
 C1  DB 时间列 timestamptz 持久化合同（RES-T03-tz）
-    — 现状：`apps/api` 内 `*.sql` 中 `timestamptz` 命中 0，时间列仍 INTEGER；
-      属真实技术债但涉及 schema 迁移，本 VP 红线禁止改 schema，故只登记
-    — 触发/去向：由 `/vision` 在路线图 editorial 时决定是否立项
+    — 现状：`apps/api` 时间列仍 INTEGER；`timestamptz` 命中 0
+    — 承接 = [VP-040-timestamptz-persistence-contract](plans/VP-040-timestamptz-persistence-contract.md) `planned`
+      （停放：不得在 VP-039 仍为 planned/active 时激活，除非用户书面改序）
 ```
 
 **刻意后置**：MongoDB、ORM、Redis、消息队列、搜索引擎、K8s、SMS。它们是部署或产品触发的后果，或已否决的技术选型。
 
-架构分支最近一拍（已关门）：**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `closed` v0.3.0**（2026-09-09 激活 v0.2.0 · VRev-087 self `pass` · lead `workspace-035-foundation-architecture-health`；R1 分母冻结、R2 as-built 矩阵、R3 业界对照 + 缺口分类均已完成；R4 路线图重述与文档卫生 `active · 3/5`，judgment 1～5 已达成；不消耗 A3/Redis/MQ trigger）。上表已按本 VP 的评估结果从「未冻结建议顺序」重述为「已交付序列 + 唯一未触发项 A3」，不再保留草案字样。A3 余项仍 trigger-gated。
+架构分支最近一拍（已关门）：**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `closed` v0.3.0**（2026-09-09 激活 v0.2.0 · VRev-087 self `pass` · lead `workspace-035-foundation-architecture-health`；R1 分母冻结、R2 as-built 矩阵、R3 业界对照 + 缺口分类均已完成；R4 路线图重述与文档卫生已随 VP 关门完成）。A3 余项仍 trigger-gated。C1 已于 2026-09-19 立项为 [VP-040](plans/VP-040-timestamptz-persistence-contract.md) `planned` **停放**（待 VP-039 波次之后激活）。
 
 ---
 
@@ -362,7 +364,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 **体验增强**
 
-| 全局搜索 / Command Palette、Saved Views、批量结果中心、未保存保护、统一 Toast/错误恢复、版本与维护提示。全局搜索若需要专用引擎，拉动架构 RT-X01。**收口进度（2026-09-19）**：Command Palette = VP-036 `closed`；Saved Views / 未保存保护 / 统一反馈 = VP-037 `closed`；**批量结果中心 = VP-038 `closed` v1.0.0（2026-09-19 交付并关门）**；剩余未立项 = 版本与维护提示。
+| 全局搜索 / Command Palette、Saved Views、批量结果中心、未保存保护、统一 Toast/错误恢复、版本与维护提示。全局搜索若需要专用引擎，拉动架构 RT-X01。**收口进度（2026-09-19）**：Command Palette = VP-036 `closed`；Saved Views / 未保存保护 / 统一反馈 = VP-037 `closed`；批量结果中心 = VP-038 `closed` v1.0.0；**版本与维护提示 = [VP-039](plans/VP-039-version-maintenance-diagnostics.md) `active` v0.2.0**（当前组合焦点）。体验增强清单无剩余未立项项。
 
 **当前一拍（已交付并关门）为 [VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md)**（2026-09-19 激活并**同日关门** · **`closed` v1.0.0** · 用户书面确认 · Root `GOAL-001-batch-operations-and-job-center` `done · 5/5` · 判据 1～7 达成 · R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass` · 补做关门 Vision Review = [VRev-100](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md)）：把 VP-012 显式排除的「通用 Job 管理页」与本节未立项的「批量结果中心」收口为有界产品能力——已注册 Job 种类的可见性与结果读取 + **至少一条**真实批量操作以异步 Job 承接 + 结果中心体验；实体全文检索、Saved Views 重做、新业务域、组织/权限域与 Redis/MQ/多实例不进入本波。**计划 self = VRev-098 `pass` · 激活 self = VRev-099 `pass`（0 required）**；lead `workspace-038-batch-operations-and-job-center`（Root `GOAL-001-batch-operations-and-job-center`），2026-09-19 用户确认激活并由 `/govern` 开区。`I-038-004` 用户 P-004 裁决 = 新建 `admin.jobs` 进 admin 默认集（**Profile 内容扩展，不改装配语义，不暂挂 `go`**）；Admin 类 freshness `0c29c08` → `7e5ce891` **PASS**。
 
@@ -370,7 +372,7 @@ typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、En
 
 Admin 功能上一拍：**[VP-019-iam-recovery](plans/VP-019-iam-recovery.md)（IAM：密码策略 / 邀请入职 / 自助恢复状态机）——2026-08-25 激活并同日全链交付，2026-08-26 `closed` v0.3.0（用户书面确认；Root done 4/4；关后 A-001/A-002 pass）**；硬前置 = VP-018 已校验邮箱（已 `closed` v1.0.0）+ VP-017 运输（已按现行分母再 `closed` v0.5.0）。不要把恢复状态机打进 VP-018。再下一截（已交付并关门）：**[VP-020-timezone-number-currency-formatting](plans/VP-020-timezone-number-currency-formatting.md) `closed` v0.3.0**（2026-08-26 激活并开区 · 2026-08-27 关门 · 时区/数字/货币格式语义，基架能力剩余 #5 交付完成；lead `workspace-020-timezone-number-currency-formatting` 结项；关门审计双腿 pass）；其后非门控未立项 = 配置包导出/diff/dry-run/导入（基架能力剩余 #3 · **已由 [VP-025](plans/VP-025-config-export-diff-dryrun-import.md) 交付并 `closed`**）与体验增强（全局搜索 / Command Palette 等）；组织/部门/岗位 + 数据权限 `org`（#2）已于 2026-08-29 按用户指示降权为 **trigger-gated**（见「基架能力剩余」）。
 
-Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md) `closed` v1.0.0**（2026-09-19 激活 · **2026-09-19 关门** · **用户书面确认** · workspace-038 Root `done · 5/5` · 方向级退出判据 1～7 达成 · R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`（开放 required = 0）· 浏览器回归双 profile 全绿；关门 Vision Review 于同日**补做** = [VRev-100](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional`（2 required 经报告内响应 `fixed`，响应后开放 required = 0）；关门后残余登记于本文件「未决项统一登记」节）。其前一拍 **[VP-037-admin-workflow-continuity](plans/VP-037-admin-workflow-continuity.md) `closed` v1.7.0**（2026-09-16 激活 · 2026-09-18 关门 · 用户书面确认 · VRev-096 self `pass` · workspace-037 Root `done · 6/6` · 七条方向级退出判据 verified · 关门后残余经 workspace-010 `GOAL-043` 统一收口）。**[VP-036-admin-command-palette](plans/VP-036-admin-command-palette.md)** 已于 2026-09-14 关门（`closed` v0.3.0；VRev-093 self `pass`；Root `GOAL-001-admin-command-palette` done 4/4）。**[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) `closed` v0.4.0**（2026-09-09 · 用户书面确认 · VRev-085 self `pass` · workspace-034 Root `done` 5/5；residual = Dashboard 现行 `workspace` 组 / GOAL-003）。**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `closed` v0.3.0**（2026-09-09 激活 v0.2.0 · 2026-09-10 关门 · VRev-089 self `pass`；架构分支评估，不属 Admin 功能交付）。上一拍 [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) 已 `closed` v0.3.0；VP-031 已 `closed`。**当前 Admin 功能分支无 active 交付 VP**；体验增强清单仅剩「版本与维护提示」未立项；基架能力剩余 #4（文件扫描 / 隔离策略）仍未立项；组织/部门/岗位仍 trigger-gated。
+Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md) `closed` v1.0.0**（2026-09-19 激活 · **2026-09-19 关门** · **用户书面确认** · workspace-038 Root `done · 5/5` · 方向级退出判据 1～7 达成 · R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`（开放 required = 0）· 浏览器回归双 profile 全绿；关门 Vision Review 于同日**补做** = [VRev-100](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional`（2 required 经报告内响应 `fixed`，响应后开放 required = 0）；关门后残余登记于本文件「未决项统一登记」节）。其前一拍 **[VP-037-admin-workflow-continuity](plans/VP-037-admin-workflow-continuity.md) `closed` v1.7.0**（2026-09-16 激活 · 2026-09-18 关门 · 用户书面确认 · VRev-096 self `pass` · workspace-037 Root `done · 6/6` · 七条方向级退出判据 verified · 关门后残余经 workspace-010 `GOAL-043` 统一收口）。**[VP-036-admin-command-palette](plans/VP-036-admin-command-palette.md)** 已于 2026-09-14 关门（`closed` v0.3.0；VRev-093 self `pass`；Root `GOAL-001-admin-command-palette` done 4/4）。**[VP-034-nav-group-collapsible](plans/VP-034-nav-group-collapsible.md) `closed` v0.4.0**（2026-09-09 · 用户书面确认 · VRev-085 self `pass` · workspace-034 Root `done` 5/5；residual = Dashboard 现行 `workspace` 组 / GOAL-003）。**[VP-035-foundation-architecture-health](plans/VP-035-foundation-architecture-health.md) `closed` v0.3.0**（2026-09-09 激活 v0.2.0 · 2026-09-10 关门 · VRev-089 self `pass`；架构分支评估，不属 Admin 功能交付）。上一拍 [VP-033-telegram-operator-console](plans/VP-033-telegram-operator-console.md) 已 `closed` v0.3.0；VP-031 已 `closed`。**当前 Admin 功能分支 active 交付 VP** = **[VP-039-version-maintenance-diagnostics](plans/VP-039-version-maintenance-diagnostics.md) `active` v0.2.0**（lead `workspace-039-version-maintenance-diagnostics`；VRev-102 `pass`；`I-039-004`/`I-039-005` verified）。基架能力剩余 #4（文件扫描 / 隔离策略）仍未立项；组织/部门/岗位仍 trigger-gated。架构 C1 已另立 [VP-040](plans/VP-040-timestamptz-persistence-contract.md) `planned` **停放**，本波不激活。
 
 ---
 
@@ -409,7 +411,7 @@ Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-0
 
 ---
 
-**当前组合焦点**：**无 active 交付 VP**（Admin 功能分支）。最近关门 = **[VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md)**（2026-09-19 激活并**同日关门** `closed` v1.0.0；用户书面确认 · 判据 1～7 达成 · Root `GOAL-001-batch-operations-and-job-center` **`done · 5/5`** · R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass` · 补做关门 Vision Review = [VRev-100](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional` → 响应后开放 required = 0）—— 承接 VP-012 显式排除的「通用 Job 管理页」与本节「体验增强」的「批量结果中心」（`I-038-004` P-004 裁决 = 新建 `admin.jobs` 进 admin 默认集，Profile 内容扩展、不暂挂 `go`；freshness `0c29c08` → `7e5ce891` PASS）。其前一拍 = **[VP-037-admin-workflow-continuity](plans/VP-037-admin-workflow-continuity.md)**（2026-09-18 `active → closed` v1.7.0；lead `workspace-037-admin-workflow-continuity`；用户书面确认 · VRev-096 self `pass`；Root `GOAL-001-admin-workflow-continuity` **done · 6/6**；七条方向级退出判据 verified；四个非纲领整改子目标 GOAL-008/009/010/011 均 done 4/4），其前为 **[VP-036-admin-command-palette](plans/VP-036-admin-command-palette.md)**（2026-09-14 `active → closed` v0.3.0；lead `workspace-036-admin-command-palette`；VRev-093 self `pass`；Root `GOAL-001-admin-command-palette` done 4/4；七条方向级退出判据 verified）（VP-035 已于 2026-09-10 `closed` v0.3.0）。持续程序仍为 [VP-009](plans/VP-009-production-hardening.md) 与 [VP-010](plans/VP-010-design-implementation-conformance.md)；组织/部门/岗位、实体全文检索与架构 gated 能力仍需按 `/vision` 结构化选型另行立项。
+**当前组合焦点**：**[VP-039-version-maintenance-diagnostics](plans/VP-039-version-maintenance-diagnostics.md) `active` v0.2.0**（lead `workspace-039-version-maintenance-diagnostics`；VRev-101 planned `pass` + VRev-102 激活 `pass`；freshness `7e5ce891` → `6197e802` PASS；`I-039-004` 默认候选已接受）。架构 C1 **[VP-040](plans/VP-040-timestamptz-persistence-contract.md) `planned` 停放**。最近关门 = VP-038 `closed` v1.0.0。持续程序 VP-009 / VP-010。组织/部门/岗位、实体全文检索、文件扫描与 A3/Redis/MQ 仍 gated。
 
 > 2026-09-18 当前投影修订：VP-037 为 **`closed` v1.7.0**；Root 为 **`done · 6/6`**，R5 `GOAL-006` 为 `done · 4/4`，R6 `GOAL-007` 为 `done · 8/8`；关门依据 = 用户书面确认（`GOAL-006` `D-002`，前置条件为整改子目标 `GOAL-011` 修正两个分页/文案缺陷）+ `VRev-096` self `pass`。仍开放项见下节统一登记。
 
@@ -419,7 +421,7 @@ Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-0
 
 > **用途**：本区是"已交付范围之外的未决事项"的**统一登记处**——不是待办清单、不是承诺、也不代表已验证。目的只有一个：日后任何人对某个未实现或有界接受的能力有疑问时，能在这里一眼看到**它是什么、为什么不现在做、什么条件下做、谁负责、证据在哪**，而不必翻遍各工作区台账。
 > **维护约定**：新增或闭合任何残余/悬置/触发项时**必须同步本节**（与 goal-tree、`03-audit` 台账同级要求）。登记只描述现状与触发条件，禁止把 deferred/recommended 写成已验证或已承诺。
-> **最近更新**：2026-09-19（① VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`，后于同日交付并关门为 `closed` v1.0.0，见⑥）**；② R4 结果中心三条残余经用户裁决移交 `[workspace-010] GOAL-044` 修复后登记为 `fixed`；③ 新增「本地扩展登记」登记项；④ VP-038 R5 关门审计的 e2e fresh-seed 顺序契约登记为 bounded residual，jobs 结果中心缺端到端覆盖一项经用户指令补测后转 `fixed`；⑤ `[workspace-010] GOAL-045`（W33）：roles 页导出触发面补齐 `fixed`、新增「列表页 actions 左侧插槽」本地扩展并补全「本地扩展清单」表；⑥ VP-038 关门 Vision Review 于同日**补做**（[VRev-100](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional`）：修正本文件 4 处未随关门同步的陈旧投影与 VP-038 台账关门记录缺失（`V-F127`/`V-F128` 经报告内响应 `fixed`），`V-F130`（`[workspace-038] GOAL-003` 的 `progress` 投影不一致）经用户授权做最小修正；⑦ 用户报告「导出所选」报「未找到」：诊断为 operator config 漏 `admin.jobs`（路由未挂载）+ mvp/demo 同类形态，经 `[workspace-010] GOAL-046`（W34）`fixed`，并在本节新增该缺陷行。其余条目不变）。
+> **最近更新**：2026-09-19（⑨ VP-039 `planned → active` v0.2.0 + workspace-039 开区，VRev-102 `pass`；⑧ 用户确认选项 1 立项 VP-039/VP-040。①–⑦ 见同日 VP-038 关门与残余收口记录）。
 
 ### 一、有界残余（B 类：实现已交付并验证，剩覆盖/文档加固）
 
@@ -464,7 +466,8 @@ Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-0
 | 新业务域 | **未立项**；无新触发不预开第二域 | 真实业务需求 | `/vision` | roadmap「业务域」 |
 | Redis / MQ / 多实例（+ 第二持久化栈） | 架构 **A3** / `RT-Q03`，架构骨架**唯一未触发项** | 多实例部署，或 C 端业务域模块正式接入同进程 | 架构分支 + `/vision` | roadmap「基架能力剩余」；`architecture/cache-redis-seam-and-track.md` |
 | 文件扫描 / 隔离**策略**（执行器见 `RT-S05`） | 基架能力剩余 #4，**未立项** | 真实需求 | `/vision` | roadmap「基架能力剩余」#4 |
-| 版本与维护提示 | roadmap「体验增强」清单项，**未立项**（VP-038 承接的是同清单的批量结果中心，不含本项） | 新立 VP | `/vision` | roadmap「体验增强」 |
+| 版本与维护提示 | **已激活**：[VP-039-version-maintenance-diagnostics](plans/VP-039-version-maintenance-diagnostics.md) `active` v0.2.0 · lead `workspace-039-version-maintenance-diagnostics` · VRev-102 `pass` | 实现层 R1 冻结 | `/govern` | roadmap「体验增强」；VP-039 |
+| DB `timestamptz` 持久化合同（C1 / `RT-T03` / `RES-T03-tz`） | **已立项（停放）**：[VP-040-timestamptz-persistence-contract](plans/VP-040-timestamptz-persistence-contract.md) `planned` v0.1.0 · 0 区；激活硬门禁 = VP-039 波次之后（或用户书面改序）；`I-040-001` SQLite 物理类型未冻结 | VP-039 `closed` 或用户书面改序 | `/vision`（本波不激活） | roadmap 架构 C1；VP-040 |
 | 扩展接缝：typed domain event、Notification Transport、OIDC/SSO/SCIM、Approval Gate、Entitlement、多组织 context、SSE/WebSocket、外部连接器/Secret 产品面、自定义 metadata/tags、文件预览 | 全部 **trigger-gated**（SSE 注记：VP-033 用短轮询，**不**解除本行；Entitlement 注记：VP-031 只交付数字 Offer 本域，**不**解除本行） | 各自真实需求 | `/vision` | roadmap「扩展接缝」 |
 
 ## 单主线模块化策略
