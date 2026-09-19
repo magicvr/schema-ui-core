@@ -5,7 +5,7 @@ title: VP-038 Admin 批量操作与异步结果中心 · 关门审视（补做�
 source: self
 scope: VP-038-batch-operations-and-job-center · closeout（补做）/ chunk evidence / user confirmation / projection sync
 verdict: conditional
-open_required: 2
+open_required: 0
 status: recorded
 date: 2026-09-19
 auditor: /vision
@@ -75,3 +75,22 @@ version: 0.1.0
 ## 声明
 
 本意见不直接修改 Charter / VP / Goal status。required finding 的响应由 `/vision` 追加在本报告中；原 verdict 与 finding 原文不得改写。
+
+---
+
+## 响应（`/vision` · 2026-09-19 · append-only）
+
+原 verdict（`conditional`）与上方 finding 原文不改写。本条只追加响应与证据。
+
+| finding | level | 响应 | 证据 |
+|---------|-------|------|------|
+| `V-F127` | required | **fixed** | `roadmap.md` 4 处现行投影对齐为关门事实：① VP 台账行（L58）= `closed`（2026-09-19 激活并同日关门 · v1.0.0 · 用户书面确认 · Root `done · 5/5` · 补做关门 Vision Review = VRev-100）；② §三「体验增强 · 收口进度」（L365）= `批量结果中心 = VP-038 closed v1.0.0（2026-09-19 交付并关门）`；③ 「当前一拍」（L367）= 「已交付并关门」并附关门证据；④ 「当前组合焦点」（L412）= 「**无 active 交付 VP**（Admin 功能分支）」，最近关门改为 VP-038、VP-037 降为「其前一拍」。另在 §三「Admin 功能最近一拍」段（L373）与「最近更新」（L422）补记 VRev-100。全文件复核：除 §「未决项统一登记」的残余行与历史修订短史外，无其它 VP-038 陈旧投影 |
+| `V-F128` | required | **fixed** | `plans/VP-038-batch-operations-and-job-center.md`：① 「关门 Vision Review」门禁行改为「关门时未执行 → 2026-09-19 补做 = VRev-100」并保留「未以 Goal 审计冒充」的原始事实；② `## 关门记录` 占位行替换为真实行（date/outcome/summary/evidence_links/residuals，含 `E-001-r5-exit-matrix`、`A-002` independent、Root `00-meta` 链接与残余）；③ `## 规划修订短史` 追加关门行 + 同日台账补记行。**`status` 与 `version` 均未改动**（保持 `closed` · v1.0.0），补记行内显式声明「不改变 `status` 与 `version`」 |
+| `V-F129` | recommended | **fixed（由补做闭合）** | 本报告即补做的关门 Vision Review；VP 台账与 `workspaces.md`（workspace-038 行）同步登记「关门时未执行、同日补做」。流程建议（关门与 Vision Review 同事务）保留在 `V-F128`/本条文本内，供后续 VP 遵循 |
+| `V-F130` | recommended | **保持 open（不在本次响应范围内）** | 涉及 `docs/workspaces/workspace-038-…/GOAL-003-…/00-meta.md` 的 `progress` 与派生说明文本，属**已冻结**的 workspace-038 台账（用户约束：不重开 VP-038、不改该区台账正文）。本响应只把它登记到 `roadmap.md`、`workspaces.md` 与本报告，**不代改**；待用户裁决「授权最小投影修正」或「接受为有界残余」 |
+
+**响应后状态：`open required = 0`**（`V-F127`/`V-F128` 均 `fixed`）。`V-F130` 为 recommended，不阻断任何门禁。VP-038 保持 `closed` v1.0.0，Charter / Goal `status` 未被本响应改动。
+
+**附带修正（响应范围内同一台账）**：① `plans/VP-038-…md` L25「激活时 Vision Review」行的 VRev-099 链接文件名有误（`…-batch-operations-job-center-activation.md`，实际文件为 `…-batch-operations-and-job-center-activation.md`），已修正；② 全 `docs/vision/`（148 个 md）相对链接复核另发现 2 处历史报告断链（`reviews/VRev-089-vp035-close-out.md` 的 `../../plans/VP-009|VP-010`，正确路径为 `../plans/…`），已按**纯路径修正**修复（未改动任何 verdict / finding / 正文表述）。复核后 vision 目录相对链接断链 = 0。
+
+**响应边界**：本次响应的写入范围仅限愿景层文档（`roadmap.md`、`workspaces.md`、`reviews.md`、本报告、VP-038 台账的关门记录/门禁行/修订短史）；未触碰任何 Goal 五件套、workspace-038 台账正文、代码或 pinned 工件。

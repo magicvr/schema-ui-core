@@ -20,9 +20,9 @@ parent: null
 | status | **`closed`**（2026-09-19 · v1.0.0 · **用户书面确认关门**；lead `workspace-038-batch-operations-and-job-center`） |
 | 关门依据 | ① **用户书面确认**（2026-09-19，「确认 VP-038 关门」）；② 方向级退出判据 1～7 全部达成（逐条证据见 `[workspace-038] GOAL-006/02-execution/E-001-r5-exit-matrix.md`）；③ R5 cross 关门审计：self `A-001` `pass` + independent `A-002`（grok-build · grok-4.6 · high · `/audit`）`pass`，`A-003`/`A-004` 响应后**开放 required = 0**；④ 浏览器回归双 profile 全绿（mvp 16 passed / 5 skipped / 0 failed；admin **17 passed / 4 skipped / 0 failed**，含新增的 jobs 结果中心端到端用例）；⑤ Root `GOAL-001-batch-operations-and-job-center` 随之 `done · 5/5` |
 | 关门后残余 | 一条 bounded residual：**e2e fresh-seed 顺序契约**（挂具机制性观察，已修复并两向复验，登记于 `roadmap.md`「未决项统一登记」）；历史作业保留/清理（`I-038-006`）保持 `deferred · non-blocking`（责任人 `/vision`，触发 = 容量/保留期真实需求） |
-| 关门 Vision Review | **未执行**（关门依据为用户书面确认 + Goal 层 cross 审计）；如需愿景层独立审视可另行以 `/vision-audit` 提请——本条如实登记，不以 Goal 审计冒充 Vision Review |
+| 关门 Vision Review | 关门时**未执行**（关门依据为用户书面确认 + Goal 层 cross 审计；未以 Goal 审计冒充 Vision Review）→ **2026-09-19 补做**：[VRev-100](../reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional`（发现 `roadmap.md` 4 处未随关门同步的投影 + 本台账关门记录缺失，`V-F127`/`V-F128` 已在该报告响应节 `fixed`，响应后开放 required = 0）；如需愿景层**独立**审视仍可另行以 `/vision-audit` 提请 |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-037 之后的工作流连续性下一拍，也是 `roadmap.md`「体验增强」清单中「批量结果中心」的承接者 |
-| 激活时 Vision Review | 计划阶段 [VRev-098](../reviews/VRev-098-vp038-batch-operations-job-center-planned.md) self `pass`；激活就绪 [VRev-099](../reviews/VRev-099-vp038-batch-operations-job-center-activation.md) self `pass`；两条报告 open required = 0 |
+| 激活时 Vision Review | 计划阶段 [VRev-098](../reviews/VRev-098-vp038-batch-operations-job-center-planned.md) self `pass`；激活就绪 [VRev-099](../reviews/VRev-099-vp038-batch-operations-and-job-center-activation.md) self `pass`；两条报告 open required = 0 |
 | 激活门禁 | **已满足**：`I-038-004` 用户 P-004 裁决 = 方案 A（新建 `admin.jobs`，进入 admin 默认集；Profile 内容扩展，不暂挂 `go`）；`I-038-005` Admin 类 freshness **PASS**（`0c29c08` → `7e5ce891`）；用户确认 workspace/Root slug |
 | 基础设施边界 | 首波不消耗 Redis、MQ、多实例、外部队列或专用搜索引擎 trigger；不重开 VP-012（关门复核：区间内未实现/解除任何 gated 能力） |
 
@@ -125,7 +125,7 @@ R1 分母与契约冻结
 
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-09-19 | closed | 方向级退出判据 1～7 达成（判据 1～6 由 `GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据；判据 7 = 证据/审计/开放 required = 0 + 组合投影同步 + 用户书面确认）；Root `GOAL-001-batch-operations-and-job-center` **`done · 5/5`**（R1～R5 子目标全部 `done`）；R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`（`A-003` 响应后开放 required = 0，`A-004` 补测 jobs 结果中心 e2e）；浏览器回归双 profile 全绿。**补记（2026-09-19）**：关门 Vision Review 于同日补做为 `VRev-100` self `conditional`，其 `V-F127`（`roadmap.md` 4 处陈旧投影）/`V-F128`（本台账关门记录缺失）已在该报告响应节 `fixed`，响应后开放 required = 0 | [VRev-100](../reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md)；[E-001-r5-exit-matrix](../../workspaces/workspace-038-batch-operations-and-job-center/GOAL-006-r5-evidence-and-closeout/02-execution/E-001-r5-exit-matrix.md)；[A-002 independent](../../workspaces/workspace-038-batch-operations-and-job-center/GOAL-006-r5-evidence-and-closeout/03-audit/A-002-r5-closeout-independent.md)；[Root 00-meta](../../workspaces/workspace-038-batch-operations-and-job-center/GOAL-001-batch-operations-and-job-center/00-meta.md) | 一条 bounded residual：e2e fresh-seed 顺序契约（登记于 `roadmap.md`「未决项统一登记」）；`I-038-006`（历史作业保留/清理）保持 `deferred · non-blocking` |
 
 ## 规划修订短史
 
@@ -133,3 +133,4 @@ R1 分母与契约冻结
 |------|--------|
 | 2026-09-19 | 初创（`planned` · v0.1.0 · 0 区）。用户 2026-09-19 确认组合层下一拍 = 本方向（备选：架构 C1 `timestamptz` 合同 / 版本与维护提示 / 不立项）。计划阶段 self Review = [VRev-098](../reviews/VRev-098-vp038-batch-operations-job-center-planned.md) `pass`（0 required）。C1 按用户同日裁决保持登记、待本波之后单独裁决，不并入本 VP。 |
 | 2026-09-19 | 激活（`planned → active` · v0.2.0）。用户确认「激活，然后开设工作区」。**P-004 裁决 `I-038-004` = 方案 A**：新建 `admin.jobs` 进 admin 默认集（Profile 内容扩展，不改装配语义，不暂挂 VP-008 `go`）。Admin 类 freshness **PASS**（`0c29c08` → `7e5ce891`：协议 pin / 依赖锁 / 迁移台账 / Profile 默认集与装配 / provenance 五域零变更）。用户确认 slug `workspace-038-batch-operations-and-job-center` / `GOAL-001-batch-operations-and-job-center`。激活就绪 self = [VRev-099](../reviews/VRev-099-vp038-batch-operations-and-job-center-activation.md) `pass`（0 required）。lead 交 `/govern` scaffold。 |
+| 2026-09-19 | 关门（`active → closed` · v1.0.0）。用户书面确认「确认 VP-038 关门」；判据 1～7 达成；Root `done · 5/5`；R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`（`A-003` 响应 + `A-004` 补测 jobs 结果中心 e2e）；残余与延期登记在册（见 `## 关门记录`）。**同日台账补记（不改变 `status` 与 `version`）**：关门时未执行 Vision Review（当时如实登记），用户 P-004 裁决**补做**关门 Vision Review = [VRev-100](../reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional` —— 其 `V-F127`（`roadmap.md` 4 处陈旧投影）/`V-F128`（本台账关门记录缺失）在报告响应节 `fixed`（响应后开放 required = 0）；`V-F129`（关门 Vision Review 未执行）由补做闭合；`V-F130`（`[workspace-038] GOAL-003` frontmatter `progress: 3/4` 与 `goal-tree` `done · 4/4` 不一致）保持 recommended——该区台账已冻结，只登记不代改。 |

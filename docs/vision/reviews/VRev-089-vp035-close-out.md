@@ -54,7 +54,7 @@ open_required: 0
 
 后续（组合层）：
 
-1. 当前无 active 交付 VP；持续程序 [VP-009](../../plans/VP-009-production-hardening.md) 与 [VP-010](../../plans/VP-010-design-implementation-conformance.md) 保持不变。
+1. 当前无 active 交付 VP；持续程序 [VP-009](../plans/VP-009-production-hardening.md) 与 [VP-010](../plans/VP-010-design-implementation-conformance.md) 保持不变。
 2. 路线图中的新增未立项候选 **C1（DB `timestamptz` 持久化合同，RES-T03-tz）**与两项技术债候选（RES-015-metrics 指标分母、RES-016-revoke 访问令牌立即失效）待用户择机决定是否立项；三者均不属 gate，无自动触发。
 3. 后续业务域/Admin 功能波次激活前，仍按既有规则执行 freshness review。
 
