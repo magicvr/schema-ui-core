@@ -16,15 +16,21 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-038-011 | required | 导出数据面分母与权限口径 | C1 | C1 前 | 读既有导出实现与列集 | open | — | `internal/handler/export.go` |
-| I-038-012 | required | 自定义组件能否读到表格选择集 | C2 | C2 前 | 读 render selection 与 custom context | open | — | R3 侦察 |
-| I-038-013 | non-blocking | 导出文件名/格式一致性 | C2/R4 | R4 前 | 对照既有 CSV 约定 | open | — | `export.go` |
+| I-038-011 | required | 导出数据面分母与权限口径 | C1 | C1 前 | 读既有导出实现与列集 | **verified**（2026-09-19：users/roles 同分母；列集与转义复用同步导出；**双重门禁 jobs.write + data.export**） | — | `attachments/R3-recon-frontend-batch-trigger.md`；D-001 §1 |
+| I-038-012 | required | 自定义组件能否读到表格选择集 | C2 | C2 前 | 读 render selection 与 custom context | **verified**（2026-09-19：可，经 `useSchemaCrud().selection(tableId)`；位置与 capability 口径见 D-001 §2） | — | `attachments/R3-recon-frontend-batch-trigger.md`；D-001 §2 |
+| I-038-013 | non-blocking | 导出文件名/格式一致性 | C2/R4 | R4 前 | 对照既有 CSV 约定 | open（文件名 `<resource>-selection.csv`；BOM/RFC4180 已复用，细节待 R4） | — | D-001 §1.1 |
 
 ## 决策索引
 
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| — | — | 暂无（R3 方案待侦察与用户裁决后落盘） | — | — |
+| D-001 | 2026-09-19 | R3 异步批量导出方案冻结（数据面 / 权限双门禁 / 前端触发 / 进度语义） | accepted | `01-decision/D-001-r3-async-batch-export-freeze.md` |
+
+## P-004 说明
+
+R3 的方案项**未触发用户裁决**：R1 已由用户裁决契约形态（方案 B）、首波分母（仅「新建批量导出所选」）与作用域模型（管理作用域 + 新权限）；R2 已冻结前端触发机制（O-1 自定义组件）与 capability 口径（O-2）。R3 的 `D-001` 是在这些裁决**之内**的实现口径（数据面、双门禁、位置、进度档位），不存在需要在既有裁决之间做取舍的方案选型。
+
+其中 **§1.2 双重门禁**是在冻结范围内新识别的安全口径（异步路径不得扩大数据外带面），已在 `D-001` §1.3 记录未选方案，并交由 C4 的 `cross` 审计复核。
 
 ## 约束输入（来自 R1/R2 冻结，非本目标可改）
 
