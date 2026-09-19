@@ -12,8 +12,8 @@ workspace_id: workspace-039-version-maintenance-diagnostics
 
 > 工作区：`workspace-039-version-maintenance-diagnostics`
 > canonical：`docs/workspaces/workspace-039-version-maintenance-diagnostics/`
-> Root：`GOAL-001-version-maintenance-diagnostics`（**`active · 3/4`**）
-> primary_plan：`VP-039-version-maintenance-diagnostics`（**`active`** v0.2.0）
+> Root：`GOAL-001-version-maintenance-diagnostics`（**`done · 4/4`**）
+> primary_plan：`VP-039-version-maintenance-diagnostics`（**`closed`** v0.3.0）
 
 ## 树
 

@@ -19,7 +19,7 @@ parent: null
 
 本工作区是 [VP-039-version-maintenance-diagnostics](../../vision/plans/VP-039-version-maintenance-diagnostics.md) 的唯一 `delivery` workspace，承接 VP-012 首波显式后置的「运行时管理 UI」，交付维护/降级/只读持久横幅、版本身份/升级入口与已交付探活字段的轻量诊断摘要。它不重开 VP-012/015/025，不属于 VP-010 符合性整改，不承载 `timestamptz` schema 迁移（VP-040 停放）、实体全文检索、组织权限、新业务域或 Redis/MQ/多实例。
 
-- VP-039 于 2026-09-19 经用户「走流程激活」从 `planned` 激活为 **`active` v0.2.0**（计划 self = `VRev-101` `pass`；激活 self = `VRev-102` `pass`，0 required）。
+- VP-039 于 2026-09-19 经用户「走流程激活」从 `planned` 激活为 `active` v0.2.0（计划 self = `VRev-101` `pass`；激活 self = `VRev-102` `pass`，0 required），后经 R1–R4 完成与用户书面确认关门为 **`closed` v0.3.0**（VRev-103 `pass`）。
 - **P-004 裁决（`I-039-004`）**：接受默认候选 = **Shell 持久横幅** + **复用 `admin.system-monitoring`**；不新建模块；不改 Profile 默认集 → **不暂挂 VP-008 `go`**。
 - **Admin 类 freshness PASS**：`7e5ce891`（VP-038 激活基线）→ HEAD `6197e802`；协议 pin `v2.9.0` / `81aa1d8`、依赖锁、provenance 零变更；区间迁移与 `admin.jobs` 默认集追加均可追溯至 VP-038 已审结目 + workspace-010 W32–W34。
 - Root `[workspace-039-version-maintenance-diagnostics] GOAL-001-version-maintenance-diagnostics`：**`done · 4/4`**；R1→R4 全部完成；用户 2026-09-19 书面确认关闭 VP-039 与 workspace-039 Root。
