@@ -97,6 +97,13 @@ func voucherJSON(v voucher.Voucher) map[string]any {
 	return row
 }
 
+// WalletJobsBasePath is the admin.wallet job route prefix. It is declared here
+// (rather than inlined at the projection) so the result address is derived by
+// the shared jobs.ResultURL helper — the same mechanism admin.jobs uses — while
+// the emitted value stays byte-identical to the historical literal
+// (GOAL-003 R2 · D-001 §2.3).
+const WalletJobsBasePath = "/api/wallet/jobs"
+
 // WalletRoutes returns the admin.wallet HTTP surface.
 func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string, ownerExists OwnerExistsFunc) []kernel.RouteContribution {
 	var routes []kernel.RouteContribution
@@ -1000,7 +1007,12 @@ func walletJobToMap(job jobs.Job) map[string]any {
 		row["finishedAt"] = job.FinishedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
 	}
 	if job.Status == jobs.StatusSucceeded {
-		row["resultUrl"] = "/api/wallet/jobs/" + job.ID + "/result"
+		// GOAL-003 R2 (D-001 §2.3): the address now comes from the shared
+		// derivation with this module's declared base path instead of a
+		// hardcoded literal. The emitted string is byte-identical to the
+		// historical value, so the VP-012 D-002 projection contract and the
+		// wallet route/permission boundary are unchanged.
+		row["resultUrl"] = jobs.ResultURL(WalletJobsBasePath, job.ID)
 	}
 	return row
 }

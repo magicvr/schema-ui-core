@@ -120,6 +120,7 @@ var lockedHeadExtraTables = map[int][]string{
 	69: {"telegram_outbound_messages"},                     // workspace-033 R3 C3: Telegram outbound state machine
 	70: {"digital_offers", "digital_purchases", "digital_entitlements"}, // workspace-031 R2 (VP-031): digital-offer domain tables
 	71: {}, // workspace-031 post-closure: operation_log event CHECK expansion for bizoffer.* events (no new objects)
+	72: {}, // workspace-038 R2 (GOAL-003 D-001 §1): CREATE INDEX on jobs only (no new objects)
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

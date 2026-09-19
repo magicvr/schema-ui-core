@@ -87,14 +87,45 @@ var jobsPGDDL = []string{
 }
 
 func Descriptors() []kernel.MigrationContribution {
-	return []kernel.MigrationContribution{{
-		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "async_jobs"},
-		Version:              42,
-		Name:                 "async_jobs",
-		Checksum:             kernel.MigrationChecksum(jobsDDL, "0042:async-jobs:v1"),
-		Apply:                migrateJobs,
-		ApplyPostgres:        migrateJobsPG,
-	}}
+	return []kernel.MigrationContribution{
+		{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "async_jobs"},
+			Version:              42,
+			Name:                 "async_jobs",
+			Checksum:             kernel.MigrationChecksum(jobsDDL, "0042:async-jobs:v1"),
+			Apply:                migrateJobs,
+			ApplyPostgres:        migrateJobsPG,
+		},
+		{
+			// GOAL-003 R2 (D-001 §1): management-scope job list index. The
+			// runtime state-machine indexes cannot serve a cross-actor
+			// `ORDER BY created_at DESC`, so the admin list gets its own
+			// index — the same shape admin.activity uses for
+			// operation_log(created_at DESC). Index-only DDL is portable
+			// (no time-column type difference), so ApplyPostgres is omitted.
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "jobs_management_indexes"},
+			Version:              72,
+			Name:                 "jobs_management_indexes",
+			Checksum:             kernel.MigrationChecksum(jobsManagementIndexDDL, "0072:jobs-management-indexes:v1"),
+			Apply:                migrateJobsManagementIndexes,
+		},
+	}
+}
+
+// jobsManagementIndexDDL adds the management-list index. The 0042 table and
+// its indexes are untouched: that contribution's checksum is frozen in the
+// migration ledger, so a new contribution is the only legal way to add DDL.
+var jobsManagementIndexDDL = []string{
+	`CREATE INDEX idx_jobs_created_at ON jobs(created_at DESC)`,
+}
+
+func migrateJobsManagementIndexes(tx kernel.Tx) error {
+	for _, stmt := range jobsManagementIndexDDL {
+		if _, err := tx.Exec(context.Background(), stmt); err != nil {
+			return fmt.Errorf("create jobs management index: %w", err)
+		}
+	}
+	return nil
 }
 
 func migrateJobs(tx kernel.Tx) error {
