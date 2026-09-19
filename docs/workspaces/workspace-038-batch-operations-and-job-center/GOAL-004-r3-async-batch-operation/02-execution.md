@@ -1,7 +1,7 @@
 ---
 id: GOAL-004-r3-async-batch-operation
 doc: execution
-status: active
+status: done
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19

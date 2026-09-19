@@ -18,6 +18,7 @@ version: 0.1.0
 | E-002 | 2026-09-19 | R1 只读侦察（`I-038-001`～`003` 证据收集） | recorded | `02-execution/E-002-r1-recon.md` |
 | E-003 | 2026-09-19 | R1 关门与 Root 投影（R1 检查点完成，`progress: 0/5 → 1/5`） | recorded | `02-execution/E-003-r1-projection.md` |
 | E-004 | 2026-09-19 | R2 关门与 Root 投影（R2 检查点完成，`progress: 1/5 → 2/5`） | recorded | `02-execution/E-004-r2-projection.md` |
+| E-005 | 2026-09-19 | R3 关门与 Root 投影（R3 检查点完成，`progress: 2/5 → 3/5`） | recorded | `02-execution/E-005-r3-projection.md` |
 
 ## 事实边界
 

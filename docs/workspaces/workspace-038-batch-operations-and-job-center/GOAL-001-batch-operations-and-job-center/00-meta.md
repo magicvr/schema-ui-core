@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.3.0
-progress: 2/5
+version: 0.4.0
+progress: 3/5
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -21,7 +21,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检索、组织/数据权限、新业务域或架构 gated 项（Redis / 外部队列 / 多实例 / 专用搜索引擎）写入本目标，也不重开 VP-012/011/037/036。
 
-工作区与 Root 已建立（2026-09-19）；纲领阶段 **R1 与 R2 已分别由 `GOAL-002` / `GOAL-003` 交付并关门**（均 `done · 4/4`），`progress: 2/5` 是显式检查点的派生展示。
+工作区与 Root 已建立（2026-09-19）；纲领阶段 **R1、R2、R3 已分别由 `GOAL-002` / `GOAL-003` / `GOAL-004` 交付并关门**（均 `done · 4/4`），`progress: 3/5` 是显式检查点的派生展示。
 
 ## 子目标
 
@@ -29,9 +29,9 @@ Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检
 |----|---------|--------|----------|
 | GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | **done** | 4/4 |
 | GOAL-003-r2-generic-job-read-surface | R2 通用作业读面 | **done** | 4/4 |
-| GOAL-004-r3-async-batch-operation | R3 批量操作异步承接 | active | 0/4 |
+| GOAL-004-r3-async-batch-operation | R3 批量操作异步承接 | **done** | 4/4 |
 
-R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。R2 于同日立项并关门（`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，开放 required = 0）；R2 交付 `admin.jobs` 模块与跨 actor 管理读面。**R3 于同日按 P-001 立项**（`GOAL-004`，`cross`），承接 `D-001` §5 的 T-5/T-6 与 `jobs.write`；R4/R5 子目标在对应阶段立项。
+R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。R2 于同日立项并关门（`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，开放 required = 0）；R2 交付 `admin.jobs` 模块与跨 actor 管理读面。**R3 于同日立项并关门**（`GOAL-004`，`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 8 条 recommended 全 `fixed`，开放 required = 0）；R3 交付 `jobs.batch-export` 异步批量导出（202 + 真实进度 + 结果）与前端触发组件。R4/R5 子目标在对应阶段立项。
 
 ## 愿景对齐
 
@@ -66,7 +66,7 @@ R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok 
 
 - [x] **R1 分母与契约冻结**：Job 种类×作用域矩阵、批量异步契约（含同步 `batch-delete` 兼容口径与协议面影响判定）、首波批量操作分母（保持同步 / 改异步 / 不进首波）、权限/Profile 边界与排除项冻结；`I-038-001`～`003` 关闭。→ 由 `GOAL-002-r1-denominator-and-contract-freeze` 交付（**`done · 4/4`**，2026-09-19）。
 - [x] **R2 通用作业读面**：Job 列表/详情/结果读取 API + 权限与作用域过滤 + fail-closed；不改变 Job 六态合同。→ 由 `GOAL-003-r2-generic-job-read-surface` 交付（**`done · 4/4`**，2026-09-19）。
-- [ ] **R3 批量操作异步承接**：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 既有语义与回归不退化。
+- [x] **R3 批量操作异步承接**：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 既有语义与回归不退化。→ 由 `GOAL-004-r3-async-batch-operation` 交付（**`done · 4/4`**，2026-09-19）。
 - [ ] **R4 结果中心与体验收敛**：列表/详情/进度/终态/过期/重试/取消/下载；中英文、浅色深色、加载空态错误态、可访问。
 - [ ] **R5 证据与关门**：退出矩阵、浏览器/自动化回归、独立意见、残余登记、组合投影同步与用户确认；开放 required = 0。
 
@@ -93,7 +93,7 @@ R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok 
 
 ## 备注
 
-- workspace/Root scaffold 是已发生事实；纲领 R1、R2 已由 `GOAL-002` / `GOAL-003` 交付并关门（各 `done · 4/4`），`progress: 2/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
+- workspace/Root scaffold 是已发生事实；纲领 R1、R2、R3 已由 `GOAL-002` / `GOAL-003` / `GOAL-004` 交付并关门（各 `done · 4/4`），`progress: 3/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
 - 建区不代表任何实现阶段完成；VP-038 关门须链接本区证据并经用户确认。
 - Vision Review `VRev-098`/`VRev-099` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。
 - `admin.jobs` 模块已由 R2（`GOAL-003`）建立并交付管理读面；**R2 之后** `apps/**` 已有实质实现变更（见 `GOAL-003/02-execution/E-002`）。
