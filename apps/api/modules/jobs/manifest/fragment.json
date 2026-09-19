@@ -1,0 +1,34 @@
+{
+  "protocolVersion": "2.7",
+  "requiredCapabilities": [
+    "app.manifest",
+    "app.navigation"
+  ],
+  "app": {
+    "appId": "schema-ui-core",
+    "name": "Schema UI Core",
+    "description": "The schema-ui-core administration workspace."
+  },
+  "pages": [
+    {
+      "pageId": "jobs",
+      "title": "Jobs",
+      "schemaUrl": "/api/schema/jobs",
+      "route": "/jobs",
+      "titleKey": "manifest.title.jobs"
+    }
+  ],
+  "navigation": {
+    "sidebar": [
+      {
+        "pageRef": "jobs",
+        "label": "Jobs",
+        "icon": "reaction",
+        "visibleWhen": {
+          "when": "$context.features.menu_jobs == true"
+        },
+        "labelKey": "manifest.nav.jobs"
+      }
+    ]
+  }
+}

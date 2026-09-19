@@ -526,7 +526,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// permission keys — identity-only self-service).
 		// W26 (GOAL-038): admin.settings adds menu_mail/menu_mail_outbox
 		// (+2 navigation, no new permission keys — settings.read reuse).
-		{profile: "admin", wantPermissions: 34, wantNavigation: 18},
+		// R2 (GOAL-003): admin.jobs adds jobs.read (+1 permission) and
+		// menu_jobs (+1 navigation).
+		{profile: "admin", wantPermissions: 35, wantNavigation: 19},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

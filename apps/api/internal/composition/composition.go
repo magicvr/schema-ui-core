@@ -51,6 +51,10 @@ import (
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/filelibrary"
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/store"
+	// jobsmodule is the R2 admin.jobs read surface (GOAL-003). Note the
+	// migration-only core.jobs provider is imported separately by
+	// modules/compiled; this alias is the runtime module.
+	jobsmodule "github.com/magicvr/schema-ui-core/apps/api/modules/jobs"
 	mfamodule "github.com/magicvr/schema-ui-core/apps/api/modules/mfa"
 	mfastore "github.com/magicvr/schema-ui-core/apps/api/modules/mfa/store"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/modules/notifications"
@@ -597,6 +601,17 @@ func newMuxWithExtraProviders(
 			return err == nil
 		})
 		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists, rateLimiters))
+	}
+	// R2 (GOAL-003 D-001 §4): admin.jobs — management-scope read surface over
+	// the same durable Job runtime. It reads the shared repository directly and
+	// registers no job kind, so it composes independently of admin.wallet.
+	// R-1 (GOAL-002 matrix §6): the runtime is enabled when EITHER module is
+	// present — previously only admin.wallet flipped this flag, which left a
+	// profile containing admin.jobs but not admin.wallet with a runner that
+	// silently never started.
+	if plan.HasModule("admin.jobs") {
+		jobRuntime.enabled.Store(true)
+		providers = append(providers, jobsmodule.New(a, jobRuntime.repository))
 	}
 	// VP-031 (workspace-031 GOAL-003 · GOAL-002 D-002 v1.0.0): biz.digital-offer —
 	// digital offers + thin purchases over the wallet money primitives +

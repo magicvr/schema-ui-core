@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "pageId": "jobs",
+    "title": "Jobs",
+    "protocolVersion": "2.7",
+    "requiredCapabilities": [
+      "app.manifest",
+      "app.navigation",
+      "table.sort"
+    ]
+  },
+  "body": {
+    "type": "section",
+    "id": "jobs",
+    "children": [
+      {
+        "type": "form",
+        "id": "jobs-search",
+        "props": {
+          "mode": "search",
+          "targetTable": "jobs-table",
+          "fields": [
+            {
+              "id": "kind",
+              "type": "input",
+              "labelKey": "schema.jobs.search.kind"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "labelKey": "schema.jobs.filter.status",
+              "options": [
+                {
+                  "value": "",
+                  "labelKey": "schema.jobs.filter.status.all"
+                },
+                {
+                  "value": "queued",
+                  "labelKey": "schema.jobs.status.queued"
+                },
+                {
+                  "value": "running",
+                  "labelKey": "schema.jobs.status.running"
+                },
+                {
+                  "value": "succeeded",
+                  "labelKey": "schema.jobs.status.succeeded"
+                },
+                {
+                  "value": "failed",
+                  "labelKey": "schema.jobs.status.failed"
+                },
+                {
+                  "value": "cancelled",
+                  "labelKey": "schema.jobs.status.cancelled"
+                },
+                {
+                  "value": "expired",
+                  "labelKey": "schema.jobs.status.expired"
+                }
+              ]
+            }
+          ],
+          "submitLabel": "Search",
+          "submitLabelKey": "feedback.search"
+        }
+      },
+      {
+        "type": "table",
+        "id": "jobs-table",
+        "props": {
+          "columns": [
+            {
+              "field": "id",
+              "label": "ID",
+              "labelKey": "schema.jobs.column.id"
+            },
+            {
+              "field": "kind",
+              "label": "Kind",
+              "labelKey": "schema.jobs.column.kind"
+            },
+            {
+              "field": "status",
+              "label": "Status",
+              "labelKey": "schema.jobs.column.status"
+            },
+            {
+              "field": "progress",
+              "label": "Progress",
+              "labelKey": "schema.jobs.column.progress"
+            },
+            {
+              "field": "attempt",
+              "label": "Attempt",
+              "labelKey": "schema.jobs.column.attempt"
+            },
+            {
+              "field": "actorId",
+              "label": "Actor",
+              "labelKey": "schema.jobs.column.actor"
+            },
+            {
+              "field": "createdAt",
+              "label": "Created",
+              "sortable": true,
+              "labelKey": "schema.jobs.column.created"
+            },
+            {
+              "field": "finishedAt",
+              "label": "Finished",
+              "labelKey": "schema.jobs.column.finished"
+            }
+          ],
+          "dataSource": "/api/jobs"
+        }
+      }
+    ]
+  }
+}
