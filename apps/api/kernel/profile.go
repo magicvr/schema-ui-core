@@ -214,7 +214,10 @@ func BuiltinModules() []Module {
 		// durable async Job runtime — cross-actor list/detail/result behind
 		// jobs.read. The jobs table stays owned by the migration-only core.jobs
 		// provider; this module contributes no persistence.
-		{ID: "admin.jobs", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/jobs", "GET /api/jobs/{id}", "GET /api/jobs/{id}/result"}, Pages: []string{"jobs"}, Navigation: []string{"menu_jobs"}, Permissions: []string{"jobs.read"}, Fragments: []string{"jobs"}}},
+		// R3 (GOAL-004): the same module carries the first real batch operation
+		// (batch export) behind jobs.write; the route is paired with
+		// data.export at the handler so it cannot widen data egress.
+		{ID: "admin.jobs", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/jobs", "GET /api/jobs/{id}", "GET /api/jobs/{id}/result", "POST /api/jobs/batch-export"}, Pages: []string{"jobs"}, Navigation: []string{"menu_jobs"}, Permissions: []string{"jobs.read", "jobs.write"}, Fragments: []string{"jobs"}}},
 		// VP-030 (GOAL-003/GOAL-004): channel.telegram — Telegram bot channel runtime.
 		// Exposes the public webhook, authenticated settings endpoints, the
 		// authenticated console-session polling lease, and the operator console

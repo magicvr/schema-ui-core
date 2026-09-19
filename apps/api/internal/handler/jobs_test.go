@@ -17,7 +17,7 @@ import (
 // repository (GOAL-003 R2).
 func mountJobsRoutes(t *testing.T, env *authTestEnv, repository *jobs.Repository) {
 	t.Helper()
-	for _, route := range JobsRoutes(env.a, repository, "admin.jobs") {
+	for _, route := range JobsRoutes(env.a, repository, nil, "admin.jobs") {
 		env.mux.Handle(route.Method+" "+route.Pattern, route.Handler)
 	}
 }

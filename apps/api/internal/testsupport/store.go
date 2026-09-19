@@ -103,6 +103,10 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "recycle.write"}, Permission: "recycle.write", Resource: "recycle-bin", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		// R2 (GOAL-003): admin.jobs management-scope read key, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.jobs", Key: "jobs.read"}, Permission: "jobs.read", Resource: "jobs", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// R3 (GOAL-004): admin.jobs write key for submitting an async job,
+		// admin-only. Paired with data.export at the route so it cannot move
+		// data out on its own.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.jobs", Key: "jobs.write"}, Permission: "jobs.write", Resource: "jobs", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},

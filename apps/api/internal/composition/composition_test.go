@@ -528,7 +528,9 @@ func TestSystemDataReconcileUsesFinalizedProfileContributions(t *testing.T) {
 		// (+2 navigation, no new permission keys — settings.read reuse).
 		// R2 (GOAL-003): admin.jobs adds jobs.read (+1 permission) and
 		// menu_jobs (+1 navigation).
-		{profile: "admin", wantPermissions: 35, wantNavigation: 19},
+		// R3 (GOAL-004): the batch-export route adds jobs.write (+1 permission,
+		// no new navigation).
+		{profile: "admin", wantPermissions: 36, wantNavigation: 19},
 	}
 	for _, tt := range tests {
 		t.Run(tt.profile, func(t *testing.T) {

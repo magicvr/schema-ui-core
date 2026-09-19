@@ -13,13 +13,18 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -33,11 +38,18 @@ type JobReader interface {
 // jobs.ResultURL, mirroring how admin.wallet declares its own prefix.
 const JobsBasePath = "/api/jobs"
 
-// JobsRoutes returns the admin.jobs HTTP read surface: the management-scope
-// list, the detail read and the result download. Every route is permission
-// gated and fail-closed.
-func JobsRoutes(a *auth.Authenticator, reader JobReader, moduleID string) []kernel.RouteContribution {
-	h := &jobsHandler{reader: reader}
+// JobBatchSubmitter enqueues the batch-export job (GOAL-004 R3). It is separate
+// from the read surface so a read-only composition can omit it.
+type JobBatchSubmitter interface {
+	Supported(resource string) bool
+	SubmitBatchExport(ctx context.Context, resource string, ids []string, actorID, correlationID string) (*jobs.Job, error)
+}
+
+// JobsRoutes returns the admin.jobs HTTP surface: the management-scope read
+// routes (R2) plus, when submitter is non-nil, the batch-export submit route
+// (R3). Every route is permission gated and fail-closed.
+func JobsRoutes(a *auth.Authenticator, reader JobReader, submitter JobBatchSubmitter, moduleID string) []kernel.RouteContribution {
+	h := &jobsHandler{reader: reader, submitter: submitter}
 	var routes []kernel.RouteContribution
 	add := func(method, pattern string, handler http.Handler) {
 		routes = append(routes, kernel.RouteContribution{
@@ -46,6 +58,27 @@ func JobsRoutes(a *auth.Authenticator, reader JobReader, moduleID string) []kern
 			Pattern:              pattern,
 			Handler:              a.Middleware(handler),
 		})
+	}
+
+	// Batch export (R3): a real batch operation carried by the Job runtime.
+	// It answers 202 + a job projection; the caller polls GET /api/jobs/{id}.
+	//
+	// Two independent gates apply, deliberately: jobs.write authorizes
+	// submitting an async job, and data.export authorizes moving the data out.
+	// Requiring both keeps the async path from becoming a way around the
+	// existing export permission (the synchronous exporter is data.export-gated
+	// too), so adding the job runtime never widens data egress.
+	if submitter != nil {
+		add("POST", JobsBasePath+"/batch-export", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, ok := requirePermission(w, r, "jobs.write")
+			if !ok {
+				return
+			}
+			if _, ok := requirePermission(w, r, "data.export"); !ok {
+				return
+			}
+			h.submitBatchExport(w, r, user)
+		}))
 	}
 
 	add("GET", JobsBasePath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -98,8 +131,88 @@ func JobsRoutes(a *auth.Authenticator, reader JobReader, moduleID string) []kern
 	return routes
 }
 
+// batchExportRequest is the submit body: the target resource and the selected
+// row keys, mirroring the shape the synchronous batch action sends.
+type batchExportRequest struct {
+	Resource string `json:"resource"`
+	IDs      []any  `json:"ids"`
+}
+
+func (h *jobsHandler) submitBatchExport(w http.ResponseWriter, r *http.Request, user account.User) {
+	var body batchExportRequest
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxResourceBodyBytes))
+	if err := decoder.Decode(&body); err != nil {
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "expected a JSON object with resource and ids")
+		return
+	}
+	resource := strings.TrimSpace(body.Resource)
+	if resource == "" {
+		writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_BODY", "resource is required")
+		return
+	}
+	if !h.submitter.Supported(resource) {
+		writeLocalizedError(w, r, http.StatusNotFound, "RESOURCE_NOT_FOUND", "no batch export for that resource")
+		return
+	}
+	if len(body.IDs) == 0 {
+		writeLocalizedError(w, r, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one key")
+		return
+	}
+	// Scalar keys only, de-duplicated preserving order — the same selection
+	// normalization the synchronous batch action applies (D3 invariants).
+	seen := make(map[string]bool, len(body.IDs))
+	ids := make([]string, 0, len(body.IDs))
+	for _, raw := range body.IDs {
+		var key string
+		switch value := raw.(type) {
+		case string:
+			if value == "" {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be non-empty scalars")
+				return
+			}
+			key = value
+		case float64:
+			if !isFiniteNumber(value) {
+				writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be finite scalars")
+				return
+			}
+			key = formatNumberKey(value)
+		case bool:
+			key = strconv.FormatBool(value)
+		default:
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "ids entries must be scalar keys")
+			return
+		}
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		ids = append(ids, key)
+	}
+	if len(ids) == 0 {
+		writeLocalizedError(w, r, http.StatusBadRequest, "EMPTY_SELECTION", "ids must contain at least one scalar key")
+		return
+	}
+
+	correlationID := requestid.FromContext(r.Context())
+	if correlationID == "" {
+		correlationID = requestid.New()
+	}
+	job, err := h.submitter.SubmitBatchExport(r.Context(), resource, ids, user.ID, correlationID)
+	if err != nil {
+		if errors.Is(err, jobs.ErrInvalid) {
+			writeLocalizedError(w, r, http.StatusBadRequest, "INVALID_SELECTION_KEY", "selection is not acceptable for batch export")
+			return
+		}
+		writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not submit batch export")
+		return
+	}
+	writeJSON(w, http.StatusAccepted, jobToMap(*job))
+}
+
 type jobsHandler struct {
-	reader JobReader
+	reader    JobReader
+	submitter JobBatchSubmitter
 }
 
 func (h *jobsHandler) list(w http.ResponseWriter, r *http.Request) {

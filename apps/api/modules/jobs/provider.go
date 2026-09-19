@@ -28,16 +28,35 @@ const ModuleID = "admin.jobs"
 
 // Provider implements kernel.Provider for admin.jobs.
 type Provider struct {
-	a      *auth.Authenticator
-	reader handler.JobReader
+	a         *auth.Authenticator
+	reader    handler.JobReader
+	submitter handler.JobBatchSubmitter
 }
 
-// New constructs the jobs provider over the shared Job read surface.
-func New(a *auth.Authenticator, reader handler.JobReader) *Provider {
-	return &Provider{a: a, reader: reader}
+// New constructs the jobs provider over the shared Job read surface. submitter
+// may be nil for a read-only composition; the batch-export route is then
+// omitted from the contribution set entirely (rather than mounted and failing
+// at request time), so the declared routes always match what is served.
+func New(a *auth.Authenticator, reader handler.JobReader, submitter ...handler.JobBatchSubmitter) *Provider {
+	p := &Provider{a: a, reader: reader}
+	if len(submitter) > 0 {
+		p.submitter = submitter[0]
+	}
+	return p
 }
 
 func (p *Provider) Descriptor() kernel.Module {
+	routes := []string{
+		"GET /api/jobs",
+		"GET /api/jobs/{id}",
+		"GET /api/jobs/{id}/result",
+	}
+	permissions := []string{"jobs.read"}
+	if p.submitter != nil {
+		// R3 (GOAL-004): the batch-export submit route and its write key.
+		routes = append(routes, "POST /api/jobs/batch-export")
+		permissions = append(permissions, "jobs.write")
+	}
 	return kernel.Module{
 		ID:             ModuleID,
 		Version:        "2.0.0",
@@ -45,14 +64,10 @@ func (p *Provider) Descriptor() kernel.Module {
 		DependsOn:      []string{"core.auth-session", "core.navigation-capability", "core.schema-render"},
 		Requires:       kernel.StandardAdminCapabilities(),
 		Contributions: kernel.ContributionKeys{
-			Routes: []string{
-				"GET /api/jobs",
-				"GET /api/jobs/{id}",
-				"GET /api/jobs/{id}/result",
-			},
+			Routes:      routes,
 			Pages:       []string{"jobs"},
 			Navigation:  []string{"menu_jobs"},
-			Permissions: []string{"jobs.read"},
+			Permissions: permissions,
 			Fragments:   []string{"jobs"},
 		},
 	}
@@ -63,7 +78,7 @@ func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error)
 }
 
 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
-	for _, route := range handler.JobsRoutes(p.a, p.reader, ModuleID) {
+	for _, route := range handler.JobsRoutes(p.a, p.reader, p.submitter, ModuleID) {
 		if err := reg.HTTP(route); err != nil {
 			return err
 		}
@@ -83,15 +98,31 @@ func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
 	// admin.scheduled-tasks' tasks.read: a job row carries another actor's
 	// error messages and correlation ids, so visibility is an operator
 	// concern (GOAL-003 D-001 §4).
-	if err := reg.Authorization(kernel.PermissionContribution{
+	contributions := []kernel.PermissionContribution{{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "jobs.read"},
 		Permission:           "jobs.read",
 		Resource:             "jobs",
 		Action:               "read",
 		PolicyID:             authsessiondata.PolicyAdmin,
 		SystemDataVersion:    authsessiondata.SystemDataVersion,
-	}); err != nil {
-		return err
+	}}
+	if p.submitter != nil {
+		// jobs.write authorizes submitting an async job. It is deliberately
+		// paired with data.export at the route, so this key alone cannot move
+		// data out (GOAL-004 D-001 §1).
+		contributions = append(contributions, kernel.PermissionContribution{
+			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "jobs.write"},
+			Permission:           "jobs.write",
+			Resource:             "jobs",
+			Action:               "write",
+			PolicyID:             authsessiondata.PolicyAdmin,
+			SystemDataVersion:    authsessiondata.SystemDataVersion,
+		})
+	}
+	for _, permission := range contributions {
+		if err := reg.Authorization(permission); err != nil {
+			return err
+		}
 	}
 	if err := reg.Navigation(kernel.NavigationContribution{
 		ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "menu_jobs"},

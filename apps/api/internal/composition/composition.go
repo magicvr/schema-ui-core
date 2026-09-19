@@ -609,9 +609,28 @@ func newMuxWithExtraProviders(
 	// present — previously only admin.wallet flipped this flag, which left a
 	// profile containing admin.jobs but not admin.wallet with a runner that
 	// silently never started.
+	//
+	// R3 (GOAL-004): the same module also carries the first real batch
+	// operation. The batch-export kind is registered here, BEFORE the runner
+	// starts (R1 D-001 §1.2 K-5). The row source reuses the users/roles
+	// resource entities, so the async export shares the synchronous export's
+	// exact column sets; it is wired only for resources the plan enabled, so a
+	// batch export can never read a resource whose module is absent.
 	if plan.HasModule("admin.jobs") {
 		jobRuntime.enabled.Store(true)
-		providers = append(providers, jobsmodule.New(a, jobRuntime.repository))
+		var exportUsers, exportRoles handler.ResourceEntity
+		if plan.HasModule("admin.users") {
+			exportUsers = handler.UsersResourceWithNotifier(authRepository, operations, authRepository).Entity
+		}
+		if plan.HasModule("admin.roles") {
+			exportRoles = handler.RolesResource(authRepository, operations).Entity
+		}
+		rowSource := handler.NewBatchExportRowSource(exportUsers, exportRoles)
+		exportService, err := jobsmodule.NewBatchExportService(jobRuntime.runner, rowSource, nil)
+		if err != nil {
+			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: jobsmodule.ModuleID, Detail: fmt.Sprintf("register batch export: %v", err)}
+		}
+		providers = append(providers, jobsmodule.New(a, jobRuntime.repository, handler.NewBatchExportSubmitter(exportService, jobRuntime.runner)))
 	}
 	// VP-031 (workspace-031 GOAL-003 · GOAL-002 D-002 v1.0.0): biz.digital-offer —
 	// digital offers + thin purchases over the wallet money primitives +
