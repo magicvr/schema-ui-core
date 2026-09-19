@@ -6,7 +6,7 @@ parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
 version: 0.2.0
-progress: 3/4
+progress: 4/4
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -44,7 +44,7 @@ R2 是本 VP 的第一段实现代码；`admin.jobs` 模块此前不存在（现
 
 ## 成功检查点
 
-以下 4 个检查点构成 `progress: 3/4` 的派生来源。
+以下 4 个检查点构成 `progress: 4/4` 的派生来源。
 
 - [x] **C1 模块与权限接线**：`admin.jobs` 模块建立并进 admin 默认集；`jobs.read` 声明、接线、入 catalog；模块/组合测试与计数断言全绿。
 - [x] **C2 查询与索引**：`internal/jobs` 新增查询方法（过滤/分页/total/排序）落地并有 repository 测试；O-3 索引决策冻结并实施（含两处冻结断言的同步）。
@@ -76,6 +76,7 @@ R1 已关闭的 `I-038-001`～`003` 与 `I-038-004`/`005` 不再重复登记；`
 
 ## 备注
 
-- `progress: 0/4` 只由上方 4 个显式检查点派生；不放行阶段、不关闭 finding、不覆盖 status。
+- `progress` 只由上方 4 个显式检查点派生（现为 `4/4`）；不放行阶段、不关闭 finding、不覆盖 status。
+- **2026-09-19 投影修正（用户授权 · `VRev-100` `V-F130`）**：frontmatter `progress` 由 `3/4` 更正为 `4/4`，与 `workspace-038/goal-tree.md` 的 `done · 4/4` 及上方四个已勾选检查点一致（`A-003` 响应第 1 条的本意即为 `3/4 → 4/4`）；同时同步本文件 L47 派生说明与上一条旧样板文本。`status` / 结论 / 三个 ledger 目录 / `goal-tree` 均未改动。
 - R1 冻结结论（`GOAL-002/01-decision/D-001-…`）是本目标的**约束输入**：C2 = 方案 B、C3 首波 = 新建批量导出所选、C1 = 管理作用域 + `jobs.read`。
 - 未定项 O-1～O-3 必须在 R2 方案中冻结；其中 O-3 已登记为 `I-038-007`（required）。
