@@ -419,7 +419,7 @@ Admin 功能最近一拍：**[VP-037-admin-workflow-continuity](plans/VP-037-adm
 
 > **用途**：本区是"已交付范围之外的未决事项"的**统一登记处**——不是待办清单、不是承诺、也不代表已验证。目的只有一个：日后任何人对某个未实现或有界接受的能力有疑问时，能在这里一眼看到**它是什么、为什么不现在做、什么条件下做、谁负责、证据在哪**，而不必翻遍各工作区台账。
 > **维护约定**：新增或闭合任何残余/悬置/触发项时**必须同步本节**（与 goal-tree、`03-audit` 台账同级要求）。登记只描述现状与触发条件，禁止把 deferred/recommended 写成已验证或已承诺。
-> **最近更新**：2026-09-19（VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`）**；其余条目不变）。
+> **最近更新**：2026-09-19（① VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`）**；② R4 结果中心三条残余经用户裁决移交 `[workspace-010] GOAL-044` 修复后登记为 `fixed`；③ 新增「本地扩展登记」登记项。其余条目不变）。
 
 ### 一、有界残余（B 类：实现已交付并验证，剩覆盖/文档加固）
 
@@ -430,6 +430,8 @@ Admin 功能最近一拍：**[VP-037-admin-workflow-continuity](plans/VP-037-adm
 | `GOAL-005 A-002 F-002` / `R5-I-005` | Host 终态与普通 resource 反馈无直接对照断言 | **2026-09-18 `fixed`**（新增跨表对照测试；Host 文案表导出供读取） | — | workspace-010 GOAL-043 | `GOAL-043 E-002` §3 |
 | `GOAL-008 A-002 F-002` | 全仓 `tsc` 简写未逐条裁定（354 行形态不可唯一确定） | **bounded residual**：可执行面由守卫 + CI 门禁锁死；文档侧不逐条考古 | **历史记录被再次当作类型检查证据引用时**，按 `GOAL-008 D-001` 口径复核并注明 | `/govern`（引用时） | `GOAL-043 E-003`；`GOAL-008 D-001` |
 | `V-F124` | 首波页面/状态/权限/持久化矩阵（防执行期滑向共享视图/实体搜索/第二套基础设施） | **2026-09-18 `fixed`**：实质要求已由 R1 交付（`r1-denominator-matrix.json` 24/58、`r1-form-matrix.json`、`r1-state-feedback-matrix.md` + `D-003`～`D-005`），愿景层经 `VRev-097` 复核闭合 | — | `/vision` | `VRev-097`；`GOAL-002` R1 交付物 |
+| `[workspace-038] GOAL-005 A-001 F-002/F-003/F-004` | R4 结果中心三条 low 级项：状态/错误文本未逐值本地化；自动刷新依赖 `reloadList()` 清空选择；无进行中作业时仍按档位轮询 | **2026-09-19 `fixed`**（用户裁决移交 → `[workspace-010]` `GOAL-044-w32-r4-residual-seams` 交付通用能力：列级 `valueLabels`、`refreshTable` 定向刷新 seam、`activeStatuses` 空闲判定；三条均经变异验证） | — | workspace-010 GOAL-044 | `GOAL-044` `D-001`/`E-001`/`A-001`；`[workspace-038] GOAL-005 A-003` §2 |
+| 本地扩展登记（`valueLabels`/`badgeStyleField`/`truncate`/`width`/`minWidth` 等列级与节点级本地扩展缺少**单一清单**） | **登记（未做）**：这些扩展与 pinned `docs/schemas/**` 的边界目前只在各波次决策里分散记录 | 出现「这是 pinned 还是本地扩展」的实际争议，或后续协议波次需要一次性核对时 | workspace-010（后续符合性波次） | `[workspace-010] GOAL-044 A-001 F-003`；`GOAL-044 D-001` §1 |
 
 ### 二、悬置的范围决策（C 类：非缺陷，等需求再定）
 
@@ -442,7 +444,7 @@ Admin 功能最近一拍：**[VP-037-admin-workflow-continuity](plans/VP-037-adm
 | 能力 | 现状 | 触发条件 | 责任人 / 下一步 | 出处 |
 |------|------|----------|-----------------|------|
 | 实体全文检索（`RT-X01` 专用引擎 / `RT-X02` DB 全文检索） | 架构触发项，**未实现**；VP-036 首波只做已注册页面/导航/声明式动作检索；VP-038 只做作业/批量结果的可见性，**不含**实体检索 | 真实**实体级**搜索需求 + 规模证据 | `/vision` 立新 VP；引擎路线拉动架构 `RT-X01` | roadmap「体验增强」；VP-036 边界表；VP-038 边界表 |
-| 批量结果中心 | **已立项**：由 [VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md) 承接（**`active` v0.2.0** · 2026-09-19 激活 · lead `workspace-038-batch-operations-and-job-center` · VRev-099 `pass`）；同清单的 Saved Views / 未保存保护 / 统一反馈已由 VP-037 交付 | 已进入实现；R1 前须关闭 `I-038-001`～`003` | `/govern` | VP-038；roadmap「体验增强」 |
+| 批量结果中心 | **已立项并交付 R1～R4**：由 [VP-038-batch-operations-and-job-center](plans/VP-038-batch-operations-and-job-center.md) 承接（**`active` v0.2.0** · 2026-09-19 激活 · lead `workspace-038-batch-operations-and-job-center` · VRev-099 `pass`）；R1～R4 子目标均 `done · 4/4`（Root `active · 4/5`，仅 R5 证据与关门待承接）；同清单的 Saved Views / 未保存保护 / 统一反馈已由 VP-037 交付 | R5 承接中 | `/govern` | VP-038；roadmap「体验增强」 |
 | 组织·部门·岗位 + 数据权限 `org` | 基架能力剩余 #2；**2026-08-29 用户书面降权**为 trigger-gated | 多组织/多团队 fork 消费，或真实多组织管理需求 | `/vision`（应用层 org 上下文归 Admin 分支） | roadmap「基架能力剩余」#2 |
 | 新业务域 | **未立项**；无新触发不预开第二域 | 真实业务需求 | `/vision` | roadmap「业务域」 |
 | Redis / MQ / 多实例（+ 第二持久化栈） | 架构 **A3** / `RT-Q03`，架构骨架**唯一未触发项** | 多实例部署，或 C 端业务域模块正式接入同进程 | 架构分支 + `/vision` | roadmap「基架能力剩余」；`architecture/cache-redis-seam-and-track.md` |

@@ -15,7 +15,7 @@ version: 0.1.0
 - **source**：orchestrator（`/govern` 编排器对 A-001 self + A-002 independent 的合并响应）
 - **类型** / **scope**：`stage` · GOAL-005 C1～C3
 - **两腿结论**：A-001 self `pass`（0 required + 4 recommended）；A-002 independent `pass`（0 required + 4 recommended）。**无冲突**：两腿在合同、隔离、门禁、派生字段、前端打点、边界上同向；independent 未升级任何 self 项为 required，未提出与 self 相反的必改项，故**不触发 P-004 冲突裁决**。
-- **响应后状态**：**开放 required = 0**；8 条 recommended 中 **5 条 `fixed`**、**3 条 `accepted-residual`**（用户 2026-09-19 书面裁决：三条都修，承载子目标移至 `[workspace-010…]` `GOAL-044`，本工作区有界接受后移交）。
+- **响应后状态**：**开放 required = 0**；8 条 recommended 中 **5 条 `fixed`**、**3 条 `accepted-residual` → 2026-09-19 全部回填 `fixed`**（用户 2026-09-19 书面裁决：三条都修，承载子目标移至 `[workspace-010…]` `GOAL-044`，本工作区有界接受后移交；该目标当日 `done · 4/4`）。**当前：8/8 `fixed`，开放 required = 0，无残余**。
 
 ## 1. 闭合清单（逐条）
 
@@ -26,7 +26,11 @@ version: 0.1.0
 | 3 | indep F-002 | HEAD 前端目录缺 `error.job*` 键（写面错误会回退服务端串并记 missing-translation） | **fixed** | 双目录各 +7 键（1227/1227）+ 判别例（`2ae1da37`） |
 | 4 | indep F-003 | 前端夹具 `retryable` 忽略 attempt 预算，`disabledWhen` 若改用 status 判据不会变红 | **fixed** | `ROWS` 增 exhausted-failed 判别行 + 变异验证（`2ae1da37`） |
 | 5 | indep F-004 | 文档索引漂移（01-decision 索引、00-meta 审计状态/计数、E-001 checkpoint、D-001 口径） | **fixed** | `58c5614f` 逐条纠正，docscheck 全绿 |
-| 6 | self F-002 | 状态列显示原始状态码，未逐值本地化 | **accepted-residual** → 移交 `[workspace-010…]` `GOAL-044` 修复 | 见 §2 |
+| 6 | self F-002 | 状态列显示原始状态码，未逐值本地化 | **`fixed`**（原 `accepted-residual`，2026-09-19 回填）→ `[workspace-010…]` `GOAL-044` 交付通用列值本地化 | 见 §2 与回填注记 |
+| 7 | self F-003 | `jobs-auto-refresh` 依赖 `reloadList()` 清空选择的语义 | **`fixed`**（原 `accepted-residual`，2026-09-19 回填）→ `GOAL-044` 交付 `refreshTable` 定向刷新 seam | 见 §2 与回填注记 |
+| 8 | self F-004 | 自动刷新在无进行中作业时仍按档位请求 | **`fixed`**（原 `accepted-residual`，2026-09-19 回填）→ `GOAL-044` 交付 `activeStatuses` 空闲判定 | 见 §2 与回填注记 |
+
+> **回填（2026-09-19）**：第 6～8 条的负载已由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（**`done · 4/4`**，checkpoint `c2ea042b`）交付，故按 P-003 由 `accepted-residual` **回填为 `fixed`**（只加闭合注记，不改 A-001/A-002 正文，也不改本目标 status/progress）。证据：`GOAL-044` `D-001`（① 列级 `valueLabels`；② `refreshTable(tableId)` 保留选择；③ `activeStatuses` + 行注册表）、`E-001` §3（三处变异验证：去 `valueLabels` / 让 `refreshTable` 清空选择 / 禁用空闲判定，均实测变红后还原）、`A-001`（self pass）+ `A-002`（三条 recommended 全 fixed）。
 
 ## 2. 三条残余：用户裁决（2026-09-19 书面）与有界接受
 
@@ -46,7 +50,7 @@ version: 0.1.0
 | 2 | self F-003 自动刷新依赖 `reloadList()` 清空选择 | 仅限 **jobs 表当前无选择**这一前提成立期间；前提已由测试钉住 | `GOAL-044` 交付定向刷新 seam 后回填 `fixed` |
 | 3 | self F-004 无进行中作业时仍按档位轮询 | 仅限默认 Off、由操作员显式开启的场景 | `GOAL-044` 交付空闲不轮询后回填 `fixed` |
 
-**闭合路径**：`accepted-residual`（用户书面接受 + 明确范围 + 复核触发）。`GOAL-044` C4 完成后，本文件与 `00-meta` 的对应条目**回填为 `fixed`**（只加闭合注记，不改 A-001 正文）。
+**闭合路径**：`accepted-residual`（用户书面接受 + 明确范围 + 复核触发）。`GOAL-044` C4 已于 2026-09-19 完成，故本文件与 `00-meta` 的对应条目**已回填为 `fixed`**（只加闭合注记，不改 A-001 正文）。
 
 ## 3. 对 self F-001 判断错误的纠正（据实留痕）
 

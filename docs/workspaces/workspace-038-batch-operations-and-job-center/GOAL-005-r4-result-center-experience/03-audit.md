@@ -16,7 +16,7 @@ version: 0.4.0
 |------|------|--------|-------|---------|---------------|------|
 | A-001 | 2026-09-19 | self | R4 C1～C3（写面 / 呈现 / 体验与测试） | **pass** | 0（4 recommended） | [A-001-r4-result-center-self.md](03-audit/A-001-r4-result-center-self.md) |
 | A-002 | 2026-09-19 | independent | R4 C1～C3（写面 / 呈现 / 体验与测试） | **pass** | 0（4 recommended） | [A-002-r4-c1-c3-independent.md](03-audit/A-002-r4-c1-c3-independent.md) |
-| A-003 | 2026-09-19 | orchestrator | A-001 + A-002 合并响应 | — | **0**（5 fixed + 3 pending-user） | [A-003-a001-a002-response.md](03-audit/A-003-a001-a002-response.md) |
+| A-003 | 2026-09-19 | orchestrator | A-001 + A-002 合并响应 | — | **0**（8 recommended 全 `fixed`） | [A-003-a001-a002-response.md](03-audit/A-003-a001-a002-response.md) |
 
 ## 说明
 

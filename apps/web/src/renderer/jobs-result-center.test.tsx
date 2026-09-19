@@ -155,6 +155,8 @@ async function renderJobsPage(options: {
   postResponse?: { status: number; body: unknown };
   rows?: JobRow[];
   locale?: "en-US" | "zh-CN";
+  /** Overrides the shipped document (used to mutate one property in a test). */
+  document?: unknown;
 }): Promise<Harness> {
   const rows = options.rows ?? ROWS;
   const requests: RecordedRequest[] = [];
@@ -216,7 +218,7 @@ async function renderJobsPage(options: {
     });
   }) as typeof fetch;
 
-  const raw = JSON.parse(readFileSync(JOBS_SCHEMA, "utf8")) as unknown;
+  const raw = options.document ?? (JSON.parse(readFileSync(JOBS_SCHEMA, "utf8")) as unknown);
   const page: PageEntry = {
     pageId: "jobs",
     title: "Jobs",
@@ -468,6 +470,31 @@ describe("R4 · result center on the shipped jobs page", () => {
       rows: [row({ id: "job-odd", status: "quiesced" })],
     });
     expect(cells(unmapped.container)).toContain("quiesced");
+  });
+
+  it("falls back to the raw value when a mapped key is missing from the catalogs", async () => {
+    // The other half of the fail-open contract (GOAL-044 A-001 F-001):
+    // `valueLabels` pointing at a key the catalogs do not have must still render
+    // the stored value. If the literal fallback were dropped, the cell would show
+    // the raw KEY ("schema.jobs.status.ghost") instead of the status — a
+    // regression no other case would catch.
+    const raw = JSON.parse(readFileSync(JOBS_SCHEMA, "utf8")) as {
+      body: { children: Array<{ id?: string; props?: { columns?: Array<Record<string, unknown>> } }> };
+    };
+    const table = raw.body.children.find((child) => child.id === "jobs-table");
+    const statusColumn = table?.props?.columns?.find((column) => column.field === "status");
+    expect(statusColumn, "the shipped jobs page must still declare the status column").toBeDefined();
+    statusColumn!.valueLabels = { running: "schema.jobs.status.gone" };
+
+    const harness = await renderJobsPage({
+      permissions: ["jobs.read", "jobs.write"],
+      document: raw,
+    });
+    const cells = Array.from(
+      harness.container.querySelectorAll("tbody tr")[0]?.querySelectorAll("td") ?? [],
+    ).map((cell) => (cell.textContent ?? "").trim());
+    expect(cells).toContain("running");
+    expect(cells).not.toContain("schema.jobs.status.gone");
   });
 
   it("stops polling once no job is in an active state", async () => {

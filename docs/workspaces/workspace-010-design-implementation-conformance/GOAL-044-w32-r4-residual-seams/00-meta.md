@@ -1,18 +1,17 @@
 ---
 id: GOAL-044-w32-r4-residual-seams
 title: W32 · R4 三项残余修复（列值本地化 · 表格定向刷新 seam · 空闲不轮询）
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 ---
-
 # GOAL-044 · W32 · R4 三项残余修复
 
 ## 概述
@@ -53,18 +52,22 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 成功检查点
 
-- [ ] **C1 方案冻结**：`D-001` 落盘（含本地扩展口径、seam 语义、用户授权与跨区可写范围）。
-- [ ] **C2 三项实施**：① 列值本地化能力 + jobs 六态接入；② 定向刷新 seam；③ 空闲不轮询落地。
-- [ ] **C3 回归与回填**：交互级测试与变异验证通过；全量回归绿；038 `A-003` 三条回填 `fixed`。
-- [ ] **C4 审计与投影**：self 审计落盘、开放 required = 0；台账与目标树同步。
+- [x] **C1 方案冻结**：`D-001` 落盘（含本地扩展口径、seam 语义、用户授权与跨区可写范围）；`I-044-001`～`003` 关闭为 `verified`。
+- [x] **C2 三项实施**：① 列级 `valueLabels` + jobs 六态接入；② `refreshTable` 定向刷新 seam（保留选择）；③ `activeStatuses` 空闲不轮询。证据 `E-001` §2，checkpoint `c2ea042b`。
+- [x] **C3 回归与回填**：三处变异验证（去 `valueLabels` / 让 `refreshTable` 清空选择 / 禁用空闲判定，均实测变红后还原）；`go test ./...` 全绿、`vitest` 119 files / 1468 tests 全绿、`typecheck` exit 0；038 `A-003` 三条回填 `fixed`。
+- [x] **C4 审计与投影**：self `A-001` `pass`（0 required + 3 recommended）→ `A-002` 响应三条全 `fixed`，开放 required = 0；`goal-tree.md`/`workspace.md` 同步；Root 保持 active 程序容器。
+
+## 关门（2026-09-19）
+
+`done · 4/4`。三项残余以**通用能力**形态交付（渲染器列值本地化 / 定向刷新 seam / 行可见性驱动轮询），既闭合了 `[workspace-038] GOAL-005` 的 F-002/F-003/F-004，也为其它枚举列页面与轮询控件提供同一能力；`reloadList()` 的 ADR-0022 D2 语义以对照测试钉住未变。审计模式 `self`（改动为渲染器本地扩展与内部 seam，不触安全/数据/迁移/发布面；跨工作区的用户可见效果由 038 的 R5 浏览器/自动化回归复核）。
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-044-001 | required | ① 的本地扩展形态：复用既有列属性命名族还是新增 `valueLabels`？是否会与 pinned `component-registry.json` 的 `format: tag`+`tagMap` 语义重叠？ | C2 | C1 | 读 `docs/schemas/component-registry.json` 的列定义与仓库既有本地扩展（`badgeStyleField` 等）先例 | open | — | 待勘察 |
-| I-044-002 | required | ② 的 seam 语义：刷新指定表格时是否清空选择？与 `reloadList()`（ADR-0022 D2 清空全部选择）和 `refreshList()`（display-only）的关系与边界？ | C2 | C1 | 读 `render.tsx` 的 `reloadList`/`refreshList`/`fetchList`/`selections` 与 SchemaTable 的取数路径 | open | — | 待勘察 |
-| I-044-003 | non-blocking | ③ 的判定数据来源：组件如何得知目标表格是否还有非终态行（组件无行数据 seam）？ | C2 | C1 | 评估「② 暴露的行可见性」与「组件自持查询」两条路径 | open | — | 待勘察 |
+| I-044-001 | required | ① 的本地扩展形态：复用既有列属性命名族还是新增 `valueLabels`？是否会与 pinned `component-registry.json` 的 `format: tag`+`tagMap` 语义重叠？ | C2 | C1 | 读 `docs/schemas/component-registry.json` 的列定义与仓库既有本地扩展（`badgeStyleField` 等）先例 | **verified** | — | `D-001` §1：新增列级 `valueLabels`（值 → i18n 键）；pinned `tagMap` 是字面量映射且本仓库未实现，二者划清边界 |
+| I-044-002 | required | ② 的 seam 语义：刷新指定表格时是否清空选择？与 `reloadList()`（ADR-0022 D2 清空全部选择）和 `refreshList()`（display-only）的关系与边界？ | C2 | C1 | 读 `render.tsx` 的 `reloadList`/`refreshList`/`fetchList`/`selections` 与 SchemaTable 的取数路径 | **verified** | — | `D-001` §2：三条 seam 分工表 + 保留选择 + 不删 in-flight 键的取舍理由；对照测试钉住 |
+| I-044-003 | non-blocking | ③ 的判定数据来源：组件如何得知目标表格是否还有非终态行（组件无行数据 seam）？ | C2 | C1 | 评估「② 暴露的行可见性」与「组件自持查询」两条路径 | **verified** | — | `D-001` §3：采用 ② 的行注册表（`publishTableRows`/`tableRows`，ref 支撑、按需读取）；行不可得时保守刷新 |
 
 ## 父目标
 

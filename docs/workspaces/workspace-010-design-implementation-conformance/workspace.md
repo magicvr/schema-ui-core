@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-010-design-implementation-conformance
 created: 2026-08-11
 updated: 2026-09-19
-version: 0.57.0
+version: 0.58.0
 parent: null
 ---
 
@@ -80,7 +80,7 @@ VP-010 为设计意图—实现符合性持续程序；与 VP-008 `go` 消费有
 | W29 | [GOAL-041-w29-api-web-protocol-conformance](GOAL-041-w29-api-web-protocol-conformance/00-meta.md) | **done**（6/6 · 2026-09-06 关门：S1 分母 + S2 分类/cross + S3 custom 裁决 + S4 整改 + S5 运行时验证 + S6 cross 关门（A-008 walker 跨平台 fixed；用户书面确认）。Root 保持 active） |
 | W30 | [GOAL-042-w30-w29-followup-supplement](GOAL-042-w30-w29-followup-supplement/00-meta.md) | **done**（3/3 · 2026-09-06 关门：F1 legacy 能力全量审计（守卫 35/35 + 32 schema 双向修正）+ F2 claim↔host-support 单源一致性 + F3 10 页行为单测；回归 Web 1332/1332 + Go 0 FAIL；A-001 self pass） |
 | W31 | [GOAL-043-w31-cross-workspace-residual-closeout](GOAL-043-w31-cross-workspace-residual-closeout/00-meta.md) | **done**（4/4 · 2026-09-18 关门：跨工作区残余统一收口 + roadmap 登记节） |
-| W32 | [GOAL-044-w32-r4-residual-seams](GOAL-044-w32-r4-residual-seams/00-meta.md) | **active**（0/4 · 2026-09-19 立项：承接 `[workspace-038]` GOAL-005 A-001 F-002/F-003/F-004 —— 通用列值本地化 + 表格定向刷新 seam + 空闲不轮询） |
+| W32 | [GOAL-044-w32-r4-residual-seams](GOAL-044-w32-r4-residual-seams/00-meta.md) | **done**（4/4 · 2026-09-19 立项并当日关门：承接 `[workspace-038]` GOAL-005 A-001 F-002/F-003/F-004 —— 通用列值本地化 `valueLabels` + `refreshTable` 定向刷新 seam + `activeStatuses` 空闲不轮询；三处变异验证；已回填 038 `A-003` 三条 `fixed`） |
 
 
 ## 固定共享资料引用
@@ -107,4 +107,4 @@ GOAL-033-w22-residual-closeout done 18/18（accepted-residual 全库清点收口
 
 **W31（2026-09-18 立项并当日关门，GOAL-043 done 4/4）**：承接用户指令「能现在处理的直接处理掉……暂时不需要处理的确保在路线图中被正确统一登记」，承载 VP-037 关门后残余的**治理上下文**。**修复（均经变异验证）**：① 暗色下开关计算背景断言（4 条不变量；把类名改成 `bg-control dark:bg-[oklch(0.955_0_0)]` 时浅色断言全过、新断言失败）② 分页契约改 roles + users 双页面参数化 ③ Host 终态与普通 resource 反馈跨表直接对照（新增 `resource-feedback-parity.test.ts`，8 共有条件 × 分类一致/不回退通用文案/命名空间不混用/双语 key 齐备）。**收口**：`GOAL-008 A-002 F-002` → bounded residual（可执行面由守卫 + CI 锁死；文档侧 354 行形态不可唯一确定）。**愿景层**：`V-F124` 经 VRev-097 self `pass` 转 `fixed`；`VR-083` 记录 editorial 变更。**登记**：`roadmap.md` 新增「未决项统一登记」节（有界残余 / 悬置决策 / trigger-gated 能力三类表 + 维护约定）。回归：Vitest 114/1437 + typecheck 0 + e2e 4 passed × admin/mvp；无产品行为变更；A-001 self `pass`（0 required）。Root/VP-010 保持 active 程序容器；VP-037/workspace-037 不重开。
 
-**W32（2026-09-19 立项，GOAL-044 active 0/4）**：承接 `[workspace-038-batch-operations-and-job-center]` `GOAL-005`（R4 结果中心）cross 审计后留下的 3 条 low 级残余——用户 2026-09-19 指令「三条都修，先在 workspace-010 开承载子目标，038 侧有界接受后转由本区新子目标执行修正」。三项均为**跨页面通用能力**（渲染器表格层），不属 VP-038 交付范围：① 通用**列值逐值本地化**（列级「值 → i18n 键」映射，沿用 `badgeStyleField` 类本地扩展姿态，不改 pinned `docs/schemas/**`）；② **表格定向刷新 seam**（刷新指定表格且**不清空表选择**，需与 ADR-0022 D2「reload 清空全部选择」及 `refreshList`（display-only）裁定边界）；③ **空闲不轮询**（仅当目标表格存在非终态行时打点；依赖 ② 的行可见性）。C4 完成后回填 038 `A-003` 三条 `accepted-residual` → `fixed`。Root/VP-010 保持 active 程序容器；不重开 VP-038/workspace-038。
+**W32（2026-09-19 立项并当日关门，GOAL-044 done 4/4）**：承接 `[workspace-038-batch-operations-and-job-center]` `GOAL-005`（R4 结果中心）cross 审计后留下的 3 条 low 级残余——用户 2026-09-19 指令「三条都修，先在 workspace-010 开承载子目标，038 侧有界接受后转由本区新子目标执行修正」。三项均以**跨页面通用能力**落地：① 列级 **`valueLabels`**（值 → i18n 键，fail-open 回落原始值；与 pinned `tagMap` 划界，不改 `docs/schemas/**`）+ jobs 六态接入；② **`refreshTable(tableId)` 定向刷新 seam**（用当前查询重取该表格且**保留选择**；`reloadList()` 的 ADR-0022 D2 语义以对照测试钉住未变；只读轮询不删 in-flight 键的理由见 `D-001` §2）；③ **空闲不轮询**（`activeStatuses` + 行注册表 `publishTableRows`/`tableRows`；行不可得时保守刷新）。**变异验证**：去 `valueLabels`、让 `refreshTable` 清空选择、禁用空闲判定——三处均实测变红后还原。回归：Go 全量 0 FAIL + vitest 119 files / 1468 tests + typecheck 0。审计 `A-001` self `pass`（0 required）+ `A-002` 三条 recommended 全 `fixed`；已按 P-003 回填 038 `A-003` 三条为 `fixed`，并在 roadmap「未决项统一登记」登记「本地扩展登记」项。Root/VP-010 保持 active 程序容器；不重开 VP-038/workspace-038。

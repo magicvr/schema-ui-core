@@ -70,10 +70,10 @@ R3 已关闭的 `I-038-011`/`012` 不再重复登记；`I-038-013` 已由本目�
 |------|--------|---------|---------------|------|
 | `A-001` | self | **pass** | 0 | 4 recommended（F-001 门禁可判别性、F-002 状态列口径、F-003 自动刷新前提、F-004 轮询取舍） |
 | `A-002` | independent（grok-4.6 · high · `/audit`） | **pass** | 0 | 4 recommended（F-001 门禁键名残余、F-002 客户端 error.job* 目录、F-003 前端夹具 attempt 预算、F-004 文档索引漂移） |
-| `A-003` | orchestrator（合并响应） | — | **0** | 5 条 `fixed`（含真反例取代嵌套守卫）；3 条 low 经**用户 2026-09-19 书面裁决** `accepted-residual`（有界接受）并移交 `[workspace-010]` `GOAL-044` 修复，复核触发 = 该目标交付 |
+| `A-003` | orchestrator（合并响应） | — | **0** | 8 条 recommended **全部 `fixed`**：5 条（含真反例取代嵌套守卫）在本目标内闭合；3 条 low 经**用户 2026-09-19 书面裁决**先 `accepted-residual`（有界接受）并移交 `[workspace-010]` `GOAL-044`，该目标当日 `done · 4/4` 交付后**回填 `fixed`** |
 
 > 两腿无冲突（未触发 P-004 冲突裁决）。C4 判据（self + independent 落盘、开放 required = 0）已满足；Root R4 检查点已于 2026-09-19 投影（3/5 → 4/5），本目标 `done · 4/4`。
-> 三条残余的负载工作由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（`active · 0/4`）承接；完成后回填本目标 `A-003` 与上表为 `fixed`。
+> 三条残余的负载已由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（`done · 4/4`）交付：列级 `valueLabels`、`refreshTable` 定向刷新 seam、`activeStatuses` 空闲不轮询（三处变异验证）；**无遗留残余**。用户可见效果由 R5 的浏览器/自动化回归复核。
 
 ## 父目标
 
