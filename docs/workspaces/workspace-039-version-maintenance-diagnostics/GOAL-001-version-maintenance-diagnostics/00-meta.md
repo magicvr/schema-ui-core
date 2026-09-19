@@ -56,9 +56,9 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-039-001 | required | 版本身份权威字段与升级说明入口 | R1、R3 | R1 | 扫描 `pkg/version`、system-monitoring status、changelog 入口 | open | — | 待 R1 |
-| I-039-002 | required | 四种 `runtime.mode` 在横幅 / Host / 写门禁错误码上的投影 | R1、R2 | R1 | 对照 bootstrap / operational / error catalog / feedback-policy | open | — | 待 R1 |
-| I-039-003 | required | 诊断摘要字段分母与排除项 | R1、R3 | R1 | 对照 healthz/readyz/status；排除 Grafana/Sentry/VP-015 residual | open | — | 待 R1 |
+| I-039-001 | required | 版本身份权威字段与升级说明入口 | R1、R3 | R1 | 扫描 `pkg/version`、system-monitoring status、changelog 入口 | **verified** | — | GOAL-002 D-001 §2 |
+| I-039-002 | required | 四种 `runtime.mode` 在横幅 / Host / 写门禁错误码上的投影 | R1、R2 | R1 | 对照 bootstrap / operational / error catalog / feedback-policy | **verified** | — | GOAL-002 D-001 §1（裁决 B） |
+| I-039-003 | required | 诊断摘要字段分母与排除项 | R1、R3 | R1 | 对照 healthz/readyz/status；排除 Grafana/Sentry/VP-015 residual | **verified** | — | GOAL-002 D-001 §3 |
 | I-039-004 | required | 承载面与默认集 | 激活、`go` | 激活前 | 默认候选核验 | **verified** | 实施期改新模块须复核 `go` | D-001；VRev-102：Shell 横幅 + 复用 system-monitoring |
 | I-039-005 | required | Admin 类 freshness | 激活与开区 | 激活前 | 五域 freshness | **verified** | 下次基线变更时复核 | `7e5ce891`→`6197e802` PASS；VRev-102 |
 | I-039-006 | non-blocking | 运行中切换 `runtime.mode` | 不进首波 | — | 真实运维需求时 `/vision` 复核 | deferred | 责任人 `/vision`；触发 = 热切换需求 | 首波不承诺热切换 |
@@ -73,5 +73,5 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 备注
 
-- 工作区建立与 Root 设立是已发生事实；R1～R4 尚未立项。
+- 工作区建立与 Root 设立是已发生事实。R1 子目标 `GOAL-002` 已立项（侦察完成，冻结等 P-004）；R2～R4 尚未立项。
 - `progress: 0/4` 只由上方 4 个显式检查点派生。
