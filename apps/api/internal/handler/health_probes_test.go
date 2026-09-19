@@ -19,7 +19,7 @@ func TestReadyzObjectProbes(t *testing.T) {
 	build := func(probes ...func(context.Context) error) *http.ServeMux {
 		env := newAuthTestEnv(t)
 		mux := http.NewServeMux()
-		RegisterWithMFAProbes(mux, env.a, env.st, operationlog.Recorder(nil), kernel.Plan{}, nil, ratelimit.NewProvider(), nil, nil, probes...)
+		RegisterWithMFAProbes(mux, env.a, env.st, operationlog.Recorder(nil), kernel.Plan{}, nil, ratelimit.NewProvider(), nil, nil, "normal", probes...)
 		_ = auth.IdentityFrom // keep import stable if helpers change
 		return mux
 	}

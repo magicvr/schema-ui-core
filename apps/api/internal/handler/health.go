@@ -43,14 +43,14 @@ func RegisterWithReadiness(mux *http.ServeMux, a *auth.Authenticator, st kernel.
 // login gate (S-10 · GOAL-017 D-002 §3): nil keeps the login contract
 // byte-identical.
 func RegisterWithMFA(mux *http.ServeMux, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, limiters kernel.RateLimiterProvider, captcha []CaptchaVerifier, mfa MFAVerifier) {
-	RegisterWithMFAProbes(mux, a, st, operations, plan, ready, limiters, captcha, mfa)
+	RegisterWithMFAProbes(mux, a, st, operations, plan, ready, limiters, captcha, mfa, "normal")
 }
 
 // RegisterWithMFAProbes is RegisterWithMFA plus optional readiness probes
 // beyond the store ping (VP-014 GOAL-003 D-001): when an S3-compatible object
 // backend is explicitly configured, composition passes a HeadBucket probe so
 // readyz covers the backend too. Nil entries are ignored.
-func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, limiters kernel.RateLimiterProvider, captcha []CaptchaVerifier, mfa MFAVerifier, probes ...func(context.Context) error) {
+func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.Store, operations operationlog.Recorder, plan kernel.Plan, ready func() bool, limiters kernel.RateLimiterProvider, captcha []CaptchaVerifier, mfa MFAVerifier, runtimeMode string, probes ...func(context.Context) error) {
 	mux.Handle("GET /healthz", healthz())
 	mux.Handle("GET /readyz", readyz(st, ready, probes...))
 	if plan.HasModule("core.auth-session") {
@@ -59,7 +59,7 @@ func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.
 			verifier = captcha[0]
 		}
 		authsHandler(mux, a, operations, limiters, verifier, mfa)
-		accountsHandler(mux, a)
+		accountsHandler(mux, a, runtimeMode)
 	}
 }
 

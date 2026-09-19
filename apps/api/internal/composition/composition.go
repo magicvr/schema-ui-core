@@ -440,7 +440,7 @@ func newMuxWithExtraProviders(
 	logger.Info("kernel event-bus port ready", "provider", "memory", "buffer_size", cfg.EventBusBufferSize)
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
-	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, string(cfg.RuntimeMode), objectProbe, mailProbe)
 	// workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery start/complete
 	// pair is a CENTRAL pre-auth surface (same layer as login) so every
 	// profile with core.auth-session gets it. The completion second-factor

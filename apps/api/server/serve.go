@@ -149,7 +149,7 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 		_ = st.Close()
 		return "", fmt.Errorf("server: trusted proxies: %w", err)
 	}
-	handler.RegisterWithMFAProbes(mux, authn, st, ops, plan, gate.Ready, ratelimit.NewProvider(), nil, nil)
+	handler.RegisterWithMFAProbes(mux, authn, st, ops, plan, gate.Ready, ratelimit.NewProvider(), nil, nil, "normal")
 	handler.RegisterSchemas(mux, authn, set.Pages)
 	if plan.HasModule("core.manifest-route") {
 		moduleFragments := make([]manifest.Fragment, 0, len(set.Fragments))

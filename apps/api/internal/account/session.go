@@ -6,6 +6,9 @@ package account
 type Session struct {
 	User     User            `json:"user"`
 	Features map[string]bool `json:"features"`
+	// RuntimeMode is the process runtime.mode (normal|maintenance|degraded|read-only).
+	// Additive VP-039 R2: Shell banners must read this field, not Host availability.mode.
+	RuntimeMode string `json:"runtimeMode"`
 }
 
 // User is the $context.user snapshot consumed by the renderer.

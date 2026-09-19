@@ -69,6 +69,8 @@ import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
 import { PageListActionsProvider } from "@/renderer/list-surface";
 import { HostFailureScreen } from "@/app/HostFailureScreen";
+import { RuntimeBanner } from "@/app/runtime-banner";
+import type { RuntimeMode } from "@/account/auth-client";
 import { NotificationBell } from "@/app/notification-bell";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 
@@ -121,6 +123,8 @@ export interface AppProps {
   resourceFetcher?: typeof fetch;
   /** Authenticated user rendered in the header; present → show a sign-out button. */
   currentUser?: { id: string; name?: string; avatarUrl?: string } | null;
+  /** Process runtime.mode from /me (VP-039 R2). Never from Host availability.mode. */
+  runtimeMode?: RuntimeMode;
   /** Revokes the session (AuthProvider flips to the login page). */
   onLogout?: () => void;
   /** Optional branding override (tests); defaults to live GET /api/branding. */
@@ -968,6 +972,7 @@ export function App({
   schemaFetcher,
   resourceFetcher,
   currentUser,
+  runtimeMode,
   onLogout,
   branding: brandingProp,
   searchableProviders,
@@ -1268,6 +1273,7 @@ export function App({
           {t("shell.accountError")}
         </div>
       ) : null}
+      <RuntimeBanner runtimeMode={runtimeMode} />
       {/* D-004 §3: sticky top bar (desktop shell language) */}
       <header
         data-shell-region="topbar"

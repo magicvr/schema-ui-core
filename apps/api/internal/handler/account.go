@@ -10,14 +10,14 @@ import (
 // accountsHandler registers GET /api/accounts/me behind the request-identity
 // middleware: the identity is resolved from the Bearer access token (or the
 // explicit dev-session fallback), never from a process-injected static session.
-func accountsHandler(mux routeRegistrar, a *auth.Authenticator) {
-	mux.Handle("GET /api/accounts/me", a.Middleware(meHandler(a)))
+func accountsHandler(mux routeRegistrar, a *auth.Authenticator, runtimeMode string) {
+	mux.Handle("GET /api/accounts/me", a.Middleware(meHandler(a, runtimeMode)))
 }
 
 // meHandler returns the current account session ($context snapshot) for the
 // authenticated request identity, including the boolean features projection from
 // the persisted menu grants (GOAL-006 S5 / I-006-002).
-func meHandler(a *auth.Authenticator) http.HandlerFunc {
+func meHandler(a *auth.Authenticator, runtimeMode string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := auth.UserIdentityFrom(r.Context())
 		if !ok {
@@ -29,6 +29,10 @@ func meHandler(a *auth.Authenticator) http.HandlerFunc {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not resolve features")
 			return
 		}
-		writeJSON(w, http.StatusOK, account.Session{User: user, Features: features})
+		mode := runtimeMode
+		if mode == "" {
+			mode = "normal"
+		}
+		writeJSON(w, http.StatusOK, account.Session{User: user, Features: features, RuntimeMode: mode})
 	}
 }

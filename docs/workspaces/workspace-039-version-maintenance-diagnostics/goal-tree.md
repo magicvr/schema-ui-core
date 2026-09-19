@@ -19,14 +19,15 @@ workspace_id: workspace-039-version-maintenance-diagnostics
 
 ```text
 GOAL-001-version-maintenance-diagnostics [active] (1/4) · 纲领容器
-└── GOAL-002-r1-denominator-and-contract-freeze [done] (4/4) · R1 范围与信息冻结
+├── GOAL-002-r1-denominator-and-contract-freeze [done] (4/4) · R1 范围与信息冻结
+└── GOAL-003-r2-runtime-banner-alignment [active] (0/4) · R2 维护横幅与运行时模式对齐
 ```
 
 ## 纲领路线图
 
 ```text
 R1 范围与信息冻结 [done · GOAL-002 · 4/4]
-   → R2 维护横幅与运行时模式对齐 [pending]
+   → R2 维护横幅与运行时模式对齐 [active · GOAL-003]
       → R3 版本提示与诊断摘要 [pending]
          → R4 回归、证据与关门 [pending]
 ```
@@ -39,6 +40,7 @@ R1 范围与信息冻结 [done · GOAL-002 · 4/4]
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-version-maintenance-diagnostics | Admin 版本更新、维护提示与诊断报告交付 | null | active | 1/4 | 2026-09-19 |
 | GOAL-002-r1-denominator-and-contract-freeze | R1 范围与信息冻结 | GOAL-001-version-maintenance-diagnostics | **done** | 4/4 | 2026-09-19 |
+| GOAL-003-r2-runtime-banner-alignment | R2 维护横幅与运行时模式对齐 | GOAL-001-version-maintenance-diagnostics | active | 0/4 | 2026-09-19 |
 
 ## 说明
 
