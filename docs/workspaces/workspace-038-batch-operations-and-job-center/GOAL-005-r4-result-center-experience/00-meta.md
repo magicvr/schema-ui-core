@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r4-result-center-experience
 title: R4 结果中心与体验收敛
-status: active
+status: done
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.2.0
-progress: 3/4
+version: 0.3.0
+progress: 4/4
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -20,6 +20,8 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 承接 Root `GOAL-001` 的纲领阶段 **R4**：把 R2 的作业读面与 R3 的异步批量导出收敛成**可用的结果中心体验**——进行中、成功、失败、取消、过期与结果已过期六类呈现可用；导出类结果可下载；失败在合同允许时可重试；并可取消进行中的作业。同时收敛中英文、浅色/深色、加载/空态/错误态与既有产品约定。
 
 R1～R3 已冻结并交付：契约归本地（方案 B，ADR-0022 冻结）、`jobs.read` 管理读面、`jobs.write` 提交写面、`jobs.batch-export` 作业与真实进度。R4 补上**写操作面**（取消/重试）与**呈现收敛**。
+
+**关门（2026-09-19）**：C1～C4 全部达成，`done · 4/4`。cross 审计两腿均 `pass`、开放 required = 0；8 条 recommended 中 5 条 `fixed`、3 条经用户书面裁决 `accepted-residual` 并移交 `[workspace-010]` `GOAL-044`（W32）修复（见 `03-audit/A-003`）。
 
 ## 范围与非目标
 
@@ -45,7 +47,7 @@ R1～R3 已冻结并交付：契约归本地（方案 B，ADR-0022 冻结）、`
 - [x] **C1 写操作面**：管理作用域取消/重试路由 + 仓储方法（`jobs.write` 门控、fail-closed）；既有 actor 隔离写路径逐字不变。证据：`02-execution/E-001-r4-implementation.md` §1/§3；`internal/jobs/actions_test.go` 反向钉住 `RequestCancel`/`Retry` 对非本人仍 `ErrNotFound`。
 - [x] **C2 结果中心呈现**：六类状态 + 进度 + 下载 + 重试 + 取消在 UI 可用；空态/加载态/错误态与既有约定一致。证据：`modules/jobs/schema/jobs.json`；`renderer/jobs-result-center.test.tsx`（9 例，渲染真实 `jobs.json`）。
 - [x] **C3 体验与测试收敛**：中英文、浅色/深色、可访问性；前端交互级测试落地；`I-038-013` 关闭；全量回归绿。证据：i18n 双目录键数对齐（含 `error.job*` 写面错误键）；主题 token 整页断言；`jobs-batch-export.test.tsx`（R3 遗留 4 例）；`job-result-download.test.ts`（`I-038-013` 单源守卫）；`renderer/jobs-result-center.test.tsx`（10 例，含 exhausted-failed 判别行与 API messageKey 本地化例）；vitest 117 files / 1458 tests 全绿 + `go test ./...` 全绿。
-- [ ] **C4 R4 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R4 检查点可投影。
+- [x] **C4 R4 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R4 检查点可投影。证据：`03-audit/A-001`（self `pass`）+ `A-002`（independent · grok-4.6 high `pass`）+ `A-003`（响应：5 fixed + 3 用户裁决 `accepted-residual` 并移交 `[workspace-010]` `GOAL-044`）；Root R4 检查点已投影（3/5 → 4/5）。
 
 ## 审计模式（P-002 实施前确定）
 
@@ -68,9 +70,10 @@ R3 已关闭的 `I-038-011`/`012` 不再重复登记；`I-038-013` 已由本目�
 |------|--------|---------|---------------|------|
 | `A-001` | self | **pass** | 0 | 4 recommended（F-001 门禁可判别性、F-002 状态列口径、F-003 自动刷新前提、F-004 轮询取舍） |
 | `A-002` | independent（grok-4.6 · high · `/audit`） | **pass** | 0 | 4 recommended（F-001 门禁键名残余、F-002 客户端 error.job* 目录、F-003 前端夹具 attempt 预算、F-004 文档索引漂移） |
-| `A-003` | orchestrator（合并响应） | — | **0** | 5 条 `fixed`（含真反例取代嵌套守卫）；3 条低危拟 `accepted-residual`，**等用户书面接受** |
+| `A-003` | orchestrator（合并响应） | — | **0** | 5 条 `fixed`（含真反例取代嵌套守卫）；3 条 low 经**用户 2026-09-19 书面裁决** `accepted-residual`（有界接受）并移交 `[workspace-010]` `GOAL-044` 修复，复核触发 = 该目标交付 |
 
-> 两腿无冲突（未触发 P-004 冲突裁决）。C4 判据（self + independent 落盘、开放 required = 0）已满足；Root R4 投影与 `GOAL-005` 关门待用户就 3 条残余作出选择后执行。
+> 两腿无冲突（未触发 P-004 冲突裁决）。C4 判据（self + independent 落盘、开放 required = 0）已满足；Root R4 检查点已于 2026-09-19 投影（3/5 → 4/5），本目标 `done · 4/4`。
+> 三条残余的负载工作由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（`active · 0/4`）承接；完成后回填本目标 `A-003` 与上表为 `fixed`。
 
 ## 父目标
 

@@ -15,7 +15,7 @@ version: 0.1.0
 - **source**：orchestrator（`/govern` 编排器对 A-001 self + A-002 independent 的合并响应）
 - **类型** / **scope**：`stage` · GOAL-005 C1～C3
 - **两腿结论**：A-001 self `pass`（0 required + 4 recommended）；A-002 independent `pass`（0 required + 4 recommended）。**无冲突**：两腿在合同、隔离、门禁、派生字段、前端打点、边界上同向；independent 未升级任何 self 项为 required，未提出与 self 相反的必改项，故**不触发 P-004 冲突裁决**。
-- **响应后状态**：**开放 required = 0**；8 条 recommended 中 **5 条 `fixed`**、**3 条 `pending-user`**（拟 `accepted-residual`，等用户书面接受）。
+- **响应后状态**：**开放 required = 0**；8 条 recommended 中 **5 条 `fixed`**、**3 条 `accepted-residual`**（用户 2026-09-19 书面裁决：三条都修，承载子目标移至 `[workspace-010…]` `GOAL-044`，本工作区有界接受后移交）。
 
 ## 1. 闭合清单（逐条）
 
@@ -26,35 +26,27 @@ version: 0.1.0
 | 3 | indep F-002 | HEAD 前端目录缺 `error.job*` 键（写面错误会回退服务端串并记 missing-translation） | **fixed** | 双目录各 +7 键（1227/1227）+ 判别例（`2ae1da37`） |
 | 4 | indep F-003 | 前端夹具 `retryable` 忽略 attempt 预算，`disabledWhen` 若改用 status 判据不会变红 | **fixed** | `ROWS` 增 exhausted-failed 判别行 + 变异验证（`2ae1da37`） |
 | 5 | indep F-004 | 文档索引漂移（01-decision 索引、00-meta 审计状态/计数、E-001 checkpoint、D-001 口径） | **fixed** | `58c5614f` 逐条纠正，docscheck 全绿 |
-| 6 | self F-002 | 状态列显示原始状态码，未逐值本地化 | **pending-user**（拟 `accepted-residual`） | 见 §2.1 |
-| 7 | self F-003 | `jobs-auto-refresh` 依赖 `reloadList()` 清空选择的语义 | **pending-user**（拟 `accepted-residual`） | 见 §2.2 |
-| 8 | self F-004 | 自动刷新在无进行中作业时仍按档位请求 | **pending-user**（拟 `accepted-residual`） | 见 §2.3 |
+| 6 | self F-002 | 状态列显示原始状态码，未逐值本地化 | **accepted-residual** → 移交 `[workspace-010…]` `GOAL-044` 修复 | 见 §2 |
 
-## 2. 拟 accepted-residual 的三条（等用户书面接受）
+## 2. 三条残余：用户裁决（2026-09-19 书面）与有界接受
 
-> 三条均为 low 严重度、已记录范围与复核触发条件的**有界残余**，不阻断任何门禁（开放 required = 0）。按 P-003，`accepted-residual` 需用户书面接受，故**不静默接受**。
+> 三条均为 low 严重度、已记录范围与复核触发条件的**有界残余**，不阻断任何门禁（开放 required = 0）。
 
-### 2.1 self F-002 · 状态/错误文本不做逐值本地化
+**用户裁决原文（2026-09-19）**：
 
-- **范围**：结果中心**状态列**显示冻结状态码（`queued`/`running`/…）+ 颜色徽标；作业行的**错误详情**显示作业行内存储的原始诊断串（`errorMessage`）。
-- **已本地化的部分**：列头、筛选器六态选项（`schema.jobs.status.*`）、写面错误反馈（`error.job*` 七键，本轮补齐）、详情抽屉字段名。
-- **为何不修**：逐值本地化需要协议级扩展（`valueLabels`/`tagMap` 类）→ 触碰 pinned 工件（`docs/schemas/**`）或新增渲染器能力，属 VP-038 明确非目标；且与既有产品约定一致（`wallet.status`、`scheduledTasks.enabled`、`users.mfaEnabled` 同样显示原始值）。
-- **风险**：中文操作员在状态列读到英文码。
-- **复核触发**：用户提出逐值本地化需求，或后续 VP/协议波次引入 `valueLabels`。
+> 三条都修，但是判断一下是直接修，还是需要再工作区开启一个子目标来承载治理上下文，如果后者比较好，则先开再工作区10开启一个承载这三项修复的子目标，然后本工作区有界接受，转由工作区10的新子目标执行修正——反之则直接进行修正。
 
-### 2.2 self F-003 · 自动刷新依赖 `reloadList()` 清空选择的语义
+**编排器结构选型判定（记录理由，非代裁）**：三项全部是**跨页面通用能力**（渲染器表格层：列值本地化能力、表格定向刷新 seam、行可见性驱动的轮询判据），不属 VP-038 交付范围；在 038 内实现会与其冻结非目标冲突（不触碰 pinned 工件、不扩渲染器能力），且会产出 jobs 专用特例。故按 AGENTS §6e「独立树/跨边界 → 另立承载」选择**后者**：在 `[workspace-010-design-implementation-conformance]` 开波次子目标 **`GOAL-044-w32-r4-residual-seams`**（`active · 0/4`）承载，本工作区**有界接受**并移交。先例：`[workspace-010…] GOAL-043-w31-cross-workspace-residual-closeout`。
 
-- **范围**：`jobs-auto-refresh` 每拍调用页面级 `reloadList()`，该 seam 会清空本页所有表选择（ADR-0022 D2）。
-- **当前为何惰性**：`jobs` 表未声明 `props.selection`，无选择可清；交互测试断言页面无选择列（前提被钉住，一旦破坏即变红）。已登记为 `D-001` §7 R-1.2。
-- **为何不修**：渲染器未提供「定向刷新表格而不清空选择」的 seam（`refreshList` 只覆盖 display 节点），新增该 seam 属渲染器能力扩展，超出本次已冻结范围。
-- **复核触发**：`jobs` 表启用行选择时（届时必须改用定向刷新或显式排除）。
+**接受范围（bounded）**：
 
-### 2.3 self F-004 · 无进行中作业时仍按档位请求
+| # | finding | 接受范围 | 复核触发 |
+|---|---------|----------|----------|
+| 1 | self F-002 状态/错误文本未逐值本地化 | 仅限**值文本**（状态码、行内存储诊断串）；列头/筛选器/写面错误反馈必须保持已本地化 | `GOAL-044` 交付通用列值本地化能力后回填 `fixed` |
+| 2 | self F-003 自动刷新依赖 `reloadList()` 清空选择 | 仅限 **jobs 表当前无选择**这一前提成立期间；前提已由测试钉住 | `GOAL-044` 交付定向刷新 seam 后回填 `fixed` |
+| 3 | self F-004 无进行中作业时仍按档位轮询 | 仅限默认 Off、由操作员显式开启的场景 | `GOAL-044` 交付空闲不轮询后回填 `fixed` |
 
-- **范围**：自动刷新 tick 不区分列表内是否仍有非终态作业。
-- **为何不修**：组件读不到表格行（自定义组件无行数据 seam），要判断「是否还有进行中作业」需新增数据 seam 或额外请求；当前形态与既有 `monitoring-auto-refresh` 同形，且**默认 Off**、由操作员显式开启。
-- **风险**：操作员开启后即使作业全部终结仍持续请求（有界的无谓流量）。
-- **复核触发**：用户反馈后台流量问题，或渲染器提供行可见性 seam。
+**闭合路径**：`accepted-residual`（用户书面接受 + 明确范围 + 复核触发）。`GOAL-044` C4 完成后，本文件与 `00-meta` 的对应条目**回填为 `fixed`**（只加闭合注记，不改 A-001 正文）。
 
 ## 3. 对 self F-001 判断错误的纠正（据实留痕）
 
@@ -74,9 +66,9 @@ A-001 self 的 F-001 处置曾写「真正的 write-vs-read 反例在策略集�
 ## 5. 门禁判定
 
 - 相关意见（scope 覆盖 R4 C1～C3）：A-001、A-002、本条 —— 全部已汇总并响应。
-- **开放 required = 0**（两腿均 0 required；5 条 recommended 已 `fixed`）。
-- 3 条 `pending-user` 均为 low 且不阻断（无门禁语义）；按 P-003 需用户书面接受方能记为 `accepted-residual`，故本条目**不预先关闭**它们。
-- 因此 **C4 检查点的判据已满足**（self + independent 落盘、开放 required = 0）；Root R4 投影与 `GOAL-005` 关门在用户就 §2 三条作出选择后执行，避免把未接受的残余写进关门记录。
+- **开放 required = 0**（两腿均 0 required；5 条 recommended 已 `fixed`，3 条经用户书面裁决 `accepted-residual` 并附范围与复核触发）。
+- 3 条残余的复核触发已明确 = `[workspace-010…]` `GOAL-044` 交付；届时回填 `fixed`。
+- 因此 **C4 检查点的判据已满足**（self + independent 落盘、开放 required = 0、残余已合法闭合）；Root R4 投影与 `GOAL-005` 关门随之执行。
 
 ## 6. 本条不修改
 
