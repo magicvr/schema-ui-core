@@ -43,14 +43,14 @@ parent: null
 - VP：[VP-039-version-maintenance-diagnostics](../../vision/plans/VP-039-version-maintenance-diagnostics.md)（**`active` · v0.2.0**）
 - 计划审视：[VRev-101](../../vision/reviews/VRev-101-vp039-vp040-planned.md) self `pass`
 - 激活审视：[VRev-102](../../vision/reviews/VRev-102-vp039-activation.md) self `pass`
-- Vision open required：0；`I-039-004`/`I-039-005` `verified`；`I-039-001`～`003` open（R1）；`I-039-006` deferred non-blocking
+- Vision open required：0；`I-039-001`～`005` `verified`；`I-039-006` deferred non-blocking
 
 ## 纲领阶段
 
 | 阶段 | 目的 | 状态 |
 |------|------|------|
 | R1 | 分母与契约冻结：模式×横幅×错误码矩阵、版本身份与升级入口、诊断字段分母 | **done**（`GOAL-002` `done · 4/4`；P-004 B/A/A；cross 开放 required = 0） |
-| R2 | 维护横幅 + 与 operational gate / Host bootstrap 语义对齐 | 未开始 |
+| R2 | 维护横幅 + 与 operational gate / Host bootstrap 语义对齐 | **done**（`GOAL-003` `done · 4/4`；T-1/T-2/T-3；cross 开放 required = 0） |
 | R3 | 版本提示 + 诊断摘要（复用或有界扩展 system-monitoring） | 未开始 |
 | R4 | Profile×权限×主题回归、证据矩阵、边界复核与关门 | 未开始 |
 

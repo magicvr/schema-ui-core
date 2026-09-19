@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-runtime-banner-alignment
 title: R2 维护横幅与运行时模式对齐
-status: active
+status: done
 parent: GOAL-001-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 4/4
 plan_refs:
   - VP-039-version-maintenance-diagnostics
 primary_plan: VP-039-version-maintenance-diagnostics
@@ -28,10 +28,10 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 成功检查点
 
-- [ ] **C1** T-1 生产者折叠 + 测试
-- [ ] **C2** T-2 `/me` + `fetchMe` 投影
-- [ ] **C3** T-3 Shell 横幅三分文案 / i18n / 主题
-- [ ] **C4** self + grok independent，开放 required = 0
+- [x] **C1** T-1 生产者折叠 + 测试
+- [x] **C2** T-2 `/me` + `fetchMe` 投影
+- [x] **C3** T-3 Shell 横幅三分文案 / i18n / 主题
+- [x] **C4** A-001 self pass + A-002 grok independent pass + A-003；开放 required = 0
 
 ## 审计模式
 
