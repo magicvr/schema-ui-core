@@ -66,7 +66,7 @@ async function renderWithRows(
     root.render(
       <I18nProvider stored="en-US">
         <SchemaCrudContext.Provider value={crud}>
-          <JobsAutoRefresh node={node()} />
+          <JobsAutoRefresh node={node()} context={{}} />
         </SchemaCrudContext.Provider>
       </I18nProvider>,
     );
