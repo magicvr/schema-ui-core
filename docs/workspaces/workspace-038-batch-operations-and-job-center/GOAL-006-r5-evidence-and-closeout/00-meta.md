@@ -41,7 +41,7 @@ R1～R4 均已 `done · 4/4`（R4 的 cross 审计两腿 `pass`、开放 require
 
 - [x] **C1 退出矩阵**：VP-038 判据 1～7 逐条附证据；未达成或有界项显式标注（含残余登记指向）。证据：`02-execution/E-001-r5-exit-matrix.md` §1（判据 1～6 **达成**；判据 7 依赖本目标的 C3/C4）。
 - [x] **C2 浏览器/自动化回归**：e2e 结果落盘（命令 + 通过/失败明细 + 覆盖说明）。证据：`E-001` §2/§3 —— 首次运行暴露**既有挂具顺序缺陷**（VP-036 新增 spec 消费 fresh-seed 前提），隔离复验确认与本 VP 无关，重命名修复后 **16 passed / 4 skipped / 0 failed（exit 0）**。
-- [x] **C3 独立意见与残余登记**：independent 审计落盘并合并响应（开放 required = 0）；残余在 roadmap 登记节可查。证据：`03-audit/A-002`（independent · grok-4.6 high · **pass**，0 required + 4 recommended；独立复跑 Go 点名测试/jobs 包/迁移 checksum/6 个 vitest 文件 64 例/**全量 e2e 16 passed·4 skipped·0 failed**）；`03-audit/A-003`（响应：F-001/F-002 登记 roadmap bounded residual；F-003 由登记闭合；F-004 索引纠偏，含 `E-001` 的 profile 与 migration 口径更正）。
+- [x] **C3 独立意见与残余登记**：independent 审计落盘并合并响应（开放 required = 0）；残余在 roadmap 登记节可查。证据：`03-audit/A-002`（independent · grok-4.6 high · **pass**，0 required + 4 recommended；独立复跑 Go 点名测试/jobs 包/迁移 checksum/6 个 vitest 文件 64 例/**全量 e2e 16 passed·4 skipped·0 failed**）；`03-audit/A-003`（响应：F-001 登记 roadmap bounded residual；F-002 登记 → 经**用户 2026-09-19 指令**补测后转 `fixed`；F-003 由登记闭合；F-004 索引纠偏）；`03-audit/A-004`（补测：新增 `e2e/jobs-result-center.spec.ts`，admin profile 端到端跑通；双 profile 全量 mvp 16 passed·5 skipped·0 failed / admin **17 passed·4 skipped·0 failed**）。
 - [ ] **C4 组合投影与关门提请**：目标树/工作区/Root 同步；向用户提请 VP-038 关门（**等用户书面确认**，不静默）。
 
 ## 信息就绪与未知项（P-005）

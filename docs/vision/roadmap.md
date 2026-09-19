@@ -419,7 +419,7 @@ Admin 功能最近一拍：**[VP-037-admin-workflow-continuity](plans/VP-037-adm
 
 > **用途**：本区是"已交付范围之外的未决事项"的**统一登记处**——不是待办清单、不是承诺、也不代表已验证。目的只有一个：日后任何人对某个未实现或有界接受的能力有疑问时，能在这里一眼看到**它是什么、为什么不现在做、什么条件下做、谁负责、证据在哪**，而不必翻遍各工作区台账。
 > **维护约定**：新增或闭合任何残余/悬置/触发项时**必须同步本节**（与 goal-tree、`03-audit` 台账同级要求）。登记只描述现状与触发条件，禁止把 deferred/recommended 写成已验证或已承诺。
-> **最近更新**：2026-09-19（① VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`）**；② R4 结果中心三条残余经用户裁决移交 `[workspace-010] GOAL-044` 修复后登记为 `fixed`；③ 新增「本地扩展登记」登记项；④ VP-038 R5 关门审计的两条 recommended（e2e fresh-seed 顺序契约、jobs 结果中心缺端到端覆盖 + 默认 mvp 不挂载）登记为 bounded residual。其余条目不变）。
+> **最近更新**：2026-09-19（① VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`）**；② R4 结果中心三条残余经用户裁决移交 `[workspace-010] GOAL-044` 修复后登记为 `fixed`；③ 新增「本地扩展登记」登记项；④ VP-038 R5 关门审计的 e2e fresh-seed 顺序契约登记为 bounded residual，jobs 结果中心缺端到端覆盖一项经用户指令补测后转 `fixed`。其余条目不变）。
 
 ### 一、有界残余（B 类：实现已交付并验证，剩覆盖/文档加固）
 
@@ -433,7 +433,7 @@ Admin 功能最近一拍：**[VP-037-admin-workflow-continuity](plans/VP-037-adm
 | `[workspace-038] GOAL-005 A-001 F-002/F-003/F-004` | R4 结果中心三条 low 级项：状态/错误文本未逐值本地化；自动刷新依赖 `reloadList()` 清空选择；无进行中作业时仍按档位轮询 | **2026-09-19 `fixed`**（用户裁决移交 → `[workspace-010]` `GOAL-044-w32-r4-residual-seams` 交付通用能力：列级 `valueLabels`、`refreshTable` 定向刷新 seam、`activeStatuses` 空闲判定；三条均经变异验证） | — | workspace-010 GOAL-044 | `GOAL-044` `D-001`/`E-001`/`A-001`；`[workspace-038] GOAL-005 A-003` §2 |
 | 本地扩展登记（`valueLabels`/`badgeStyleField`/`truncate`/`width`/`minWidth` 等列级与节点级本地扩展缺少**单一清单**） | **登记（未做）**：这些扩展与 pinned `docs/schemas/**` 的边界目前只在各波次决策里分散记录 | 出现「这是 pinned 还是本地扩展」的实际争议，或后续协议波次需要一次性核对时 | workspace-010（后续符合性波次） | `[workspace-010] GOAL-044 A-001 F-003`；`GOAL-044 D-001` §1 |
 | `[workspace-038] GOAL-006 A-001/A-002 F-001` | e2e 挂具的 **fresh-seed 顺序契约**仍依赖文件名排序（`00-` 前缀）：全量套件共用一块 scratch 库，任何更靠前的新 spec 若使用 sign-in helper（其会自动完成强制改密）都会再次消费该前提，失败形态是难与真实缺陷区分的「登录 401」 | **bounded residual（2026-09-19 登记）**：本次已由重命名修复并两向复验（隔离通过 / 全量 16 passed / 4 skipped / 0 failed），但机制仍是隐式约定 | 后续波次新增 e2e 文件，或排序/挂具策略变更时 | workspace-010（后续符合性波次；e2e 挂具属 W23/W24/W25 一系） | `[workspace-038] GOAL-006 E-001` §2；`A-001/A-002` F-001；`apps/web/e2e/00-force-password-change.spec.ts` 注释 |
-| `[workspace-038] GOAL-006 A-001/A-002 F-002` | 浏览器回归**未驱动** jobs 结果中心：11 个 e2e spec 无「提交批量导出 → 观察进度 → 下载」路径；且 `npm run test:e2e` 默认 `APP_PROFILE=mvp`（**不含** `admin.jobs`），本 VP 新增面在默认 e2e 中模块级缺席 | **bounded residual（2026-09-19 登记）**：判据 4/5 的浏览器侧证据目前来自真实 `jobs.json` 的渲染/交互级测试（24 例）+ HTTP 契约测试，而非真实浏览器端到端 | 用户要求补端到端证据，或后续波次收紧「浏览器/自动化回归」口径时（需以 admin profile 运行） | `/vision` 或后续符合性波次 | `[workspace-038] GOAL-006 E-001` §3；`A-001/A-002` F-002；`playwright.config.ts` 默认 mvp |
+| `[workspace-038] GOAL-006 A-001/A-002 F-002` | 浏览器回归**未驱动** jobs 结果中心：11 个 e2e spec 无「提交批量导出 → 观察进度 → 下载」路径；且 `npm run test:e2e` 默认 `APP_PROFILE=mvp`（**不含** `admin.jobs`），本 VP 新增面在默认 e2e 中模块级缺席 | **2026-09-19 `fixed`**（用户指令「先补 jobs e2e 再关门」）：新增 `apps/web/e2e/jobs-result-center.spec.ts`（admin profile 专用，mvp 下 `test.skip` 显式跳过）——真实浏览器路径：选择行 → 提交异步导出 → 观察真实进度 → 终态下载（文件名 = 服务端 `users-selection.csv`）→ 结果中心读同一作业（本地化 `Succeeded`）→ 行操作再次下载；双 profile 全量复跑：mvp 16 passed / 5 skipped / 0 failed，admin 17 passed / 4 skipped / 0 failed（均 exit 0） | 未覆盖部分（重试/取消的浏览器端到端路径）随实现扩展时补 | `/govern`（后续波次） | `[workspace-038] GOAL-006 E-001` §2/§3；`A-004`；`apps/web/e2e/jobs-result-center.spec.ts` |
 
 ### 二、悬置的范围决策（C 类：非缺陷，等需求再定）
 

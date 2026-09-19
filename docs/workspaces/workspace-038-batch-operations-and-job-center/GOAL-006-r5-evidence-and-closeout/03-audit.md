@@ -17,6 +17,7 @@ version: 0.2.0
 | A-001 | 2026-09-19 | self | R5 C1～C2（退出矩阵 / 浏览器回归） | **pass** | 0（2 recommended） | [03-audit/A-001-r5-closeout-self.md](03-audit/A-001-r5-closeout-self.md) |
 | A-002 | 2026-09-19 | **independent**（grok-build · grok-4.6 · high · `/audit`） | R5 / VP-038 关门复审（判据 1～7 证据充分性 / e2e 挂具根因 / 范围保持 / R4 残余回填名实） | **pass** | 0（4 recommended） | [03-audit/A-002-r5-closeout-independent.md](03-audit/A-002-r5-closeout-independent.md) |
 | A-003 | 2026-09-19 | orchestrator | A-001 + A-002 合并响应 + C4 组合投影 | — | **0**（6 条 recommended 全处置：登记/纠偏/闭合） | [03-audit/A-003-a001-a002-response.md](03-audit/A-003-a001-a002-response.md) |
+| A-004 | 2026-09-19 | orchestrator | 审计后补测（jobs 结果中心 e2e）与 F-002 闭合（用户指令） | — | **0** | [03-audit/A-004-post-audit-jobs-e2e-addition.md](03-audit/A-004-post-audit-jobs-e2e-addition.md) |
 
 ## 说明
 

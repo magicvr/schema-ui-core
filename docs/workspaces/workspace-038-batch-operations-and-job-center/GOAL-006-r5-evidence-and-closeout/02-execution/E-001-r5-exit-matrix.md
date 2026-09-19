@@ -37,12 +37,15 @@ version: 0.1.0
 | 隔离复验 | `npx playwright test force-password-change.spec.ts` → **1 passed (10.3s)**（fresh 库下前提成立）→ 确认为**共用库 + 文件顺序假设被后续波次破坏**的既有挂具缺陷，与 R1～R5 实现无关 |
 | 修复 | 按 R5 发现处置：将该用例重命名为 `00-force-password-change.spec.ts` 使其**真的**先跑（文件内注释记录原因与两向证据），不改变任何断言 |
 | 修复后复跑 | **`16 passed / 4 skipped / 0 failed`（exit 0，3.9m）** —— 含 `00-force-password-change.spec.ts`（1.9s，先跑）与全部其余 spec；4 个 skip 为既有的 profile/配置条件跳过（`localization` 的 admin-only 段 + `telegram-operator-layout` 三例按频道路由条件跳过） |
+| **补测（用户 2026-09-19 指令：先补 jobs e2e 再关门）** | 新增 `e2e/jobs-result-center.spec.ts`：真实浏览器路径 **选择行 → 提交异步批量导出 → 观察进度 → 取回 CSV → 到结果中心读同一作业（本地化终态）→ 用行操作再次下载**；断言下载文件名 = 服务端 `users-selection.csv`（两次下载同源）。以 admin profile 运行（`admin.jobs` 仅在该 profile 挂载；spec 内 `test.skip(appProfile !== "admin")` 保证 mvp 下显式跳过而非假绿） |
+| **双 profile 全量复跑** | 默认（mvp）：**16 passed / 5 skipped / 0 failed**（第 5 个 skip = 新 spec 的 profile 守卫）；`APP_PROFILE=admin`：**17 passed / 4 skipped / 0 failed**（新 spec 实跑通过，20.8s 单跑）。两条命令均 exit 0 |
 
 ### 3. e2e 覆盖与判据 4/5 的关系（诚实边界）
 
-- e2e 分母（11 个 spec 文件）覆盖：登录/强制改密、命令面板、host 失败面、列表视觉、本地化、schema 鉴权传输、schema CRUD、shell、Telegram 运营台布局、长内容抽查。**没有一个 spec 直接驱动 jobs 结果中心**（无「提交批量导出 → 观察进度 → 下载」的端到端用例）；且默认 profile 为 `mvp`（不含 `admin.jobs`），因此即使新增用例也需显式以 admin profile 运行。
-- 因此判据 4/5 的浏览器侧证据来自**渲染/交互级测试**（真实 `jobs.json` + 生产渲染链 + 真实路由断言的 24 例，见 §1 判据 4）与 HTTP 契约测试，而不是 e2e。
-- **该缺口已登记**（R5 `A-001` F-002 + 独立腿 `A-002` F-002 加强），并在 `docs/vision/roadmap.md`「未决项统一登记」可查：是否新增一条 jobs 结果中心的 e2e 用例（admin profile），属「后续波次 or bounded residual」，交由用户/审计裁量，不在本波次静默扩大范围。
+- **补测前**（R5 审计 A-001/A-002 F-002 登记的缺口）：11 个 spec 无「提交批量导出 → 观察进度 → 下载」路径，且默认 `APP_PROFILE=mvp` 不含 `admin.jobs` → 本 VP 新增面在默认 e2e 中模块级缺席。
+- **补测后（2026-09-19，用户指令）**：新增 `e2e/jobs-result-center.spec.ts`（admin profile 专用，mvp 下显式 skip），把该路径变成**真实浏览器端到端**证据：选择行 → `导出所选` → **观察真实进度**（`[data-jobs-batch-export-progress]`）→ 终态下载（断言文件名 = 服务端 `users-selection.csv`）→ 结果中心列出同一作业且状态为**本地化**终态（`Succeeded`）→ 行操作再次下载同一文件。
+- 判据 4/5 的浏览器侧证据因此由「间接（交互级 + 契约测试）」升级为「**端到端 + 交互级 + 契约测试**」三层；`A-002` F-002 的缺口闭合（`A-004` 登记）。默认 mvp 运行下该 spec 以 profile 守卫跳过——这是**显式跳过**，不会伪装成本 VP 已被 mvp 覆盖。
+- 仍未覆盖（保持登记）：并行/重试/取消的浏览器端到端路径（当前由交互级与 HTTP 契约测试覆盖）；`GOAL-006 A-001/A-002 F-001`（e2e fresh-seed 顺序契约）仍为 roadmap 上的 bounded residual。
 
 ### 4. 边界
 
