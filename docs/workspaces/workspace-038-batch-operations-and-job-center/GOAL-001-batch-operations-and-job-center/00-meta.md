@@ -1,12 +1,12 @@
 ---
 id: GOAL-001-batch-operations-and-job-center
 title: Admin 批量操作与异步结果中心交付
-status: active
+status: done
 parent: null
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.6.0
-progress: 4/5
+version: 1.0.0
+progress: 5/5
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -31,6 +31,7 @@ Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检
 | GOAL-003-r2-generic-job-read-surface | R2 通用作业读面 | **done** | 4/4 |
 | GOAL-004-r3-async-batch-operation | R3 批量操作异步承接 | **done** | 4/4 |
 | GOAL-005-r4-result-center-experience | R4 结果中心与体验收敛 | **done** | 4/4 |
+| GOAL-006-r5-evidence-and-closeout | R5 证据与关门 | **done** | 4/4 |
 
 R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。R2 于同日立项并关门（`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，开放 required = 0）；R2 交付 `admin.jobs` 模块与跨 actor 管理读面。**R3 于同日立项并关门**（`GOAL-004`，`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 8 条 recommended 全 `fixed`，开放 required = 0）；R3 交付 `jobs.batch-export` 异步批量导出（202 + 真实进度 + 结果）与前端触发组件。**R4 于同日立项并关门**（`GOAL-005`，`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 5 `fixed` + 3 条经用户书面裁决 `accepted-residual`（有界接受，负载移交 `[workspace-010]` `GOAL-044`），开放 required = 0）；R4 交付管理作用域取消/重试 + `jobs` 页结果中心（六态/详情/下载/自动刷新）与交互级测试。R5 子目标在对应阶段立项。
 
@@ -69,7 +70,11 @@ R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok 
 - [x] **R2 通用作业读面**：Job 列表/详情/结果读取 API + 权限与作用域过滤 + fail-closed；不改变 Job 六态合同。→ 由 `GOAL-003-r2-generic-job-read-surface` 交付（**`done · 4/4`**，2026-09-19）。
 - [x] **R3 批量操作异步承接**：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 既有语义与回归不退化。→ 由 `GOAL-004-r3-async-batch-operation` 交付（**`done · 4/4`**，2026-09-19）。
 - [x] **R4 结果中心与体验收敛**：列表/详情/进度/终态/过期/重试/取消/下载；中英文、浅色深色、加载空态错误态、可访问。→ 由 `GOAL-005-r4-result-center-experience` 交付（**`done · 4/4`**，2026-09-19；cross 审计 A-001 self `pass` + A-002 grok independent `pass` → A-003 响应 5 `fixed` + 3 用户裁决 `accepted-residual`（移交 `[workspace-010]` `GOAL-044`），开放 required = 0）。
-- [ ] **R5 证据与关门**：退出矩阵、浏览器/自动化回归、独立意见、残余登记、组合投影同步与用户确认；开放 required = 0。
+- [x] **R5 证据与关门**：退出矩阵、浏览器/自动化回归、独立意见、残余登记、组合投影同步与用户确认；开放 required = 0。→ 由 `GOAL-006-r5-evidence-and-closeout` 交付（**`done · 4/4`**，2026-09-19；VP-038 判据 1～7 达成，cross 审计 self `A-001` + grok independent `A-002` 均 `pass`，响应后开放 required = 0；e2e 双 profile 全绿含新增 jobs 端到端用例；**用户书面确认 VP-038 关门**）。
+
+## 关门（2026-09-19）
+
+五个纲领检查点全部达成（`done · 5/5`）。VP-038 经**用户书面确认**于同日 `closed` v1.0.0（依据：判据 1～7 逐条证据 + R5 cross 关门审计两腿 `pass` + 开放 required = 0 + 双 profile 浏览器回归全绿）。关门后残余 1 条 bounded residual（e2e fresh-seed 顺序契约）登记于 `docs/vision/roadmap.md`「未决项统一登记」；`I-038-006`（历史作业保留/清理）保持 `deferred · non-blocking`。**关门 Vision Review 未执行**（如实登记；如需愿景层独立审视可另行 `/vision-audit`）。
 
 ## 信息就绪与未知项（P-005）
 
@@ -96,7 +101,8 @@ R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok 
 
 ## 备注
 
-- workspace/Root scaffold 是已发生事实；纲领 R1、R2、R3、R4 已由 `GOAL-002` / `GOAL-003` / `GOAL-004` / `GOAL-005` 交付并关门（各 `done · 4/4`），R5 待承接；`progress: 4/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
-- 建区不代表任何实现阶段完成；VP-038 关门须链接本区证据并经用户确认。
-- Vision Review `VRev-098`/`VRev-099` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。
-- `admin.jobs` 模块已由 R2（`GOAL-003`）建立并交付管理读面；**R2 之后** `apps/**` 已有实质实现变更（见 `GOAL-003/02-execution/E-002`）。
+- workspace/Root scaffold 是已发生事实；纲领 R1、R2、R3、R4、R5 已由 `GOAL-002` / `GOAL-003` / `GOAL-004` / `GOAL-005` / `GOAL-006` 全部交付并关门（各 `done · 4/4`），`progress: 5/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status；本 Root 已 `done`。
+- 建区不代表任何实现阶段完成；VP-038 关门已链接本区证据并经**用户书面确认**（2026-09-19）。
+- Vision Review `VRev-098`/`VRev-099` 属愿景层；Goal 审计已写入各子目标 `03-audit/`，**未**用 Vision Review 代替；关门 Vision Review 未执行（如实登记，可另行 `/vision-audit`）。
+- `admin.jobs` 模块已由 R2（`GOAL-003`）建立并交付管理读面；R2 之后 `apps/**` 有实质实现变更（见 `GOAL-003`/`004`/`005` 的 `02-execution`）。
+- **跨区交付**：R4 三条低残余的通用能力修复由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（`done · 4/4`）交付并回填 `fixed`；本区未因此扩渲染器能力，亦未重开任何既有 VP。

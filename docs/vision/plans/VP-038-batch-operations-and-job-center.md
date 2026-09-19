@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-038-batch-operations-and-job-center
 title: Admin 批量操作与异步结果中心
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-038-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.2.0
+version: 1.0.0
 parent: null
 ---
 
@@ -17,11 +17,14 @@ parent: null
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-19 · v0.2.0 · 用户确认激活；lead `workspace-038-batch-operations-and-job-center`） |
+| status | **`closed`**（2026-09-19 · v1.0.0 · **用户书面确认关门**；lead `workspace-038-batch-operations-and-job-center`） |
+| 关门依据 | ① **用户书面确认**（2026-09-19，「确认 VP-038 关门」）；② 方向级退出判据 1～7 全部达成（逐条证据见 `[workspace-038] GOAL-006/02-execution/E-001-r5-exit-matrix.md`）；③ R5 cross 关门审计：self `A-001` `pass` + independent `A-002`（grok-build · grok-4.6 · high · `/audit`）`pass`，`A-003`/`A-004` 响应后**开放 required = 0**；④ 浏览器回归双 profile 全绿（mvp 16 passed / 5 skipped / 0 failed；admin **17 passed / 4 skipped / 0 failed**，含新增的 jobs 结果中心端到端用例）；⑤ Root `GOAL-001-batch-operations-and-job-center` 随之 `done · 5/5` |
+| 关门后残余 | 一条 bounded residual：**e2e fresh-seed 顺序契约**（挂具机制性观察，已修复并两向复验，登记于 `roadmap.md`「未决项统一登记」）；历史作业保留/清理（`I-038-006`）保持 `deferred · non-blocking`（责任人 `/vision`，触发 = 容量/保留期真实需求） |
+| 关门 Vision Review | **未执行**（关门依据为用户书面确认 + Goal 层 cross 审计）；如需愿景层独立审视可另行以 `/vision-audit` 提请——本条如实登记，不以 Goal 审计冒充 Vision Review |
 | 组合位置 | **Admin 功能分支 · 体验增强**；承接 VP-037 之后的工作流连续性下一拍，也是 `roadmap.md`「体验增强」清单中「批量结果中心」的承接者 |
-| Vision Review | 计划阶段 [VRev-098](../reviews/VRev-098-vp038-batch-operations-job-center-planned.md) self `pass`；激活就绪 [VRev-099](../reviews/VRev-099-vp038-batch-operations-job-center-activation.md) self `pass`；两条报告 open required = 0 |
+| 激活时 Vision Review | 计划阶段 [VRev-098](../reviews/VRev-098-vp038-batch-operations-job-center-planned.md) self `pass`；激活就绪 [VRev-099](../reviews/VRev-099-vp038-batch-operations-job-center-activation.md) self `pass`；两条报告 open required = 0 |
 | 激活门禁 | **已满足**：`I-038-004` 用户 P-004 裁决 = 方案 A（新建 `admin.jobs`，进入 admin 默认集；Profile 内容扩展，不暂挂 `go`）；`I-038-005` Admin 类 freshness **PASS**（`0c29c08` → `7e5ce891`）；用户确认 workspace/Root slug |
-| 基础设施边界 | 首波不消耗 Redis、MQ、多实例、外部队列或专用搜索引擎 trigger；不重开 VP-012 |
+| 基础设施边界 | 首波不消耗 Redis、MQ、多实例、外部队列或专用搜索引擎 trigger；不重开 VP-012（关门复核：区间内未实现/解除任何 gated 能力） |
 
 ## 用户已裁决（2026-09-19 · P-004）
 
@@ -92,7 +95,7 @@ parent: null
 
 `I-038-004` 与 `I-038-005` 已于 2026-09-19 关闭（用户 P-004 裁决 + Admin 类 freshness PASS），激活门禁解除。`I-038-001`～`I-038-003` 已由 `GOAL-002`（R1）经用户 P-004 裁决关闭为 `verified`（2026-09-19 C4 投影同步本表）。`I-038-003` 同时承接 `V-F126`。`I-038-006` 是有界延期，不代表已验证或承诺后续实现。
 
-> **R5 关门证据状态（2026-09-19，`[workspace-038] GOAL-006`）**：判据 1～6 已由 `GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据达成；判据 7 的「退出矩阵 + 浏览器/自动化回归 + 独立意见 + 开放 required = 0」已满足（R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`，`A-003` 响应后开放 required = 0；全量 e2e 16 passed / 4 skipped / 0 failed）。**剩余关门条件 = 用户书面确认**（`I-038-019`）；两条 bounded residual（e2e fresh-seed 顺序契约、jobs 结果中心缺端到端覆盖）已登记于 `docs/vision/roadmap.md`「未决项统一登记」。**本 VP 的 `status` 在用户书面确认前保持 `active`。**
+> **R5 关门证据状态（2026-09-19，`[workspace-038] GOAL-006`）— 已关门**：判据 1～6 由 `GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据达成；判据 7 全部满足（退出矩阵 + 浏览器回归 + 独立意见 + 开放 required = 0 + **用户书面确认**）。R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`；e2e 双 profile 全绿并新增 jobs 结果中心端到端用例（`apps/web/e2e/jobs-result-center.spec.ts`，admin profile）。关门后残余：一条 bounded residual（e2e fresh-seed 顺序契约，已登记 `roadmap.md`）。**本 VP 的 `status` = `closed`（v1.0.0）。**
 
 ## 纲领路线图
 
