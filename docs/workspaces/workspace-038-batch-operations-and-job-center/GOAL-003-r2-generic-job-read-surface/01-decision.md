@@ -1,7 +1,7 @@
 ---
 id: GOAL-003-r2-generic-job-read-surface
 doc: decision
-status: active
+status: done
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19

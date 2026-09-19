@@ -432,6 +432,27 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 		// reason) so an inconsistent reconcile is immediately debuggable.
 		t.Fatalf("reconcile result = %v err=%v details=%v", run["result"], err, run["details"])
 	}
+	// GOAL-003 R2 (A-002 F-003): the projection's resultUrl is now derived by
+	// the shared jobs.ResultURL helper through this module's declared base
+	// path. Pin both the derivation and the emitted literal so a future change
+	// to the constant or the helper cannot silently move the wallet download
+	// address (VP-012 D-002 §6 contract).
+	rr = httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, adminToken, http.MethodGet, "/api/wallet/jobs/"+jobID, ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("job detail = %d body=%s", rr.Code, rr.Body.String())
+	}
+	var projected map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &projected); err != nil {
+		t.Fatal(err)
+	}
+	wantResultURL := jobs.ResultURL(WalletJobsBasePath, jobID)
+	if projected["resultUrl"] != wantResultURL {
+		t.Fatalf("resultUrl = %v, want %q", projected["resultUrl"], wantResultURL)
+	}
+	if wantResultURL != "/api/wallet/jobs/"+jobID+"/result" {
+		t.Fatalf("wallet result address = %q, want the historical literal", wantResultURL)
+	}
 	for _, tc := range []struct {
 		path string
 		code string

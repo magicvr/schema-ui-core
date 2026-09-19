@@ -192,4 +192,13 @@ func TestResultURLReproducesTheHistoricalWalletAddress(t *testing.T) {
 	if got := jobs.ResultURL("/api/jobs/", "job-3"); got != "/api/jobs/job-3/result" {
 		t.Fatalf("trailing-slash base = %q", got)
 	}
+	// The derivation must be byte-identical for ANY id, including hostile ones:
+	// it is the drop-in replacement for "/api/wallet/jobs/" + id + "/result",
+	// so no id may be normalized, escaped or trimmed (A-002 F-003).
+	for _, id := range []string{"", "job with space", "a/b", "a?b#c", "任务-1"} {
+		want := "/api/wallet/jobs/" + id + "/result"
+		if got := jobs.ResultURL("/api/wallet/jobs", id); got != want {
+			t.Fatalf("ResultURL(%q) = %q, want %q (must be byte-identical)", id, got, want)
+		}
+	}
 }

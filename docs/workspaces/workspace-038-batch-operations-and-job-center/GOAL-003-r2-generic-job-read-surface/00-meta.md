@@ -1,7 +1,7 @@
 ---
 id: GOAL-003-r2-generic-job-read-surface
 title: R2 通用作业读面
-status: active
+status: done
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
@@ -49,7 +49,7 @@ R2 是本 VP 的第一段实现代码；`admin.jobs` 模块此前不存在（现
 - [x] **C1 模块与权限接线**：`admin.jobs` 模块建立并进 admin 默认集；`jobs.read` 声明、接线、入 catalog；模块/组合测试与计数断言全绿。
 - [x] **C2 查询与索引**：`internal/jobs` 新增查询方法（过滤/分页/total/排序）落地并有 repository 测试；O-3 索引决策冻结并实施（含两处冻结断言的同步）。
 - [x] **C3 读面 API 与作用域**：列表/详情/结果读取 API 落地；管理作用域由 `jobs.read` 门控；越权/不存在 fail-closed；**既有 actor 隔离测试语义不变**。
-- [ ] **C4 R2 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R2 检查点可投影。
+- [x] **C4 R2 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R2 检查点可投影。
 
 ## 审计模式（P-002 实施前确定）
 
@@ -59,9 +59,9 @@ R2 是本 VP 的第一段实现代码；`admin.jobs` 模块此前不存在（现
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-038-007 | required | 管理列表索引决策（O-3）：既有三索引是否足够，是否新增迁移版本；新增则两处冻结断言如何同步 | C2 | C2 前 | 对照 R1 索引矩阵 + 列表默认查询形状做静态判定；必要时 `EXPLAIN QUERY PLAN` | open | — | `attachments/r1-job-kind-scope-matrix.md` §4；`store/migrate_test.go:692-693`；`jobs/migration/migration_test.go:15` |
-| I-038-008 | required | 结果 URL 泛化口径：现行 `walletJobToMap` 硬编码 `/api/wallet/jobs/{id}/result`（wallet 权限门下），通用读面如何表达结果地址 | C3 | C3 前 | 读 `walletJobToMap` 与 wallet 结果路由；给出通用结果地址方案 | open | — | `internal/handler/wallet.go:989-1006`、`:426-451` |
-| I-038-009 | required | 前端触发机制与 capability 声明口径（O-1 / O-2）：自定义组件 vs `props` 本地扩展键；新页面是否声明 `actions.batch.request`（guard marker = `/batch-delete/`） | C4（方案冻结）、R3/R4 实施 | R2 方案冻结前 | 对照 `monitoring-auto-refresh.tsx` 先例与 `capability-declaration.guard.test.ts:38-58,110-114` | open | — | R1 `D-001` §1.3 O-1/O-2 |
+| I-038-007 | required | 管理列表索引决策（O-3）：既有三索引是否足够，是否新增迁移版本；新增则两处冻结断言如何同步 | C2 | C2 前 | 迁移机制 + 索引矩阵静态判定 + EXPLAIN 实测 | **verified**（2026-09-19 用户裁决：新增 v72，并细化为 `(created_at DESC, id DESC)`） | — | `attachments/R2-recon-index-and-query-shape.md`；`01-decision/D-001-…` §1/§1.2a |
+| I-038-008 | required | 结果 URL 泛化口径：现行 `walletJobToMap` 硬编码 `/api/wallet/jobs/{id}/result`（wallet 权限门下），通用读面如何表达结果地址 | C3 | C3 前 | 读 `walletJobToMap` 与 wallet 结果路由；给出通用结果地址方案 | **verified**（2026-09-19 用户裁决：泛化 + 共享 helper，登记为字节等价重构；C4 审计已复核等价性） | — | `01-decision/D-001-…` §2；`03-audit/A-002-…` |
+| I-038-009 | required | 前端触发机制与 capability 声明口径（O-1 / O-2）：自定义组件 vs `props` 本地扩展键；新页面是否声明 `actions.batch.request`（guard marker = `/batch-delete/`） | C4（方案冻结）、R3/R4 实施 | R2 方案冻结前 | 对照 `monitoring-auto-refresh.tsx` 先例与 `capability-declaration.guard.test.ts:38-58,110-114` | **verified**（2026-09-19 冻结：O-1 自定义组件；O-2 不声明 `actions.batch.request`——`jobs.json` 已遵守且 guard 通过） | — | `01-decision/D-001-…` §3 |
 | I-038-010 | non-blocking | `admin.jobs` 的导航分组与 i18n 键位（VP-034 分组约定） | R4 体验收敛 | R4 前 | 读 `nav-groups-r4.test.ts` 与既有模块 fragment | open | — | R1 侦察 §6 接线清单 |
 
 R1 已关闭的 `I-038-001`～`003` 与 `I-038-004`/`005` 不再重复登记；`I-038-006` 保持 `deferred · non-blocking`（历史作业保留与清理）。

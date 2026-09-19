@@ -22,19 +22,21 @@ parent: null
 - VP-038 于 2026-09-19 经用户确认从 `planned` 激活为 **`active` v0.2.0**（计划 self = `VRev-098` `pass`；激活 self = `VRev-099` `pass`，0 required）。
 - **P-004 裁决（`I-038-004`，2026-09-19）**：新建 **`admin.jobs`** 模块并进入 **admin 默认集**；`mvp` / `demo` 不启用。定性 = **Profile 内容扩展**（沿用 S 系列先例），**不改装配语义** → **不暂挂 VP-008 `go`**。
 - **Admin 类 freshness PASS**：`0c29c08`（VP-037 激活基线）→ `7e5ce891`（HEAD）；协议 pin `v2.9.0` / `81aa1d8`、依赖锁、迁移台账、Profile 默认集与装配、provenance 五域零变更；区间 `apps/**` 变更全部为 VP-037 已审结目。
-- Root `[workspace-038-batch-operations-and-job-center] GOAL-001-batch-operations-and-job-center`：**`active · 1/5`**；纲领 R1→R5。
+- Root `[workspace-038-batch-operations-and-job-center] GOAL-001-batch-operations-and-job-center`：**`active · 2/5`**；纲领 R1→R5。
 - **R1 已完成并关门**（2026-09-19 · 子目标 `GOAL-002-r1-denominator-and-contract-freeze` **`done · 4/4`**）：C1 分母与作用域矩阵 / C2 契约形态冻结 / C3 首波分母冻结 / C4 R1 审计与投影。审计模式 `cross`——self `A-001` `pass` → grok build（grok-4.6 · high · `/audit`）independent `A-002` `conditional`（3 required）→ `A-003` 响应 required 全 `fixed`，**开放 required = 0**。
+- **R2 已完成并关门**（2026-09-19 · 子目标 `GOAL-003-r2-generic-job-read-surface` **`done · 4/4`**）：C1 模块与权限接线 / C2 查询与索引 / C3 读面 API 与作用域 / C4 R2 审计与投影。审计模式 `cross`——self `A-001` `pass` → grok build independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，**开放 required = 0**。
 - **R1 冻结要点（用户 P-004 裁决 2026-09-19）**：C2 = **方案 B**（另立本地模块自有异步契约，ADR-0022 同步 `batch-delete` 语义逐字冻结，协议 pin 零改动）；C3 首波 = **仅「新建批量导出所选」1 条**；C1 = **管理作用域 + 新增 `jobs.read` 权限**（`PolicyAdmin`，既有 actor 隔离语义与测试不动）。
+- **R2 交付要点**：新建 `admin.jobs` 模块（进 admin 默认集）+ `jobs.read`（`PolicyAdmin`）+ `GET /api/jobs`、`/{id}`、`/{id}/result`（管理作用域 + fail-closed）+ 迁移 v72 管理列表索引 `(created_at DESC, id DESC)`；并修 R-1（`jobRuntime.enabled` 改为 `admin.jobs` 或 `admin.wallet` 任一存在即启用）。跨 VP 触碰：wallet 结果地址改经共享 `jobs.ResultURL`，**输出字符串逐字不变**（独立审计复核通过）。
 - 用户已确认 workspace slug = `workspace-038-batch-operations-and-job-center`；Root slug = `GOAL-001-batch-operations-and-job-center`。
 - Vision open required：0；`V-F125` → `fixed`；`V-F126` 保持 `open · recommended`，承接动作已由 `I-038-003` 完成（闭合登记属 `/vision`，见首波矩阵 §7 交接项）。
-- `I-038-001`～`003` 已关闭为 `verified`；R2 移交项见 `D-001` §5（T-1～T-8）与未定项 O-1～O-3（必须在 R2 方案中冻结）。
+- `I-038-001`～`003` 与 `I-038-007`～`009` 已关闭为 `verified`；R3 移交项见 `D-001` §5 的 T-5/T-6（O-1/O-2 方案已在 R2 冻结，实现属 R3/R4）。
 
 ## 绑定
 
 | 字段 | 当前值 | 说明 |
 |------|--------|------|
 | 工作区 ID | `workspace-038-batch-operations-and-job-center` | 与本区目标及资料引用的 `workspace_id` 一致；当前无固定共享资料 |
-| Root Goal | `GOAL-001-batch-operations-and-job-center` | `parent: null`；**active · 1/5** |
+| Root Goal | `GOAL-001-batch-operations-and-job-center` | `parent: null`；**active · 2/5** |
 | canonical 范围 | `docs/workspaces/workspace-038-batch-operations-and-job-center/` | 本区唯一目标状态范围 |
 | 共享资料目录 | `none` | 本区暂无固定共享资料；不得声明共享资料引用 |
 | 愿景角色 | `delivery` | VP-038 唯一 delivery workspace；不改变 Charter primary workspace |
@@ -53,8 +55,8 @@ parent: null
 | 阶段 | 目的 | 状态 |
 |------|------|------|
 | R1 | 分母与契约冻结：Job 种类×作用域矩阵、批量异步契约（含同步 `batch-delete` 兼容口径）、首波批量操作分母、权限/Profile 边界与排除项 | **done**（`GOAL-002` `done · 4/4`；`I-038-001`～`003` verified；审计 `A-001` self pass + `A-002` grok independent conditional → `A-003` required 全 fixed，开放 required = 0） |
-| R2 | 通用作业读面：Job 列表/详情/结果读取 API + 权限与作用域过滤 + fail-closed；不改变 Job 六态合同 | **pending**；承接 `D-001` §5 的 T-1～T-8 与未定项 O-1～O-3 |
-| R3 | 批量操作异步承接：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 回归不退化 | **pending** |
+| R2 | 通用作业读面：Job 列表/详情/结果读取 API + 权限与作用域过滤 + fail-closed；不改变 Job 六态合同 | **done**（`GOAL-003` `done · 4/4`；`admin.jobs` 模块 + `jobs.read` + 迁移 v72；审计 `A-001` self pass + `A-002` grok independent **pass** → `A-003` 全 fixed，开放 required = 0） |
+| R3 | 批量操作异步承接：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 回归不退化 | **pending**；承接 `D-001` §5 的 T-5/T-6（O-1/O-2 实现） |
 | R4 | 结果中心与体验收敛：列表/详情/进度/终态/过期/重试/取消/下载；中英文、浅色深色、加载空态错误态、可访问 | **pending** |
 | R5 | 证据与关门：退出矩阵、浏览器/自动化回归、独立意见、残余登记、组合投影同步与用户确认 | **pending** |
 
