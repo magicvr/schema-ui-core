@@ -16,16 +16,24 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-038-007 | required | 管理列表索引决策（O-3） | C2 | C2 前 | 索引矩阵 + 查询形状静态判定 | open | — | R1 矩阵 §4 |
-| I-038-008 | required | 结果 URL 泛化口径 | C3 | C3 前 | 读 wallet 结果路由与映射 | open | — | `handler/wallet.go:989-1006` |
-| I-038-009 | required | 前端触发机制与 capability 声明口径（O-1/O-2） | C4、R3/R4 | R2 方案冻结前 | 对照先例与守卫 | open | — | R1 `D-001` §1.3 |
-| I-038-010 | non-blocking | 导航分组与 i18n 键位 | R4 | R4 前 | 读分组测试与 fragment | open | — | R1 侦察 §6 |
+| I-038-007 | required | 管理列表索引决策（O-3） | C2 | C2 前 | 迁移机制 + 索引矩阵静态判定 | **verified**（2026-09-19 用户裁决：新增单列 `created_at DESC`） | — | `attachments/R2-recon-migration-mechanics-and-index.md`；D-001 §1 |
+| I-038-008 | required | 结果 URL 泛化口径 | C3 | C3 前 | 读 wallet 结果路由与映射 | **verified**（2026-09-19 用户裁决：泛化 + 共享 helper，登记为字节等价重构） | — | D-001 §2 |
+| I-038-009 | required | 前端触发机制与 capability 声明口径（O-1/O-2） | C4、R3/R4 | R2 方案冻结前 | 对照先例与守卫 | **verified**（2026-09-19 冻结方案；实现属 R3/R4） | — | D-001 §3 |
+| I-038-010 | non-blocking | 导航分组与 i18n 键位 | R4 | R4 前 | 读分组测试与 fragment | open（分组已随 D-001 §4 冻结为 `operations`；i18n 键位待 R4） | — | D-001 §4 |
 
 ## 决策索引
 
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| — | — | 暂无（R2 方案待侦察与用户裁决后落盘） | — | — |
+| D-001 | 2026-09-19 | R2 方案冻结（索引 / 权限 / 结果 URL / 前端口径；用户 P-004 裁决） | accepted | `01-decision/D-001-r2-scheme-freeze.md` |
+
+## P-004 裁决记录（2026-09-19）
+
+| 决策点 | 用户裁决 | 备选（未选） |
+|--------|---------|-------------|
+| `I-038-007` 索引（O-3） | **新增单列索引 `idx_jobs_created_at ON jobs(created_at DESC)`**（新贡献版本 72） | 复合索引（created_at + kind/status）；不新增索引改 `updated_at` 排序 |
+| 权限策略 | **`jobs.read` / `jobs.write` 均 `PolicyAdmin`** | `jobs.read` 用 `PolicyAdminEditor` |
+| `I-038-008` 结果 URL | **泛化 + 共享 helper + 各模块自申 base path**；wallet 输出字符串逐字不变；**登记为字节等价重构交审计复核** | 集中 kind→base path 登记表；仅 admin.jobs 自建不动 wallet |
 
 ## 约束输入（来自 R1 冻结，非本目标可改）
 
