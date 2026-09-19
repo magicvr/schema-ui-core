@@ -346,13 +346,34 @@ describe("batch export availability (2026-09-19 regression)", () => {
     expect(harness.requests.filter((entry) => entry.url === "/api/jobs/batch-export")).toEqual([]);
   });
 
-  it("keeps the trigger enabled when only one of the two gates is granted", async () => {
-    // jobs.write without data.export (and vice versa) is still not enough: the
-    // route requires both, so the control stays unavailable.
+  // F-001 (independent A-002): the XOR cases MUST select a row first. With an
+  // empty selection the button is disabled anyway (`count === 0`), so a bare
+  // `disabled` assertion also passes for an implementation that checks only ONE
+  // of the two gates — it would not discriminate at all. Selecting a row makes
+  // availability the only remaining reason to be disabled, and the
+  // `data-jobs-batch-export-unavailable` marker names that reason.
+  it("keeps the trigger unavailable when only jobs.write is granted", async () => {
+    // jobs.write without data.export is not enough: the route requires both.
     const harness = await renderUsersPage({
       context: { user: { permissions: ["users.read", "users.write", "jobs.write"] } },
     });
-    expect(exportButton(harness.container)!.disabled).toBe(true);
+    await selectRows(harness.container, 1);
+    const button = exportButton(harness.container);
+    expect(button!.disabled).toBe(true);
+    expect(button!.getAttribute("data-jobs-batch-export-unavailable")).toBe("true");
+    expect(harness.container.textContent).toContain("not available in this deployment");
+  });
+
+  it("keeps the trigger unavailable when only data.export is granted", async () => {
+    // The symmetric case: a `jobs.write`-only implementation passes the test
+    // above but must fail this one.
+    const harness = await renderUsersPage({
+      context: { user: { permissions: ["users.read", "users.write", "data.export"] } },
+    });
+    await selectRows(harness.container, 1);
+    const button = exportButton(harness.container);
+    expect(button!.disabled).toBe(true);
+    expect(button!.getAttribute("data-jobs-batch-export-unavailable")).toBe("true");
   });
 
   it("still renders the trigger enabled for a principal holding both gates", async () => {

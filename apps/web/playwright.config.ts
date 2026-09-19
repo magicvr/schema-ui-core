@@ -44,6 +44,12 @@ const customE2EModules = [
   "admin.data-permission",
   "admin.mfa",
   "admin.wallet",
+  // W34 (GOAL-046): this list is the admin preset + channel.telegram, so it must
+  // carry admin.jobs too. It was missing for the same reason the operator config
+  // was (VP-038 added the module to the preset, not to the explicit lists) — and
+  // the availability spec's `custom` branch asserts admin-equivalent capability,
+  // so the harness has to actually grant it.
+  "admin.jobs",
   "channel.telegram",
 ];
 const appConfig = appProfile === "custom"
