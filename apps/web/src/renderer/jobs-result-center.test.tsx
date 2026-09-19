@@ -153,7 +153,10 @@ async function renderJobsPage(options: {
   permissions: string[];
   resultDocument?: unknown;
   postResponse?: { status: number; body: unknown };
+  rows?: JobRow[];
+  locale?: "en-US" | "zh-CN";
 }): Promise<Harness> {
+  const rows = options.rows ?? ROWS;
   const requests: RecordedRequest[] = [];
   const downloads: Array<{ filename: string; text: string }> = [];
   let listCalls = 0;
@@ -203,7 +206,7 @@ async function renderJobsPage(options: {
     if (url.startsWith("/api/jobs")) {
       listCalls += 1;
       return new Response(
-        JSON.stringify({ items: ROWS, total: ROWS.length, page: 1, pageSize: 20 }),
+        JSON.stringify({ items: rows, total: rows.length, page: 1, pageSize: 20 }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     }
@@ -230,7 +233,7 @@ async function renderJobsPage(options: {
   activeRoots.push({ root, container });
   await act(async () => {
     root.render(
-      <I18nProvider stored="en-US">
+      <I18nProvider stored={options.locale ?? "en-US"}>
         <RenderPage
           document={pageDocument}
           context={{ user: { permissions: options.permissions }, features: {} } as never}
@@ -437,6 +440,77 @@ describe("R4 · result center on the shipped jobs page", () => {
     const text = harness.container.textContent ?? "";
     expect(text).toContain("this job can no longer be cancelled");
     expect(text).not.toContain("job cannot be cancelled");
+  });
+
+  it("localizes the six job states through the column's valueLabels", async () => {
+    // W32 (GOAL-044 D-001 §1): the status cell reads in the operator's language
+    // instead of showing the stored code. Both directions are pinned:
+    // en-US and zh-CN must differ, and an UNMAPPED value must survive verbatim
+    // (fail-open: a missing translation may never blank a cell).
+    const cells = (container: HTMLElement): string[] =>
+      Array.from(container.querySelectorAll("tbody tr")[0]?.querySelectorAll("td") ?? []).map(
+        (cell) => (cell.textContent ?? "").trim(),
+      );
+
+    const english = await renderJobsPage({ permissions: ["jobs.read", "jobs.write"] });
+    expect(cells(english.container)).toContain("Running");
+    expect(cells(english.container)).not.toContain("running");
+
+    const chinese = await renderJobsPage({
+      permissions: ["jobs.read", "jobs.write"],
+      locale: "zh-CN",
+    });
+    expect(cells(chinese.container)).toContain("执行中");
+    expect(cells(chinese.container)).not.toContain("running");
+
+    const unmapped = await renderJobsPage({
+      permissions: ["jobs.read", "jobs.write"],
+      rows: [row({ id: "job-odd", status: "quiesced" })],
+    });
+    expect(cells(unmapped.container)).toContain("quiesced");
+  });
+
+  it("stops polling once no job is in an active state", async () => {
+    // W32 (GOAL-044 D-001 §3): with 5s selected and every row terminal, the tick
+    // must issue NO request at all (the R4 residual was that it kept polling).
+    vi.useFakeTimers();
+    const settled = await renderJobsPage({
+      permissions: ["jobs.read", "jobs.write"],
+      rows: [
+        row({ id: "job-done", status: "succeeded", progress: 100, attempt: 1 }),
+        row({ id: "job-failed", status: "failed", attempt: 3, maxAttempts: 3, retryable: false }),
+      ],
+    });
+    const select = settled.container.querySelector("[data-jobs-refresh-select]") as HTMLSelectElement;
+    await act(async () => {
+      select.value = "5000";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const quiet = settled.listCalls();
+    await act(async () => {
+      vi.advanceTimersByTime(30000);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(settled.listCalls()).toBe(quiet);
+
+    // Positive control: the SAME control with one running row does poll, so the
+    // assertion above cannot pass merely because refreshing is broken.
+    const busy = await renderJobsPage({ permissions: ["jobs.read", "jobs.write"] });
+    const busySelect = busy.container.querySelector("[data-jobs-refresh-select]") as HTMLSelectElement;
+    await act(async () => {
+      busySelect.value = "5000";
+      busySelect.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const before = busy.listCalls();
+    await act(async () => {
+      vi.advanceTimersByTime(5000);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(busy.listCalls()).toBeGreaterThan(before);
   });
 
   it("re-fetches the list on the auto-refresh cadence", async () => {

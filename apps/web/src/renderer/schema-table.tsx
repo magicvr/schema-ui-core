@@ -88,6 +88,39 @@ export interface SchemaTableColumnSpec {
   format?: "currency";
   /** W16-F09: render this cell as a colored badge using the row field value. */
   badgeStyleField?: string;
+  /**
+   * W32 (GOAL-044 D-001 §1): local extension mapping a cell's raw value to an
+   * i18n key, so an enum column can read in the operator's language instead of
+   * showing the stored code. Unmapped values (or a key missing from the
+   * catalogs) fall back to the RAW value — this is presentation, not a gate, so
+   * a missing translation must never blank the cell.
+   *
+   * NOT the pinned `format:"tag"`/`tagMap` pair (which maps a value to literal
+   * {text, tone} and is unimplemented here): this extension only answers "which
+   * catalog key names this value".
+   */
+  valueLabels?: Record<string, unknown>;
+}
+
+/** Resolves one cell's display text through the column's valueLabels mapping. */
+function labeledCellValue(
+  column: SchemaTableColumnSpec,
+  key: string,
+  translate: (key: string, params?: undefined, literalFallback?: string) => string,
+): string {
+  const rendered = key === "" ? "" : key;
+  if (rendered === "") {
+    return "";
+  }  if (column.valueLabels === undefined || typeof column.valueLabels !== "object" || column.valueLabels === null) {
+    return rendered;
+  }
+  const mapped = (column.valueLabels as Record<string, unknown>)[rendered];
+  if (typeof mapped !== "string" || mapped === "") {
+    return rendered;
+  }
+  // The raw value doubles as the literal fallback: a key that is missing from
+  // the catalogs degrades to today's behaviour instead of emptying the cell.
+  return translate(mapped, undefined, rendered);
 }
 
 function stringOf(value: unknown): string {
@@ -535,6 +568,10 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
   const crud = useSchemaCrud();
   const t = useTranslate();
   const tableId = node.id ?? "default";
+  // W32 (GOAL-044 D-001 §2): targeted-refresh token for THIS table. Bumping it
+  // (crud.refreshTable) re-runs the fetch effect below with the same query while
+  // leaving every table selection untouched.
+  const tableRefreshToken = crud?.tableRefreshToken(tableId) ?? 0;
   const pageListActionsHost = usePageListActionsHost();
   const [pageActionsPortalReady, setPageActionsPortalReady] = useState(false);
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
@@ -920,7 +957,17 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken, retryNonce]);
+  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken, tableRefreshToken, retryNonce]);
+
+  // W32 (GOAL-044 D-001 §3): publish the rows this table currently renders so a
+  // polling control can decide whether a refresh is worth issuing ("only while a
+  // job is still running"). The registry is ref-backed, so this costs no render.
+  useEffect(() => {
+    if (crud === null || list === null) {
+      return;
+    }
+    crud.publishTableRows(tableId, list.items as ReadonlyArray<Record<string, unknown>>);
+  }, [crud, list, tableId]);
 
   // F-002: validate row keys on every fetched page; invalid → fail closed.
   const keyCheck = useMemo(
@@ -1106,7 +1153,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
               // email) renders the universal muted placeholder instead of an
               // empty pill — cellContent's fallback only applies when no
               // render fn exists.
-              const badgeText = stringOf(row[column.field]);
+              const badgeText = labeledCellValue(column, stringOf(row[column.field]), t);
               if (badgeText === "") {
                 return <span className="text-muted-foreground">—</span>;
               }
@@ -1119,7 +1166,14 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
               );
             },
           }
-        : {}),
+        : column.valueLabels !== undefined
+          ? {
+              // W32 (GOAL-044 D-001 §1): a plain (non-badge) column may still
+              // localize its values through valueLabels.
+              render: (row: ResourceItem) =>
+                labeledCellValue(column, stringOf(row[column.field]), t),
+            }
+          : {}),
     })),
     ...(rowActions.length > 0
       ? [

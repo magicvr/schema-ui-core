@@ -249,6 +249,24 @@ export interface SchemaCrudValue {
   refreshList: (dataSource: string) => void;
   /** Current refresh token for a display dataSource (0 when untouched). */
   listRefreshToken: (dataSource: string) => number;
+  /**
+   * W32 (GOAL-044 D-001 §2): targeted TABLE refresh. Refetches one table node
+   * with its CURRENT query and — unlike `reloadList()` — leaves every table
+   * selection intact, so a polling control can refresh a list without deleting
+   * the selection the operator is working with (ADR-0022 D2 keeps its meaning
+   * for reloads; this seam is for read-only polling).
+   */
+  refreshTable: (tableId: string) => void;
+  /** Current refresh token for one table node (0 when untouched). */
+  tableRefreshToken: (tableId: string) => number;
+  /**
+   * W32 (GOAL-044 D-001 §3): the rows a table node currently renders. Published
+   * by SchemaTable into a ref-backed registry (no extra renders) so a control
+   * can decide whether a refresh is worth issuing at all — e.g. "only poll while
+   * a job is still running".
+   */
+  publishTableRows: (tableId: string, rows: ReadonlyArray<Record<string, unknown>>) => void;
+  tableRows: (tableId: string) => ReadonlyArray<Record<string, unknown>> | undefined;
   activeModal: { actionRef: string; row: Record<string, unknown> | null; title: string } | null;
   modalRow: Record<string, unknown> | null;
   openModal: (actionRef: string, row: Record<string, unknown> | null, title: string) => void;
@@ -999,6 +1017,40 @@ function SchemaCrudProvider({
     [listRefreshTokens],
   );
 
+  // W32 (GOAL-044 D-001 §2/§3): per-table refresh tokens + a ref-backed row
+  // registry. The rows live in a ref (not state) because publishing them must
+  // not re-render the page: the table already renders those rows, and only the
+  // polling control reads them — inside a timer callback, never during render.
+  const [tableRefreshTokens, setTableRefreshTokens] = useState<Record<string, number>>({});
+  const tableRowsRegistry = useRef(new Map<string, ReadonlyArray<Record<string, unknown>>>());
+  const refreshTable = useCallback((tableId: string) => {
+    if (tableId === "") {
+      return;
+    }
+    // Deliberately does NOT drop the in-flight entry (D-001 §2): this is a
+    // read-only poll, so joining an in-flight identical request only saves a
+    // round trip and still yields server-current data. A refresh issued after a
+    // MUTATION must keep using reloadList(), which does drop the map.
+    setTableRefreshTokens((prev) => ({ ...prev, [tableId]: (prev[tableId] ?? 0) + 1 }));
+  }, []);
+  const tableRefreshToken = useCallback(
+    (tableId: string) => tableRefreshTokens[tableId] ?? 0,
+    [tableRefreshTokens],
+  );
+  const publishTableRows = useCallback(
+    (tableId: string, rows: ReadonlyArray<Record<string, unknown>>) => {
+      if (tableId === "") {
+        return;
+      }
+      tableRowsRegistry.current.set(tableId, rows);
+    },
+    [],
+  );
+  const tableRows = useCallback(
+    (tableId: string) => tableRowsRegistry.current.get(tableId),
+    [],
+  );
+
   const fetchList = useCallback(
     (
       dataSource: string,
@@ -1524,6 +1576,10 @@ function SchemaCrudProvider({
       fetchList,
       refreshList,
       listRefreshToken,
+      refreshTable,
+      tableRefreshToken,
+      publishTableRows,
+      tableRows,
       activeModal,
       modalRow: activeModal?.row ?? null,
       openModal,
@@ -1560,6 +1616,10 @@ function SchemaCrudProvider({
       fetchList,
       refreshList,
       listRefreshToken,
+      refreshTable,
+      tableRefreshToken,
+      publishTableRows,
+      tableRows,
       activeModal,
       openModal,
       closeModal,

@@ -95,7 +95,14 @@
         "type": "custom",
         "id": "jobs-auto-refresh",
         "component": "jobs-auto-refresh",
-        "props": {}
+        "props": {
+          "targetTable": "jobs-table",
+          "statusField": "status",
+          "activeStatuses": [
+            "queued",
+            "running"
+          ]
+        }
       },
       {
         "type": "table",
@@ -124,6 +131,14 @@
               "field": "status",
               "label": "Status",
               "badgeStyleField": "statusStyle",
+              "valueLabels": {
+                "queued": "schema.jobs.status.queued",
+                "running": "schema.jobs.status.running",
+                "succeeded": "schema.jobs.status.succeeded",
+                "failed": "schema.jobs.status.failed",
+                "cancelled": "schema.jobs.status.cancelled",
+                "expired": "schema.jobs.status.expired"
+              },
               "labelKey": "schema.jobs.column.status"
             },
             {
