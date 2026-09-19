@@ -19,6 +19,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/app/App";
 import { I18nProvider } from "@/i18n/runtime";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
+// GOAL-004 R3: the users page declares the async batch-export trigger, so the
+// component must be registered or the page logs an unknown-custom placeholder.
+import "@/components/jobs-batch-export";
 
 const MANIFEST_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),

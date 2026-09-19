@@ -178,6 +178,67 @@ func TestJobsBatchExportValidation(t *testing.T) {
 
 // C3: the read routes from R2 still behave, and the new submit route did not
 // disturb them (the same route table serves both phases).
+// C1 (security): the submit route requires BOTH jobs.write and data.export, so
+// adding the Job runtime cannot widen data egress.
+//
+// Under the built-in policy matrix the second gate is defence-in-depth rather
+// than an active constraint: jobs.write is PolicyAdmin ({admin}) and data.export
+// is PolicyAdminEditor ({admin, editor}), so every principal holding jobs.write
+// already holds data.export. A discriminating test is therefore not
+// constructible from seeded roles (A-001 F-001 / A-002 F-001). This test pins
+// the nesting that makes that true: if the policy sets ever stop being nested,
+// it fails loudly and a real counter-example test becomes both possible and
+// necessary.
+func TestJobsBatchExportSecondGateIsDefenceInDepth(t *testing.T) {
+	env := newAuthTestEnv(t)
+	mountJobsExportRoutes(t, env)
+
+	// Read the effective permission sets straight from the repository: addUser
+	// creates "user-<username>", and the seeded admin is "user-admin".
+	adminPermissions := permissionsForUser(t, env, "user-admin")
+	env.addUser(t, "editor-probe", "editor-password", []string{"editor"})
+	editorPermissions := permissionsForUser(t, env, "user-editor-probe")
+
+	if !containsPermission(adminPermissions, "jobs.write") || !containsPermission(adminPermissions, "data.export") {
+		t.Fatalf("the admin principal lacks jobs.write or data.export (%v): the batch-export route is unreachable", adminPermissions)
+	}
+
+	// The nesting that makes the second gate unreachable-by-rejection today.
+	if containsPermission(editorPermissions, "jobs.write") {
+		t.Fatalf("the editor role now holds jobs.write: a jobs.write-without-data.export principal " +
+			"may be constructible, so the discriminating counter-example test is now required")
+	}
+	// And the property the gate protects: whoever may submit may also export.
+	for _, permissions := range [][]string{adminPermissions, editorPermissions} {
+		if containsPermission(permissions, "jobs.write") && !containsPermission(permissions, "data.export") {
+			t.Fatalf("a principal holds jobs.write without data.export (%v); the second gate is now "+
+				"load-bearing and must have a discriminating test", permissions)
+		}
+	}
+}
+
+func containsPermission(permissions []string, want string) bool {
+	for _, permission := range permissions {
+		if permission == want {
+			return true
+		}
+	}
+	return false
+}
+
+// permissionsForUser reads one principal's effective permission set.
+func permissionsForUser(t *testing.T, env *authTestEnv, userID string) []string {
+	t.Helper()
+	permissions, err := env.authRepository.PermissionsForUser(userID)
+	if err != nil {
+		t.Fatalf("permissions for %s: %v", userID, err)
+	}
+	if len(permissions) == 0 {
+		t.Fatalf("principal %s has no permissions", userID)
+	}
+	return permissions
+}
+
 func TestJobsRoutesIncludeReadAndSubmit(t *testing.T) {
 	env := newAuthTestEnv(t)
 	mountJobsExportRoutes(t, env)

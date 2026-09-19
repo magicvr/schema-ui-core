@@ -210,7 +210,10 @@ func (h *exportHandler) export() http.Handler {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not export users")
 				return
 			}
-			headers = []string{"id", "username", "name", "roles", "enabled", "locked", "createdAt", "updatedAt"}
+			// Single source of truth (A-002 F-005): the header list comes from
+			// exportHeaders, the same helper the async batch export uses, so the
+			// two surfaces cannot drift apart.
+			headers = exportHeaders("users")
 			for _, u := range items {
 				rows = append(rows, exportRow("users", userToMap(u)))
 			}
@@ -231,7 +234,8 @@ func (h *exportHandler) export() http.Handler {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not export roles")
 				return
 			}
-			headers = []string{"id", "key", "name", "system", "permissions", "menuItems", "assignedUsers", "editable", "deletable", "createdAt", "updatedAt"}
+			// Single source of truth (A-002 F-005): see the users branch above.
+			headers = exportHeaders("roles")
 			for _, role := range items {
 				rows = append(rows, exportRow("roles", roleToMap(role)))
 			}

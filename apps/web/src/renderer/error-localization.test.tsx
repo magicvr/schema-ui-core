@@ -22,6 +22,8 @@ import { authFetch } from "@/account/auth-client";
 import { I18nProvider, setActiveLocale } from "@/i18n/runtime";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 import { readResourceApiError, ResourceApiError } from "@/renderer/resource";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");

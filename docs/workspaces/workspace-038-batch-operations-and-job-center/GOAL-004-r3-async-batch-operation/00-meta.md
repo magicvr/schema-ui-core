@@ -55,9 +55,9 @@ R1 已冻结首波分母 = **仅「新建批量导出所选」1 条**（`GOAL-00
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-038-011 | required | 导出**数据面**分母与权限口径：批量导出所选支持哪些资源；是否沿用 `data.export` 还是 `jobs.write`；导出内容是否含敏感字段（对齐既有 `GET /api/export/{resource}` 的列集与转义） | C1 | C1 前 | 读既有导出实现与列集、权限门；给出导出资源与列的白名单 | open | — | `internal/handler/export.go`；`GOAL-003/01-decision/D-001-…` §4 |
-| I-038-012 | required | 前端能否从自定义组件读到**当前表格选择集**；若不能，触发机制如何取得选中行 | C2 | C2 前 | 读 `render.tsx` 的 selection 状态与 `custom-components.ts` 的 context 契约 | open | — | R3 前端触发侦察 |
-| I-038-013 | non-blocking | 导出结果的文件名/格式与既有 CSV 约定的一致性细节 | C2/R4 | R4 前 | 对照既有导出文件名与 BOM/转义 | open | — | `internal/handler/export.go` |
+| I-038-011 | required | 导出**数据面**分母与权限口径：批量导出所选支持哪些资源；是否沿用 `data.export` 还是 `jobs.write`；导出内容是否含敏感字段（对齐既有 `GET /api/export/{resource}` 的列集与转义） | C1 | C1 前 | 读既有导出实现与列集、权限门；给出导出资源与列的白名单 | **verified**（2026-09-19：users/roles 同分母；列集与转义复用同步导出；**双重门禁 jobs.write + data.export**） | — | `attachments/R3-recon-frontend-batch-trigger.md`；`01-decision/D-001-…` §1 |
+| I-038-012 | required | 前端能否从自定义组件读到**当前表格选择集**；若不能，触发机制如何取得选中行 | C2 | C2 前 | 读 `render.tsx` 的 selection 状态与 `custom-components.ts` 的 context 契约 | **verified**（2026-09-19：可，经 `useSchemaCrud().selection(tableId)`；位置与 capability 口径见 D-001 §2） | — | `attachments/R3-recon-frontend-batch-trigger.md`；`01-decision/D-001-…` §2 |
+| I-038-013 | non-blocking | 导出结果的文件名/格式与既有 CSV 约定的一致性细节 | C2/R4 | R4 前 | 对照既有导出文件名与 BOM/转义 | open（文件名 `<resource>-selection.csv`；BOM/RFC4180 已复用，UI 文案差异待 R4 收敛） | — | `01-decision/D-001-…` §1.1 |
 
 R1 已关闭的 `I-038-001`～`003` 与 R2 已关闭的 `I-038-007`～`009` 不再重复登记；`I-038-006` 保持 `deferred · non-blocking`；`I-038-010`（导航与 i18n 键位）最晚 R4。
 

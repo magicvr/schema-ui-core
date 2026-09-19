@@ -12,6 +12,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { I18nProvider } from "@/i18n/runtime";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 

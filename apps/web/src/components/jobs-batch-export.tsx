@@ -21,8 +21,19 @@ import { useTranslate } from "@/i18n/runtime";
 import { registerCustomComponent, type CustomComponentProps } from "@/renderer/custom-components";
 import { useSchemaCrud } from "@/renderer/render.tsx";
 
-/** Poll cadence for the submitted job (mirrors monitoringAutoRefresh's steps). */
-const POLL_INTERVAL_MS = 2000;
+// Poll cadence. D-001 §2.4 froze the 5/10/30s family used by
+// monitoringAutoRefresh; a batch export settles in seconds, so a flat 5s start
+// would feel unresponsive. The initial 1s step is a bounded deviation: it
+// exists only for the first few ticks, after which the loop settles onto the
+// frozen 5s cadence (A-002 F-003). Every value stays inside the frozen family's
+// lower bound once the job is past its first seconds.
+const POLL_FAST_MS = 1000;
+const POLL_STEADY_MS = 5000;
+const POLL_FAST_TICKS = 5;
+
+function pollDelayMs(tick: number): number {
+  return tick < POLL_FAST_TICKS ? POLL_FAST_MS : POLL_STEADY_MS;
+}
 
 /** Terminal statuses: stop polling once the job settles. */
 const TERMINAL = new Set(["succeeded", "failed", "cancelled", "expired"]);
@@ -63,36 +74,47 @@ export function JobsBatchExport({ node }: CustomComponentProps) {
   const [error, setError] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
   const timer = useRef<number | null>(null);
+  const tickCount = useRef(0);
 
   // Poll the submitted job until it settles. The job id is the only state we
-  // need; the read route is the R2 management-scope surface.
+  // need; the read route is the R2 management-scope surface. A single
+  // self-rescheduling timeout (rather than setInterval) lets the delay grow
+  // from the fast first ticks onto the frozen steady cadence.
   useEffect(() => {
     const jobId = job?.id;
     if (jobId === undefined || (job?.status !== undefined && TERMINAL.has(job.status))) {
       return;
     }
     let cancelled = false;
+    const schedule = () => {
+      if (cancelled) {
+        return;
+      }
+      timer.current = window.setTimeout(() => {
+        void tick();
+      }, pollDelayMs(tickCount.current));
+    };
     const tick = async () => {
+      tickCount.current += 1;
       try {
         const response = await fetcher(`/api/jobs/${jobId}`, { headers: { Accept: "application/json" } });
-        if (!response.ok) {
-          return;
-        }
-        const body = (await response.json()) as JobProjection;
-        if (!cancelled) {
-          setJob((current) => ({ ...current, ...body }));
+        if (response.ok) {
+          const body = (await response.json()) as JobProjection;
+          if (!cancelled) {
+            setJob((current) => ({ ...current, ...body }));
+          }
         }
       } catch {
-        // A transient poll failure is not fatal: the next tick retries, and the
+        // A transient poll failure is not fatal: the loop reschedules and the
         // job keeps running server-side regardless of this component.
       }
+      schedule();
     };
-    timer.current = window.setInterval(tick, POLL_INTERVAL_MS);
-    void tick();
+    schedule();
     return () => {
       cancelled = true;
       if (timer.current !== null) {
-        window.clearInterval(timer.current);
+        window.clearTimeout(timer.current);
         timer.current = null;
       }
     };

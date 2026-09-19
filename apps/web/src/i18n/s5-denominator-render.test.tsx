@@ -41,6 +41,8 @@ import "@/components/notification-center";
 import "@/components/password-policy-tab";
 import "@/components/telegram-admin-tab";
 import "@/components/wallet-ensure";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ADMIN_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
