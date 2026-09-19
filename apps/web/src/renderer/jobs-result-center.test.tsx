@@ -365,6 +365,20 @@ describe("R4 · result center on the shipped jobs page", () => {
     // reach the network either (the JSX disabled attribute blocks activation).
     await click(rowButton(harness.container, 0, "Cancel"));
     expect(harness.requests.filter((entry) => entry.method === "POST")).toEqual([]);
+
+    // Discriminating counterpart: download is gated on jobs.read (the server's
+    // own gate for GET /api/jobs/{id}/result), so a read-only principal KEEPS
+    // it. If the schema's local gate ever became jobs.write, this fails — which
+    // is what makes the read-only case meaningful rather than vacuous.
+    const succeededRowMenu = Array.from(
+      harness.container.querySelectorAll("[data-row-actions-menu]"),
+    )[2]?.querySelector("button");
+    await click(succeededRowMenu ?? null);
+    const downloadItem = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find(
+      (item) => (item.textContent ?? "").trim() === "Download result",
+    ) as HTMLButtonElement | undefined;
+    expect(downloadItem, "download must still be offered to a jobs.read holder").toBeDefined();
+    expect(downloadItem?.disabled).toBe(false);
   });
 
   it("re-fetches the list on the auto-refresh cadence", async () => {

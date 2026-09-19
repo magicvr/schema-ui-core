@@ -221,6 +221,36 @@ func TestJobActionsRequireJobsWrite(t *testing.T) {
 	}
 }
 
+// C1 (security) · the honest limit of the gate test above.
+//
+// `TestJobActionsRequireJobsWrite` proves that a principal WITHOUT jobs.write is
+// refused. It does NOT prove the gate is jobs.write rather than jobs.read,
+// because under the built-in policy matrix both keys are PolicyAdmin ({admin})
+// and the editor role holds neither — mutating the route's gate to "jobs.read"
+// leaves that test green (verified by mutation in the R4 self-audit).
+//
+// No discriminating principal is constructible from the seeded roles today, so
+// this test pins the nesting that makes that true. If the keys ever stop being
+// co-held, it fails loudly and a real counter-example test becomes both possible
+// and required.
+func TestJobActionGateIsNotDiscriminableToday(t *testing.T) {
+	env := newAuthTestEnv(t)
+	adminPermissions := permissionsForUser(t, env, "user-admin")
+	env.addUser(t, "editor-gate-probe", "editor-password", []string{"editor"})
+	editorPermissions := permissionsForUser(t, env, "user-editor-gate-probe")
+
+	if !containsPermission(adminPermissions, "jobs.write") || !containsPermission(adminPermissions, "jobs.read") {
+		t.Fatalf("the admin principal lacks jobs.read or jobs.write (%v): the result center is unreachable", adminPermissions)
+	}
+	for _, permissions := range [][]string{adminPermissions, editorPermissions} {
+		if containsPermission(permissions, "jobs.read") && !containsPermission(permissions, "jobs.write") {
+			t.Fatalf("a principal now holds jobs.read without jobs.write (%v): a jobs.write-vs-jobs.read "+
+				"discriminating test for the cancel/retry gate is now constructible and REQUIRED "+
+				"(the current gate test cannot tell the two keys apart)", permissions)
+		}
+	}
+}
+
 // C1: the write routes exist only when the actions surface is bound. This is
 // the handler-side half of the descriptor promise in modules/jobs: a read-only
 // composition declares — and serves — no mutating route at all.
