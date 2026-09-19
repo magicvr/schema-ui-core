@@ -760,7 +760,7 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		// workspace-038 R2 (GOAL-003 D-001 §1): management-scope job list
 		// index. The 0042 async_jobs row above stays byte-identical — a new
 		// contribution is the only legal way to add DDL to an applied table.
-		{"core.jobs", "jobs_management_indexes", "a0c1e8645f3341525a9311001db5b54c0c52efe007d69055f94b9a81c702e41e"},
+		{"core.jobs", "jobs_management_indexes", "d946e1dbba9311586db8ea29a63d337f38ca7e5927974eae2b64f0f53787cb67"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

@@ -115,8 +115,16 @@ func Descriptors() []kernel.MigrationContribution {
 // jobsManagementIndexDDL adds the management-list index. The 0042 table and
 // its indexes are untouched: that contribution's checksum is frozen in the
 // migration ledger, so a new contribution is the only legal way to add DDL.
+//
+// The index carries the `id` tiebreak column because the admin list pages with
+// `ORDER BY created_at DESC, id DESC` — `created_at` is millisecond precision,
+// so without a deterministic tiebreak rows sharing a timestamp could repeat or
+// vanish across pages (the same reason operationlog and wallet add `, id DESC`).
+// EXPLAIN QUERY PLAN confirms the tiebreak column is what lets the index order
+// the result directly instead of falling back to a temp B-tree.
+// `IF NOT EXISTS` matches the pure-index precedent (admin.settings 0063).
 var jobsManagementIndexDDL = []string{
-	`CREATE INDEX idx_jobs_created_at ON jobs(created_at DESC)`,
+	`CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC, id DESC)`,
 }
 
 func migrateJobsManagementIndexes(tx kernel.Tx) error {

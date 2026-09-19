@@ -29,16 +29,36 @@ version: 1.0.0
 | 新贡献 Version | **72**（当前最大 = 71，`core.operationlog` / `operation_log_digitaloffer_events`；`validateApplied` 要求连续前缀，见侦察 §1.2） |
 | ModuleID | **`core.jobs`**（同模块追加后续贡献，先例 `admin.account` 13→35；见侦察 §1.3） |
 | Key / Name | `jobs_management_indexes` |
-| DDL（sqlite 与 postgres 文本相同） | `CREATE INDEX idx_jobs_created_at ON jobs(created_at DESC)` |
+| DDL（sqlite 与 postgres 文本相同） | `CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC, id DESC)` |
 | `ApplyPostgres` | **省略（nil）** —— 纯索引 DDL 无时间列类型差异，`Apply` 可移植（`contribution.go:124-128`） |
 | `async_jobs`(42) 行 | **不动**（其 checksum 冻结，改则 checksum drift 拒绝启动） |
+
+### 1.2a 索引形状细化（2026-09-19 用户二次裁决）
+
+初版裁决为「单列 `created_at DESC`」。R2 侦察以**真实 `EXPLAIN QUERY PLAN`**（系统 sqlite3 3.51.2，`:memory:` 重建 schema）发现：**分页必须带 tiebreak**（`created_at` 为毫秒精度，同毫秒多行会在页间重复或丢失；仓内 `operationlog/repository.go:232`、`wallet/store/repository.go:200` 均带 `, id DESC`），而**单列索引无法服务该 tiebreak**：
+
+| 索引形状 | `ORDER BY created_at DESC, id DESC` 计划 |
+|---------|----------------------------------------|
+| `(created_at DESC)` | `SCAN ... USING INDEX` + **`USE TEMP B-TREE FOR LAST TERM OF ORDER BY`** |
+| `(created_at DESC, id DESC)` | `SCAN ... USING INDEX`，**无临时 B 树** |
+
+⇒ 用户裁决**细化为 `(created_at DESC, id DESC)`**：同一迁移 v72 内、零额外索引、零额外迁移，仅补上稳定性所需的 tiebreak 列。`IF NOT EXISTS` 对齐纯索引先例（`admin/settings` 0063）。
+
+**与 R1 O-3 表述的调和**：R1 `D-001` §1.3 O-3 原文写「跨 actor 的 `ORDER BY updated_at DESC` 新增索引」；R2 冻结的默认排序为 **`created_at DESC`**（对齐 `admin.activity` 的 `created_at` 先例与「作业创建时间」的语义）。**R1 原文保留不改写**（历史决策不可改写），本 §1.2a 登记该**取代关系**：O-3 的排序列以 R2 冻结值为准。
+
+**EXPLAIN 证据强度限制**（诚实标注）：驱动为 `modernc.org/sqlite v1.55.0`，与 CLI 3.51.2 **非同一构建**；对这类单表等值/范围 + ORDER BY + LIMIT 形状计划应一致，但**不构成等价性证明**。仓内**无** `EXPLAIN` 工具或测试（全仓零命中），故索引主张**不可由仓库机器验证**。详见 `attachments/R2-recon-index-and-query-shape.md` §5。
+
+**worker 路径回归**：加索引后 `ListRunnable` / `ExpireDue` / 按 id 查询的计划**逐字不变**（侦察 §5.3.2 实测）。
 
 **必须同步的测试期望**：
 
 | 测试 | 变更 |
 |------|------|
-| `internal/store/migrate_test.go:692-693` 冻结列表 | **追加**新三元组 `{"core.jobs", "jobs_management_indexes", <新 checksum>}`（既有行不变） |
-| `modules/jobs/migration/migration_test.go:15` | `len(descriptors)` 期望 **1 → 2**；并断言新描述符的 Version/Name |
+| `internal/store/migrate_test.go:759-763` 冻结列表 | **追加**新三元组 `{"core.jobs", "jobs_management_indexes", d946e1db…}`（既有行不变） |
+| `modules/jobs/migration/migration_test.go` | `len(descriptors)` 期望 **1 → 2**；并断言新描述符的 Version/Name/Key、非 tombstone、`ApplyPostgres == nil` |
+| `internal/store/identity.go:93` | `completeFingerprintCatalogHead` **71 → 72** |
+| `internal/store/identity_test.go` | `lockedHeadExtraTables[72] = {}`（纯索引，无新对象） |
+| `migrate_test.go:124`、`:200`、`operations_test.go:54`、`restart_test.go:52` | applied 尾部 **71 → 72**（含 `jobs_management_indexes`） |
 
 ### 1.3 查询形状（冻结）
 
@@ -117,6 +137,8 @@ O-1 / O-2 的**实现**属 R3（批量异步承接）与 R4（结果中心）；
 |--------|------|------|
 | 索引 | `created_at` + `kind`/`status` 复合索引 | 首波默认列表无强制过滤；复合索引增加写入开销。若后续出现真实过滤需求，按同模式追加新贡献（版本 73+） |
 | 索引 | 不新增索引、改用 `updated_at DESC` 排序 | 跨 actor 时 `idx_jobs_actor` 前导列是 `actor_id`，仍不能覆盖排序；且与 `admin.activity` 的 `created_at` 先例不一致 |
+| 索引形状 | 保持单列 `(created_at DESC)` | 实测无法服务分页必需的 `id` tiebreak（见 §1.2a）；与仓内列表先例（均带 `, id DESC`）不一致 |
+| 索引形状 | 三索引（`created_at` + `status` + `kind` 复合） | 首波默认列表无强制过滤；复合索引增加写入开销。若后续出现真实过滤需求，按同模式追加新贡献（版本 73+） |
 | 权限 | `jobs.read` 用 `PolicyAdminEditor` | 作业含其他 actor 的执行详情（错误消息、correlation），属管理面；与 `tasks.read` 一致更保守 |
 | 结果 URL | 集中 kind → base path 登记表 | 隐式耦合：新 kind 忘登记则 URL 静默错误 |
 | 结果 URL | 不动 wallet（仅 admin.jobs 自建） | 用户选择泛化；字节等价重构风险已由「输出不变 + 审计复核」约束 |
