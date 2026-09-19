@@ -22,7 +22,7 @@ version: 0.4.0
 
 - A-001（self）已于 2026-09-19 落盘：verdict `pass`，0 required + 4 recommended（F-001 门禁可判别性、F-002 状态列逐值本地化、F-003 自动刷新清空选择的前提、F-004 轮询取舍）。
 - A-002（independent · grok-build grok-4.6 high · `/audit`）已于 2026-09-19 落盘：verdict `pass`，0 required + 4 recommended。同意 self 的合同/隔离/门禁结论；独立复跑 Go `./...`、`Any` 用例与点名前端测试，并自做 `retryable` 忽略预算变异（红→还原）。新增 recommended：F-001 写门禁键名残余、F-002 HEAD 前端缺少 `error.job*` 键、F-003 前端夹具未钉 attempt 预算、F-004 文档索引漂移。
-- A-003（响应）已于 2026-09-19 落盘：两腿**无冲突**，不触发 P-004 冲突裁决；**开放 required = 0**。8 条 recommended 中 5 条 `fixed`（`2ae1da37` / `58c5614f`），3 条（self F-002/F-003/F-004，均 low）拟 `accepted-residual` 并**等用户书面接受**（P-003：残余须用户书面接受，不静默）。
+- A-003（响应）已于 2026-09-19 落盘：两腿**无冲突**，不触发 P-004 冲突裁决；**开放 required = 0**。8 条 recommended 中 5 条 `fixed`（`2ae1da37` / `58c5614f`），3 条（self F-002/F-003/F-004，均 low）先经**用户书面裁决**记为 `accepted-residual`（有界接受，含范围与复核触发），随后由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（`done · 4/4`）交付通用能力，并**已于 2026-09-19 回填为 `fixed`**（只加闭合注记，不改 A-001/A-002 正文与本目标 status/progress）。**当前：8/8 `fixed`，无遗留残余。**
 - 据实纠正：self A-001 曾判定「write-vs-read 判别性主体不可构造」有误——独立腿指出 `CreateRoleWithGrants` 路径；A-003 §3 已落地真反例并变异验证，取代原嵌套守卫。
 - **审计模式 = `cross`**（本目标 `00-meta.md` §审计模式）：R4 新增**管理作用域写操作**（可取消/重试他人作业）并收敛权限可见面——属权限/数据高影响门禁。
 - 审计范围（C4）：① 取消/重试路由是否真正 `jobs.write` 门控且 fail-closed；② **既有 actor 作用域写路径（`RequestCancel`/`Retry`）是否逐字未放宽**；③ 可取消/可重试状态集合是否与 Job 六态合同一致（不越权改合同）；④ 结果过期（410）与未就绪（409）在 UI 的呈现是否与后端语义一致；⑤ 前端交互级测试是否真正覆盖「不 reloadList / 只收 202 / 终态下载」；⑥ 是否越界改 pinned 工件或重开既有 VP。

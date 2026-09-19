@@ -83,14 +83,16 @@ parent: null
 
 | 编号 | 所需信息 | 级别 | 影响 | 最晚需要 | 收集/验证动作 | 状态 | 延期/复核与证据 |
 |------|----------|------|------|----------|----------------|------|------------------|
-| I-038-001 | Job 分母与可见作用域：现存及首波纳入的 Job 种类、是否展示全量/本 actor/按数据范围、与 `wallet.reconcile` 既有 actor 作用域的兼容关系 | required | R1 范围冻结、R2 读面、判据 1/2 | R1 | 扫描 `internal/jobs` 与各模块 `Register*JobKind` 消费点，形成种类×作用域矩阵；确认是否需要新增 repository 列表查询 | open | — |
-| I-038-002 | 批量异步契约：是否扩展 ADR-0022 以支持异步变体，还是为长操作另立独立契约；同步 `batch-delete` 是否保持；是否触碰 pinned `schema-ui-docs@v2.9.0` 协议面 | required | R1 方案冻结、R3 实施、判据 1/3/6 | R1 | 对照 `apps/web/src/protocol`（`actions.batch.request` / `batchMapping`）与上游 v2.9.0 契约；判定「本地扩展」vs「上游协议变更」，并给出兼容与回归口径 | open | — |
-| I-038-003 | 首波批量操作分母：哪些现有批量/长操作（批量删除、批量启停、导出、导入、对账等）进入异步首波，哪些保持同步 | required | R1 范围冻结、R3 实施、判据 3 | R1 | 盘点 `resources.go` 批量面、`data-transfer` 导出导入、wallet reconcile 现状，逐项给出「保持同步 / 改异步 / 不进首波」 | open | — |
+| I-038-001 | Job 分母与可见作用域：现存及首波纳入的 Job 种类、是否展示全量/本 actor/按数据范围、与 `wallet.reconcile` 既有 actor 作用域的兼容关系 | required | R1 范围冻结、R2 读面、判据 1/2 | R1 | 扫描 `internal/jobs` 与各模块 `Register*JobKind` 消费点，形成种类×作用域矩阵；确认是否需要新增 repository 列表查询 | **verified**（2026-09-19 由 `GOAL-002` 关闭；证据：`GOAL-002/attachments/r1-job-kind-scope-matrix.md`、`01-decision/D-001` §1；管理读面由 `GOAL-003` 交付，R5 独立腿以代码抽查复验） | R2 交付 `admin.jobs` 管理读面 |
+| I-038-002 | 批量异步契约：是否扩展 ADR-0022 以支持异步变体，还是为长操作另立独立契约；同步 `batch-delete` 是否保持；是否触碰 pinned `schema-ui-docs@v2.9.0` 协议面 | required | R1 方案冻结、R3 实施、判据 1/3/6 | R1 | 对照 `apps/web/src/protocol`（`actions.batch.request` / `batchMapping`）与上游 v2.9.0 契约；判定「本地扩展」vs「上游协议变更」，并给出兼容与回归口径 | **verified**（2026-09-19 用户 P-004 裁决 = 方案 B「另立模块自有异步契约」；ADR-0022 同步语义逐字冻结、pinned 工件零改动；见 `GOAL-002/01-decision/D-001` §2 与 `GOAL-004/01-decision/D-001`） | R3 交付 `jobs.batch-export` |
+| I-038-003 | 首波批量操作分母：哪些现有批量/长操作（批量删除、批量启停、导出、导入、对账等）进入异步首波，哪些保持同步 | required | R1 范围冻结、R3 实施、判据 3 | R1 | 盘点 `resources.go` 批量面、`data-transfer` 导出导入、wallet reconcile 现状，逐项给出「保持同步 / 改异步 / 不进首波」 | **verified**（2026-09-19 用户 P-004 裁决 = 首波仅「新建批量导出所选」1 条，同时承接 `V-F126`；逐项矩阵见 `GOAL-002/attachments/r1-first-wave-denominator-matrix.md`） | R3 实现；`V-F126` 已由 `VRev-097` 闭合 |
 | I-038-004 | **Profile / 模块矩阵边界**：作业中心以新模块（如 `admin.jobs`）承载还是挂在既有模块；是否进入默认 Profile 集 | required | 激活、R1、VP-008 `go` 消费有效性、判据 5/6 | **激活前**（须用户 P-004 裁决） | 读 `kernel/profile.go` 现行模块矩阵与 `mvp`/`admin`/`demo` 集合；给出「新增模块进默认集」与「挂既有模块」两方案的影响面与红线结论 | **verified**（2026-09-19 用户 P-004 裁决方案 A：新建 `admin.jobs` 进 admin 默认集；Profile 内容扩展，不改装配语义，不暂挂 `go`） | VRev-099；`kernel/profile.go:46`–`93` ProfileAdmin 先例 |
 | I-038-005 | 激活前 Admin 类 freshness 与 VP-008 `go` 消费有效性 | required | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，核对协议 pin、依赖锁、迁移台账、Profile 默认集与装配、provenance 及区间变更 | **verified**（2026-09-19：`0c29c08` → `7e5ce891` 五域 PASS；不暂挂 `go`） | VRev-099 |
 | I-038-006 | 历史作业保留与清理策略（`expires_at` 已存在；是否需要归档/清理/容量上限） | non-blocking | 后续运维波次边界 | 关门后或出现容量触发 | 不纳入首波；出现真实容量或合规需求时由 `/vision` 复核 | deferred | 延期理由：首波聚焦可见性与结果读取，不新建数据生命周期程序；责任人：`/vision`；复核触发：作业表容量/保留期出现真实需求 |
 
-`I-038-004` 与 `I-038-005` 已于 2026-09-19 关闭（用户 P-004 裁决 + Admin 类 freshness PASS），激活门禁解除。`I-038-001`～`I-038-003` 为 R1 冻结前的 required 门禁，仍为 open。`I-038-006` 是有界延期，不代表已验证或承诺后续实现。
+`I-038-004` 与 `I-038-005` 已于 2026-09-19 关闭（用户 P-004 裁决 + Admin 类 freshness PASS），激活门禁解除。`I-038-001`～`I-038-003` 已由 `GOAL-002`（R1）经用户 P-004 裁决关闭为 `verified`（2026-09-19 C4 投影同步本表）。`I-038-003` 同时承接 `V-F126`。`I-038-006` 是有界延期，不代表已验证或承诺后续实现。
+
+> **R5 关门证据状态（2026-09-19，`[workspace-038] GOAL-006`）**：判据 1～6 已由 `GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据达成；判据 7 的「退出矩阵 + 浏览器/自动化回归 + 独立意见 + 开放 required = 0」已满足（R5 cross 审计 self `A-001` + grok-build independent `A-002` 均 `pass`，`A-003` 响应后开放 required = 0；全量 e2e 16 passed / 4 skipped / 0 failed）。**剩余关门条件 = 用户书面确认**（`I-038-019`）；两条 bounded residual（e2e fresh-seed 顺序契约、jobs 结果中心缺端到端覆盖）已登记于 `docs/vision/roadmap.md`「未决项统一登记」。**本 VP 的 `status` 在用户书面确认前保持 `active`。**
 
 ## 纲领路线图
 

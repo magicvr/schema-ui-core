@@ -23,14 +23,15 @@ version: 0.1.0
 | 3 | **批量操作异步承接**：至少一条真实批量操作走 Job（queued→running→终态 + 进度 + 终态结果），**同时**既有 ADR-0022 同步 `batch-delete` 语义与回归不退化 | **达成** | `jobs.batch-export`（`POST /api/jobs/batch-export` → 202 + jobId，双重门禁 `jobs.write`+`data.export`，真实细粒度进度按行上报）；行为测试 `modules/jobs/export_test.go`（CSV 结果、进度非硬编码、校验先于建行）；同步路径零 diff + 回归锚点（`GOAL-004 A-002` 独立腿以**空 diff** 复核 `resources.go`/协议 fixture 未动） |
 | 4 | **结果中心体验**：进行中/成功/失败/取消/过期/结果已过期六类呈现；导出类结果可下载；失败可重试；中英文、浅色/深色、加载/空态/错误态与既有约定一致 | **达成**（三条 low 级残余已跨区修复） | `jobs` 页：六态徽标 + 六态**逐值本地化**（`valueLabels`，en-US/zh-CN 双断言）、进度列、`recordView` 15 字段详情、结果下载（`jobs.downloadResult` → 共享助手，CSV 用服务端 `fileName`）、取消/重试（`jobs.write`，行级可用性由服务端派生字段驱动）、自动刷新（off/5/10/30s，**空闲不轮询**）；测试 `renderer/jobs-result-center.test.tsx`（13 例）、`components/jobs-batch-export.test.tsx`（4 例）、`lib/job-result-download.test.ts`（4 例）、`components/jobs-auto-refresh.test.tsx`（4 例）、`renderer/table-refresh-seam.test.tsx`（3 例）；残余由 `[workspace-010] GOAL-044`（`done · 4/4`）交付并回填 `fixed` |
 | 5 | **权限与 Profile 安全**：按 Profile 与权限过滤，不绕过路由守卫与数据范围；mvp/admin（及适用 demo/custom）覆盖**有矩阵证据**；直接 URL 行为与既有守卫一致 | **达成** | `admin.jobs` 仅进 admin 默认集（用户 P-004 裁决，`kernel/profile.go`）；只读组合下两条写路由**不声明也不挂载**（`TestJobActionRoutesAbsentWithoutActions`）；写门禁以**自定义只读角色真反例**钉住（`TestJobWriteGateRequiresJobsWriteNotJobsRead`：持 `jobs.read` 无 `jobs.write` → 读 200 / 写 403 且行未变）；`descriptor = 计划描述符`（`TestPlanDescriptorMatchesTheFullProvider` + kernel `MODULES_API_MISMATCH` 装配检查） |
-| 6 | **基础设施与范围保持**：未实现/解除 Redis、外部队列、多实例、跨进程索引或专用搜索引擎；未重开 VP-012/011/037；未改 Charter 目的/边界/非目标；未混入新业务域 | **达成** | R1～R5 区间 `git diff --stat` 无 `docs/schemas/**`、`apps/web/src/protocol/upstream/**`、`apps/api/modules/jobs/migration/**`（迁移仍 v72，`async_jobs` v42 checksum `55e1d3f8…` 未变）；Jobs 六态合同与同步 `batch-delete` 零改动（多次以空 diff 复核）；无 Redis/broker/多实例代码；未新开 VP |
+| 6 | **基础设施与范围保持**：未实现/解除 Redis、外部队列、多实例、跨进程索引或专用搜索引擎；未重开 VP-012/011/037；未改 Charter 目的/边界/非目标；未混入新业务域 | **达成** | `git diff --stat e1893a1a..HEAD -- docs/schemas apps/web/src/protocol/upstream apps/api/modules/jobs/migration apps/api/internal/jobs/repository.go apps/api/internal/jobs/runner.go` **为空**（R5 独立腿复验一致）；`async_jobs` v42 checksum 仍为 `55e1d3f8…`（`internal/store/migrate_test.go` frozen catalog，独立腿复跑 `TestCompiledMigrationCatalogOwnership` + `modules/jobs/migration` 通过）；Jobs 六态合同与同步 `batch-delete` 零改动（多次以空 diff 复核）；无 Redis/broker/多实例代码；未新开 VP。**口径精确化（R5 独立腿 F-004 附带指出）**：自 VP-038 激活（`e125d902`）起 `apps/api/modules/jobs/migration/**` **有** R2 授权的 v72 索引增量，故「migration 全区间零改动」的说法不成立；**准确表述**是「相对 R3 关门基线 `e1893a1a` 为空，且 v42 描述符/checksum 与 v72 之前的历史未动」 |
 | 7 | **证据与审计**：退出矩阵、浏览器/自动化回归、必要的独立意见已落盘；开放 required = 0；组合投影同步且**经用户书面确认**关门 | **进行中** | 本文件（退出矩阵 + 回归，见 §2）；`GOAL-005` cross 审计两腿 `pass` 且 8/8 recommended `fixed`；R5 独立意见与用户确认见后续条目（C3/C4） |
 
 ### 2. 浏览器/自动化回归（C2）
 
 | 项 | 结果 |
 |----|------|
-| 命令 | `cd apps/web && npm run test:e2e`（Playwright chromium · 默认 sqlite scratch 库 · 单 worker） |
+| 命令 | `cd apps/web && npm run test:e2e`（Playwright chromium · 单 worker · 默认 sqlite scratch 库） |
+| **profile 口径（R5 独立腿 F-002 纠正）** | 该命令**未设 `APP_PROFILE`**，`playwright.config.ts` 默认 **`mvp`**；`admin.jobs` 不在 mvp/demo 默认集，故本 VP 新增面在**默认 e2e 中模块级缺席**。此前本表「在 admin profile 上跑通」的措辞与所记录命令不符，已按事实更正；4 个 skip 与 mvp 条件跳过一致（`localization` 的 admin-only 段 + `telegram-operator-layout` 三例按频道路由条件跳过） |
 | 首次运行 | **15 passed / 1 failed / 4 skipped**；失败项 = `force-password-change.spec.ts`（fresh seed 强制改密） |
 | 失败根因（证据） | 失败页面快照显示 `admin / admin` 登录返回 **"invalid username or password"**，说明该次运行所连 scratch 库中 admin 密码已被改过。`workers: 1` + `fullyParallel: false` 下用例按文件名顺序串行，而 **VP-036 新增的 `command-palette.spec.ts` 排在 `force-password-change.spec.ts` 之前**，其 sign-in helper **会自行完成强制改密**，从而消费掉「fresh seed」前提。 |
 | 隔离复验 | `npx playwright test force-password-change.spec.ts` → **1 passed (10.3s)**（fresh 库下前提成立）→ 确认为**共用库 + 文件顺序假设被后续波次破坏**的既有挂具缺陷，与 R1～R5 实现无关 |
@@ -39,9 +40,9 @@ version: 0.1.0
 
 ### 3. e2e 覆盖与判据 4/5 的关系（诚实边界）
 
-- e2e 分母（11 个 spec 文件）覆盖：登录/强制改密、命令面板、host 失败面、列表视觉、本地化、schema 鉴权传输、schema CRUD、shell、Telegram 运营台布局、长内容抽查。**没有一个 spec 直接驱动 jobs 结果中心**（无「提交批量导出 → 观察进度 → 下载」的端到端用例）。
+- e2e 分母（11 个 spec 文件）覆盖：登录/强制改密、命令面板、host 失败面、列表视觉、本地化、schema 鉴权传输、schema CRUD、shell、Telegram 运营台布局、长内容抽查。**没有一个 spec 直接驱动 jobs 结果中心**（无「提交批量导出 → 观察进度 → 下载」的端到端用例）；且默认 profile 为 `mvp`（不含 `admin.jobs`），因此即使新增用例也需显式以 admin profile 运行。
 - 因此判据 4/5 的浏览器侧证据来自**渲染/交互级测试**（真实 `jobs.json` + 生产渲染链 + 真实路由断言的 24 例，见 §1 判据 4）与 HTTP 契约测试，而不是 e2e。
-- **该缺口已登记**（R5 `A-001` F-002）：是否新增一条 jobs 结果中心的 e2e 用例，属「后续波次 or bounded residual」的选择，交由用户/审计裁量，不在本波次静默扩大范围。
+- **该缺口已登记**（R5 `A-001` F-002 + 独立腿 `A-002` F-002 加强），并在 `docs/vision/roadmap.md`「未决项统一登记」可查：是否新增一条 jobs 结果中心的 e2e 用例（admin profile），属「后续波次 or bounded residual」，交由用户/审计裁量，不在本波次静默扩大范围。
 
 ### 4. 边界
 

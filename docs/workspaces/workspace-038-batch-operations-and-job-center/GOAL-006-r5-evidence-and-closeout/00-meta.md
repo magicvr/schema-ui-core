@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.2.0
-progress: 2/4
+version: 0.3.0
+progress: 3/4
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -41,16 +41,16 @@ R1～R4 均已 `done · 4/4`（R4 的 cross 审计两腿 `pass`、开放 require
 
 - [x] **C1 退出矩阵**：VP-038 判据 1～7 逐条附证据；未达成或有界项显式标注（含残余登记指向）。证据：`02-execution/E-001-r5-exit-matrix.md` §1（判据 1～6 **达成**；判据 7 依赖本目标的 C3/C4）。
 - [x] **C2 浏览器/自动化回归**：e2e 结果落盘（命令 + 通过/失败明细 + 覆盖说明）。证据：`E-001` §2/§3 —— 首次运行暴露**既有挂具顺序缺陷**（VP-036 新增 spec 消费 fresh-seed 前提），隔离复验确认与本 VP 无关，重命名修复后 **16 passed / 4 skipped / 0 failed（exit 0）**。
-- [ ] **C3 独立意见与残余登记**：independent 审计落盘并合并响应（开放 required = 0）；残余在 roadmap 登记节可查。
+- [x] **C3 独立意见与残余登记**：independent 审计落盘并合并响应（开放 required = 0）；残余在 roadmap 登记节可查。证据：`03-audit/A-002`（independent · grok-4.6 high · **pass**，0 required + 4 recommended；独立复跑 Go 点名测试/jobs 包/迁移 checksum/6 个 vitest 文件 64 例/**全量 e2e 16 passed·4 skipped·0 failed**）；`03-audit/A-003`（响应：F-001/F-002 登记 roadmap bounded residual；F-003 由登记闭合；F-004 索引纠偏，含 `E-001` 的 profile 与 migration 口径更正）。
 - [ ] **C4 组合投影与关门提请**：目标树/工作区/Root 同步；向用户提请 VP-038 关门（**等用户书面确认**，不静默）。
 
 ## 信息就绪与未知项（P-005）
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-038-017 | required | e2e 覆盖是否足以支撑「浏览器/自动化回归」判据？作业/结果中心是否被真实浏览器路径触及？ | C2 | C2 前 | 读 `apps/web/e2e/**` 的用例清单与断言，判定覆盖面与缺口 | open | — | 待勘察 |
-| I-038-018 | non-blocking | `I-038-006`（历史作业保留/清理）在关门时的处置口径 | C4 | C4 | 确认其 `deferred · non-blocking` 与 roadmap 登记一致 | open | — | VP-038 信息表 |
-| I-038-019 | required | VP-038 判据 7「组合投影同步且经用户书面确认」的关门形态 | C4 | C4 | 按 VP-037 先例（VRev + 用户书面确认）给出提请文本 | open | — | VP-037 关门记录 |
+| I-038-017 | required | e2e 覆盖是否足以支撑「浏览器/自动化回归」判据？作业/结果中心是否被真实浏览器路径触及？ | C2 | C2 前 | 读 `apps/web/e2e/**` 的用例清单与断言，判定覆盖面与缺口 | **verified** | — | `E-001` §3 + `A-002` 独立复跑：11 个 spec **无** jobs 结果中心端到端路径，且默认 `APP_PROFILE=mvp` 不含 `admin.jobs`；缺口已登记 roadmap（bounded residual），判据 4/5 的浏览器侧证据来自真实 `jobs.json` 的交互级 24 例 + HTTP 契约测试 |
+| I-038-018 | non-blocking | `I-038-006`（历史作业保留/清理）在关门时的处置口径 | C4 | C4 | 确认其 `deferred · non-blocking` 与 roadmap 登记一致 | **verified** | — | 保持 `deferred · non-blocking`（责任人 `/vision`，触发 = 作业表容量/保留期出现真实需求）；与 VP-038 信息表一致，关门不因此受阻 |
+| I-038-019 | required | VP-038 判据 7「组合投影同步且经用户书面确认」的关门形态 | C4 | C4 | 按 VP-037 先例（VRev + 用户书面确认）给出提请文本 | **open** | — | 待用户书面确认（`A-002` 独立腿明确：本条未决前 **VP-038 不具备关门条件**，不得把 `pass` 读成 `closed`） |
 
 ## 父目标
 
