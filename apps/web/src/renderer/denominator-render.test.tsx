@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
 //
-// S5 (GOAL-041 W29) · full page-denominator render: every one of the 35 module
-// schema documents must survive the production chain
+// S5 (GOAL-041 W29) · full page-denominator render: every module schema
+// document must survive the production chain
 //   validatePageDocument (D-VAL) → loadPageDocument (incl. F-001 page-level
 //   version+capability negotiation) → RenderPage
 // and render a non-empty surface without the schema-error page or an
 // unknown-custom placeholder. This closes the C-007 denominator: structural
-// coverage (35/35 D-VAL) alone was not runtime render proof. The representative
-// pages (GOAL-004) remain the behavior-touched subset; this test proves the
-// whole denominator renders.
+// coverage alone was not runtime render proof. The representative pages
+// (GOAL-004) remain the behavior-touched subset; this test proves the whole
+// denominator renders.
+//
+// The count is 36 since R2 (GOAL-003) added the admin.jobs page; the walk below
+// discovers files, so only this assertion tracks the denominator size.
 
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -123,9 +126,9 @@ async function renderDocument(pageDoc: RenderPageDocument): Promise<HTMLDivEleme
   return container;
 }
 
-describe("S5 · full page denominator renders (35/35)", () => {
-  it("collects all 35 module schema documents", () => {
-    expect(REFS.length).toBe(35);
+describe("S5 · full page denominator renders (36/36)", () => {
+  it("collects all 36 module schema documents", () => {
+    expect(REFS.length).toBe(36);
   });
 
   for (const ref of REFS) {
