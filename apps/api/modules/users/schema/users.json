@@ -315,7 +315,8 @@
         "component": "jobs-batch-export",
         "props": {
           "targetTable": "users-table",
-          "resource": "users"
+          "resource": "users",
+          "slot": "list-page-actions"
         }
       },
       {

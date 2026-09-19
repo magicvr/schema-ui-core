@@ -419,7 +419,7 @@ Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-0
 
 > **用途**：本区是"已交付范围之外的未决事项"的**统一登记处**——不是待办清单、不是承诺、也不代表已验证。目的只有一个：日后任何人对某个未实现或有界接受的能力有疑问时，能在这里一眼看到**它是什么、为什么不现在做、什么条件下做、谁负责、证据在哪**，而不必翻遍各工作区台账。
 > **维护约定**：新增或闭合任何残余/悬置/触发项时**必须同步本节**（与 goal-tree、`03-audit` 台账同级要求）。登记只描述现状与触发条件，禁止把 deferred/recommended 写成已验证或已承诺。
-> **最近更新**：2026-09-19（① VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`）**；② R4 结果中心三条残余经用户裁决移交 `[workspace-010] GOAL-044` 修复后登记为 `fixed`；③ 新增「本地扩展登记」登记项；④ VP-038 R5 关门审计的 e2e fresh-seed 顺序契约登记为 bounded residual，jobs 结果中心缺端到端覆盖一项经用户指令补测后转 `fixed`。其余条目不变）。
+> **最近更新**：2026-09-19（① VP-038 立项登记：§三「批量结果中心」由**未立项**改为**已立项（VP-038 `planned`）**；② R4 结果中心三条残余经用户裁决移交 `[workspace-010] GOAL-044` 修复后登记为 `fixed`；③ 新增「本地扩展登记」登记项；④ VP-038 R5 关门审计的 e2e fresh-seed 顺序契约登记为 bounded residual，jobs 结果中心缺端到端覆盖一项经用户指令补测后转 `fixed`；⑤ `[workspace-010] GOAL-045`（W33）：roles 页导出触发面补齐 `fixed`、新增「列表页 actions 左侧插槽」本地扩展并补全「本地扩展清单」表。其余条目不变）。
 
 ### 一、有界残余（B 类：实现已交付并验证，剩覆盖/文档加固）
 
@@ -431,7 +431,19 @@ Admin 功能最近一拍：**[VP-038-batch-operations-and-job-center](plans/VP-0
 | `GOAL-008 A-002 F-002` | 全仓 `tsc` 简写未逐条裁定（354 行形态不可唯一确定） | **bounded residual**：可执行面由守卫 + CI 门禁锁死；文档侧不逐条考古 | **历史记录被再次当作类型检查证据引用时**，按 `GOAL-008 D-001` 口径复核并注明 | `/govern`（引用时） | `GOAL-043 E-003`；`GOAL-008 D-001` |
 | `V-F124` | 首波页面/状态/权限/持久化矩阵（防执行期滑向共享视图/实体搜索/第二套基础设施） | **2026-09-18 `fixed`**：实质要求已由 R1 交付（`r1-denominator-matrix.json` 24/58、`r1-form-matrix.json`、`r1-state-feedback-matrix.md` + `D-003`～`D-005`），愿景层经 `VRev-097` 复核闭合 | — | `/vision` | `VRev-097`；`GOAL-002` R1 交付物 |
 | `[workspace-038] GOAL-005 A-001 F-002/F-003/F-004` | R4 结果中心三条 low 级项：状态/错误文本未逐值本地化；自动刷新依赖 `reloadList()` 清空选择；无进行中作业时仍按档位轮询 | **2026-09-19 `fixed`**（用户裁决移交 → `[workspace-010]` `GOAL-044-w32-r4-residual-seams` 交付通用能力：列级 `valueLabels`、`refreshTable` 定向刷新 seam、`activeStatuses` 空闲判定；三条均经变异验证） | — | workspace-010 GOAL-044 | `GOAL-044` `D-001`/`E-001`/`A-001`；`[workspace-038] GOAL-005 A-003` §2 |
-| 本地扩展登记（`valueLabels`/`badgeStyleField`/`truncate`/`width`/`minWidth` 等列级与节点级本地扩展缺少**单一清单**） | **登记（未做）**：这些扩展与 pinned `docs/schemas/**` 的边界目前只在各波次决策里分散记录 | 出现「这是 pinned 还是本地扩展」的实际争议，或后续协议波次需要一次性核对时 | workspace-010（后续符合性波次） | `[workspace-010] GOAL-044 A-001 F-003`；`GOAL-044 D-001` §1 |
+| 本地扩展登记（`valueLabels`/`badgeStyleField`/`truncate`/`width`/`minWidth` 等列级与节点级本地扩展缺少**单一清单**） | **登记（部分补齐）**：`[workspace-010] GOAL-045` 已把「列表页 actions 左侧插槽」加入本清单并记录其取值与约定；其余扩展仍分散在各波次决策里 | 出现「这是 pinned 还是本地扩展」的实际争议，或后续协议波次需要一次性核对时 | workspace-010（后续符合性波次） | `GOAL-044 A-001 F-003`；`GOAL-045 D-001` §1/§4；`GOAL-045 A-002` |
+| `[workspace-038]` roles 页导出触发面（R3 冻结分母含 `users`/`roles`，但页面 UI 只接到 users） | **2026-09-19 `fixed`**：`roles-table` 增多选、页面增 `roles-batch-export` 节点（`resource: roles`，与 users 同一组件与同一插槽）；**后端零改动**（分母本就含 roles） | 已闭合；后续新资源接入导出时按同一形态扩展 | workspace-010 GOAL-045 | `[workspace-010] GOAL-045 E-001` §2；`apps/api/modules/roles/schema/roles.json` |
+
+**本地扩展清单（截至 2026-09-19，供「pinned vs 本地扩展」判断）**：
+
+| 扩展 | 层 | 取值/形态 | 约定 |
+|------|----|-----------|------|
+| `badgeStyleField` | 表格列 | 行字段名（`success`/`warning`/`destructive`/`info`/其它=neutral） | 单元格渲染为彩色徽标；空值显示 `—` |
+| `truncate` / `width` / `minWidth` | 表格列 | boolean / px 或 CSS 长度 | 单行截断 + 标题提示 / 列宽提示 |
+| `valueLabels` | 表格列 | `{ "值": "i18n 键" }` | 展示层映射；键缺失或值未映射 → **回落原始值**（fail-open） |
+| `slot` + `targetTable` | custom 节点 | `slot: "list-page-actions"` | 节点投放进目标表格列表控件行**左段**；未知 slot 值按未声明处理（**原地渲染，无提示**）；目标表不存在亦原地渲染（fail-open） |
+| `component` | custom 节点 | 组件注册键 | 节点级键（非 `props`）；未注册 → 明显占位 + `console.error` |
+| `format: "tag"` / `tagMap` | 表格列 | — | **pinned 定义，本仓库未实现**；与 `valueLabels` 不竞争（前者字面量映射，后者 i18n 键） |
 | `[workspace-038] GOAL-006 A-001/A-002 F-001` | e2e 挂具的 **fresh-seed 顺序契约**仍依赖文件名排序（`00-` 前缀）：全量套件共用一块 scratch 库，任何更靠前的新 spec 若使用 sign-in helper（其会自动完成强制改密）都会再次消费该前提，失败形态是难与真实缺陷区分的「登录 401」 | **bounded residual（2026-09-19 登记）**：本次已由重命名修复并两向复验（隔离通过 / 全量 16 passed / 4 skipped / 0 failed），但机制仍是隐式约定 | 后续波次新增 e2e 文件，或排序/挂具策略变更时 | workspace-010（后续符合性波次；e2e 挂具属 W23/W24/W25 一系） | `[workspace-038] GOAL-006 E-001` §2；`A-001/A-002` F-001；`apps/web/e2e/00-force-password-change.spec.ts` 注释 |
 | `[workspace-038] GOAL-006 A-001/A-002 F-002` | 浏览器回归**未驱动** jobs 结果中心：11 个 e2e spec 无「提交批量导出 → 观察进度 → 下载」路径；且 `npm run test:e2e` 默认 `APP_PROFILE=mvp`（**不含** `admin.jobs`），本 VP 新增面在默认 e2e 中模块级缺席 | **2026-09-19 `fixed`**（用户指令「先补 jobs e2e 再关门」）：新增 `apps/web/e2e/jobs-result-center.spec.ts`（admin profile 专用，mvp 下 `test.skip` 显式跳过）——真实浏览器路径：选择行 → 提交异步导出 → 观察真实进度 → 终态下载（文件名 = 服务端 `users-selection.csv`）→ 结果中心读同一作业（本地化 `Succeeded`）→ 行操作再次下载；双 profile 全量复跑：mvp 16 passed / 5 skipped / 0 failed，admin 17 passed / 4 skipped / 0 failed（均 exit 0） | 未覆盖部分（重试/取消的浏览器端到端路径）随实现扩展时补 | `/govern`（后续波次） | `[workspace-038] GOAL-006 E-001` §2/§3；`A-004`；`apps/web/e2e/jobs-result-center.spec.ts` |
 

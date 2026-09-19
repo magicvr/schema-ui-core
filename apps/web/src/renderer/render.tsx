@@ -13,6 +13,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { createPortal } from "react-dom";
+
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
@@ -38,7 +40,10 @@ import { ConfirmDialog } from "@/renderer/confirm";
 import { confirmDiscard, equalDirtyValues, registerDirtyStateSource } from "@/renderer/dirty-state";
 import { feedbackFromError } from "@/renderer/feedback-policy";
 import { FormControls } from "@/renderer/form-controls.tsx";
-import { getCustomComponent } from "@/renderer/custom-components";
+import {
+  getCustomComponent,
+  type CustomComponentProps,
+} from "@/renderer/custom-components";
 import {
   FORM_RECORD_LOAD_CAPABILITY,
   coerceFieldValue,
@@ -80,6 +85,7 @@ import {
   tableActionGate,
   type RenderActionButtonNode,
   type RenderChartNode,
+  type RenderCustomNode,
   type RenderFormNode,
   type RenderGridNode,
   type RenderNode,
@@ -267,6 +273,18 @@ export interface SchemaCrudValue {
    */
   publishTableRows: (tableId: string, rows: ReadonlyArray<Record<string, unknown>>) => void;
   tableRows: (tableId: string) => ReadonlyArray<Record<string, unknown>> | undefined;
+  /**
+   * W33 (GOAL-045 D-001 §2): the list page-actions slot. A custom node may
+   * declare `props.slot = "list-page-actions"` + `props.targetTable` to be
+   * rendered inside THAT table's page-actions row (left segment) instead of in
+   * document flow. Registration is what makes a table render that row at all —
+   * a table with no slot consumer gains no empty segment — and the host element
+   * is published by the table so the node can portal into it.
+   */
+  registerListActionsSlot: (tableId: string) => () => void;
+  hasListActionsSlot: (tableId: string) => boolean;
+  publishListActionsHost: (tableId: string, element: HTMLElement | null) => void;
+  listActionsHost: (tableId: string) => HTMLElement | null;
   activeModal: { actionRef: string; row: Record<string, unknown> | null; title: string } | null;
   modalRow: Record<string, unknown> | null;
   openModal: (actionRef: string, row: Record<string, unknown> | null, title: string) => void;
@@ -1051,6 +1069,45 @@ function SchemaCrudProvider({
     [],
   );
 
+  // W33 (GOAL-045 D-001 §2): list page-actions slot registry. Both maps are
+  // state-backed because they decide what renders: a slot consumer makes its
+  // target table render the left segment, and the table then publishes the host
+  // element the consumer portals into.
+  const [listActionsSlotConsumers, setListActionsSlotConsumers] = useState<Record<string, number>>({});
+  const registerListActionsSlot = useCallback((tableId: string) => {
+    if (tableId === "") {
+      return () => {};
+    }
+    setListActionsSlotConsumers((prev) => ({ ...prev, [tableId]: (prev[tableId] ?? 0) + 1 }));
+    return () => {
+      setListActionsSlotConsumers((prev) => {
+        const next = { ...prev };
+        const remaining = (next[tableId] ?? 0) - 1;
+        if (remaining > 0) {
+          next[tableId] = remaining;
+        } else {
+          delete next[tableId];
+        }
+        return next;
+      });
+    };
+  }, []);
+  const hasListActionsSlot = useCallback(
+    (tableId: string) => (listActionsSlotConsumers[tableId] ?? 0) > 0,
+    [listActionsSlotConsumers],
+  );
+  const [listActionsHosts, setListActionsHosts] = useState<Record<string, HTMLElement | null>>({});
+  const publishListActionsHost = useCallback((tableId: string, element: HTMLElement | null) => {
+    if (tableId === "") {
+      return;
+    }
+    setListActionsHosts((prev) => (prev[tableId] === element ? prev : { ...prev, [tableId]: element }));
+  }, []);
+  const listActionsHost = useCallback(
+    (tableId: string) => listActionsHosts[tableId] ?? null,
+    [listActionsHosts],
+  );
+
   const fetchList = useCallback(
     (
       dataSource: string,
@@ -1580,6 +1637,10 @@ function SchemaCrudProvider({
       tableRefreshToken,
       publishTableRows,
       tableRows,
+      registerListActionsSlot,
+      hasListActionsSlot,
+      publishListActionsHost,
+      listActionsHost,
       activeModal,
       modalRow: activeModal?.row ?? null,
       openModal,
@@ -1620,6 +1681,10 @@ function SchemaCrudProvider({
       tableRefreshToken,
       publishTableRows,
       tableRows,
+      registerListActionsSlot,
+      hasListActionsSlot,
+      publishListActionsHost,
+      listActionsHost,
       activeModal,
       openModal,
       closeModal,
@@ -3167,6 +3232,61 @@ function ActionButtonView({
   );
 }
 
+/** The one slot value this renderer understands (GOAL-045 D-001 §1). */
+const LIST_PAGE_ACTIONS_SLOT = "list-page-actions";
+
+/**
+ * Does this custom node ask to be placed in the list page-actions slot?
+ * Pure predicate: the dispatch path uses it to decide whether to take the
+ * hook-using slot branch at all, so ordinary custom nodes keep the exact
+ * pre-W33 render path (no extra context subscription, no extra re-renders).
+ */
+function declaresListPageActionsSlot(node: RenderCustomNode): boolean {
+  const props = isRecord(node.props) ? node.props : undefined;
+  return (
+    props?.slot === LIST_PAGE_ACTIONS_SLOT &&
+    typeof props.targetTable === "string" &&
+    props.targetTable !== ""
+  );
+}
+
+/**
+ * W33 (GOAL-045 D-001): renders a custom node inside its target table's
+ * page-actions row (left segment) instead of in document flow.
+ *
+ * The fallback is deliberately fail-OPEN (D-001 §3): this is a layout
+ * capability, not a gate, so a target table that does not exist degrades to the
+ * pre-W33 in-flow position and the control stays usable. Hiding it would turn a
+ * schema typo into a silently missing operation entry point.
+ */
+function ListActionsSlotNode({
+  node,
+  context,
+  component: Custom,
+}: {
+  node: RenderCustomNode;
+  context: Record<string, unknown>;
+  component: ComponentType<CustomComponentProps>;
+}) {
+  const crud = useSchemaCrud();
+  const target = typeof node.props?.targetTable === "string" ? node.props.targetTable : "";
+  // Registering is what makes the target table render its left segment at all,
+  // so a table nobody slots into gains no empty row. Depend on the STABLE
+  // register function, never on the context object: its identity changes on
+  // every provider state update, which would register/unregister in a loop.
+  const registerListActionsSlot = crud?.registerListActionsSlot;
+  useEffect(() => {
+    if (registerListActionsSlot === undefined) {
+      return;
+    }
+    return registerListActionsSlot(target);
+  }, [registerListActionsSlot, target]);
+
+  const content = <Custom node={node} context={context} children={node.children} />;
+  const host = crud?.listActionsHost(target) ?? null;
+  return host !== null ? createPortal(content, host) : content;
+}
+
 function dispatchNode({
   node,
   path,
@@ -3315,6 +3435,12 @@ function dispatchParsedNode({
           </div>
         );
       }
+      // W33 (GOAL-045 D-001): a node that declares the list page-actions slot
+      // takes the slot branch; every other custom node keeps the plain path
+      // (identical pre-W33 behaviour, no extra CRUD subscription).
+      if (declaresListPageActionsSlot(node)) {
+        return <ListActionsSlotNode node={node} context={context} component={Custom} />;
+      }
       return <Custom node={node} context={context} children={node.children} />;
     }
     case "recordView":
@@ -3339,11 +3465,22 @@ function dispatchParsedNode({
         return <ChartView node={node} />;
       }
       return (
-        tableRenderer?.(node) ?? (
-          <p className="text-sm text-muted-foreground">
-            table node rendered without a tableRenderer (the app wires SchemaTable)
-          </p>
-        )
+        // W33 (GOAL-045): a table node is KEYED BY ITS ID so two different
+        // tables never share one component instance. Page trees can align their
+        // table node at the same child index (the roles page gained a custom
+        // node, which put its table where the users table sits), and React then
+        // reuses the mounted SchemaTable across the navigation — carrying the
+        // previous table's local state (visible columns, saved-view load, local
+        // query) into a different schema. Symptom found in browser E2E: the
+        // users table came back showing only the columns the two schemas have in
+        // common. A different table is a different surface; remount it.
+        <Fragment key={node.id ?? "table"}>
+          {tableRenderer?.(node) ?? (
+            <p className="text-sm text-muted-foreground">
+              table node rendered without a tableRenderer (the app wires SchemaTable)
+            </p>
+          )}
+        </Fragment>
       );
     }
   }

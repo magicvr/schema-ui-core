@@ -572,6 +572,24 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
   // (crud.refreshTable) re-runs the fetch effect below with the same query while
   // leaving every table selection untouched.
   const tableRefreshToken = crud?.tableRefreshToken(tableId) ?? 0;
+  // W33 (GOAL-045 D-001 §2/§4): does a custom node claim this table's list
+  // page-actions SLOT? If so the row renders a left segment and this table
+  // publishes the host element the node portals into.
+  const listActionsSlotClaimed = crud?.hasListActionsSlot(tableId) ?? false;
+  // The host ref callback must be IDENTITY-STABLE: an inline arrow would make
+  // React detach (null) and reattach (element) on every commit, and that
+  // null↔element oscillation would drive publishListActionsHost in a loop. The
+  // CRUD value is read through a ref so the callback itself never changes.
+  // (Both hooks sit here, ABOVE the component's early returns — React requires
+  // a stable hook count on every render path.)
+  const crudRef = useRef(crud);
+  crudRef.current = crud;
+  const publishListActionsHostRef = useCallback(
+    (element: HTMLElement | null) => {
+      crudRef.current?.publishListActionsHost(tableId, element);
+    },
+    [tableId],
+  );
   const pageListActionsHost = usePageListActionsHost();
   const [pageActionsPortalReady, setPageActionsPortalReady] = useState(false);
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
@@ -1367,17 +1385,29 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
       </div>
     ) : null;
 
+  // W33 (GOAL-045 D-001 §2/§4): this table renders the page-actions row when it
+  // has its own right-hand content OR when a custom node declares the
+  // `list-page-actions` slot for it. The left segment is then the slot HOST: it
+  // is published so that node can portal into it.
   const pageToolbarSurface =
-    columnConfiguration !== null || toolbar.length > 0 ? (
+    columnConfiguration !== null || toolbar.length > 0 || listActionsSlotClaimed ? (
     <div
-      className="flex flex-wrap items-center justify-end gap-2"
+      className="flex flex-wrap items-center justify-between gap-2"
       data-list-page-actions
       // Keep the legacy Saved View test scope able to discover column
       // configuration after page actions move below the filter surface.
       data-saved-views={savedViewEnabled ? "true" : undefined}
     >
-      {columnConfiguration}
-      {toolbar.map((trigger) => {
+      {listActionsSlotClaimed ? (
+        <div
+          ref={publishListActionsHostRef}
+          data-list-page-actions-left="true"
+          className="flex min-w-0 flex-wrap items-center gap-2"
+        />
+      ) : null}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {columnConfiguration}
+        {toolbar.map((trigger) => {
         const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
         const permitted = crud?.effectivePermission(key) ?? true;
         const isBatch =
@@ -1419,6 +1449,7 @@ export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
           </button>
         );
       })}
+      </div>
     </div>
   ) : null;
 
