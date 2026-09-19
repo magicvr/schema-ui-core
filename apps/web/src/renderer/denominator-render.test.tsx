@@ -43,6 +43,8 @@ import "@/components/mfa-manager";
 import "@/components/monitoring-auto-refresh";
 // GOAL-004 R3: the users page declares the async batch-export trigger.
 import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 import "@/components/notification-center";
 import "@/components/password-policy-tab";
 import "@/components/telegram-admin-tab";

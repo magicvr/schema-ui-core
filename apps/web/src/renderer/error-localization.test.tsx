@@ -24,6 +24,8 @@ import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
 import { readResourceApiError, ResourceApiError } from "@/renderer/resource";
 // GOAL-004 R3: the users page declares the async batch-export trigger.
 import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");

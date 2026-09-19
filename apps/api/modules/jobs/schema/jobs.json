@@ -6,8 +6,34 @@
     "requiredCapabilities": [
       "app.manifest",
       "app.navigation",
-      "table.sort"
+      "table.sort",
+      "actions.row.request",
+      "actions.page.trigger",
+      "permissions.inheritance",
+      "record.view.load"
     ]
+  },
+  "actions": {
+    "cancelJob": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/jobs/{id}/cancel",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "retryJob": {
+      "type": "request",
+      "method": "POST",
+      "url": "/api/jobs/{id}/retry",
+      "onSuccess": {
+        "behavior": "reload"
+      }
+    },
+    "downloadJobResult": {
+      "type": "custom",
+      "handler": "jobs.downloadResult"
+    }
   },
   "body": {
     "type": "section",
@@ -66,8 +92,22 @@
         }
       },
       {
+        "type": "custom",
+        "id": "jobs-auto-refresh",
+        "component": "jobs-auto-refresh",
+        "props": {}
+      },
+      {
         "type": "table",
         "id": "jobs-table",
+        "permissionCascade": {
+          "keys": [
+            "edit"
+          ]
+        },
+        "permissions": {
+          "edit": "$context.user.permissions contains \"jobs.write\""
+        },
         "props": {
           "columns": [
             {
@@ -83,6 +123,7 @@
             {
               "field": "status",
               "label": "Status",
+              "badgeStyleField": "statusStyle",
               "labelKey": "schema.jobs.column.status"
             },
             {
@@ -101,6 +142,11 @@
               "labelKey": "schema.jobs.column.actor"
             },
             {
+              "field": "errorCode",
+              "label": "Error",
+              "labelKey": "schema.jobs.column.error"
+            },
+            {
               "field": "createdAt",
               "label": "Created",
               "sortable": true,
@@ -110,9 +156,153 @@
               "field": "finishedAt",
               "label": "Finished",
               "labelKey": "schema.jobs.column.finished"
+            },
+            {
+              "field": "resultExpiresAt",
+              "label": "Result expires",
+              "labelKey": "schema.jobs.column.resultExpires"
+            },
+            {
+              "field": "correlationId",
+              "label": "Correlation",
+              "labelKey": "schema.jobs.column.correlation"
             }
           ],
-          "dataSource": "/api/jobs"
+          "dataSource": "/api/jobs",
+          "actions": [
+            {
+              "key": "cancel",
+              "label": "Cancel",
+              "actionRef": "cancelJob",
+              "permissionIntent": "edit",
+              "disabledWhen": {
+                "field": "cancellable",
+                "equals": false
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "confirm": "Cancel this job?",
+              "labelKey": "schema.jobs.action.cancel",
+              "confirmKey": "schema.jobs.confirm.cancel"
+            },
+            {
+              "key": "retry",
+              "label": "Retry",
+              "actionRef": "retryJob",
+              "permissionIntent": "edit",
+              "disabledWhen": {
+                "field": "retryable",
+                "equals": false
+              },
+              "requestMapping": {
+                "path": {
+                  "id": "$row.id"
+                }
+              },
+              "labelKey": "schema.jobs.action.retry"
+            },
+            {
+              "key": "download",
+              "label": "Download result",
+              "actionRef": "downloadJobResult",
+              "disabledWhen": {
+                "field": "downloadable",
+                "equals": false
+              },
+              "permissions": {
+                "edit": "$context.user.permissions contains \"jobs.read\""
+              },
+              "labelKey": "schema.jobs.action.download"
+            }
+          ]
+        }
+      },
+      {
+        "type": "recordView",
+        "id": "job-detail",
+        "props": {
+          "title": "Job details",
+          "titleKey": "schema.jobs.detail.title",
+          "fields": [
+            {
+              "key": "id",
+              "label": "ID",
+              "labelKey": "schema.jobs.column.id"
+            },
+            {
+              "key": "kind",
+              "label": "Kind",
+              "labelKey": "schema.jobs.column.kind"
+            },
+            {
+              "key": "status",
+              "label": "Status",
+              "labelKey": "schema.jobs.column.status"
+            },
+            {
+              "key": "progress",
+              "label": "Progress",
+              "labelKey": "schema.jobs.column.progress"
+            },
+            {
+              "key": "attempt",
+              "label": "Attempt",
+              "labelKey": "schema.jobs.column.attempt"
+            },
+            {
+              "key": "maxAttempts",
+              "label": "Max attempts",
+              "labelKey": "schema.jobs.detail.maxAttempts"
+            },
+            {
+              "key": "actorId",
+              "label": "Actor",
+              "labelKey": "schema.jobs.column.actor"
+            },
+            {
+              "key": "errorCode",
+              "label": "Error",
+              "labelKey": "schema.jobs.column.error"
+            },
+            {
+              "key": "errorMessage",
+              "label": "Error detail",
+              "labelKey": "schema.jobs.detail.errorMessage"
+            },
+            {
+              "key": "resultUrl",
+              "label": "Result",
+              "labelKey": "schema.jobs.detail.resultUrl"
+            },
+            {
+              "key": "resultExpiresAt",
+              "label": "Result expires",
+              "labelKey": "schema.jobs.column.resultExpires"
+            },
+            {
+              "key": "correlationId",
+              "label": "Correlation",
+              "labelKey": "schema.jobs.column.correlation"
+            },
+            {
+              "key": "createdAt",
+              "label": "Created",
+              "labelKey": "schema.jobs.column.created"
+            },
+            {
+              "key": "updatedAt",
+              "label": "Updated",
+              "labelKey": "schema.jobs.column.updated"
+            },
+            {
+              "key": "finishedAt",
+              "label": "Finished",
+              "labelKey": "schema.jobs.column.finished"
+            }
+          ]
         }
       }
     ]

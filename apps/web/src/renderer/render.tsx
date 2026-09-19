@@ -21,6 +21,10 @@ import { FeedbackRegion, FeedbackNoticeView, type FeedbackNotice } from "@/compo
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDisplayTime } from "@/lib/datetime";
 import {
+  downloadJobResultDocument,
+  triggerBlobDownload,
+} from "@/lib/job-result-download";
+import {
   constructRequest,
   normalizeSelection,
   type RequestConstructionResult,
@@ -360,6 +364,12 @@ const CUSTOM_HANDLER_URLS: Record<string, string> = {
   // copyLink writes the URL to the clipboard.
   "library.preview": "/api/library/files/{id}/download",
   "library.copyLink": "/api/library/files/{id}/download",
+  // R4 (GOAL-005 D-001 §4): the result center's row download. The R2 result
+  // route is the shared address both the jobs page and the wallet surface
+  // advertise; the CSV envelope inside it is unpacked by the shared helper, so
+  // this handler and the R3 batch-export component cannot name or render the
+  // same result differently.
+  "jobs.downloadResult": "/api/jobs/{id}/result",
 };
 
 async function runCustomAction(
@@ -463,6 +473,26 @@ async function runCustomAction(
       ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
     };
   }
+  // R4 (GOAL-005 D-001 §4): a job result document is an envelope, not the file
+  // itself — hand it to the shared unpacker (CSV when present, JSON otherwise)
+  // instead of dumping the raw body. The 409 JOB_RESULT_NOT_READY / 410
+  // JOB_RESULT_EXPIRED cases never reach here: they are non-2xx and are mapped
+  // to their localized codes above.
+  if (handler === "jobs.downloadResult") {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      return {
+        ok: false,
+        code: "JOB_RESULT_UNREADABLE",
+        message: "job result is not a JSON document",
+        messageKey: "error.internal",
+      };
+    }
+    downloadJobResultDocument(payload, "job-" + (typeof rowId === "string" && rowId !== "" ? rowId : "result") + ".json");
+    return { ok: true };
+  }
   const blob = await response.blob();
   // The download filename prefers the row's stored name, scrubbed with the
   // server allowlist shape ([A-Za-z0-9._-], trimmed, capped — A-003 F-001);
@@ -493,18 +523,6 @@ function sanitizeClientFilename(name: string): string {
     out = out.slice(0, 100);
   }
   return out;
-}
-
-/** Triggers a browser download from a fetched blob (F-02 local extension). */
-function triggerBlobDownload(blob: Blob, filename: string): void {
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = objectUrl;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(objectUrl);
 }
 
 async function runRequest(

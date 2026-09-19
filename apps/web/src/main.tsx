@@ -17,6 +17,8 @@ import "@/components/cron-preview";
 import "@/components/monitoring-auto-refresh";
 // GOAL-004 R3: the async batch-export trigger (users list page).
 import "@/components/jobs-batch-export";
+// GOAL-005 R4: the result center's auto-refresh control (jobs list page).
+import "@/components/jobs-auto-refresh";
 import "@/components/import-template-download";
 import "@/components/wallet-ensure";
 import "@/components/notification-center";

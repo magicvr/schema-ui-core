@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 
 import { useTranslate } from "@/i18n/runtime";
+import { downloadJobResultDocument } from "@/lib/job-result-download";
 import { registerCustomComponent, type CustomComponentProps } from "@/renderer/custom-components";
 import { useSchemaCrud } from "@/renderer/render.tsx";
 
@@ -161,20 +162,11 @@ export function JobsBatchExport({ node }: CustomComponentProps) {
         setError(t("schema.jobs.batchExport.error"));
         return;
       }
-      const payload = (await response.json()) as { csv?: string; fileName?: string };
-      if (typeof payload.csv !== "string") {
-        setError(t("schema.jobs.batchExport.error"));
-        return;
-      }
-      const blob = new Blob([payload.csv], { type: "text/csv;charset=utf-8" });
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = payload.fileName ?? `${resource}-selection.csv`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
+      // R4: the envelope → file decision is shared with the result center's row
+      // action (GOAL-005 D-001 §4) so both export entry points produce the same
+      // file, under the same name, from the same document.
+      const payload: unknown = await response.json();
+      downloadJobResultDocument(payload, `${resource}-selection.csv`);
       setDownloaded(true);
     } catch {
       setError(t("schema.jobs.batchExport.error"));
