@@ -101,6 +101,8 @@ func testSystemDataContributions() ([]kernel.PermissionContribution, []kernel.Na
 		// S-12 (GOAL-012): admin.recycle-bin keys, admin-only.
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "recycle.read"}, Permission: "recycle.read", Resource: "recycle-bin", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.recycle-bin", Key: "recycle.write"}, Permission: "recycle.write", Resource: "recycle-bin", Action: "write", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
+		// R2 (GOAL-003): admin.jobs management-scope read key, admin-only.
+		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.jobs", Key: "jobs.read"}, Permission: "jobs.read", Resource: "jobs", Action: "read", PolicyID: authsessiondata.PolicyAdmin, SystemDataVersion: authsessiondata.SystemDataVersion},
 	}
 	navigation := []kernel.NavigationContribution{
 		{ContributionIdentity: kernel.ContributionIdentity{ModuleID: "admin.users", Key: "menu_users"}, NodeID: "menu_users", PageID: "users", Order: 1, Label: "Users", Visibility: authsessiondata.PolicyAdmin, Permission: "users.read", SystemDataVersion: authsessiondata.SystemDataVersion},
