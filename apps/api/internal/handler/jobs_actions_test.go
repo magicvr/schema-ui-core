@@ -221,33 +221,62 @@ func TestJobActionsRequireJobsWrite(t *testing.T) {
 	}
 }
 
-// C1 (security) · the honest limit of the gate test above.
+// C1 (security) · the discriminating counter-example for the write gate.
 //
-// `TestJobActionsRequireJobsWrite` proves that a principal WITHOUT jobs.write is
-// refused. It does NOT prove the gate is jobs.write rather than jobs.read,
-// because under the built-in policy matrix both keys are PolicyAdmin ({admin})
-// and the editor role holds neither — mutating the route's gate to "jobs.read"
-// leaves that test green (verified by mutation in the R4 self-audit).
+// `TestJobActionsRequireJobsWrite` proves that a principal without jobs.write is
+// refused, but NOT that the gate is jobs.write rather than jobs.read: under the
+// built-in matrix both keys are PolicyAdmin ({admin}) and the editor role holds
+// neither, so swapping the gate still leaves that test green.
 //
-// No discriminating principal is constructible from the seeded roles today, so
-// this test pins the nesting that makes that true. If the keys ever stop being
-// co-held, it fails loudly and a real counter-example test becomes both possible
-// and required.
-func TestJobActionGateIsNotDiscriminableToday(t *testing.T) {
-	env := newAuthTestEnv(t)
-	adminPermissions := permissionsForUser(t, env, "user-admin")
-	env.addUser(t, "editor-gate-probe", "editor-password", []string{"editor"})
-	editorPermissions := permissionsForUser(t, env, "user-editor-gate-probe")
+// A discriminating principal IS constructible — the seeded roles are not the
+// only source of grants — so this test builds one and closes the gap for real
+// (independent A-002 F-001). The role below is granted jobs.read and nothing
+// else, deliberately NOT jobs.write, and the same principal is shown to be
+// allowed to READ and refused every write verb.
+func TestJobWriteGateRequiresJobsWriteNotJobsRead(t *testing.T) {
+	actionEnv := mountJobActionRoutes(t, newAuthTestEnv(t))
+	env := actionEnv.env
+	job := actionEnv.seedJobForOperator(t, "job-read-only-role", time.Now().UTC())
 
-	if !containsPermission(adminPermissions, "jobs.write") || !containsPermission(adminPermissions, "jobs.read") {
-		t.Fatalf("the admin principal lacks jobs.read or jobs.write (%v): the result center is unreachable", adminPermissions)
+	// A custom role with exactly one grant: jobs.read. (Same shape as the
+	// wallet voucher suite's permission-isolation fixture, but through the real
+	// repository so the grant resolves permission id → key correctly.)
+	if _, err := env.authRepository.CreateRoleWithGrants(
+		"jobs-reader", "Jobs reader", []string{"jobs.read"}, nil, time.Now().UTC(),
+	); err != nil {
+		t.Fatalf("seed read-only role: %v", err)
 	}
-	for _, permissions := range [][]string{adminPermissions, editorPermissions} {
-		if containsPermission(permissions, "jobs.read") && !containsPermission(permissions, "jobs.write") {
-			t.Fatalf("a principal now holds jobs.read without jobs.write (%v): a jobs.write-vs-jobs.read "+
-				"discriminating test for the cancel/retry gate is now constructible and REQUIRED "+
-				"(the current gate test cannot tell the two keys apart)", permissions)
+	env.addUser(t, "jobs-reader", "jobs-reader-password", []string{"jobs-reader"})
+	token := env.login(t, "jobs-reader", "jobs-reader-password")
+
+	permissions := permissionsForUser(t, env, "user-jobs-reader")
+	if !containsPermission(permissions, "jobs.read") || containsPermission(permissions, "jobs.write") {
+		t.Fatalf("fixture role permissions = %v, want jobs.read WITHOUT jobs.write", permissions)
+	}
+
+	// Positive control: the principal really can read. Without this the 403s
+	// below would also be produced by a principal holding nothing at all.
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodGet, "/api/jobs", ""))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("jobs.read holder GET /api/jobs = %d %s, want 200", rr.Code, rr.Body.String())
+	}
+
+	// The discriminator: holding jobs.read must NOT authorize the write verbs.
+	for _, verb := range []string{"cancel", "retry"} {
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPost, "/api/jobs/"+job.ID+"/"+verb, ""))
+		if rr.Code != http.StatusForbidden {
+			t.Fatalf("jobs.read-only principal %s = %d %s, want 403 (the gate must be jobs.write)",
+				verb, rr.Code, rr.Body.String())
 		}
+	}
+	after, err := actionEnv.repository.GetJob(context.Background(), job.ID)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if after.Status != jobs.StatusQueued || after.CancelRequested {
+		t.Fatalf("a refused write mutated the job: %+v", after)
 	}
 }
 

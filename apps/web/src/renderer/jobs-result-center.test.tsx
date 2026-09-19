@@ -85,6 +85,10 @@ function row(overrides: Partial<JobRow> & { id: string; status: string }): JobRo
     actorId: "user-1",
     correlationId: "corr-" + overrides.id,
     createdAt: "2026-09-19T10:00:00.000Z",
+    // Availability flags are written out per row on purpose: they are the
+    // SERVER's derivation (internal/handler/jobs.go jobToMap) as the browser
+    // receives it, so they are expectations here, not a re-implementation. The
+    // server rule itself is pinned by TestJobsProjectionDerivesActionAvailability.
     cancellable: overrides.status === "queued" || overrides.status === "running",
     retryable: overrides.status === "failed",
     downloadable: overrides.status === "succeeded",
@@ -105,6 +109,22 @@ const ROWS: JobRow[] = [
   }),
   row({ id: "job-done", status: "succeeded", progress: 100, attempt: 1, statusStyle: "success" }),
   row({ id: "job-expired", status: "expired", attempt: 1, statusStyle: "neutral" }),
+  // A failed job whose attempt budget is SPENT: the one row that separates
+  // "retryable" from "status == failed". The server derives retryable as
+  // `failed && attempt < maxAttempts`, so this row is `failed` AND not
+  // retryable — if the schema's disabledWhen ever keyed off the status instead
+  // of the server's flag, this row would offer a Retry the API must refuse
+  // (independent A-002 F-003).
+  row({
+    id: "job-exhausted",
+    status: "failed",
+    attempt: 3,
+    maxAttempts: 3,
+    errorCode: "JOB_ATTEMPTS_EXHAUSTED",
+    errorMessage: "attempts exhausted",
+    retryable: false,
+    statusStyle: "destructive",
+  }),
 ];
 
 interface RecordedRequest {
@@ -132,6 +152,7 @@ interface Harness {
 async function renderJobsPage(options: {
   permissions: string[];
   resultDocument?: unknown;
+  postResponse?: { status: number; body: unknown };
 }): Promise<Harness> {
   const requests: RecordedRequest[] = [];
   const downloads: Array<{ filename: string; text: string }> = [];
@@ -173,8 +194,9 @@ async function renderJobsPage(options: {
       });
     }
     if (url.startsWith("/api/jobs") && method === "POST") {
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
+      const post = options.postResponse ?? { status: 200, body: { ok: true } };
+      return new Response(JSON.stringify(post.body), {
+        status: post.status,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -313,6 +335,14 @@ describe("R4 · result center on the shipped jobs page", () => {
       expect(rowButton(container, index, "Cancel")?.disabled).toBe(true);
       expect(rowButton(container, index, "Retry")?.disabled).toBe(true);
     }
+    // Row 4 is failed with the attempt budget SPENT. It is enabled-vs-disabled
+    // identical to row 3 for cancel, but for retry it is the discriminator: the
+    // two failed rows (1 and 4) differ ONLY in the server's `retryable` flag, so
+    // a disabledWhen keyed off `status` would light this one up.
+    expect(rowButton(container, 4, "Retry")?.disabled).toBe(true);
+    expect(ROWS[1].status).toBe(ROWS[4].status);
+    expect(ROWS[1].retryable).toBe(true);
+    expect(ROWS[4].retryable).toBe(false);
   });
 
   it("cancels the row's own job through the frozen management-scope route", async () => {
@@ -379,6 +409,34 @@ describe("R4 · result center on the shipped jobs page", () => {
     ) as HTMLButtonElement | undefined;
     expect(downloadItem, "download must still be offered to a jobs.read holder").toBeDefined();
     expect(downloadItem?.disabled).toBe(false);
+  });
+
+  it("localizes a refused transition through the API message key", async () => {
+    // The API answers 409 with BOTH a server-side localized message and a
+    // messageKey. The client must prefer its own catalog entry: if the key were
+    // missing from the catalogs, the operator would silently fall back to the
+    // server string and the i18n runtime would emit a missing-translation
+    // report. This pins the key's existence for the R4 write surface.
+    const harness = await renderJobsPage({
+      permissions: ["jobs.read", "jobs.write"],
+      postResponse: {
+        status: 409,
+        body: {
+          error: "JOB_NOT_CANCELLABLE",
+          message: "job cannot be cancelled",
+          messageKey: "error.jobNotCancellable",
+        },
+      },
+    });
+    await click(rowButton(harness.container, 0, "Cancel"));
+    const confirm = Array.from(document.body.querySelectorAll("button")).find(
+      (button) => (button.textContent ?? "").trim() === "Confirm",
+    );
+    await click(confirm ?? null);
+
+    const text = harness.container.textContent ?? "";
+    expect(text).toContain("this job can no longer be cancelled");
+    expect(text).not.toContain("job cannot be cancelled");
   });
 
   it("re-fetches the list on the auto-refresh cadence", async () => {
