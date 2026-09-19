@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-batch-operations-and-job-center
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-038-batch-operations-and-job-center
 primary_plan: VP-038-batch-operations-and-job-center
@@ -40,11 +40,11 @@ R1 已冻结首波分母 = **仅「新建批量导出所选」1 条**（`GOAL-00
 
 ## 成功检查点
 
-以下 4 个检查点构成 `progress: 0/4` 的派生来源。
+以下 4 个检查点构成 `progress: 3/4` 的派生来源。
 
-- [ ] **C1 异步写面与进度**：`jobs.write` 权限 + 批量导出端点（202 + jobId）+ Job kind + handler 落地；**进度可观察**（非硬编码终值）；结果经既有 `/api/jobs/{id}/result` 可读。
-- [ ] **C2 前端触发**：列表页接入自定义组件触发提交（O-1）并轮询至终态；页面**未**声明 `actions.batch.request`（O-2）；中英文与既有反馈约定一致。
-- [ ] **C3 同步路径回归**：既有同步 `batch-delete`（含原子性与协议 fixture）与 Job 六态合同**逐字不退化**；全量 Go/Web 回归绿。
+- [x] **C1 异步写面与进度**：`jobs.write` 权限 + 批量导出端点（202 + jobId）+ Job kind + handler 落地；**进度可观察**（非硬编码终值）；结果经既有 `/api/jobs/{id}/result` 可读。
+- [x] **C2 前端触发**：列表页接入自定义组件触发提交（O-1）并轮询至终态；页面**未**声明 `actions.batch.request`（O-2）；中英文与既有反馈约定一致。
+- [x] **C3 同步路径回归**：既有同步 `batch-delete`（含原子性与协议 fixture）与 Job 六态合同**逐字不退化**；全量 Go/Web 回归绿。
 - [ ] **C4 R3 审计与投影**：self + independent 审计落盘，开放 required = 0，Root R3 检查点可投影。
 
 ## 审计模式（P-002 实施前确定）

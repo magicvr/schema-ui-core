@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
-| E-001 | 2026-09-19 | R3 立项与前端触发机制侦察 | recorded | `02-execution/E-001-r3-establishment.md` |
+| E-001 | 2026-09-19 | R3 立项与前端触发侦察 | recorded | `02-execution/E-001-r3-establishment.md` |
+| E-002 | 2026-09-19 | R3 C1～C3 实施（异步批量导出后端 / 前端触发 / 回归） | recorded | `02-execution/E-002-r3-implementation.md` |
 
 ## 事实边界
 
