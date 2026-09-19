@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-19
 parent: null
-version: 1.8.4
+version: 1.8.5
 ---
 
 # Vision Review 台账
@@ -30,6 +30,7 @@ version: 1.8.4
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-103（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 关门审视**——判据 1–7 verified；workspace-039 Root `done · 4/4`；Goal R1–R4 cross required=0；用户书面确认「确认关闭 VP-039 与 workspace-039 Root」；既有 fresh-seed harness bounded residual 保持登记；open required = 0。VP-039 `active → closed` v0.3.0。 |
 | — | — | — | **无** | **VRev-102（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 激活就绪** —— `I-039-004` 接受默认候选（Shell 横幅 + 复用 `admin.system-monitoring`，不新模块、不改默认集 → 不暂挂 `go`）；Admin 类 freshness `7e5ce891` → `6197e802` PASS；`I-039-004`/`I-039-005` verified；**VP-039 `planned → active` v0.2.0**，lead `workspace-039-version-maintenance-diagnostics`。`V-F131` → fixed。VP-040 保持 planned 停放。 |
 | — | — | — | **无** | **VRev-101（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 / VP-040 计划阶段**——用户选项 1：VP-039 `planned`（体验增强收口，下一拍）+ VP-040 `planned` 停放（C1 timestamptz，激活硬门禁 = VP-039 波次之后）。结构选型成立（两 VP 串行，不塞 VP-010、不合成）。0 required；V-F131（039 承载面/`go`）/ V-F132（040 SQLite 物理类型）recommended 不阻断 planned。**不是激活许可。** |
 | — | — | — | **无** | **VRev-100（self · `/vision` · 2026-09-19，`conditional`）**：**VP-038 关门审视（补做）**——关门时未执行 Vision Review（当时如实登记），用户 P-004 裁决补做。关门事实成立（判据 1～6 逐条证据 / Root `done · 5/5` / R5 cross 两腿 `pass` / 用户书面确认 / 残余与延期在册 / Charter `@0.4.0` 无 re-align 债务），但判据 7「组合投影同步」未成立：`roadmap.md` 4 处陈旧投影（`V-F127`）与 VP-038 台账关门记录缺失（`V-F128`）为 2 required，**均已在本报告响应节 `fixed`（响应后开放 required = 0）**；`V-F129`（关门 Vision Review 未执行）由补做闭合；`V-F130`（workspace-038 `GOAL-003` 的 `progress` 投影与 `goal-tree` `done · 4/4` 不一致）recommended，经用户 2026-09-19 授权后以**最小投影修正** `fixed`（`3/4 → 4/4` + 派生说明/备注同步，`status` 与其余冻结内容未动）。VP-038 保持 `closed` v1.0.0 |
@@ -56,6 +57,7 @@ version: 1.8.4
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-103 | 2026-09-19 | self | VP-039 关门审视 · 判据 1–7 / Goal cross 审计 / 回归矩阵 / 用户确认 | pass | 0 | **VP-039 `active → closed` v0.3.0**；Root `GOAL-001-version-maintenance-diagnostics` `done · 4/4`；R1–R4 cross required=0；用户书面确认；bounded harness residual 保持登记 | [VRev-103-vp039-closeout.md](reviews/VRev-103-vp039-closeout.md) |
 | VRev-102 | 2026-09-19 | self | VP-039 激活就绪 · `I-039-004` 默认候选 / Admin 类 freshness / slug | pass | 0 | **VP-039 `planned → active` v0.2.0**，lead `workspace-039-version-maintenance-diagnostics`。默认候选不暂挂 `go`；freshness `7e5ce891`→`6197e802` PASS（区间 = VP-038 已审结目 + W32–W34）；`V-F131` → fixed | [VRev-102-vp039-activation.md](reviews/VRev-102-vp039-activation.md) |
 | VRev-101 | 2026-09-19 | self | VP-039 版本/维护/诊断 planned + VP-040 timestamptz 合同 planned（停放）· Charter 对齐 / 结构选型 / 退出判据 / P-005 / 只读事实 | pass | 0 | 用户选项 1 落盘：VP-039 为下一拍（承接 VP-012 UI 可后置；默认候选不改 Profile 默认集）；VP-040 另立并停放（不并入 039、不塞 VP-010）。只读核对 8 项属实。0 required；V-F131 激活事务内 fixed；V-F132 recommended 仍属 VP-040 R1。**当时不是激活许可** | [VRev-101-vp039-vp040-planned.md](reviews/VRev-101-vp039-vp040-planned.md) |
 | VRev-100 | 2026-09-19 | self | VP-038 关门审视（补做）· 判据 1～7 证据核对 / 组合投影同步 / 台账卫生 | conditional | 0 | **补做 VP-038 关门 Vision Review**（关门时如实登记为「未执行」，用户 2026-09-19 P-004 裁决补做并由其驱动修正）。关门事实成立：判据 1～6 由 `[workspace-038] GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据；Root `GOAL-001-batch-operations-and-job-center` `done · 5/5`；R5 cross 两腿 `A-001` self + `A-002`（grok build · grok-4.6 · high）独立 `pass`（开放 required = 0）；用户书面确认留痕；残余（e2e fresh-seed 顺序契约）与 `I-038-006` 延期均在册；Charter `@0.4.0` 对齐、无 re-align 债务。判据 7 的「组合投影同步」**未成立** → `V-F127`（`roadmap.md` 4 处陈旧投影）、`V-F128`（VP 台账关门记录缺失）2 required；`V-F129`（关门 Vision Review 未执行 · 本次补做即闭合动作）、`V-F130`（`[workspace-038] GOAL-003` frontmatter `progress: 3/4` 与 `goal-tree` `done · 4/4` 不一致）recommended，经用户授权最小投影修正后 `fixed`。**报告内响应（2026-09-19）**：`V-F127`/`V-F128` 均 `fixed`（`roadmap.md` 4 处对齐 + VP-038 台账关门记录/修订短史/门禁行补齐，`status` 与 `version` 未改动）→ **响应后开放 required = 0** | [VRev-100-vp038-batch-operations-and-job-center-closeout.md](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) |

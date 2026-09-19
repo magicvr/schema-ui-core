@@ -1,7 +1,7 @@
 ---
 id: GOAL-005-r4-regression-and-closeout
 doc: audit
-status: active
+status: done
 parent: GOAL-001-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19
@@ -27,7 +27,8 @@ version: 0.2.0
 | A-001 | 2026-09-19 | self | VP-039 R4 判据 1–7 / C1–C3 | pass | 0 | `03-audit/A-001-r4-self.md` |
 | A-002 | 2026-09-19 | independent | VP-039 R4 判据 1–7 / C1–C3 + C4 independent 半边 | pass | 0（1 recommended） | `03-audit/A-002-r4-independent.md` |
 | A-003 | 2026-09-19 | self（响应） | A-002 F-001 | pass | **0** | `03-audit/A-003-a001-a002-response.md` |
+| A-004 | 2026-09-19 | self（用户响应） | P-004 Root/VP close confirmation | pass | **0** | `03-audit/A-004-user-close-response.md` |
 
 ## 结论状态
 
-C4 independent 已落盘（A-002 `pass` · 开放 required = 0）；A-002 F-001 已由 A-003 `fixed`。self + independent 均无未闭合必改项。Root/VP 用户书面确认仍开放。独立意见不直接改 `status` / `progress`；响应和状态变更走 `/govern` 与用户裁决。
+C4 完成：A-001/A-002 pass；A-003 recommended fixed；A-004 记录用户书面关门确认；开放 required=0。GOAL-005 `done · 4/4`。

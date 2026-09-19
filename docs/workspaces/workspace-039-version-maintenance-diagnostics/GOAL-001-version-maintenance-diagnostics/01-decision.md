@@ -1,11 +1,11 @@
 ---
 id: GOAL-001-version-maintenance-diagnostics
 doc: decision
-status: active
+status: done
 parent: null
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-001
@@ -28,3 +28,4 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-09-19 | 工作区与 Root 建立：VP-039 激活落盘、`I-039-004` 裁决与 freshness 记录 | accepted | `01-decision/D-001-workspace-root-establishment.md` |
+| D-002 | 2026-09-19 | 用户书面关门确认 | accepted | `01-decision/D-002-user-close-confirmation.md` |

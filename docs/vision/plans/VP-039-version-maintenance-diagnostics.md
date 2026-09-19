@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-039-version-maintenance-diagnostics
 title: Admin 版本更新、维护提示与诊断报告
-status: active
+status: closed
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-039-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.2.0
+version: 0.3.0
 parent: null
 ---
 
@@ -17,10 +17,12 @@ parent: null
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-19 · v0.2.0 · lead `workspace-039-version-maintenance-diagnostics`） |
+| status | **`closed`**（2026-09-19 · v0.3.0 · 用户书面确认；lead `workspace-039-version-maintenance-diagnostics`） |
 | 组合位置 | **Admin 功能分支 · 体验增强**；体验清单收口（版本更新 / 维护提示 / 诊断报告） |
-| 计划阶段 Vision Review | [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md) self `pass`（0 required；`V-F131` 激活事务内 `fixed`） |
+| 计划阶段 Vision Review | [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md) self `pass`（0 required；`V-F131` fixed） |
 | 激活就绪 Vision Review | [VRev-102](../reviews/VRev-102-vp039-activation.md) self `pass`（0 required） |
+| 关门 Vision Review | [VRev-103](../reviews/VRev-103-vp039-closeout.md) self `pass`（0 required） |
+| 关门依据 | Root `GOAL-001-version-maintenance-diagnostics` `done · 4/4`; GOAL-002～005 done；Goal cross required=0；用户 2026-09-19 书面确认；R4 回归证据与 bounded harness residual 登记 |
 | 激活门禁 | **已满足**：① `I-039-004` 接受默认候选（Shell 横幅 + 复用 `admin.system-monitoring`，不新模块、不改默认集，不暂挂 `go`）；② `I-039-005` Admin 类 freshness **PASS**（`7e5ce891` → `6197e802`）；③ 激活就绪 self Review；④ slug 按惯例确认 |
 | 基础设施边界 | 首波不消耗 Redis、MQ、多实例、搜索引擎、`timestamptz` schema 迁移或文件扫描 trigger；不重开 VP-012 / VP-015 / VP-025 |
 | 与 VP-040 | **正交**。C1 `timestamptz` 由 [VP-040](VP-040-timestamptz-persistence-contract.md) 另立；本 VP **不并入** schema 迁移。用户 2026-09-19 裁决：先本 VP，VP-040 本波之后再激活 |
@@ -109,15 +111,13 @@ R1 范围与信息冻结：模式×横幅×错误码矩阵、版本身份与升�
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| workspace-039-version-maintenance-diagnostics | GOAL-001-version-maintenance-diagnostics | delivery | 2026-09-19 | `/govern` scaffold；Root 初始 `active · 0/4`；不改变 Charter primary |
+| workspace-039-version-maintenance-diagnostics | GOAL-001-version-maintenance-diagnostics | delivery | 2026-09-19 | `/govern` scaffold；Root **`done · 4/4`**；VP-039 closed；不改变 Charter primary |
 
 ## 关门记录
 
-（仅 `closed` / `abandoned` 时填写。）
-
 | date | outcome | summary | evidence_links | residuals |
 |------|---------|---------|----------------|-----------|
-| — | — | — | — | — |
+| 2026-09-19 | closed | 方向级判据 1–7 verified；workspace-039 Root `done · 4/4`；R1–R4 cross 审计 required=0；用户书面确认「确认关闭 VP-039 与 workspace-039 Root」 | [VRev-103](../reviews/VRev-103-vp039-closeout.md)；[workspace-039 goal-tree](../../workspaces/workspace-039-version-maintenance-diagnostics/goal-tree.md)；[GOAL-005 R4 matrix](../../workspaces/workspace-039-version-maintenance-diagnostics/GOAL-005-r4-regression-and-closeout/attachments/r4-regression-matrix.md) | existing e2e fresh-seed ordering bounded residual，见 roadmap 未决项登记 |
 
 ## 规划修订短史
 
@@ -125,6 +125,7 @@ R1 范围与信息冻结：模式×横幅×错误码矩阵、版本身份与升�
 |------|--------|
 | 2026-09-19 | 初创 `planned` v0.1.0 · 0 区。用户确认选项 1：下一拍 = 本 VP；C1 另立 VP-040 且本波不激活；不塞 VP-010、不合成混分支 VP。计划阶段 self = [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md)。 |
 | 2026-09-19 | 用户指令走流程激活：`planned → active` v0.2.0。`I-039-004`/`I-039-005` verified；激活 self = [VRev-102](../reviews/VRev-102-vp039-activation.md) `pass`；lead `workspace-039-version-maintenance-diagnostics` 交 `/govern` 开区。VP-040 保持 planned 停放。 |
+| 2026-09-19 | R1–R4 完成并关门：GOAL-002～005 全部 `done`；VRev-103 self `pass`；用户书面确认 Root/VP 关门；VP-039 `active → closed` v0.3.0。 |
 
 ## 声明
 
