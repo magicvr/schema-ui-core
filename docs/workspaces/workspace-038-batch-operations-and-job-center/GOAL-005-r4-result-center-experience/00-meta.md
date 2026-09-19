@@ -67,9 +67,10 @@ R3 已关闭的 `I-038-011`/`012` 不再重复登记；`I-038-013` 已由本目�
 | A-ID | source | verdict | 开放 required | 备注 |
 |------|--------|---------|---------------|------|
 | `A-001` | self | **pass** | 0 | 4 recommended（F-001 门禁可判别性、F-002 状态列口径、F-003 自动刷新前提、F-004 轮询取舍） |
-| `A-002` | independent（grok-4.6 · high · `/audit`） | **pass** | 0 | 4 recommended（F-001 门禁可判别性残余、F-002 客户端 error.job* 目录、F-003 前端夹具 attempt 预算、F-004 文档索引漂移） |
+| `A-002` | independent（grok-4.6 · high · `/audit`） | **pass** | 0 | 4 recommended（F-001 门禁键名残余、F-002 客户端 error.job* 目录、F-003 前端夹具 attempt 预算、F-004 文档索引漂移） |
+| `A-003` | orchestrator（合并响应） | — | **0** | 5 条 `fixed`（含真反例取代嵌套守卫）；3 条低危拟 `accepted-residual`，**等用户书面接受** |
 
-响应与闭合见 `03-audit/A-003-*.md`。
+> 两腿无冲突（未触发 P-004 冲突裁决）。C4 判据（self + independent 落盘、开放 required = 0）已满足；Root R4 投影与 `GOAL-005` 关门待用户就 3 条残余作出选择后执行。
 
 ## 父目标
 
