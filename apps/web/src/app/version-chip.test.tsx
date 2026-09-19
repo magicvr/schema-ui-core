@@ -63,7 +63,7 @@ describe("VersionChip", () => {
       await Promise.resolve();
     });
     expect(fetcher).toHaveBeenCalled();
-    expect(String(fetcher.mock.calls[0]?.[0])).toContain("/api/system-monitoring/status");
+    expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/system-monitoring/status"));
     expect(container.querySelector("[data-version-chip-value]")?.textContent).toBe("1.2.3");
     expect(container.textContent).not.toContain("deadbeef");
     const upgrade = container.querySelector(`a[href="${QUICKSTART_UPGRADE_URL}"]`);

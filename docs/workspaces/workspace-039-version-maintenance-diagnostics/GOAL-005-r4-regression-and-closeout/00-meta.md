@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-version-maintenance-diagnostics
 created: 2026-09-19
 updated: 2026-09-19
-version: 0.1.0
-progress: 0/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-039-version-maintenance-diagnostics
 primary_plan: VP-039-version-maintenance-diagnostics
@@ -21,9 +21,9 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 ## 成功检查点
 
-- [ ] **C1 回归矩阵**：mvp/admin/demo/custom（可用范围内）、monitoring.read/无权限、normal/maintenance/degraded/read-only、zh-CN/en-US、light/dark 有证据。
-- [ ] **C2 自动化验证**：Go 全量、Web typecheck、Web Vitest、现有 Playwright 回归（可运行范围）结果落盘。
-- [ ] **C3 边界与残余**：VP-012 写门禁、Host consumer、Profile 默认集、pinned upstream、VP-040/Redis/MQ 等未越界；残余显式登记。
+- [x] **C1 回归矩阵**：profiles/permissions/modes/locales/themes evidence in `attachments/r4-regression-matrix.md`。
+- [x] **C2 自动化验证**：Go full pass；Web Vitest 123/1489 pass；forced TypeScript pass；admin browser slice 7/1/0 pass/skip/fail；mvp full has existing harness bounded residual with isolated pass。
+- [x] **C3 边界与残余**：VP-012 write gate, Host consumer, Profile defaults, pinned upstream, VP-040/Redis/MQ boundaries checked; fresh-seed residual explicitly recorded。
 - [ ] **C4 cross 审计与关门提请**：self + grok independent，开放 required=0；形成用户书面关门提请。用户未确认前保持本目标/Root active。
 
 ## 审计模式

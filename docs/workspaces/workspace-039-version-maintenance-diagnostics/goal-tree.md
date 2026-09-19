@@ -22,7 +22,7 @@ GOAL-001-version-maintenance-diagnostics [active] (3/4) · 纲领容器
 ├── GOAL-002-r1-denominator-and-contract-freeze [done] (4/4) · R1 范围与信息冻结
 ├── GOAL-003-r2-runtime-banner-alignment [done] (4/4) · R2 维护横幅与运行时模式对齐
 ├── GOAL-004-r3-version-and-diagnostics [done] (4/4) · R3 版本提示与诊断摘要
-└── GOAL-005-r4-regression-and-closeout [active] (0/4) · R4 回归、证据与关门提请
+└── GOAL-005-r4-regression-and-closeout [active] (3/4) · R4 回归、证据与关门提请
 ```
 
 ## 纲领路线图
@@ -44,9 +44,9 @@ R1 范围与信息冻结 [done · GOAL-002 · 4/4]
 | GOAL-002-r1-denominator-and-contract-freeze | R1 范围与信息冻结 | GOAL-001-version-maintenance-diagnostics | **done** | 4/4 | 2026-09-19 |
 | GOAL-003-r2-runtime-banner-alignment | R2 维护横幅与运行时模式对齐 | GOAL-001-version-maintenance-diagnostics | **done** | 4/4 | 2026-09-19 |
 | GOAL-004-r3-version-and-diagnostics | R3 版本提示与诊断摘要 | GOAL-001-version-maintenance-diagnostics | **done** | 4/4 | 2026-09-19 |
-| GOAL-005-r4-regression-and-closeout | R4 回归、证据与关门提请 | GOAL-001-version-maintenance-diagnostics | active | 0/4 | 2026-09-19 |
+| GOAL-005-r4-regression-and-closeout | R4 回归、证据与关门提请 | GOAL-001-version-maintenance-diagnostics | active | 3/4 | 2026-09-19 |
 
 ## 说明
 
-- Root `active · 3/4`。R1–R3 子目标均 done。R4 `GOAL-005` active；Root/VP 关门仍需用户书面确认。
+- Root `active · 3/4`。R1–R3 done；R4 `GOAL-005` active `3/4`，回归证据已落盘；C4 cross 审计与 Root/VP 用户书面关门确认仍待处理。
 - 不重开 VP-012/015/025；不实施 VP-040；不消耗 Redis/MQ/多实例/搜索引擎/文件扫描 trigger。
