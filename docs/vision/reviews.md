@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-19
 parent: null
-version: 1.7.0
+version: 1.8.0
 ---
 
 # Vision Review 台账
@@ -30,6 +30,8 @@ version: 1.7.0
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| `V-F127` | required | VP-038 组合投影（`roadmap.md`） | **open** | **VRev-100（self · `/vision` · 2026-09-19，`conditional`）**：VP-038 关门审视（补做）发现 `roadmap.md` 4 处现行投影仍为激活态（L58 VP 台账行 `active` · v0.2.0 / L365 `批量结果中心 = VP-038 planned` / L367 当前一拍（`active`）/ L412 组合焦点 `active 交付 VP = VP-038`），与 VP 文件 `closed` v1.0.0、`workspaces.md`、workspace-038 Root `done · 5/5` 矛盾；`git blame` = 激活提交 `e125d9021`。判据 7「组合投影同步」名实不符 |
+| `V-F128` | required | VP-038 台账自身 | **open** | **VRev-100（self · `/vision` · 2026-09-19，`conditional`）**：`plans/VP-038-…md` 的 `## 关门记录` 仍为占位行、`## 规划修订短史` 停在激活 v0.2.0、「关门 Vision Review」门禁行仍写未执行（补做后应指向 VRev-100）；对照 VP-036 / VP-035 惯例，关门事实应可从 VP 文件自证 |
 | — | — | — | **无** | **VRev-099（self · `/vision` · 2026-09-19，`pass`）**：**VP-038 激活就绪** —— `I-038-004` 用户 P-004 裁决 = 新建 `admin.jobs` 进 admin 默认集；独立核对确认属 Profile **内容扩展**（组合根已无条件构造 Job 运行时；`ResolveProfile`/Manifest/协议 pin 零改动）→ **不暂挂 VP-008 `go`**；Admin 类 freshness `0c29c08` → `7e5ce891` 五域 PASS（区间变更全部为 VP-037 已审结目）；`I-038-005` verified；**VP-038 `planned → active` v0.2.0**，lead `workspace-038-batch-operations-and-job-center`。`V-F125` → fixed；`V-F126` recommended 由 `I-038-003` 承接。 |
 | — | — | — | **无** | **VRev-098（self · `/vision` · 2026-09-19，`pass`）**：**VP-038-batch-operations-and-job-center 计划阶段意图审视** —— Charter `@0.4.0` 对齐；结构选型 = 新 VP + 新 delivery 工作区；七条方向级退出判据可判定；只读事实核对 8 项主张属实；0 required，V-F125（Profile/模块矩阵边界须激活前经用户 P-004 裁决）/ V-F126（首波批量操作分母）recommended 不阻断 `planned`。**不是激活许可**；激活前须 `I-038-004` 用户裁决 + `I-038-005` Admin 类 freshness。 |
 | — | — | — | **无** | **VRev-096（self · `/vision` · 2026-09-18，`pass`）**：**VP-037 关门**——方向级退出判据 1～7 全部 verified；lead workspace Root `GOAL-001-admin-workflow-continuity` **`done · 6/6`**；R6 `A-002` 的 F-001～F-005 与 `GOAL-008 A-002 F-001` 全部合法闭合，R5 `A-001 R5-GATE-001`/`A-002 F-001` 经用户书面确认 `fixed`；Root `A-006` 关门审计 `pass`；**用户书面确认**（2026-09-18，前置条件=整改子目标 `GOAL-011` 修正两个使用中发现的分页/文案缺陷）已留痕；组合投影（`goal-tree`/`workspace`/`roadmap`/`workspaces`/Charter 快照/本台账）同步；**VP-037 `active → closed` v1.7.0**；残余 `V-F124`、`R5-I-005`、`I-037-005`、`GOAL-008 A-002 F-002`、`GOAL-009 A-001 F-001/F-002` 保持开放，gated 非目标未解除。 |
@@ -53,6 +55,7 @@ version: 1.7.0
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-100 | 2026-09-19 | self | VP-038 关门审视（补做）· 判据 1～7 证据核对 / 组合投影同步 / 台账卫生 | conditional | 2 | **补做 VP-038 关门 Vision Review**（关门时如实登记为「未执行」，用户 2026-09-19 P-004 裁决补做并由其驱动修正）。关门事实成立：判据 1～6 由 `[workspace-038] GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据；Root `GOAL-001-batch-operations-and-job-center` `done · 5/5`；R5 cross 两腿 `A-001` self + `A-002`（grok build · grok-4.6 · high）独立 `pass`（开放 required = 0）；用户书面确认留痕；残余（e2e fresh-seed 顺序契约）与 `I-038-006` 延期均在册；Charter `@0.4.0` 对齐、无 re-align 债务。判据 7 的「组合投影同步」**未成立** → `V-F127`（`roadmap.md` 4 处陈旧投影）、`V-F128`（VP 台账关门记录缺失）2 required；`V-F129`（关门 Vision Review 未执行 · 本次补做即闭合动作）、`V-F130`（workspace-038 `GOAL-003` frontmatter `progress: 3/4` 与 goal-tree `done · 4/4` 不一致 · 该区台账冻结，只登记不代改）recommended | [VRev-100-vp038-batch-operations-and-job-center-closeout.md](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) |
 | VRev-099 | 2026-09-19 | self | VP-038 激活就绪 · `I-038-004` 用户 P-004 裁决 / Admin 类 freshness / 激活事务边界 | pass | 0 | **VP-038 `planned → active` v0.2.0**，lead `workspace-038-batch-operations-and-job-center`（Root `GOAL-001-batch-operations-and-job-center`）。`I-038-004` 用户裁决 = 方案 A（新建 `admin.jobs` 进 admin 默认集）；独立核对代码与先例确认属 **Profile 内容扩展**（组合根 `composition.go:171`–`178` 已无条件构造 Job 运行时；`ResolveProfile`/Manifest/pin 零改动）→ **不暂挂 VP-008 `go`**；freshness `0c29c08` → `7e5ce891` 五域 **PASS**（区间变更全部为 VP-037 已审结目）；`I-038-005` verified。`V-F125` → **fixed**；`V-F126` 保持 recommended，由 `I-038-003`（R1 前 required）承接 | [VRev-099-vp038-batch-operations-and-job-center-activation.md](reviews/VRev-099-vp038-batch-operations-and-job-center-activation.md) |
 | VRev-098 | 2026-09-19 | self | VP-038 批量操作与异步结果中心 · 计划阶段意图审视（Charter 对齐 / 结构选型 / 七条判据 / P-005 / 只读事实核对） | pass | 0 | 意图落在成功边界 #3/#5；结构选型 = 新 VP + 新 delivery 工作区（VP-012 把「通用 Job 管理页」写成显式非目标，属未做产品能力而非符合性偏差）；只读核对 8 项主张属实（`core.jobs` 迁移专用、`GetForActor` 仅单一 kind、批量面只有同步 `batch-delete`、导出导入同步、协议侧 `actions.batch.request` 已交付）；七条判据可判定；V-F125（Profile/模块边界激活前须用户裁决）+ V-F126（首波批量操作分母）recommended 不阻断；**不是激活许可** | [VRev-098-vp038-batch-operations-job-center-planned.md](reviews/VRev-098-vp038-batch-operations-job-center-planned.md) |
 | VRev-097 | 2026-09-18 | self | VP-037 `V-F124` 闭合复审 · 首波矩阵是否已由 R1 交付 | pass | 0 | 逐项对照：页面分母/状态字段/Profile·权限覆盖/Saved View 持久化边界/dirty-state·反馈类型 全部由 R1 交付物覆盖，机读矩阵即 R1 交付物；防范意图成立（未滑向共享视图/实体搜索/第二套基础设施）。`V-F124` → **fixed**；VP-037 其余残余改由路线图「未决项统一登记」承载 | [VRev-097-vp037-vf124-closure.md](reviews/VRev-097-vp037-vf124-closure.md) |
