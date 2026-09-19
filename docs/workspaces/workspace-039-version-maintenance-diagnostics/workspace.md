@@ -52,7 +52,7 @@ parent: null
 | R1 | 分母与契约冻结：模式×横幅×错误码矩阵、版本身份与升级入口、诊断字段分母 | **done**（`GOAL-002` `done · 4/4`；P-004 B/A/A；cross 开放 required = 0） |
 | R2 | 维护横幅 + 与 operational gate / Host bootstrap 语义对齐 | **done**（`GOAL-003` `done · 4/4`；T-1/T-2/T-3；cross 开放 required = 0） |
 | R3 | 版本提示 + 诊断摘要（复用或有界扩展 system-monitoring） | **done**（`GOAL-004` `done · 4/4`；T-4；cross 开放 required = 0） |
-| R4 | Profile×权限×主题回归、证据矩阵、边界复核与关门 | 未开始 |
+| R4 | Profile×权限×主题回归、证据矩阵、边界复核与关门 | **active**（`GOAL-005` `0/4`；Root/VP 关门须用户书面确认） |
 
 纲领阶段按 R1 → R2 → R3 → R4 串行推进；工作区建立本身不代表任何实现阶段完成。
 

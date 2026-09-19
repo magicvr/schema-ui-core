@@ -50,7 +50,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 - [x] **R1 范围与信息冻结**：`GOAL-002` `done · 4/4`；`I-039-001`～`003` verified；C4 cross 开放 required = 0。
 - [x] **R2 维护横幅**：`GOAL-003` `done · 4/4`；Host 生产者折叠 + `/me.runtimeMode` + Shell 三分横幅。
 - [x] **R3 版本提示与诊断摘要**：`GOAL-004` `done · 4/4`；`monitoring.read` 版本 chip + QUICKSTART + 既有监控页入口。
-- [ ] **R4 回归与关门准备**：Profile×权限×主题矩阵、浏览器/自动化回归、Goal 审计与必要独立意见；开放 required = 0，用户确认关门。
+- [ ] **R4 回归与关门准备**：`GOAL-005` active；Profile×权限×主题矩阵、浏览器/自动化回归、Goal 审计与必要独立意见；开放 required = 0；等待用户书面确认关门。
 
 ## 信息就绪与未知项（P-005）
 
