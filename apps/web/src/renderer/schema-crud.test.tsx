@@ -24,6 +24,9 @@ import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table";
 import type { ResourceItem } from "@/renderer/resource";
+// GOAL-004 R3: the users page declares the async batch-export trigger, so the
+// component must be registered before the users document is rendered.
+import "@/components/jobs-batch-export";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
