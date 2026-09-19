@@ -21,7 +21,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 
 Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检索、组织/数据权限、新业务域或架构 gated 项（Redis / 外部队列 / 多实例 / 专用搜索引擎）写入本目标，也不重开 VP-012/011/037/036。
 
-工作区与 Root 已建立（2026-09-19）；纲领阶段 R1 已由子目标 `GOAL-002-r1-denominator-and-contract-freeze` 承接（`active · 0/4`），`progress: 0/5` 是显式检查点的派生展示。
+工作区与 Root 已建立（2026-09-19）；纲领阶段 **R1 已由子目标 `GOAL-002-r1-denominator-and-contract-freeze` 交付并关门**（`done · 4/4`），`progress: 1/5` 是显式检查点的派生展示。
 
 ## 子目标
 
@@ -91,7 +91,7 @@ R2～R5 子目标在 R1 冻结后按 P-001 逐阶段立项。R1 已于 2026-09-1
 
 ## 备注
 
-- workspace/Root scaffold 是已发生事实；纲领 R1 由 `GOAL-002` 承接（`active · 0/4`），`progress: 0/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
+- workspace/Root scaffold 是已发生事实；纲领 R1 已由 `GOAL-002` 交付并关门（`done · 4/4`），`progress: 1/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status。
 - 建区不代表任何实现阶段完成；VP-038 关门须链接本区证据并经用户确认。
 - Vision Review `VRev-098`/`VRev-099` 属愿景层；Goal 审计须写入本目标 `03-audit/`，不能用 Vision Review 代替。
 - `admin.jobs` 模块的建立属 VP-038 R2/R3 实现范围，本轮 scaffold **未**改动 `apps/**`。
