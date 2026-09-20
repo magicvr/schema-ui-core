@@ -39,7 +39,7 @@ R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-timestamptz-persistence-contract | DB 时间列 timestamptz 持久化合同 | null | **active** | 1/3 | 2026-09-20 |
 | GOAL-002-r1-contract-and-denominator-freeze | R1 · 时间合同与分母冻结 | GOAL-001-timestamptz-persistence-contract | **done** | 4/4 | 2026-09-20 |
-| GOAL-003-r2-codec-and-descriptor-m1-m2 | R2 · 共享 codec 与 15 个 conversion descriptor（M1/M2） | GOAL-001-timestamptz-persistence-contract | **active** | 0/4 | 2026-09-20 |
+| GOAL-003-r2-codec-and-descriptor-m1-m2 | R2 · 共享 codec 与 15 个 conversion descriptor（M1/M2） | GOAL-001-timestamptz-persistence-contract | **active** | 1/4 | 2026-09-20 |
 
 ## 说明
 
