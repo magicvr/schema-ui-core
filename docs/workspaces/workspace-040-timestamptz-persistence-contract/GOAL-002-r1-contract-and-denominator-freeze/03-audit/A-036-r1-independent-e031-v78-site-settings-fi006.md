@@ -29,6 +29,7 @@ version: 0.1.0
 - **未读其他工作区**。未改 Charter / VP / Goal `status` / 检查点 / `progress` / 方案正文 / goal-tree / `apps/`。
 - 实测：`OpenSeeded`（`modernc.org/sqlite` 报 `sqlite_version()=3.53.3`）对临时库跑完整 catalog 后 dump `PRAGMA table_info` / `sqlite_master`；观测测试已删除，`apps/` 无残留。
 - `git show --stat b8d157a0`：7 个文件均在 workspace-040；`apps/` 无变更。`git show --stat 92bf74ef`：9 个文件均在 workspace-040；`apps/` 无变更。
+- **证据窗口**：本条对附件的判定以通读当时的正文为准（对应 `b8d157a0` / `92bf74ef` 已提交内容）。落盘过程中工作区另出现引用「A-036」的未提交补丁（PG 附件补 v78、`dict_entries` 可粘贴 CREATE、conversion `#72/#73` 细胞改写、A-035/E-031 更正注）。那些补丁是**编排响应**，不是本审证据；本条不据此闭合 F-I-026 / F-I-002 残留项。由 `/govern` 记录后再另安排 independent 复审。
 
 ## 核对方法
 
