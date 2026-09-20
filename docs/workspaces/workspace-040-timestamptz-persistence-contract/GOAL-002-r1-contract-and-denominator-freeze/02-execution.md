@@ -14,7 +14,8 @@ version: 0.1.0
 
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|--------|------|
-| — | — | — | — | 尚未记录 R1 执行事实 |
+| E-001 | 2026-09-20 | R1 用户方案裁决已落盘 | recorded | `02-execution/E-001-user-decisions-recorded.md` |
+| E-002 | 2026-09-20 | 时间列与单位 inventory v0.1 | recorded | `02-execution/E-002-time-column-inventory-v0.1.md` |
 
 ## 事实边界
 

@@ -39,7 +39,7 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
-| C1 | 逐列 inventory 与单位/类型/读写路径证据 | pending |
+| C1 | 逐列 inventory 与单位/类型/读写路径证据 | **active** |
 | C2 | 物理合同、精度、NULL/零值与未选方案冻结 | pending |
 | C3 | 双方言原地转换、备份依赖与失败策略冻结 | pending |
 | C4 | self + grok independent 审计、响应与 R1 放行 | pending |
