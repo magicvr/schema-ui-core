@@ -1,12 +1,12 @@
 ---
 id: GOAL-002-r1-contract-and-denominator-freeze
 title: R1 · 时间合同与分母冻结
-status: active
+status: done
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.2.0
-progress: 3/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -42,9 +42,19 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 | C1 | 逐列 inventory 与单位/类型/读写路径证据 | **completed**（A-006 independent accepted） |
 | C2 | 物理合同、精度、NULL/零值、wire 与未选方案冻结 | **completed（frozen）**：90 列逐列合同、谓词 exact SQL、逐表 SQLite+PG DDL（44 张表）、可执行边界测试均落盘；**F-I-002 由 A-046 判 `fixed`** |
 | C3 | 双方言原地转换、备份依赖与失败策略冻结 | **completed（frozen）**：`r1-c3-backup-recovery-boundary-v1.0-fc.md`（三类产物区分、双 token、调用点、harness、错误分类）；**F-I-004 经 A-042 closed、A-044/A-046 复审残留已修**；转换/失败策略经 `D-019`（F-5）与 `D-021` 落盘 |
-| C4 | self + grok independent 审计、响应与 R1 放行 | **completed**：关门向 independent = **A-046**（**开放 required = 0**）；编排响应 = **A-047**；**放行待用户确认关门** |
+| C4 | self + grok independent 审计、响应与 R1 放行 | **completed**：关门向 independent = **A-046**（**开放 required = 0**）；编排响应 = **A-047**；**用户 2026-09-20 书面确认关门** |
 
-**`progress: 3/4` 由 C1～C4 派生**（C1/C2/C3 经 independent 接受为 completed；C4 的审计与响应已落盘，**R1 本体的关门待用户确认**——故 C4 记为 completed 而 Root R1 的门禁仍以用户确认为准）。progress 不替代信息门禁或审计结论，**也不放行阶段**。
+**`progress: 4/4`**（C1～C4 全部 completed；C4 的用户确认已于 2026-09-20 取得）。progress 不替代信息门禁或审计结论，**也不放行阶段**。
+
+## 关门记录
+
+- **关门日期**：2026-09-20（用户书面确认）
+- **关门时开放 required**：**0**
+- **关门向 independent 审计**：A-046（`conditional`，判定 F-I-002 `fixed`、F-I-005 `accepted-residual`，无新 required）
+- **编排响应**：A-047（`pass`）
+- **残余风险**：F-I-005 = **`accepted-residual`**（范围穷举三项 + 复审触发 + 失效条件，见 child `D-021`）——**不得读作哈希已验证**
+- **仍开 recommended（不阻断关门，随 R2 处理）**：F-I-008、F-I-009（属 R3）、F-I-025（已修待复审确认）、F-I-028（已实际改写待复审确认）
+- **放行边界**：本次关门**只放行设计面**；R2 的生产 schema 变更仍需 R2 自身验收（含 `D-021` 的 residual 复审触发点 = R2 首次记录任一 v73+ 哈希时）
 
 ## 信息需求与阶段门禁
 

@@ -5,8 +5,8 @@ status: active
 parent: null
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.0
-progress: 0/3
+version: 0.2.0
+progress: 1/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -51,11 +51,13 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
-| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **active**（GOAL-002） |
+| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **completed**（GOAL-002 `done · 4/4`；关门向 independent = A-046，开放 required = 0；用户 2026-09-20 书面确认） |
 | R2 | 双方言迁移 + Store 编解码 | pending |
 | R3 | 读写/时区回归、备份有界核对、证据与关门 | pending |
 
-`progress: 0/3` = 0/3 个检查点完成。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+`progress: 1/3` = 1/3 个检查点完成（**R1 completed**）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
+
+> **R1 关门边界**：本次关门只放行**设计面**。F-I-005 为 `accepted-residual`（**不得读作哈希已验证**，复审触发 = R2 首次记录任一 v73+ 哈希时）；R2 的生产 schema 变更仍须经 R2 自身验收。R1 关门**不等于**判据 2/3/4 已满足——它们分别属 R2/R3。
 
 ## 信息就绪与未知项（P-005）
 
