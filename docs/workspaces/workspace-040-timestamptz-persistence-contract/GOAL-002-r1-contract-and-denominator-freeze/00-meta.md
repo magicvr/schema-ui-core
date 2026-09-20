@@ -6,7 +6,7 @@ parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
 version: 0.1.0
-progress: 0/4
+progress: 1/4
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -39,12 +39,12 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
-| C1 | 逐列 inventory 与单位/类型/读写路径证据 | **active** |
+| C1 | 逐列 inventory 与单位/类型/读写路径证据 | **completed** |
 | C2 | 物理合同、精度、NULL/零值与未选方案冻结 | pending |
 | C3 | 双方言原地转换、备份依赖与失败策略冻结 | pending |
 | C4 | self + grok independent 审计、响应与 R1 放行 | pending |
 
-`progress: 0/4` 由 C1～C4 派生；progress 不替代信息门禁或审计结论。
+`progress: 1/4` 由 C1～C4 派生（C1 inventory 已完成，C2～C4 未完成）；progress 不替代信息门禁或审计结论。
 
 ## 信息需求与阶段门禁
 

@@ -14,7 +14,7 @@ version: 0.1.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-040-001～003 | collecting | 用户方向已冻结；逐列 inventory、转换与备份依赖尚未形成证据 |
+| I-040-001～003 | collecting | C1 inventory v0.2 已完成；C2/C3 的 codec、NULL/zero、原地转换与备份证据尚未闭合，见 A-001 F-R1-002～004 |
 | I-040-004 | open | R3 回归矩阵，当前不放行 R3 |
 | 资料引用 | 无 | 工作区 `shared_materials_catalog: none` |
 
@@ -22,7 +22,7 @@ version: 0.1.0
 
 | A-ID | 日期 | source | scope | verdict | 开放 required | 文件 |
 |------|------|--------|-------|---------|---------------|------|
-| — | — | — | — | — | — | 尚未到达 R1 审计节点 |
+| A-001 | 2026-09-20 | self | C1/C2/C3 readiness | conditional | 3 | `03-audit/A-001-r1-self-readiness.md` |
 
 ## 结论状态
 
