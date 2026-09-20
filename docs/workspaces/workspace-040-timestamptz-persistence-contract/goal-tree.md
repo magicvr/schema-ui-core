@@ -26,7 +26,7 @@ GOAL-001-timestamptz-persistence-contract [active] (1/3) · 纲领容器
 
 ```text
 R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
-   → R2 双方言迁移 + Store 编解码 [pending]
+   → R2 双方言迁移 + Store 编解码 [active · 边界已冻结（Root D-016）· 子目标待渐进立项]
       → R3 读写/时区回归、备份核对、证据与关门 [pending]
 ```
 
