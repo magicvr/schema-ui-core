@@ -32,9 +32,11 @@ version: 1.0.0
 ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
   USING (date_trunc('microseconds', to_timestamp("<col>"::double precision)));
 
--- (E2) PG legacy milliseconds，非 sentinel，NOT NULL
+-- (E2) PG legacy milliseconds，非 sentinel，NOT NULL —— **整数拆分式（2026-09-20 实测更正）**
 ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
-  USING (date_trunc('microseconds', TIMESTAMPTZ 'epoch' + "<col>" * INTERVAL '1 millisecond'));
+  USING (TIMESTAMPTZ 'epoch'
+         + (("<col>" - CASE WHEN "<col>" >= 0 THEN 0 ELSE 999 END) / 1000) * INTERVAL '1 second'
+         + ((("<col>" % 1000) + 1000) % 1000) * INTERVAL '1 millisecond');
 
 -- (E3) PG sentinel 0 → NULL 前置（D0 列专用；随后套用 E1 或 E2 的 ELSE 分支）
 ALTER TABLE "<table>" ALTER COLUMN "<col>" DROP DEFAULT;
@@ -42,11 +44,12 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" DROP NOT NULL;
 ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
   USING (CASE WHEN "<col>" = 0 THEN NULL
               ELSE date_trunc('microseconds', to_timestamp("<col>"::double precision)) END);
--- 毫秒 D0 列（#34）的 ELSE 主体用 E2：TIMESTAMPTZ 'epoch' + "<col>" * INTERVAL '1 millisecond'
+-- 毫秒 D0 列（#34）的 ELSE 主体用 E2（整数拆分式，见上）
 ```
 
 - **nullable 列**：`CASE WHEN "<col>" IS NULL THEN NULL ELSE <E1/E2 主体> END`。
-- **秒族（E1）= 三份载体 A-020 已接受的 `to_timestamp(double)` + `date_trunc` 式，本次**保留不改**（用户 2026-09-20 裁决 B）；毫秒族（E2）= `TIMESTAMPTZ 'epoch' + n * INTERVAL '1 millisecond'`，全程不经二进制浮点（A-016 F-I-002.3 要求）。**
+- **秒族（E1）= 三份载体 A-020 已接受的 `to_timestamp(double)` + `date_trunc` 式，本次**保留不改**（用户 2026-09-20 裁决 B）；毫秒族（E2）= **整数拆分式**（`epoch + floor(x/1000) * INTERVAL '1 second' + ((x%1000+1000)%1000) * INTERVAL '1 millisecond'`），全程不经浮点。**
+  > **2026-09-20 实测更正**：E2 原为 `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + x * INTERVAL '1 millisecond')`。在 PG 临时容器（`postgres:16`）实测发现该式在 ~2.5×10¹⁴ ms（公元 9999 年）上产生 **+8 µs 误差**（得 `.999008`，应为 `.999000`）——根因是 `BIGINT * INTERVAL` 内部经浮点；`::numeric` 亦无效。已改为整数拆分式并实测全部边界为零误差。详见 `r1-c2-per-table-pg-ddl-v1.0-fc.md` §0.1。
 - **`/1000.0` 与 `::timestamptz(6)` typmod-only cast 全包禁止**（A-018 点名）。typmod 的 `p` 默认 **round**，不得被当成已实现 Root D-008 的向零截断；截断由新写入的 Go `UTC().Truncate(time.Microsecond)` 与 E1/E2 的 `date_trunc` 承担。
 - **禁止**：`/1000.0`、`to_timestamp(n / 1000.0)`、raw fractional 值直接 `::timestamptz(6)` typmod cast、`+00:00` 或本地时区文本。
 - **口径收口（对应 A-027/A-029 点名的 D-015 字面差）**：Root `D-015-negative-instant-truncation.md` 原写「legacy **sec/ms 均** `date_trunc` + 整数 interval」；实际秒族是 E1（`to_timestamp(double)`），只有毫秒族是整数 interval。本次按裁决 B 修订 **D-015 字面**（毫秒族整数 interval / 秒族保留 `to_timestamp(double)`），**不改三份载体的秒式**，因此不新增第二套秒列 SQL 家族。
@@ -91,7 +94,7 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
 | 31 | 74 | `core.auth-session` | `service_credentials.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-31-RT`,`T-31-SORT` |
 | 32 | 74 | `core.auth-session` | `service_credentials.updated_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-32-RT`,`T-32-SORT` |
 | 33 | 73 | `core.persistence` | `mail_outbox.created_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-33-RT`,`T-33-SORT` |
-| 34 | 73 | `core.persistence` | `mail_config.updated_at` | ms D0 | `timestamptz(6) NULL`，去 `DEFAULT 0` | E3（毫秒 ELSE 主体 = **E2**：`date_trunc('microseconds', TIMESTAMPTZ 'epoch' + "<col>" * INTERVAL '1 millisecond')`） | `TEXT NULL` | R:NULL→未初始化；W:NULL 写入 | `T-34-ZL`,`T-34-NULL` |
+| 34 | 73 | `core.persistence` | `mail_config.updated_at` | ms D0 | `timestamptz(6) NULL`，去 `DEFAULT 0` | E3（毫秒 ELSE 主体 = **E2 整数拆分式**，见 §1） | `TEXT NULL` | R:NULL→未初始化；W:NULL 写入 | `T-34-ZL`,`T-34-NULL` |
 | 35 | 75 | `core.operationlog` | `operation_log.created_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-35-RT`,`T-35-SORT` |
 | 36 | 75 | `core.operationlog` | `operation_log_archive.created_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-36-RT`,`T-36-SORT` |
 | 37 | 75 | `core.operationlog` | `operation_log_archive.archived_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-37-RT`,`T-37-SORT` |

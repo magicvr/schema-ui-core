@@ -30,7 +30,7 @@ version: 0.1.0
 | 旧单位/语义 | PG conversion | SQLite conversion | 约束 |
 |--------------|---------------|-------------------|------|
 | Unix seconds，非 sentinel | `date_trunc('microseconds', to_timestamp(value::double precision))` | Go codec `FromUnix(value)` → fixed-6 TEXT | 非法/越界 fail closed；**秒族保留 `to_timestamp(double)`**（用户 2026-09-20 裁决 B；见 Root D-015 措辞） |
-| Unix milliseconds，非 sentinel | `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` | Go codec `FromUnixMilli(value)` → fixed-6 TEXT | 不把 ms 当 sec；**整数 interval 避免二进制浮点**；其余补零 |
+| Unix milliseconds，非 sentinel | **整数拆分式**：`TIMESTAMPTZ 'epoch' + ((v - CASE WHEN v >= 0 THEN 0 ELSE 999 END)/1000) * INTERVAL '1 second' + (((v % 1000) + 1000) % 1000) * INTERVAL '1 millisecond'` | Go codec `FromUnixMilli(value)` → fixed-6 TEXT | 不把 ms 当 sec；**全程整数、零浮点**。原 `date_trunc(... epoch + v * INTERVAL '1 millisecond')` 式在 ~2.5×10¹⁴ ms 上实测有 **+8 µs 误差**，已弃用（见 `r1-c2-per-table-pg-ddl-v1.0-fc.md` §0.1） |
 | sentinel `0` 表示 absence | `NULL` via explicit `CASE` | `NULL` via table rebuild / row transform | 仅适用于逐列标记为 sentinel 的列 |
 | nullable SQL NULL | 保持 NULL | 保持 NULL | 不把 NULL 写成 epoch/字符串 |
 | non-sentinel 0 in required instant | fail closed / data anomaly report | fail closed / data anomaly report | 不静默转 NULL |

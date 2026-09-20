@@ -20,7 +20,8 @@ version: 0.1.0
 - SQLite physical type = `TEXT`; canonical storage = exactly `YYYY-MM-DDTHH:MM:SS.ffffffZ`.
 - Canonical SQLite text is fixed-width and lexically sortable as an instant. `+00:00`, offsets, spaces, variable fraction, and local-zone text are rejected at persistence boundary.
 - Existing seconds values: `time.Unix(v, 0).UTC()` → canonical; PG uses `date_trunc('microseconds', to_timestamp(v::double precision))`（**秒族保留 `to_timestamp(double)`**，用户 2026-09-20 裁决 B）.
-- Existing milliseconds values: `time.UnixMilli(v).UTC()` → canonical; PG uses `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + v * INTERVAL '1 millisecond')`; integer interval avoids binary-float conversion.
+- Existing milliseconds values: `time.UnixMilli(v).UTC()` → canonical; PG uses the **integer-split form** `TIMESTAMPTZ 'epoch' + ((v - CASE WHEN v >= 0 THEN 0 ELSE 999 END)/1000) * INTERVAL '1 second' + (((v % 1000) + 1000) % 1000) * INTERVAL '1 millisecond'`.
+  > **2026-09-20 实测更正**：原 `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + v * INTERVAL '1 millisecond')` 在 ~2.5×10¹⁴ ms（公元 9999 年）上实测有 **+8 µs 误差**（`BIGINT * INTERVAL` 内部经浮点；`::numeric` 亦无效），已弃用。详见 `r1-c2-per-table-pg-ddl-v1.0-fc.md` §0.1。
 - Seconds/milliseconds are never inferred from magnitude at runtime; unit comes from the v0.3.1 per-column row.
 - Existing integer seconds gain `.000000`; existing milliseconds gain three trailing zero microdigits. New values and migrations **truncate toward zero to microseconds**; no module-specific rounding/fail-closed alternative.
 - Legacy sentinel 0 becomes SQL NULL only for the explicit sentinel rows in §2; non-sentinel required time 0 is a migration error, not a silent NULL.

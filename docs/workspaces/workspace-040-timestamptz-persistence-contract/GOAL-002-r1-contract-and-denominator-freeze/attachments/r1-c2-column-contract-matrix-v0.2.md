@@ -49,7 +49,8 @@ The row assignment sums to 90 and includes `login_failures.locked_until`/`update
 ## Explicit conversion expressions
 
 - PG legacy seconds, non-sentinel: `date_trunc('microseconds', to_timestamp(value::double precision))` from integer seconds.
-- PG legacy milliseconds, non-sentinel: `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` from integer milliseconds; integer interval avoids binary-float conversion.
+- PG legacy milliseconds, non-sentinel: **integer-split form** `TIMESTAMPTZ 'epoch' + ((value - CASE WHEN value >= 0 THEN 0 ELSE 999 END)/1000) * INTERVAL '1 second' + (((value % 1000) + 1000) % 1000) * INTERVAL '1 millisecond'` from integer milliseconds; no floating point anywhere.
+  > **2026-09-20 实测更正**：原 `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` 在 ~2.5×10¹⁴ ms 上有 **+8 µs 误差**，已弃用（见 `r1-c2-per-table-pg-ddl-v1.0-fc.md` §0.1）。
 - PG sentinel rows: `CASE WHEN value = 0 THEN NULL ELSE date_trunc(...) END` before type/constraint restoration; do not feed arbitrary fractional source through a typmod cast and call it truncation.
 - SQLite: never use SQLite date functions for the conversion; read the legacy integer through the shared Go codec, bind canonical fixed-6 UTC TEXT, then rebuild indexes/checks/FKs.
 - New Go writes: `t.UTC().Truncate(time.Microsecond)` before PG bind or SQLite formatting; tests must prove the bound value was truncated before the driver sees it.

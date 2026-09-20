@@ -25,11 +25,43 @@ version: 1.0.0
 -- 秒族（legacy BIGINT 整数秒 → timestamptz(6)）
 date_trunc('microseconds', to_timestamp(<col>::double precision))
 
--- 毫秒族（legacy BIGINT 整数毫秒 → timestamptz(6)，整数 interval，不经二进制浮点）
-date_trunc('microseconds', TIMESTAMPTZ 'epoch' + <col> * INTERVAL '1 millisecond')
+-- 毫秒族（legacy BIGINT 整数毫秒 → timestamptz(6)）—— **整数拆分式**（见下方更正）
+TIMESTAMPTZ 'epoch'
+  + ((<col> - CASE WHEN <col> >= 0 THEN 0 ELSE 999 END) / 1000) * INTERVAL '1 second'
+  + ((<col> % 1000 + 1000) % 1000) * INTERVAL '1 millisecond'
 ```
 
-与 `r1-c2-per-column-conversion-contract-v1.0-fc.md` §1 的 E1/E2 同一；秒族保留 `to_timestamp(double)`（用户 2026-09-20 裁决 B，Root `D-015` 已按此修订）。
+> **⚠️ 2026-09-20 实测更正（PG 临时容器，`postgres:16`）——原毫秒式有精度缺陷。**
+>
+> 原设计式为 `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + <col> * INTERVAL '1 millisecond')`。实测在**大数值**上产生**非零误差**：
+>
+> | 输入（ms） | 原式输出 | 期望 |
+> |-----------|---------|------|
+> | `253402300799999`（公元 9999 年） | `9999-12-31T23:59:59.999008` | `…59.999000` |
+>
+> 误差 **+8 微秒**。根因：`BIGINT * INTERVAL` 路径内部经**浮点**转换，在 ~2.5×10¹⁴ 量级上丢失微秒精度。**`::numeric` 强制转换无效**（实测同为 `.999008`）。
+>
+> **正确的整数拆分式**（无浮点参与）实测结果（`postgres:16`，`SET TIME ZONE 'UTC'`）：
+>
+> | 输入（ms） | 输出 |
+> |-----------|------|
+> | `1758320000123` | `2025-09-19T22:13:20.123000` |
+> | `1758320000999` | `2025-09-19T22:13:20.999000`（**无进位**） |
+> | `-1` | `1969-12-31T23:59:59.999000` |
+> | `-999` | `1969-12-31T23:59:59.001000` |
+> | `-1000` | `1969-12-31T23:59:59.000000` |
+> | `-1001` | `1969-12-31T23:59:58.999000` |
+> | `-86400000` | `1969-12-31T00:00:00.000000` |
+> | `-1758320000123` | `1914-04-14T01:46:39.877000` |
+> | `253402300799999` | `9999-12-31T23:59:59.999000` ✅ |
+>
+> 该式与 SQLite 侧同构（同样 floor 秒 + 归一化余数）：PG 整数除法同样**向零截断**（实测 `-1/1000 = 0`、`-1%1000 = -1`），故负值需 `-999` 修正与 `(x%1000+1000)%1000` 归一化。
+>
+> **秒族无需更改**：`to_timestamp(value::double precision)` 在 `253402300799` 与 `-1` 上实测精确。
+>
+> `D-019` §6「PG DDL 必须显式书写」的要求因此**更有必要**——若沿用 `pgTimeColRe` 派生（它只把 `INTEGER` 换成 `BIGINT`），该精度缺陷不会被任何断言发现。
+
+与 `r1-c2-per-column-conversion-contract-v1.0-fc.md` §1 的 E1/E2 同一族；秒族保留 `to_timestamp(double)`（用户 2026-09-20 裁决 B，Root `D-015` 已按此修订）。**毫秒族的 E2 定义已按上述实测更正为整数拆分式。**
 
 ### 0.2 每个时间列的 PG 语句骨架
 
@@ -81,18 +113,22 @@ ALTER TABLE "schema_migrations" ALTER COLUMN "applied_at" TYPE timestamptz(6)
   USING date_trunc('microseconds', to_timestamp("applied_at"::double precision));
 ALTER TABLE "schema_migrations" ALTER COLUMN "applied_at" SET NOT NULL;
 
--- mail_outbox.created_at（NN，毫秒族）
+-- mail_outbox.created_at（NN，毫秒族）—— USING 用 §0.1 的 E2 整数拆分式（下方为展开）
 ALTER TABLE "mail_outbox" ALTER COLUMN "created_at" DROP NOT NULL;
 ALTER TABLE "mail_outbox" ALTER COLUMN "created_at" TYPE timestamptz(6)
-  USING date_trunc('microseconds', TIMESTAMPTZ 'epoch' + "created_at" * INTERVAL '1 millisecond');
+  USING (TIMESTAMPTZ 'epoch'
+         + (("created_at" - CASE WHEN "created_at" >= 0 THEN 0 ELSE 999 END) / 1000) * INTERVAL '1 second'
+         + ((("created_at" % 1000) + 1000) % 1000) * INTERVAL '1 millisecond');
 ALTER TABLE "mail_outbox" ALTER COLUMN "created_at" SET NOT NULL;
 
--- mail_config.updated_at（D0）
+-- mail_config.updated_at（D0）—— ELSE 主体用 §0.1 的 E2 整数拆分式
 ALTER TABLE "mail_config" ALTER COLUMN "updated_at" DROP DEFAULT;
 ALTER TABLE "mail_config" ALTER COLUMN "updated_at" DROP NOT NULL;
 ALTER TABLE "mail_config" ALTER COLUMN "updated_at" TYPE timestamptz(6)
   USING (CASE WHEN "updated_at" = 0 THEN NULL
-              ELSE date_trunc('microseconds', TIMESTAMPTZ 'epoch' + "updated_at" * INTERVAL '1 millisecond') END);
+              ELSE TIMESTAMPTZ 'epoch'
+                   + (("updated_at" - CASE WHEN "updated_at" >= 0 THEN 0 ELSE 999 END) / 1000) * INTERVAL '1 second'
+                   + ((("updated_at" % 1000) + 1000) % 1000) * INTERVAL '1 millisecond' END);
 ```
 
 ## 2. v74 `core.auth-session`（秒族；31 列）
@@ -161,10 +197,12 @@ ALTER TABLE "login_failures" ALTER COLUMN "locked_until" TYPE timestamptz(6)
 ## 3. v75 `core.operationlog`（毫秒族）——**本 descriptor 禁用 `pgTimeDDL`**
 
 ```sql
--- operation_log.created_at（NN，毫秒族）
+-- operation_log.created_at（NN，毫秒族）—— USING 用 §0.1 的 E2 整数拆分式
 ALTER TABLE "operation_log" ALTER COLUMN "created_at" DROP NOT NULL;
 ALTER TABLE "operation_log" ALTER COLUMN "created_at" TYPE timestamptz(6)
-  USING date_trunc('microseconds', TIMESTAMPTZ 'epoch' + "created_at" * INTERVAL '1 millisecond');
+  USING (TIMESTAMPTZ 'epoch'
+         + (("created_at" - CASE WHEN "created_at" >= 0 THEN 0 ELSE 999 END) / 1000) * INTERVAL '1 second'
+         + ((("created_at" % 1000) + 1000) % 1000) * INTERVAL '1 millisecond');
 ALTER TABLE "operation_log" ALTER COLUMN "created_at" SET NOT NULL;
 
 -- operation_log_archive.created_at / archived_at（NN，毫秒族，同形）
