@@ -24,7 +24,8 @@ GOAL-001-timestamptz-persistence-contract [active] (2/3) · 纲领容器
 ├── GOAL-004-r2-repository-and-predicate-rewrites [done] (3/3) · R2 M3 仓储与谓词改造
 ├── GOAL-005-r2-backup-port-and-closeout [done] (3/3) · R2 M4 Backup Port 与阶段关门
 ├── GOAL-006-r3-wire-formatter-and-unit-family-matrix [done] (3/3) · R3 公共 wire formatter 与单位族/时区矩阵
-└── GOAL-007-r3-pg-cross-version-restore-matrix [done] (3/3) · R3 PG 15/16/17 pg_restore 跨版本矩阵与升级后恢复核对
+├── GOAL-007-r3-pg-cross-version-restore-matrix [done] (3/3) · R3 PG 15/16/17 pg_restore 跨版本矩阵与升级后恢复核对
+└── GOAL-008-r3-exit-matrix-and-root-closeout [active] (0/3) · R3 退出判据矩阵、关门审计与 Root 确认关门
 ```
 
 ## 纲领路线图
@@ -48,6 +49,7 @@ R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
 | GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
 | GOAL-006-r3-wire-formatter-and-unit-family-matrix | R3 · 公共 wire fixed-6 formatter 与单位族/时区矩阵（R3-A/B） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-21 |
 | GOAL-007-r3-pg-cross-version-restore-matrix | R3 · PostgreSQL 15/16/17 pg_restore 跨版本矩阵与升级后恢复有界核对（R3-C） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-21 |
+| GOAL-008-r3-exit-matrix-and-root-closeout | R3 · 退出判据证据矩阵、关门审计与 Root 确认关门（R3-D） | GOAL-001-timestamptz-persistence-contract | **active** | 0/3 | 2026-09-21 |
 
 ## 说明
 
