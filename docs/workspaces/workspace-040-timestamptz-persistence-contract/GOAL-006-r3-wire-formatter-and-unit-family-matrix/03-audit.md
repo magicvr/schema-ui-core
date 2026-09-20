@@ -18,7 +18,7 @@ version: 0.1.0
 
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
-| — | — | — | — | — | 尚无意见（本目标刚立项） | — |
+| A-001 | self | 2026-09-20 | GOAL-006 检查点 A/B（formatter、fixture、单位族矩阵、VP-020 round-trip） | conditional | 8 项成果可核对；开放 required = 0；`F-S-001`/`F-S-002` 已 fixed；`F-S-003`～`F-S-006` 提交 independent 复核；`N-001`～`N-005` 已核对为非问题 | `03-audit/A-001-self-r3ab-checkpoints.md` |
 
 ## 待复审事项（编排器登记，供独立审计取证）
 

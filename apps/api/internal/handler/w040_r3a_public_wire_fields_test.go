@@ -154,6 +154,44 @@ func TestMailOutboxCreatedAtIsCanonicalWire(t *testing.T) {
 	}
 }
 
+// TestMailConfigWireProjectsExactlyOneUpdatedAt pins the two properties of the
+// handler-side projection that a reviewer must not have to take on trust:
+//
+//  1. A nil view stays nil, so the endpoint keeps encoding JSON null exactly as
+//     `writeJSON(w, http.StatusOK, view)` did before the projection existed.
+//  2. The embedded mail.PublicView is shadowed by the shallower UpdatedAt, so the
+//     encoded object carries exactly ONE "updated_at" key — the canonical string.
+func TestMailConfigWireProjectsExactlyOneUpdatedAt(t *testing.T) {
+	if got := mailConfigWire(nil); got != nil {
+		t.Fatalf("mailConfigWire(nil) = %+v, want nil (JSON null on the wire)", got)
+	}
+	nilRaw, err := json.Marshal(mailConfigWire(nil))
+	if err != nil {
+		t.Fatalf("marshal nil projection: %v", err)
+	}
+	if string(nilRaw) != "null" {
+		t.Fatalf("nil projection encodes as %s, want null", nilRaw)
+	}
+
+	instant := time.Date(2026, 9, 20, 12, 57, 15, 900_000_000, time.UTC)
+	raw, err := json.Marshal(mailConfigWire(&mail.PublicView{
+		Channel: mail.RuntimeChannelMock, UpdatedAt: &instant,
+	}))
+	if err != nil {
+		t.Fatalf("marshal projection: %v", err)
+	}
+	if count := strings.Count(string(raw), `"updated_at"`); count != 1 {
+		t.Fatalf("encoded projection has %d \"updated_at\" keys, want exactly 1: %s", count, raw)
+	}
+	if !strings.Contains(string(raw), `"updated_at":"`+trailingZeroInstant+`"`) {
+		t.Fatalf("encoded projection = %s, want the canonical fixed-6 updated_at", raw)
+	}
+	// The embedded view's other fields are still forwarded.
+	if !strings.Contains(string(raw), `"channel":"`+mail.RuntimeChannelMock+`"`) {
+		t.Fatalf("encoded projection dropped the embedded channel: %s", raw)
+	}
+}
+
 // TestMailConfigUpdatedAtIsCanonicalWire covers GET /api/mail/config, whose
 // updated_at used to be a *time.Time field on mail.PublicView.
 //

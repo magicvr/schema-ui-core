@@ -72,21 +72,27 @@ func mailPermWrite(next http.Handler) http.Handler {
 //
 // The R2 ruling is preserved: the model keeps *time.Time and NULL stays JSON
 // null instead of a fabricated instant (GOAL-004 A-003 F-I-002 user-overruled).
+//
+// A nil view still encodes as JSON null (see mailConfigWire), matching the
+// pre-projection behaviour of `writeJSON(w, http.StatusOK, view)`.
 type mailConfigResponse struct {
 	mail.PublicView
 	UpdatedAt *string `json:"updated_at"`
 }
 
-func mailConfigWire(view *mail.PublicView) mailConfigResponse {
-	out := mailConfigResponse{}
-	if view != nil {
-		out.PublicView = *view
-		if view.UpdatedAt != nil {
-			wire := FormatWireTime(*view.UpdatedAt)
-			out.UpdatedAt = &wire
-		}
+// mailConfigWire projects the runtime view for the wire. A nil view stays JSON
+// null, exactly as `writeJSON(view)` encoded it before this projection existed —
+// the projection must not turn "no view" into a zero-valued object.
+func mailConfigWire(view *mail.PublicView) *mailConfigResponse {
+	if view == nil {
+		return nil
 	}
-	return out
+	out := mailConfigResponse{PublicView: *view}
+	if view.UpdatedAt != nil {
+		wire := FormatWireTime(*view.UpdatedAt)
+		out.UpdatedAt = &wire
+	}
+	return &out
 }
 
 func mailConfigGet(svc MailAdminService) http.Handler {
