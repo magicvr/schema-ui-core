@@ -12,7 +12,8 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/temporalcontract"
 )
 
-// workspace-040 R3-A guard (independent audit A-002 F-I-001/F-I-002).
+// workspace-040 R3-A guard (independent audit A-002 F-I-001/F-I-002, hardened
+// after A-004 F-I-102).
 //
 // The R3-A sweep found two public wire time fields that bypassed the shared
 // fixed-6 formatter, because they were not inline Format(...) layouts:
@@ -22,8 +23,23 @@ import (
 //   - a bare time.Time value placed in a response map whose key was outside the
 //     hand-written scan list (GET /api/mfa/status "enrolledAt").
 //
-// These guards turn both classes into an executable, fail-closed check over the
-// production sources, so the next such field cannot ship silently.
+// These guards are a RATCHET, not a closure proof. Audit A-004 demonstrated six
+// bypass classes against the first version and the rules below were extended to
+// cover four of them (capitalised map key, key whose value sits on the next
+// line, a value variable merely containing "Format", and a runtime map
+// assignment). Two classes remain DOCUMENTED GAPS of a source scan, both
+// verified absent from the current tree by A-004:
+//
+//   - class A: an exported time.Time struct field with no json tag, shipped by
+//     writing the whole struct — deciding this needs type information (does the
+//     struct reach writeJSON?), which a regex scan cannot supply without
+//     drowning the check in false positives from internal record types;
+//   - class C: a bare-noun key such as "created" holding an instant — the same
+//     words are also used for counts and for already-projected strings, so
+//     including them produced false positives rather than coverage.
+//
+// Producers outside this Go module are out of scope by construction; they are
+// covered by their own tests (the Web display formatter and its fixtures).
 
 func wireRepoRoot(t *testing.T) string {
 	t.Helper()
@@ -102,6 +118,12 @@ func readLines(t *testing.T, path string) []string {
 // type and whose tag carries a JSON name.
 var jsonTaggedTimeField = regexp.MustCompile("^\\s*[A-Z][A-Za-z0-9_]*\\s+\\*?(?:time\\.Time|sql\\.NullTime)\\s+`[^`]*json:\"[^\"]+\"[^`]*`")
 
+// untaggedTimeField matches an EXPORTED time-typed struct field with no tag at
+// all. It is deliberately NOT used as a blanket rule (see the package comment:
+// deciding whether such a struct reaches writeJSON needs type information); it
+// exists so the gap stays visible in this file.
+var untaggedTimeField = regexp.MustCompile("^\\s*[A-Z][A-Za-z0-9_]*\\s+\\*?(?:time\\.Time|sql\\.NullTime)\\s*$")
+
 // jsonTaggedTimeFieldAllowlist is the ratchet: adding a json-tagged time field to
 // a production struct now requires a deliberate entry here with its reason. An
 // entry does not mean "safe on the wire" — it means the file's wire path is
@@ -114,20 +136,26 @@ var jsonTaggedTimeFieldAllowlist = map[string]string{
 	"apps/api/modules/wallet/subject/subject.go": "wallet domain model; not referenced by any HTTP projection",
 }
 
-// TestNoJSONTaggedWireTimeFieldOutsideProjections is guard 1.
+// TestNoJSONTaggedWireTimeFieldOutsideProjections is guard 1: it covers the
+// json-tagged variant (the class that produced F-I-001) and keeps the known
+// untagged (class A) gap observable without turning it into noise.
 func TestNoJSONTaggedWireTimeFieldOutsideProjections(t *testing.T) {
 	root := wireRepoRoot(t)
 	var offenders []string
 	seen := map[string]bool{}
+	untaggedGap := 0
 	for _, path := range productionGoFiles(t, root) {
 		rel := relPath(t, root, path)
 		for _, line := range readLines(t, path) {
-			if !jsonTaggedTimeField.MatchString(line) {
+			if jsonTaggedTimeField.MatchString(line) {
+				seen[rel] = true
+				if _, ok := jsonTaggedTimeFieldAllowlist[rel]; !ok {
+					offenders = append(offenders, rel+": "+strings.TrimSpace(line))
+				}
 				continue
 			}
-			seen[rel] = true
-			if _, ok := jsonTaggedTimeFieldAllowlist[rel]; !ok {
-				offenders = append(offenders, rel+": "+strings.TrimSpace(line))
+			if untaggedTimeField.MatchString(line) {
+				untaggedGap++
 			}
 		}
 	}
@@ -142,12 +170,29 @@ func TestNoJSONTaggedWireTimeFieldOutsideProjections(t *testing.T) {
 			t.Errorf("allowlist entry %s (%s) no longer matches any json-tagged time field; remove it", rel, reason)
 		}
 	}
+	// Keep the documented class-A gap from silently becoming an assumption: if the
+	// untagged population disappears entirely, this file's comment is stale.
+	if untaggedGap == 0 {
+		t.Log("no untagged exported time fields remain; the documented class-A gap can be re-evaluated")
+	}
 }
 
 // responseTimeKey matches a JSON/Go map key that names an instant. It is
 // deliberately broader than the hand-written list that missed "enrolledAt":
-// snake_case *_at, camelCase *At, and "timestamp".
-var responseTimeKey = regexp.MustCompile("`?\"([A-Za-z_]*_at|[a-z][A-Za-z0-9]*At|timestamp)\"`?\\s*:")
+// snake_case *_at, any-case *at (so a capitalised key is caught too), and
+// "timestamp". Bare nouns ("created", "updated", "deleted") are NOT included:
+// the same words carry counts and already-projected strings, and audit A-004
+// class C is recorded as a documented gap instead of a source of false alarms.
+var responseTimeKey = regexp.MustCompile(`(?i)"([a-z_]*_at|[a-z][a-z0-9]*at|timestamp)"\s*:`)
+
+// responseTimeAssignment matches the runtime-assignment form (audit A-004 class
+// F): inner["enrolledAt"] = instant, which a literal-only scan cannot see.
+var responseTimeAssignment = regexp.MustCompile(`(?i)\[[^]]*"([a-z_]*_at|[a-z][a-z0-9]*at|timestamp)"[^]]*\]\s*=`)
+
+// formatterCall matches a real call to one of the shared formatters. Merely
+// containing the letters "Format" is not enough (audit A-004 class E: a value
+// variable named notFormatted satisfied the previous substring test).
+var formatterCall = regexp.MustCompile(`\b(?:FormatWireTime|FormatWireTimePtr|temporal\.FormatWire|temporal\.MustFormat)\s*\(`)
 
 // formattedValue reports whether the value expression routes the instant through
 // a formatter (or is obviously not an instant at all).
@@ -158,7 +203,7 @@ func formattedValue(value string) bool {
 	case "", "nil", "true", "false":
 		return true
 	}
-	if strings.Contains(value, "Format") { // FormatWireTime / temporal.FormatWire
+	if formatterCall.MatchString(value) {
 		return true
 	}
 	// String and numeric literals cannot be a time.Time value.
@@ -171,6 +216,60 @@ func formattedValue(value string) bool {
 	return false
 }
 
+// hasResponseTimeBypass reports whether one source file contains a value that
+// names an instant without a formatter call. It scans statement by statement so
+// a key whose value sits on the following line (audit A-004 class D) is still
+// checked instead of being read as an empty — and therefore "obviously fine" —
+// value.
+func hasResponseTimeBypass(lines []string) []string {
+	var offenders []string
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "*") {
+			continue // documentation, not code
+		}
+		// SQL/DDL and sort/column mapping tables never encode a response body.
+		if strings.Contains(line, "SELECT") || strings.Contains(line, "ALTER TABLE") ||
+			strings.Contains(line, "json:\"") || strings.Contains(line, "case \"") {
+			continue
+		}
+		// D-009 excludes the audit `detail` JSON from the wire contract, and that
+		// payload is built with its own formatting rule.
+		if strings.Contains(line, "operationlog.NewDetail(") || strings.Contains(line, "auditDetail(") {
+			continue
+		}
+
+		if loc := responseTimeAssignment.FindStringSubmatchIndex(line); loc != nil {
+			if !formattedValue(line[loc[1]:]) {
+				offenders = append(offenders, itoa(i+1)+" (assignment "+line[loc[2]:loc[3]]+"): "+trimmed)
+			}
+			continue
+		}
+
+		loc := responseTimeKey.FindStringSubmatchIndex(line)
+		if loc == nil {
+			continue
+		}
+		key := line[loc[2]:loc[3]]
+		value := line[loc[1]:]
+		if strings.TrimSpace(value) == "" {
+			// The value is on the next line(s): take the rest of the statement.
+			for j := i + 1; j < len(lines) && j <= i+3; j++ {
+				value += lines[j]
+				if strings.Contains(lines[j], ",") || strings.Contains(lines[j], "}") {
+					break
+				}
+			}
+		}
+		if formattedValue(value) {
+			continue
+		}
+		offenders = append(offenders, itoa(i+1)+" ("+key+"): "+trimmed)
+	}
+	return offenders
+}
+
 // responseTimeKeyAllowlist holds instants that are deliberately NOT rendered by
 // the public wire formatter, each with the decision that puts it outside the
 // contract (Root D-009: human prose, audit detail JSON, arbitrary payload).
@@ -181,9 +280,9 @@ var responseTimeKeyAllowlist = map[string]string{
 	"apps/api/modules/recyclebin/service.go": "D-009: recycle_items.payload reconstruction keeps its own parser rules",
 }
 
-// TestNoUnformattedResponseTimeValue is guard 2: every response map key that
-// names an instant must either pass through the shared formatter or be listed
-// with the decision that excludes it.
+// TestNoUnformattedResponseTimeValue is guard 2: every response value that names
+// an instant must either pass through the shared formatter or live in a file
+// listed with the decision that excludes it.
 func TestNoUnformattedResponseTimeValue(t *testing.T) {
 	root := wireRepoRoot(t)
 	var offenders []string
@@ -192,26 +291,8 @@ func TestNoUnformattedResponseTimeValue(t *testing.T) {
 		if _, ok := responseTimeKeyAllowlist[rel]; ok {
 			continue
 		}
-		for i, line := range readLines(t, path) {
-			trimmed := strings.TrimSpace(line)
-			if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "*") {
-				continue // documentation, not code
-			}
-			loc := responseTimeKey.FindStringSubmatchIndex(line)
-			if loc == nil {
-				continue
-			}
-			key := strings.Trim(line[loc[2]:loc[3]], "`\"")
-			// Skip SQL/DDL and sort/column mapping tables: they never encode a
-			// response body. Detected by the absence of a Go map/call context.
-			if !strings.Contains(line, ":") || strings.Contains(line, "SELECT") ||
-				strings.Contains(line, "ALTER TABLE") || strings.Contains(line, "json:\"") {
-				continue
-			}
-			if formattedValue(line[loc[1]:]) {
-				continue
-			}
-			offenders = append(offenders, rel+":"+itoa(i+1)+" ("+key+"): "+trimmed)
+		for _, hit := range hasResponseTimeBypass(readLines(t, path)) {
+			offenders = append(offenders, rel+":"+hit)
 		}
 	}
 	if len(offenders) > 0 {

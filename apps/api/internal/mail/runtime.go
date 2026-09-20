@@ -133,6 +133,12 @@ type Switcher struct {
 	// request, never the request shape or auth scheme.
 	resendBaseURL string
 
+	// now stamps mail_config.updated_at. Production keeps time.Now; the seam
+	// exists so a test can freeze a trailing-zero microsecond instant and make
+	// the wire-shape assertion deterministic (same shape as
+	// backup.Service.SetClock).
+	now func() time.Time
+
 	mu    sync.Mutex
 	cached *cachedAdapter
 }
@@ -158,7 +164,8 @@ func NewSwitcher(store kernel.Store, masterKey []byte, seed SeedConfig, logger *
 	if logger == nil {
 		logger = slog.Default()
 	}
-	s := &Switcher{store: store, masterKey: masterKey, logger: logger}
+	s := &Switcher{store: store, masterKey: masterKey, logger: logger,
+		now: func() time.Time { return time.Now().UTC() }}
 	if err := s.ensureSeeded(seed); err != nil {
 		return nil, err
 	}
@@ -406,7 +413,7 @@ func (s *Switcher) Update(ctx context.Context, req UpdateRequest) (*PublicView, 
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UTC()
+	now := s.now().UTC()
 	err = s.store.Run(context.Background(), func(tx kernel.Tx) error {
 		_, err := tx.Exec(context.Background(),
 			`UPDATE mail_config SET channel = ?, mock_retention = ?, resend_from = ?, resend_api_key_enc = ?,
@@ -426,4 +433,17 @@ func (s *Switcher) Update(ctx context.Context, req UpdateRequest) (*PublicView, 
 	s.mu.Unlock()
 	s.logger.Info("outbound mail channel switched", "channel", cfg.Channel)
 	return s.publicViewOf(*cfg), nil
+}
+
+// SetClock replaces the timestamp source used when a switch stamps
+// mail_config.updated_at. It exists for tests that must pin a trailing-zero
+// microsecond instant; production never calls it (backup.Service.SetClock is
+// the same seam).
+func (s *Switcher) SetClock(now func() time.Time) {
+	if now == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.now = now
 }

@@ -1,12 +1,12 @@
 ---
 id: GOAL-006-r3-wire-formatter-and-unit-family-matrix
 title: R3 · 公共 wire fixed-6 formatter 与单位族/时区矩阵（R3-A/B）
-status: active
+status: done
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
-updated: 2026-09-20
-version: 0.2.0
-progress: 2/3
+updated: 2026-09-21
+version: 0.3.0
+progress: 3/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -53,11 +53,11 @@ serves_summary: 承接 Root R3 的 R3-A/B：落码共享 fixed-6 UTC wire format
 
 | 检查点 | 判据 | 状态 |
 |--------|------|------|
-| **A** | shared fixed-6 formatter 落码并替换 inventory 的 Go 面；输入兼容矩阵（0/3/6/9 位、`+00:00`、拒绝无时区、**拒绝非零 offset**）有可执行测试；Go/Web fixture 同步；`I-041-008` 判定 | **completed**（E-002/E-003 + `I-041-008` verified 见 Root `D-019`；**曾被 independent `A-002` 判未完成**——PUT mail config 漏改、MFA `enrolledAt` 漏扫、`ParseWireTime` 未拒绝非零 offset——已由 E-005 修复并加常驻守卫，开放 required = 0，待 `A-004` 复审确认） |
+| **A** | shared fixed-6 formatter 落码并替换 inventory 的 Go 面；输入兼容矩阵（0/3/6/9 位、`+00:00`、拒绝无时区、**拒绝非零 offset**）有可执行测试；Go/Web fixture 同步；`I-041-008` 判定 | **completed**（E-002/E-003 + `I-041-008` verified 见 Root `D-019`；**曾被 independent `A-002` 判未完成**——PUT mail config 漏改、MFA `enrolledAt` 漏扫、`ParseWireTime` 未拒绝非零 offset——E-005 修复后由 `A-004` 定向复审判定 3 条 required 全部 `fixed`、开放 required = 0） |
 | **B** | 单位族矩阵（秒/毫秒/可空/sentinel 各至少一个 endpoint）通过；VP-020 会话时区展示 round-trip 通过（Go + Web 组件/单测）；`I-040-004` 关闭 | **completed**（E-004；4 端点矩阵 + Go/Web round-trip；`A-002` 亦判达成） |
-| **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | pending（`A-001` self + `A-002` independent `fail` + `A-003` 响应已落盘；待 `A-004` 定向复审） |
+| **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | **completed**（`A-001` self → `A-002` independent `fail`（3 required）→ `A-003` 响应修复 → `A-004` independent 定向复审 **pass / 开放 required = 0** → `A-005` 响应 + 关门记录；recommended `F-I-004`/`005`/`101`/`102` 亦已 fixed 或书面记录缺口） |
 
-`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 3/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 
@@ -74,3 +74,5 @@ serves_summary: 承接 Root R3 的 R3-A/B：落码共享 fixed-6 UTC wire format
 ## 关门条件
 
 **A～C 全部完成**、`03-audit` 的 self 与 independent 意见落盘、required 合法闭合后才可静默关门；关门**不**等于 Root 关门（Root 关门仍须 R3-C/D 与用户确认）。
+
+**关门记录（2026-09-21）**：A～C 均 `completed`；`A-001`（self）/ `A-002`（independent `fail`，3 required）/ `A-003`（响应修复）/ `A-004`（independent 定向复审 **pass / 开放 required = 0**）/ `A-005`（响应 + 关门记录）全部落盘；按既有用户裁决（子目标关门属非关键决策）**静默关门**：`status: done`、`progress: 3/3`。移交 R3-C（`GOAL-007-r3-pg-cross-version-restore-matrix`）与 R3-D（`GOAL-008-r3-exit-matrix-and-root-closeout`）；`I-041-004` 仍 open，归 R3-C。

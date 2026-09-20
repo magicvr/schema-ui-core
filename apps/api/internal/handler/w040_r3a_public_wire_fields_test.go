@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -276,12 +275,13 @@ func TestMailConfigUpdatedAtIsCanonicalWire(t *testing.T) {
 // still wrote the raw *mail.PublicView, so the two halves of one resource
 // disagreed about the width of the same instant.
 //
-// The assertion is deterministic rather than shape-only: mail.Switcher.Update
-// stamps updated_at with time.Now() and stores that same value, so the canonical
-// projection of the response must equal the canonical value the database kept. A
-// regression to encoding/json's default marshaller can only match by coincidence
-// (it would have to drop no digit at all), and the loop switches twice to make
-// that coincidence vanishingly unlikely.
+// The instant is FROZEN at a trailing-zero microsecond value through the
+// Switcher's clock seam (audit A-004 F-I-101 showed that comparing the response
+// against time.Now()-derived state is only ~90% decisive per attempt, because
+// encoding/json's stripped form coincides with the canonical form often enough).
+// With the clock pinned, the response must be byte-identical to the stored
+// canonical value AND to the expected literal, so a regression to the default
+// marshaller fails deterministically — the old code rendered ".9Z" here.
 func TestMailConfigPutUpdatedAtIsCanonicalWire(t *testing.T) {
 	env := newAuthTestEnv(t)
 	key := []byte(strings.Repeat("m", 32))
@@ -289,40 +289,58 @@ func TestMailConfigPutUpdatedAtIsCanonicalWire(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSwitcher: %v", err)
 	}
+	frozen, err := time.Parse("2006-01-02T15:04:05.000000Z", trailingZeroInstant)
+	if err != nil {
+		t.Fatalf("parse frozen instant: %v", err)
+	}
+	sw.SetClock(func() time.Time { return frozen })
 	RegisterMailAdmin(env.mux, env.a, sw, env.operations)
 	token := adminToken(t, env)
 
-	for attempt := 0; attempt < 2; attempt++ {
-		rr := httptest.NewRecorder()
-		env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPut, "/api/mail/config",
-			`{"channel":"mock","mockRetention":`+strconv.Itoa(attempt+1)+`}`))
-		if rr.Code != http.StatusOK {
-			t.Fatalf("PUT /api/mail/config = %d body=%s", rr.Code, rr.Body.String())
-		}
-		body := decodeObject(t, rr.Body.Bytes())
-		var got string
-		if err := json.Unmarshal(body["updated_at"], &got); err != nil {
-			t.Fatalf("PUT updated_at is not a string: %s", body["updated_at"])
-		}
-		if !wireInstantPattern.MatchString(got) {
-			t.Fatalf("PUT updated_at = %q, want fixed-6 UTC", got)
-		}
-		var stored string
-		if err := env.st.Run(context.Background(), func(tx kernel.Tx) error {
-			return tx.QueryRow(context.Background(),
-				`SELECT updated_at FROM mail_config WHERE id = 1`).Scan(&stored)
-		}); err != nil {
-			t.Fatalf("read stored updated_at: %v", err)
-		}
-		if got != stored {
-			t.Fatalf("PUT updated_at = %q but the stored canonical value is %q: the response bypassed the shared formatter",
-				got, stored)
-		}
-		// Non-time keys must survive the projection on this path too.
-		for _, field := range []string{"channel", "mockRetention", "resend", "smtp", "secrets"} {
-			if _, ok := body[field]; !ok {
-				t.Fatalf("PUT response dropped %q: %v", field, body)
-			}
+	// Premise: the frozen instant really is one the default marshaller would have
+	// rendered short, so the assertions below cannot pass vacuously.
+	short, err := json.Marshal(frozen)
+	if err != nil {
+		t.Fatalf("marshal frozen instant: %v", err)
+	}
+	if string(short) == `"`+trailingZeroInstant+`"` {
+		t.Fatalf("premise broken: encoding/json renders %s as the canonical form", trailingZeroInstant)
+	}
+
+	rr := httptest.NewRecorder()
+	env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPut, "/api/mail/config", `{"channel":"mock","mockRetention":3}`))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("PUT /api/mail/config = %d body=%s", rr.Code, rr.Body.String())
+	}
+	body := decodeObject(t, rr.Body.Bytes())
+	var got string
+	if err := json.Unmarshal(body["updated_at"], &got); err != nil {
+		t.Fatalf("PUT updated_at is not a string: %s", body["updated_at"])
+	}
+	if got != trailingZeroInstant {
+		t.Fatalf("PUT updated_at = %q, want the frozen canonical %q (default marshalling gives %s)",
+			got, trailingZeroInstant, short)
+	}
+	if !wireInstantPattern.MatchString(got) {
+		t.Fatalf("PUT updated_at = %q, want fixed-6 UTC", got)
+	}
+	var stored string
+	if err := env.st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(),
+			`SELECT updated_at FROM mail_config WHERE id = 1`).Scan(&stored)
+	}); err != nil {
+		t.Fatalf("read stored updated_at: %v", err)
+	}
+	if stored != trailingZeroInstant {
+		t.Fatalf("stored updated_at = %q, want the frozen %q (the write path must keep microseconds)", stored, trailingZeroInstant)
+	}
+	if got != stored {
+		t.Fatalf("PUT updated_at = %q but the stored canonical value is %q", got, stored)
+	}
+	// Non-time keys must survive the projection on this path too.
+	for _, field := range []string{"channel", "mockRetention", "resend", "smtp", "secrets"} {
+		if _, ok := body[field]; !ok {
+			t.Fatalf("PUT response dropped %q: %v", field, body)
 		}
 	}
 }
