@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.11
+version: 0.1.12
 ---
 
 # 审计 · GOAL-002
@@ -14,7 +14,7 @@ version: 0.1.11
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（`02-execution.md` 现为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006：owner checklist / family 谓词 / backup 命令模板 / 测试改写清单纯文字已落盘，逐列 codec、90 列 mapping、Port 调用点、已接受 allocation+checksum、exact SQL 仍缺；草案不是实施证据 |
+| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 Root D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（当时 `02-execution.md` 为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006；A-027 确认 A-026 的 Root D-014/D-015 与 child D-012 可收窄 F-I-005（未发布 allocation baseline）与 F-I-002（负瞬间 Go Truncate 解释），仍不可闭合五条 required：逐列 codec、90 列 mapping、Port 调用点、唯一表范围+descriptor 名+checksum、exact SQL 仍缺；D-015「integer interval」与秒列 `to_timestamp(double)` 未收口；v74 ledger 歧义仍在被接受文本；草案/baseline 不是实施证据；新增 recommended F-I-017（E-017 双文件）与 F-I-018（无限定 D-012 同号不同义） |
 | I-040-004 | open | R3 回归矩阵；R1 接口仍未登记（A-002/A-004/A-006/A-010/A-012/A-014 F-I-009） |
 | 资料引用 | 无 | 工作区 `shared_materials_catalog: none` |
 
@@ -48,7 +48,9 @@ version: 0.1.11
 | A-024 | 2026-09-20 | self | C2/C3 design evidence expansion | conditional | 5 | `03-audit/A-024-r1-self-response-design-evidence-expansion.md` |
 | A-025 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-024 / E-020..E-023 drafts | conditional | 5 | `03-audit/A-025-r1-independent-after-a024-c2-c3-evidence.md` |
 | A-026 | 2026-09-20 | self | response to A-025 / accepted allocation baseline | conditional | 5 | `03-audit/A-026-r1-self-response-to-a025.md` |
+| A-027 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-026 / D-014 / D-015 | conditional | 5 | `03-audit/A-027-r1-independent-after-a026-c2-c3-evidence.md` |
+| A-028 | 2026-09-20 | self | response to A-027 / owner and backup boundary hygiene | conditional | 5 | `03-audit/A-028-r1-self-response-to-a027.md` |
 
 ## 结论状态
 
-用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`；A-016 independent 接受 A-015 对 **F-I-015** 碰撞的 `fixed`；A-018 independent 确认 D-012/D-013 方向已唯一但发现 matrix 表达式不一致；A-020 independent 接受 A-019 已把三份 C2 载体收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 independent 接受 A-021 对 **F-I-016** 的 `fixed`（当时 `02-execution.md` E-001～E-019 严格递增且路径/`id` 一致）；A-023 已响应并维持 F-I-002～F-I-006 open。A-025 independent 确认索引现为 E-001～E-023 仍单调，且 A-024 的 E-020～E-023 proposed 草案可收窄 F-I-005（测试改写清单纯文字）与 F-I-006（voucher/monotonic family 行），但五条 required 均不可闭合：逐列 codec、90 列 mapping、Port 调用点、已接受 allocation+checksum、exact SQL 仍缺；D-012/D-013 无政策矛盾。F-I-010 planning 仍 closed。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014/A-016/A-018/A-020/A-022/A-025 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，leftover 列名表已列出，PG 式已同一，但确认 C2/C3 仍不可冻结：草案不是实施证据。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。
+用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`；A-016 independent 接受 A-015 对 **F-I-015** 碰撞的 `fixed`；A-018 independent 确认 Root D-012/D-013 方向已唯一但发现 matrix 表达式不一致；A-020 independent 接受 A-019 已把三份 C2 载体收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 independent 接受 A-021 对 **F-I-016** 的 `fixed`（当时 `02-execution.md` E-001～E-019 严格递增且路径/`id` 一致）；A-023 已响应并维持 F-I-002～F-I-006 open。A-025 independent 确认当时索引为 E-001～E-023 单调，且 A-024 的 E-020～E-023 proposed 草案可收窄但不可闭合五条 required。A-027 independent 确认 A-026 的 Root D-014（v73–v87 未发布 baseline）与 D-015（负瞬间 Go Truncate / 整数来源不经 typmod）为可核对的方向收窄，**仍不可闭合** F-I-002～006：逐列 codec、90 列 mapping、Port 调用点、唯一表范围+descriptor 名+checksum、exact SQL 仍缺；D-015「integer interval」与秒列 `to_timestamp(double)` 未收口；被接受 allocation 仍含 v74 ledger 歧义；A-026 后出现 E-017 双文件（F-I-017 recommended）与无限定 D-012 同号不同义（F-I-018 recommended）。Root D-012/D-013 无政策矛盾。A-028 已修正 owner/E-ID/D-012 scope 与 backup pre-conversion/RecoveryPoint 边界；F-I-010 planning 仍 closed。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014/A-016/A-018/A-020/A-022/A-025/A-027 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，leftover 列名表已列出，PG 式已同一，D-014 baseline 已接受，但确认 C2/C3 仍不可冻结：草案与未发布 baseline 不是实施证据。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。

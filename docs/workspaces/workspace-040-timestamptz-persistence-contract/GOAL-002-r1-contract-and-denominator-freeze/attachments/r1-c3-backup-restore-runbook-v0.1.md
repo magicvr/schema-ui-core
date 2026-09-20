@@ -14,10 +14,11 @@ version: 0.1.0
 ## SQLite provider
 
 1. Before each pending v73+ conversion migration, call the existing per-migration snapshot boundary (`snapshotBeforePending`) and record artifact path, source DB identity, catalog version and checksum set.
-2. Run conversion inside the migration transaction; failure rolls back table/constraint changes. Preserve the pre-conversion snapshot as the higher-level recovery point.
-3. Restore snapshot to a new SQLite file, open with the compiled catalog, run `PRAGMA integrity_check`, `PRAGMA foreign_key_check`, catalog/checksum verification and current-schema retired-record assertion.
-4. Verify all 90 temporal columns have target TEXT shape/NULL policy and sample values cover seconds, milliseconds, sentinel 0, nullable absence, negative-invalid and fixed-6 lexical ordering.
-5. Record verification result and cleanup only temporary restore target; do not delete the recovery artifact before audit evidence is persisted.
+2. Run conversion inside the migration transaction; failure rolls back table/constraint changes. The pre-conversion snapshot is a **rollback/recovery artifact**, not a successful target-contract RecoveryPoint.
+3. After a successful conversion, invoke the internal BackupService/provider path for the target database; only its post-restore verification can produce a kernel `CreateRecoveryPoint` result.
+4. Restore the pre-conversion snapshot to a new SQLite file only for rollback rehearsal; restore the converted target artifact separately to a new SQLite file and run `PRAGMA integrity_check`, `PRAGMA foreign_key_check`, catalog/checksum verification and current-schema retired-record assertion.
+5. Verify the converted target has all 90 temporal columns with target TEXT/NULL policy and samples cover seconds, milliseconds, sentinel 0, nullable absence, negative-invalid and fixed-6 lexical ordering.
+6. Record rollback and target RecoveryPoint verification separately; preserve artifacts until audit evidence is persisted.
 
 ## PostgreSQL provider
 
@@ -28,16 +29,17 @@ pg_dump -F c --no-owner --file <artifact> <source-dsn>
 ```
 
 2. Record server/client major versions, source identifier, catalog/schema version, checksum set, time-contract version and artifact digest.
-3. Run v73+ conversion migrations in one transaction per migration; a failure rolls back that migration. Do not rewrite v1–v72 ledger rows.
-4. Restore to a new isolated database using:
+3. Run v73+ conversion migrations in one transaction per migration; a failure rolls back that migration. Do not rewrite v1–v72 ledger rows. The pre-conversion dump is a rollback/recovery artifact, not a successful target-contract RecoveryPoint.
+4. After a successful conversion, the internal BackupService/provider path must create/restore/verify a target RecoveryPoint before kernel `CreateRecoveryPoint` can succeed.
+5. Restore to a new isolated database using:
 
 ```text
 createdb <restore-db>
 pg_restore --exit-on-error --no-owner --dbname <restore-dsn> <artifact>
 ```
 
-5. Verify `information_schema` temporal columns are `timestamp with time zone` precision 6; all 90 live temporal columns are present; catalog/checksums match; sentinel/NULL/type samples and representative seconds/milliseconds values round-trip; restore emits no unclassified error.
-6. Record verification report, tool versions, target identity and cleanup; preserve artifact until audit sign-off.
+6. Verify `information_schema` temporal columns are `timestamp with time zone` precision 6; all 90 live temporal columns are present; catalog/checksums match; sentinel/NULL/type samples and representative seconds/milliseconds values round-trip; restore emits no unclassified error.
+7. Record verification report, tool versions, target identity and cleanup; preserve artifact until audit sign-off.
 
 ## RecoveryPoint Port postcondition
 

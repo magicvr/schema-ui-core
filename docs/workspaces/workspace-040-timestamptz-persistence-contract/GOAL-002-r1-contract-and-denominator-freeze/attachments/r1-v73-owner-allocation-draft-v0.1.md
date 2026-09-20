@@ -16,7 +16,7 @@ version: 0.1.0
 | proposed version | ModuleID / owner | Tables / columns | mapping keys / special rules |
 |---:|---|---|---|
 | 73 | `core.persistence` | `schema_migrations.applied_at`, `mail_outbox.created_at`, `mail_config.updated_at` | #1 `S-NN`/runner seconds; #33 `MS-NN`; #34 `MS-D0`→NULL; assert retired `records` absent |
-| 74 | `core.auth-session` | users, refresh_tokens, roles, permissions, menu_items, schema/system ledger, challenges, login_failures, password history, invites, credentials | #2–#32; `S-D0` #5/#6/#20; nullable child fields; typed predicates |
+| 74 | `core.auth-session` | users, refresh_tokens, roles, permissions, menu_items, `system_data_reconcile`, challenges, login_failures, password history, invites, credentials | #2–#32 excluding `schema_migrations.applied_at` #1; `S-D0` #5/#6/#20; nullable child fields; typed predicates |
 | 75 | `core.operationlog` | operation_log + operation_log_archive | #35–#37 `MS-NN`; retention/filter/order rewrite |
 | 76 | `core.jobs` | jobs five time columns | #41–#45; `MS-NN` #42/#43; `MS-N` #41/#44/#45; six-state CHECK rebuild |
 | 77 | `admin.data-dictionary` | dict_types/dict_entries | #46–#49 `S-NN`; created/updated indexes/order |
