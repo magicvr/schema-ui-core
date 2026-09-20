@@ -70,7 +70,7 @@ func MigrationChecksum(stmts []string, transformID string) string {
 | `m4` | 校验语句（`information_schema` 类型断言 / 完整性与 FK 检查） |
 | `m5` | descriptor 元数据落盘（version/name/checksum 追加，append-only） |
 
-**双方言约定**：沿用既有模式，每个 owner 提供 `Apply`（SQLite DDL 切片）与 `ApplyPostgres`（PG DDL 切片），二者**各自独立**计算 checksum（`transform_id` 后加方言后缀 `:sqlite` / `:pg`），或按仓库既有单 transforms 约定共用——**该二选一必须由 independent 复审确认**，本候选不静默选定，见 §5 开放项 3。
+**双方言约定（用户 2026-09-20 P-004 裁决 = 选项 A，见 child `01-decision/D-017-v73-checksum-convention.md`）**：沿用 v1–v72 现行约定——每个 descriptor **只有一个** checksum，`stmts` = **SQLite canonical DDL 切片**（`m0 → m5` 顺序），**PG `ApplyPostgres` 变体不进哈希**，`transform_id` **不加** `:sqlite`/`:pg` 后缀。PG 侧差异由 `information_schema` 类型/精度测试断言承担，不由 checksum 承担。此项**已选定**，不再是开放二选一（原 §5.3 关闭）。
 
 ## 3. 冻结后仍不得改动（append-only 边界）
 
@@ -86,7 +86,7 @@ R2 落码时的**唯一**允许输入：本台账的 `name` / `transform_id` / �
 
 1. **已迁移的 checksum 值**：`MigrationChecksum` 只能对**已存在的语句切片**求值；v73–v87 的语句切片属 R2 落码产物。本文件记录的是**计算输入的结构与算法**，不是哈希值本身。A-029 F-I-005 的「已记录的 canonical SQL / `MigrationChecksum`」子项在 R2 首次落码并写入 ledger 后才可闭合。
 2. **可执行测试改写**：`migrate_test.go` / `postgres_test.go` / `operations_test.go` / `restart_test.go` 的 v73+ 断言与金额/时间拆分为 R2 产物；本文件只冻结「改成什么」与「哪些不可改」。
-3. **双方言 checksum 约定二选一**（§2 末）需 independent 明确选择。
+3. ~~**双方言 checksum 约定二选一**（§2 末）需 independent 明确选择。~~ **已由用户 2026-09-20 P-004 裁决为选项 A**（见 §2 与 child `D-017`）；本项不再是开放项。
 4. **唯一表范围**（v74 消歧，A-029 已接受 allocation 列号不相交，本条把 owner spec 措辞收到同一）与 **descriptor 名 / transform ID** 已在本台账确定，但**接受与否由 independent 复审判定**。
 5. **`r1-c2-owner-migration-spec-v0.1.md` L28 的 v74「ledger/reconcile」措辞同轮已改写**为 `system_data_reconcile`（不含 `schema_migrations`），与 allocation 同文；是否接受由 independent 复审判定。
 

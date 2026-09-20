@@ -48,18 +48,16 @@ version: 0.1.0
 
 - **F-I-002**：逐表 exact SQLite rebuild DDL + `INSERT SELECT` 正文；非法/越界单路径（新增规则已定，正文待写）；case 仍是 ID 不是可执行测试。
 - **F-I-004**：C3 整条未收窄——PG 转换后 artifact 独立 token、`CreateRecoveryPoint` 包路径与 before/after 调用点、restore-to-new-db harness 均缺。
-- **F-I-005**：无任何 v73+ canonical SQL 或 `MigrationChecksum` 哈希落盘；测试未改写；双方言 checksum 约定未选定。
-- **F-I-006**：两源已收口但 exact 表仍需 independent 复审确认；ORDER BY 归属修正需复审。
+- **F-I-005**：无任何 v73+ canonical SQL 或 `MigrationChecksum` 哈希落盘；测试未改写（checksum 计算约定已由用户裁决选定，见 §4，但约定 ≠ 已记录哈希）。
+- **F-I-006**：两源已收口但 exact 表仍需 independent 复审确认；`#5` 方向改正、ORDER BY 归属修正、jobs 四索引补入均需复审。
 
 **本响应不闭合任何 required。** 在本轮修正后，C2/C3 仍未冻结、R2 仍未放行；下一步应再跑 `/audit` 复审本轮修正，而非自行宣告收窄成立。
 
-## 4. 待用户 P-004 裁决（本响应不静默选定）
+## 4. 已由用户 P-004 裁决（不再是开放项）
 
-**F-I-005 双方言 checksum 约定二选一**（A-030 §227 明确要求 P-004，且本审不代选）：
+**F-I-005 双方言 checksum 约定**（A-030 §227 明确要求 P-004，且该审不代选）：
 
-| 选项 | 内容 | 影响 |
-|------|------|------|
-| **A（A-030 建议、沿用现状）** | 沿用 v1–v72 现行约定：**单** checksum，哈希 **SQLite canonical DDL 切片** + `transform_id`；PG 变体不进哈希（例 `jobs/migration/migration.go:95` `MigrationChecksum(jobsDDL, "0042:async-jobs:v1")`） | 与已冻结 v1–v72 台账和现行 `kernel.MigrationChecksum` 调用形状完全一致；不新增约定 |
-| **B** | 双方言各自独立 checksum（`transform_id` 加 `:sqlite` / `:pg` 后缀），PG DDL 也进哈希 | 覆盖 PG 变体，但**新约定**，与 v1–v72 不一致，需说明历史台账如何解释 |
-
-本响应倾向 **A**（现状一致、改动面最小），但**未选定**——按 P-004 等用户书面裁决。
+- **用户 2026-09-20 书面裁决 = 选项 A**：沿用 v1–v72 现行约定——**单** checksum，`stmts` = **SQLite canonical DDL 切片**，`transform_id` **不加**方言后缀；PG `ApplyPostgres` 变体**不进**哈希（对位：`jobs/migration/migration.go:95` `MigrationChecksum(jobsDDL, "0042:async-jobs:v1")`）。
+- **落盘**：child `01-decision/D-017-v73-checksum-convention.md`（`status: accepted`）；`r1-c2-descriptor-ledger-v1.0-fc.md` §2 改写为已选定，原 §5.3 开放项关闭。
+- **边界**：该裁决只确定**计算约定**，**不等于 checksum 已记录**——canonical SQL 尚未落码，哈希值仍须在 R2 首次落码时计算写入 ledger；F-I-005 该子项仍开放。
+- **未选方案 B**（双方言各自 checksum / `:sqlite`·`:pg` 后缀，PG DDL 也进哈希）及其理由已记入 `D-017`「未选方案」。
