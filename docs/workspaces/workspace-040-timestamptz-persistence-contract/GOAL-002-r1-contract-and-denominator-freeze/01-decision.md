@@ -14,10 +14,10 @@ version: 0.1.1
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 状态 | 证据 / 决策 |
 |----|------|-----------------|----------|------|-------------|
-| I-040-001 | required | PG `timestamptz(6)` / SQLite fixed-6 RFC3339 TEXT 的精度、编解码、排序与 NULL 规则 | C2/R2 | **collecting（显著收窄）** | 90 列逐列合同、谓词 exact SQL、逐表 SQLite/PG DDL 均已落盘；**负值政策按列分档、PG 毫秒式经 15/16/17 实测更正**；剩余见 `03-audit.md` A-044（F-I-002 未闭） |
-| I-040-002 | required | 全部绝对时刻列与排除列分母 | C1/C2/R2 | **collecting（分母已冻结口径）** | inventory v0.3：**90 列 / 44 张表**（「倒数第二段 = 表名」机械去重，A-044 独立复算一致）；排除列清单已在 inventory 列明 |
-| I-040-003 | required | SQLite/PG 原地转换、失败恢复、备份依赖 | C3/R2/R3 | **collecting（C3 边界已落盘）** | `r1-c3-backup-recovery-boundary-v1.0-fc.md`（三类产物区分、双 token、调用点、harness、错误分类）经 A-042 判 F-I-004 closed；PG 跨版本兼容矩阵仍待 R3 |
-| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | open | Root I-040-004；R1 仅登记接口，R3 执行 |
+| I-040-001 | required | PG `timestamptz(6)` / SQLite fixed-6 RFC3339 TEXT 的精度、编解码、排序与 NULL 规则 | C2/R2 | **verified** | 90 列逐列合同、谓词 exact SQL、逐表 SQLite/PG DDL 均落盘；E1/E2 经 SQLite 3.51/3.53 与 **PG 15.19/16.15/17.11** 实测；**F-I-002 由 A-046 判 `fixed`** |
+| I-040-002 | required | 全部绝对时刻列与排除列分母 | C1/C2/R2 | **verified** | inventory v0.3：**90 列 / 44 张表**（机械去重，A-044 独立复算一致）；排除列清单已列明；F-I-001/F-I-003 closed |
+| I-040-003 | required | SQLite/PG 原地转换、失败恢复、备份依赖 | C3/R2/R3 | **verified**（R3 侧另有 residual） | `r1-c3-backup-recovery-boundary-v1.0-fc.md` 经 **A-042 判 F-I-004 closed**；转换/失败策略见 `D-019`/`D-021`；PG 跨版本矩阵与 restore harness 的**执行**属 R3 |
+| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | **open**（不阻断 R1） | Root I-040-004；R1 仅登记接口，R3 执行；对应 recommended F-I-009 |
 
 ## 决策索引
 

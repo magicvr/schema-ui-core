@@ -154,14 +154,16 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
 
 **行数与分配自检**：90 行 = `sec 80 + ms 10` = `NN 71 + N 14 + D0 5`；owner 分配 = v73 3 / v74 31 / v75 3 / v76 5 / v77 4 / v78 2 / v79 4 / v80 4 / v81 2 / v82 2 / v83 5 / v84 1 / v85 11 / v86 7 / v87 6 = **90**。v74 = inventory `#2`–`#32`（31 列），**不含** `#1 schema_migrations.applied_at`（归 v73）——即 **v74 表范围 = `system_data_reconcile` + auth 表，`system_data_reconcile` 归 v74，`schema_migrations` 归 v73**。这与 `r1-v73-owner-allocation-draft-v0.1.md` L18/L19 的「#1 归 73 / #2–#32 excluding #1 归 74」一致，消掉 A-027 F-I-005 点名的 v74「ledger/reconcile」 vs 「schema/system ledger」歧义。
 
-## 3. C2 冻结前必须收口的 3 项（本候选仍未满足）
+## 3. 收口状态（2026-09-20 复核后更新；响应 A-046 F-I-025）
 
-1. **D-015 字面已按裁决 B 收口并落盘**：秒族保留三份载体已接受的 E1（`to_timestamp(double)` + `date_trunc`），毫秒族为整数 interval。Root `D-015-negative-instant-truncation.md` 与 child `D-012-v73-allocation-negative-truncation.md` 已改为分族表述（E-026）。**A-030 已确认该子项 `fixed`**；本文件仍为冻结候选（整条 F-I-002 未闭合，见 §3.4 与 A-030）。
-2. **不可逆点清单**：已在 `r1-c2-predicate-exact-sql-v1.0-fc.md` §6 单列（0→NULL、精度截断、非规范 TEXT fail closed）；本文件 §2 的 `ZL`/`NEG`/`NULL` 用例族与之对应。
-3. **per-owner `MigrationChecksum` 尚未记录**：见 `r1-c2-descriptor-ledger-v1.0-fc.md`（结构、名称、transform ID 已定，哈希值需 R2 落码后填充）。
-4. **逐表 exact SQLite rebuild DDL 仍未写出**（A-030 F-I-002.1）：本文件 §1 给的是共享模板与逐列目标形状；每张受影响表的完整 `<t>_new` DDL + `INSERT SELECT` 正文仍是 C2 冻结前必交项。
-5. **负值单路径 + 分档政策**：`< 0` 不进任何 `USING` 分支。**仅 `#72`/`#73`（voucher 两列）**由 `m0` 预检 **fail closed**（**Root** `D-012`）；**其余全部时间列正常转换**——负 epoch 是合法 instant（**Root** `D-015`）。见 `r1-c2-predicate-exact-sql-v1.0-fc.md` §1 说明块与 §6 `m0`；可执行断言见 `apps/api/internal/w040contracttest/`。
-6. **双方言 checksum 约定二选一**：未选定（P-004 待用户/编排器裁决；见 descriptor 台账 §5.3）。
+> 本节此前是「C2 冻结前必须收口的 3 项」清单；相关项均已落盘或被移交，故改写为**现状**。**凡与本节不符的旧表述一律以本节为准。**
+
+1. **D-015 字面：已收口。** 秒族保留 E1（`to_timestamp(double)` + `date_trunc`，实测精确）；毫秒族为 **E2 整数拆分式**（**不再是**「整数 interval」，原式经 PG 15/16/17 实测证伪并已在 Root `D-015` / child `D-012` 标弃用）。A-030 确认该子项 `fixed`。
+2. **不可逆点清单：已落盘**（`r1-c2-predicate-exact-sql-v1.0-fc.md` §6：0→NULL、微秒截断、非规范 TEXT fail closed）；本文件 §2 的 `ZL`/`NEG`/`NULL` 用例族与之对应。
+3. **per-owner `MigrationChecksum`：约定/名/算法已落盘；真实哈希值已由用户书面裁定为 `accepted-residual` 移交 R2**（child `D-021`）。**不得读作哈希已验证。**
+4. **逐表 exact SQLite rebuild DDL：已写出**（`r1-c2-per-table-rebuild-ddl-v1.0-fc.md`，覆盖 **44 张表**，经 A-036/A-038/A-042 复审）；PG 侧见 `r1-c2-per-table-pg-ddl-v1.0-fc.md`。**本条不再是 C2 冻结前必交项。**
+5. **负值：单路径 + 分档政策。** `< 0` 不进任何 `USING` 分支；**仅 `#72`/`#73`（voucher 两列）**由 `m0` 预检 **fail closed**（**Root** `D-012`）；**其余全部时间列正常转换**——负 epoch 是合法 instant（**Root** `D-015`）。可执行断言见 `apps/api/internal/w040contracttest/`。
+6. **checksum 约定：已选定**（用户 2026-09-20 P-004 选 A：单 checksum / SQLite DDL 切片 / PG 不进哈希；见 child `D-017`）。**不再是开放二选一。**
 
 ## 4. 声明
 

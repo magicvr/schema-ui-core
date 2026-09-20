@@ -97,7 +97,7 @@ strftime('%Y-%m-%dT%H:%M:%S',
 | `D0`（`NOT NULL DEFAULT 0`，0 = 缺失） | `CASE WHEN <col> = 0 THEN NULL ELSE <表达式> END`；新 DDL **去 `NOT NULL`、去 `DEFAULT 0`** |
 | `#72/#73 vouchers`（可空且 legacy `0` 亦为缺失） | `CASE WHEN <col> IS NULL OR <col> = 0 THEN NULL ELSE <表达式> END` |
 
-**负值 `< 0` 一律不进表达式**（不进 `USING`/rebuild 的任何 `CASE` 分支）。但**政策按列分档**（经 A-042 更正，与 Root `D-012`/`D-015` 一致）：
+**负值不进 `USING`/rebuild 的任何 `CASE` 分支**；**政策按列分档**（经 A-042 更正、A-046 复核，与 Root `D-012`/`D-015` 一致）：
 
 | 列 | 负值处置 | 依据 |
 |----|----------|------|

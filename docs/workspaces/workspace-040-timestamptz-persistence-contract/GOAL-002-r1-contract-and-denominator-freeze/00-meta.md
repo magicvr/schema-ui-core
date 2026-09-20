@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.0
-progress: 1/4
+version: 0.2.0
+progress: 3/4
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -40,20 +40,20 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
 | C1 | 逐列 inventory 与单位/类型/读写路径证据 | **completed**（A-006 independent accepted） |
-| C2 | 物理合同、精度、NULL/零值、wire 与未选方案冻结 | **active**（guardrails draft） |
-| C3 | 双方言原地转换、备份依赖与失败策略冻结 | pending |
-| C4 | self + grok independent 审计、响应与 R1 放行 | pending |
+| C2 | 物理合同、精度、NULL/零值、wire 与未选方案冻结 | **completed（frozen）**：90 列逐列合同、谓词 exact SQL、逐表 SQLite+PG DDL（44 张表）、可执行边界测试均落盘；**F-I-002 由 A-046 判 `fixed`** |
+| C3 | 双方言原地转换、备份依赖与失败策略冻结 | **completed（frozen）**：`r1-c3-backup-recovery-boundary-v1.0-fc.md`（三类产物区分、双 token、调用点、harness、错误分类）；**F-I-004 经 A-042 closed、A-044/A-046 复审残留已修**；转换/失败策略经 `D-019`（F-5）与 `D-021` 落盘 |
+| C4 | self + grok independent 审计、响应与 R1 放行 | **completed**：关门向 independent = **A-046**（**开放 required = 0**）；编排响应 = **A-047**；**放行待用户确认关门** |
 
-`progress: 1/4` 由 C1～C4 派生（C1 inventory 经 A-006 independent 接受；C2～C4 未完成）；progress 不替代信息门禁或审计结论。
+**`progress: 3/4` 由 C1～C4 派生**（C1/C2/C3 经 independent 接受为 completed；C4 的审计与响应已落盘，**R1 本体的关门待用户确认**——故 C4 记为 completed 而 Root R1 的门禁仍以用户确认为准）。progress 不替代信息门禁或审计结论，**也不放行阶段**。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 |
 |----|------|----------|----------|------|------|
-| I-040-001 | required | PG `timestamptz(6)` 与 SQLite 固定 6 位 RFC3339 TEXT 的逐列编解码/精度合同 | C2/R2 | collecting | Root D-002；待 C1/C2 证据 |
-| I-040-002 | required | 全部绝对时刻列分母与排除列清单 | C1/C2/R2 | collecting | 用户 D-002；待 inventory |
-| I-040-003 | required | SQLite/PG 各自原地转换、失败恢复与备份依赖 | C3/R2/R3 | collecting | 用户 D-002；待转换设计 |
-| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | open | Root I-040-004；R1 先登记接口 |
+| I-040-001 | required | PG `timestamptz(6)` 与 SQLite 固定 6 位 RFC3339 TEXT 的逐列编解码/精度合同 | C2/R2 | **verified** | 90 列逐列合同 `r1-c2-per-column-conversion-contract-v1.0-fc.md`；谓词 exact SQL；E1/E2 表达式经 SQLite 3.51/3.53 与 **PG 15.19/16.15/17.11** 实测；F-I-002 由 **A-046** 判 `fixed` |
+| I-040-002 | required | 全部绝对时刻列分母与排除列清单 | C1/C2/R2 | **verified** | `r1-time-column-inventory-v0.3.md`：**90 列 / 44 张表**（「倒数第二段 = 表名」机械去重；A-044 独立复算一致）；排除列清单已列明；F-I-001/F-I-003 经 A-006/A-030 判 closed |
+| I-040-003 | required | SQLite/PG 各自原地转换、失败恢复与备份依赖 | C3/R2/R3 | **verified**（R3 侧另有 residual） | `r1-c3-backup-recovery-boundary-v1.0-fc.md` 经 **A-042 判 F-I-004 closed**；转换/失败策略见 `D-019`（F-5 子女先行）与 `D-021`（PG 容器验证）；PG 跨版本兼容矩阵与 restore harness 的**执行**属 R3 |
+| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | **open**（**不阻断 R1**） | Root I-040-004；R1 仅登记接口，R3 执行；对应 recommended F-I-009 |
 
 ## 父目标
 

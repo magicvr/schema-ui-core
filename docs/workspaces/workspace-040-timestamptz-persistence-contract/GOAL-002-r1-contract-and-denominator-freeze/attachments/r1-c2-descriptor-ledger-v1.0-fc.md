@@ -87,8 +87,10 @@ R2 落码时的**唯一**允许输入：本台账的 `name` / `transform_id` / �
 1. **已迁移的 checksum 值**：`MigrationChecksum` 只能对**已存在的语句切片**求值；v73–v87 的语句切片属 R2 落码产物。本文件记录的是**计算输入的结构与算法**，不是哈希值本身。A-029 F-I-005 的「已记录的 canonical SQL / `MigrationChecksum`」子项在 R2 首次落码并写入 ledger 后才可闭合。
 2. **可执行测试改写**：`migrate_test.go` / `postgres_test.go` / `operations_test.go` / `restart_test.go` 的 v73+ 断言与金额/时间拆分为 R2 产物；本文件只冻结「改成什么」与「哪些不可改」。
 3. ~~**双方言 checksum 约定二选一**（§2 末）需 independent 明确选择。~~ **已由用户 2026-09-20 P-004 裁决为选项 A**（见 §2 与 child `D-017`）；本项不再是开放项。
-4. **唯一表范围**（v74 消歧，A-029 已接受 allocation 列号不相交，本条把 owner spec 措辞收到同一）与 **descriptor 名 / transform ID** 已在本台账确定，但**接受与否由 independent 复审判定**。
-5. **`r1-c2-owner-migration-spec-v0.1.md` L28 的 v74「ledger/reconcile」措辞同轮已改写**为 `system_data_reconcile`（不含 `schema_migrations`），与 allocation 同文；是否接受由 independent 复审判定。
+4. ~~**唯一表范围** … **接受与否由 independent 复审判定**。~~ **已获独立接受**：唯一表范围（v74 消歧）经 **A-034** 接受（并独立复算列号不相交），**descriptor 名 / transform ID** 经 **A-036 §C** 接受（15/15 载体）。本项不再是开放项。
+5. ~~**`r1-c2-owner-migration-spec-v0.1.md` L28 的 v74「ledger/reconcile」措辞同轮已改写** … **是否接受由 independent 复审判定**。~~ **已获独立接受**：**A-036 §B/§C** 确认 v74 与已接受 allocation 同文。本项不再是开放项。
+
+> **本文件剩余开放项仅 1、2 两项**（已迁移哈希值 / 可执行测试改写），二者均由用户 2026-09-20 P-004 书面裁定为 **`accepted-residual` 移交 R2**（child `D-021`：范围穷举三项 + 复审触发 + 失效条件）。**不得读作哈希已验证。**
 
 ## 6. 声明
 
