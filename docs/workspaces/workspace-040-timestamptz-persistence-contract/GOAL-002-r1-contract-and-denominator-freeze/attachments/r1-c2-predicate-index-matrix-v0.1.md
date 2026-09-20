@@ -35,6 +35,21 @@ version: 0.1.0
 | `digital-offer` | order/status/expiry | created order, duration `expires_at` checks/filters | typed time values; duration/count check preserved |
 | `authsession.users/roles` | monotonic update behavior | `nextUpdatedAt = max(now.Unix, old+1)` | C2 must decide microsecond equivalent after truncate-to-microsecond; preserve monotonic update invariant |
 
+## Explicit old/new predicate forms (draft)
+
+| Family | Old form | New form |
+|--------|----------|----------|
+| `login_failures.locked_until` | `locked_until > now.Unix()`; `locked_until <= now.Unix()` | `locked_until IS NULL OR locked_until > nowUTC`; expiry branch `locked_until IS NOT NULL AND locked_until <= nowUTC` |
+| `users.last_login_failure_at` | `last_login_failure_at < windowStart` with 0 sentinel | `last_login_failure_at IS NULL OR last_login_failure_at < windowStartUTC` (policy: NULL means stale/no recent failure) |
+| `login_failures.updated_at` | `updated_at < windowStart` integer seconds | typed UTC time comparison; no sentinel |
+| `task_runs.finished_at` | write 0; `COALESCE(finished_at, 0)` | write SQL NULL; nullable scan; no numeric COALESCE |
+| `mail_config/telegram_config.updated_at` | D0 default 0 | NULL after migration; read model treats NULL as uninitialized |
+| `jobs` state CHECK | `IS NULL`/`IS NOT NULL` over integer columns | same logical NULL predicates over TEXT/timestamptz; rebuilt verbatim after type conversion |
+| `recycle_items` partial index | `WHERE restored_at IS NULL` | same predicate after rebuild |
+| `digital_entitlements` form CHECK | duration `expires_at IS NOT NULL`; count `expires_at IS NULL` | same predicate after rebuild |
+| expiry/challenge filters | integer `expires_at >/< now.Unix()` | typed UTC `expires_at >/< nowUTC`; nullable absence not compared |
+| operation/jobs/wallet ordering | `ORDER BY created_at`/range integer | same column order over canonical TEXT/timestamptz + deterministic id tie-break |
+
 ## C2 closure requirements
 
 1. Replace this prose matrix with exact old/new SQL/predicate snippets and migration order per owner module.

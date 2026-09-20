@@ -45,6 +45,22 @@ The row assignment sums to 90 and includes `login_failures.locked_until`/`update
 - `#72/#73 vouchers.expires_at/redeemed_at`: 0→NULL; negative values fail closed; positive seconds convert.
 - `#8/#24/#25/#29/#30/#38/#41/#44/#45/#57/#72/#73/#88`: SQL NULL preserved; each row’s predicate/index/check must be listed in C2.
 
+## Explicit conversion expressions
+
+- PG seconds, non-sentinel: `date_trunc('microseconds', to_timestamp(value::double precision))`.
+- PG milliseconds, non-sentinel: `date_trunc('microseconds', to_timestamp(value::double precision / 1000.0))`.
+- PG sentinel rows: `CASE WHEN value = 0 THEN NULL ELSE date_trunc(...) END` before type/constraint restoration.
+- SQLite: never use SQLite date functions for the conversion; read the legacy integer through the shared Go codec, bind canonical fixed-6 UTC TEXT, then rebuild indexes/checks/FKs.
+- New Go writes: `t.UTC().Truncate(time.Microsecond)` before PG bind or SQLite formatting.
+
+## Precision and invalid-value rules
+
+- All new `time.Time` writes call `UTC().Truncate(time.Microsecond)` before binding/formatting; no PG type modifier is relied on for rounding.
+- Legacy seconds/milliseconds are exact at their source precision; seconds receive six zero fractional digits, milliseconds receive three zero fractional digits.
+- Negative epoch values are valid if the resulting Go time is representable and the column is not a sentinel field; only explicitly sentinel-marked `0` maps to NULL.
+- Values outside the supported Go/PG conversion range, non-canonical SQLite text, missing timezone, invalid calendar values, and non-sentinel required zero values fail closed.
+- Fixed-width SQLite text sorting and PG order/index behavior require explicit round-trip/sort tests for each unit family and nullable family.
+
 ## Per-owner conversion work products still required
 
 For each owner module and each assigned row:

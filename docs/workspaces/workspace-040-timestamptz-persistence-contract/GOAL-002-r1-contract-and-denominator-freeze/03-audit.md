@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.4
+version: 0.1.6
 ---
 
 # 审计 · GOAL-002
@@ -14,8 +14,8 @@ version: 0.1.4
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-010 确认 C2/C3 guardrails v0.1 不足以冻结 codec、NULL/zero、checksum 追加实施、谓词清单、备份回滚与 6 位公共 wire 分母 |
-| I-040-004 | open | R3 回归矩阵；R1 接口仍未登记（A-002/A-004/A-006/A-010 F-I-009） |
+| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed（冻结包与 D-008/D-009/Port/D-011 唯一）及 D-010/D-011 方向子项，但确认 C2/C3 仍不可冻结：逐列 codec、NULL mapping、checksum leftover、谓词 old/new、备份回滚程序（F-I-002～006） |
+| I-040-004 | open | R3 回归矩阵；R1 接口仍未登记（A-002/A-004/A-006/A-010/A-012/A-014 F-I-009） |
 | 资料引用 | 无 | 工作区 `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -33,7 +33,10 @@ version: 0.1.4
 | A-009 | 2026-09-20 | self | response to A-008 / Backup Port surface user decision | conditional | 6 | `03-audit/A-009-r1-self-response-backup-port.md` |
 | A-010 | 2026-09-20 | independent | C2/C3 guardrails freeze gate after A-009 | conditional | 6 | `03-audit/A-010-r1-independent-c2-c3-guardrails.md` |
 | A-011 | 2026-09-20 | self | response to A-010 / C2/C3 user decisions and wire coverage | conditional | 6 | `03-audit/A-011-r1-self-response-to-a010.md` |
+| A-012 | 2026-09-20 | independent | C2/C3 freeze-gate follow-up after A-011 / D-008 / D-009 | conditional | 6 | `03-audit/A-012-r1-independent-after-a011-d008-d009.md` |
+| A-013 | 2026-09-20 | self | response to A-012 / freeze-package alignment | conditional | 6 | `03-audit/A-013-r1-self-response-to-a012.md` |
+| A-014 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-013 | conditional | 5 | `03-audit/A-014-r1-independent-after-a013-c2-c3-evidence.md` |
 
 ## 结论状态
 
-用户已完成关键方案裁决；R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-010 independent 确认 guardrails v0.1 不足以冻结 C2/C3；A-011 已补 precision/D0/PG dump、wire coverage 与 Port boundary 响应，但需下一次 independent 复审。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。F-I-002～006 与 F-I-010 仍为开放 required。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。
+用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`（冻结载体与 Root D-008/D-009 及 Port/`core.persistence` owner 唯一），并维持 **F-I-010 planning closed**（不按 A-013 重开）。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，但确认 C2/C3 仍不可冻结。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。
