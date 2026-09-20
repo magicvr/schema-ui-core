@@ -29,8 +29,8 @@ version: 0.1.0
 
 | 旧单位/语义 | PG conversion | SQLite conversion | 约束 |
 |--------------|---------------|-------------------|------|
-| Unix seconds，非 sentinel | `date_trunc('microseconds', to_timestamp(value::double precision))` | Go codec `FromUnix(value)` → fixed-6 TEXT | 非法/越界 fail closed |
-| Unix milliseconds，非 sentinel | `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` | Go codec `FromUnixMilli(value)` → fixed-6 TEXT | 不把 ms 当 sec；整数间隔避免浮点误差；其余补零 |
+| Unix seconds，非 sentinel | `date_trunc('microseconds', to_timestamp(value::double precision))` | Go codec `FromUnix(value)` → fixed-6 TEXT | 非法/越界 fail closed；**秒族保留 `to_timestamp(double)`**（用户 2026-09-20 裁决 B；见 Root D-015 措辞） |
+| Unix milliseconds，非 sentinel | `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` | Go codec `FromUnixMilli(value)` → fixed-6 TEXT | 不把 ms 当 sec；**整数 interval 避免二进制浮点**；其余补零 |
 | sentinel `0` 表示 absence | `NULL` via explicit `CASE` | `NULL` via table rebuild / row transform | 仅适用于逐列标记为 sentinel 的列 |
 | nullable SQL NULL | 保持 NULL | 保持 NULL | 不把 NULL 写成 epoch/字符串 |
 | non-sentinel 0 in required instant | fail closed / data anomaly report | fail closed / data anomaly report | 不静默转 NULL |
@@ -47,9 +47,11 @@ At minimum C2 must enumerate and rewrite:
 - `mail_config.updated_at`, `telegram_config.updated_at`: user selected legacy 0 → NULL; widen nullable/remove default 0 after preflight count; read/write stop treating 0 as instant.
 - `task_runs.finished_at`: remove runtime write-0 and `COALESCE(...,0)`; preserve NULL for unfinished runs.
 - `jobs.lease_expires_at`, `finished_at`, `expires_at`: preserve SQL NULL; state CHECK remains semantically equivalent after type conversion.
-- `notifications.read_at`, `recycle_items.restored_at`, voucher/entitlement nullable times: preserve NULL and partial-index/check semantics; voucher 0→NULL and negative fail closed per D-012.
-- users/roles monotonic updates: D-013 `max(truncatedNow, old+1µs)` must preserve cache/ETag/order behavior.
+- `notifications.read_at`, `recycle_items.restored_at`, voucher/entitlement nullable times: preserve NULL and partial-index/check semantics; voucher 0→NULL and negative fail closed per Root D-012.
+- users/roles monotonic updates: **Root** D-013 `max(truncatedNow, old+1µs)` must preserve cache/ETag/order behavior.
 - All `WHERE`, range filters, `ORDER BY`, `CHECK`, partial indexes and `IS NULL` predicates touching the 90 columns must be listed with old/new form.
+- **编号限定（A-029 F-I-018 关闭要求）**：本文件一律用 `Root D-0NN` / `child D-0NN` 形式。`Root D-012` = voucher 异常值政策；`child D-012-v73-allocation-negative-truncation.md` = v73 allocation / 负瞬间承接，**不是** voucher 政策；`Root D-013` = 单调 `updated_at`。
+- **本次收口**：秒/毫秒族口径以本表 L32–L33 为准；`Root D-015` 原「legacy sec/ms 均 `date_trunc` + 整数 interval」措辞已按用户 2026-09-20 裁决 B 修订为「毫秒族整数 interval；秒族保留 `to_timestamp(double)`」。
 
 ## 4. Append-only migration catalog
 

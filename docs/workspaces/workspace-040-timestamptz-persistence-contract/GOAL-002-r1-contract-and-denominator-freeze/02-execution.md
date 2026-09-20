@@ -30,7 +30,6 @@ version: 0.1.0
 | E-014 | 2026-09-20 | schema_migrations owner 用户裁决 | recorded | `02-execution/E-014-schema-ledger-owner.md` |
 | E-015 | 2026-09-20 | minimal Backup/RecoveryPoint Port contract 草案 | recorded | `02-execution/E-015-backup-port-contract-draft.md` |
 | E-016 | 2026-09-20 | voucher / monotonic policy 用户裁决 | recorded | `02-execution/E-016-voucher-monotonic-policy-decisions.md` |
-| E-024 | 2026-09-20 | v73 allocation / negative truncation policy | recorded | `02-execution/E-024-v73-negative-truncation-decision.md` |
 | E-017 | 2026-09-20 | C2 90 列 codec/NULL mapping matrix 草案 | recorded | `02-execution/E-017-c2-column-matrix-draft.md` |
 | E-018 | 2026-09-20 | predicate/index/check 矩阵草案 | recorded | `02-execution/E-018-predicate-index-matrix-draft.md` |
 | E-019 | 2026-09-20 | v73+ module conversion owner allocation draft | recorded | `02-execution/E-019-v73-owner-allocation-draft.md` |
@@ -38,6 +37,11 @@ version: 0.1.0
 | E-021 | 2026-09-20 | runtime read/write and predicate spec draft | recorded | `02-execution/E-021-readwrite-predicate-spec-draft.md` |
 | E-022 | 2026-09-20 | backup/restore-to-new-db runbook draft | recorded | `02-execution/E-022-backup-restore-runbook-draft.md` |
 | E-023 | 2026-09-20 | v73+ append-only test rewrite checklist draft | recorded | `02-execution/E-023-v73-test-rewrite-checklist-draft.md` |
+| E-024 | 2026-09-20 | v73 allocation / negative truncation policy | recorded | `02-execution/E-024-v73-negative-truncation-decision.md` |
+| E-025 | 2026-09-20 | C2 冻结候选第一批：90 列逐列转换合同 + 谓词 exact SQL 单表 + descriptor 台账 | recorded | `02-execution/E-025-c2-freeze-candidate-batch1.md` |
+| E-026 | 2026-09-20 | D-015 秒/毫秒族措辞收口与 D-012/D-013 编号限定（裁决 B） | recorded | `02-execution/E-026-d015-seconds-family-and-d012-scoping.md` |
+
+> 索引行序自本版起为 **E-001 → E-026 严格递增**（A-029 **F-I-019** 关闭要求已满足）。
 
 ## 事实边界
 

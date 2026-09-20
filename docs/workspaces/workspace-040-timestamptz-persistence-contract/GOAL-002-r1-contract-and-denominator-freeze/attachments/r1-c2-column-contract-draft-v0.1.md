@@ -19,7 +19,7 @@ version: 0.1.0
 - PostgreSQL physical type = `timestamptz(6)`; all parameters/scans normalize to UTC.
 - SQLite physical type = `TEXT`; canonical storage = exactly `YYYY-MM-DDTHH:MM:SS.ffffffZ`.
 - Canonical SQLite text is fixed-width and lexically sortable as an instant. `+00:00`, offsets, spaces, variable fraction, and local-zone text are rejected at persistence boundary.
-- Existing seconds values: `time.Unix(v, 0).UTC()` → canonical; PG uses `date_trunc('microseconds', to_timestamp(v::double precision))`.
+- Existing seconds values: `time.Unix(v, 0).UTC()` → canonical; PG uses `date_trunc('microseconds', to_timestamp(v::double precision))`（**秒族保留 `to_timestamp(double)`**，用户 2026-09-20 裁决 B）.
 - Existing milliseconds values: `time.UnixMilli(v).UTC()` → canonical; PG uses `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + v * INTERVAL '1 millisecond')`; integer interval avoids binary-float conversion.
 - Seconds/milliseconds are never inferred from magnitude at runtime; unit comes from the v0.3.1 per-column row.
 - Existing integer seconds gain `.000000`; existing milliseconds gain three trailing zero microdigits. New values and migrations **truncate toward zero to microseconds**; no module-specific rounding/fail-closed alternative.
@@ -55,6 +55,8 @@ version: 0.1.0
 4. Verify canonical TEXT regexp/length/UTC `Z` and sample round-trip.
 
 ### Dependent predicates and constraints to include in C2/C3
+
+> **编号限定（A-029 F-I-018）**：本文件一律用 `Root D-0NN` / `child D-0NN`。`Root D-012` = voucher 异常值政策（child `D-011` 承接）；`child D-012-v73-allocation-negative-truncation.md` = v73 allocation / 负瞬间承接，**不是** voucher 政策。
 
 - `core.jobs` six-state CHECK over `lease_expires_at`, `finished_at`, `expires_at`; indexes on runnable/expiry/created.
 - `admin.recycle-bin` partial unique index `WHERE restored_at IS NULL`.

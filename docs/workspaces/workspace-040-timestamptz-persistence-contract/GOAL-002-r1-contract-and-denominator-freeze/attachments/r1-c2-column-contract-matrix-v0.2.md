@@ -42,8 +42,8 @@ The row assignment sums to 90 and includes `login_failures.locked_until`/`update
 - `#5 users.locked_until`, `#6 users.last_login_failure_at`, `#20 login_failures.locked_until`: 0→NULL; remove default 0; change predicates to NULL-aware.
 - `#34 mail_config.updated_at`, `#78 telegram_config.updated_at`: 0→NULL; remove NOT NULL/default 0 after preflight count.
 - `#61 task_runs.finished_at`: remove runtime write-0 and `COALESCE(...,0)`; SQL NULL is unfinished.
-- `#72/#73 vouchers.expires_at/redeemed_at`: D-012 0→NULL; negative values fail closed; positive seconds convert; runtime `>0` scan must be tightened.
-- users/roles `updated_at` writes use D-013 `max(truncatedNow, old+1µs)` to preserve monotonic behavior.
+- `#72/#73 vouchers.expires_at/redeemed_at`: Root D-012 0→NULL; negative values fail closed; positive seconds convert; runtime `>0` scan must be tightened.
+- users/roles `updated_at` writes use Root D-013 `max(truncatedNow, old+1µs)` to preserve monotonic behavior.
 - `#8/#24/#25/#29/#30/#38/#41/#44/#45/#57/#72/#73/#88`: SQL NULL preserved; each row’s predicate/index/check must be listed in C2.
 
 ## Explicit conversion expressions

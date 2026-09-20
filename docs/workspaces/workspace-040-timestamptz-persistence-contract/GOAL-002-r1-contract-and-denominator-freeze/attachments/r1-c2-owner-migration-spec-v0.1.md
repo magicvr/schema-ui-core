@@ -25,7 +25,7 @@ version: 0.1.0
 | v | ModuleID | descriptor name | assigned scope | mandatory special work |
 |---:|---|---|---|---|
 | 73 | `core.persistence` | `vp040_temporal_core_persistence` | `schema_migrations.applied_at`, `mail_outbox.created_at`, `mail_config.updated_at` | schema ledger runner owner; mail ms; config D0→NULL; retired `records` absent assertion |
-| 74 | `core.auth-session` | `vp040_temporal_authsession` | users, refresh, RBAC, ledger/reconcile, challenges, failures, history, invites, credentials | lock/failure D0→NULL; nullable child fields; all expiry predicates; monotonic users/roles |
+| 74 | `core.auth-session` | `vp040_temporal_authsession` | users, refresh, RBAC, **`system_data_reconcile`（不含 `schema_migrations`，归 v73）**, challenges, failures, history, invites, credentials | lock/failure D0→NULL; nullable child fields; all expiry predicates; monotonic users/roles |
 | 75 | `core.operationlog` | `vp040_temporal_operationlog` | operation log + archive | ms conversion; retention/filter/order predicates; archive indexes |
 | 76 | `core.jobs` | `vp040_temporal_jobs` | jobs five temporal columns | six-state CHECK; runnable/expiry/created indexes; nullable fields |
 | 77 | `admin.data-dictionary` | `vp040_temporal_dictionary` | dict types/entries | created/updated order and repository codec |
@@ -54,3 +54,5 @@ For each row before C2 close:
 ## Status
 
 Proposed. This file makes owner/version/mapping scope concrete but does not claim any descriptor or code has been implemented.
+
+**2026-09-20 收口（响应 A-029 F-I-005）**：L28 v74 assigned scope 的「ledger/reconcile」已改写为 **`system_data_reconcile`（不含 `schema_migrations`，归 v73）**，与 `r1-v73-owner-allocation-draft-v0.1.md` L19 的被接受文本同文。逐列展开、descriptor `Name`/`transform_id` 与 `MigrationChecksum` 计算输入见 `r1-c2-per-column-conversion-contract-v1.0-fc.md` 与 `r1-c2-descriptor-ledger-v1.0-fc.md`。

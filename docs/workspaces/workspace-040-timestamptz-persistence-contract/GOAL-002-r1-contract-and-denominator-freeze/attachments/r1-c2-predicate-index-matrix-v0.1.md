@@ -12,6 +12,8 @@ version: 0.1.0
 # R1 C2 时间列 predicate/index/check 矩阵 v0.1
 
 > This is the dependency inventory required before table rebuild/PG ALTER. Old/new SQL text and migration ordering remain open.
+>
+> **已被取代（superseded）**：exact old/new SQL 单表改由 `r1-c2-predicate-exact-sql-v1.0-fc.md` 承载（A-029 F-I-006 关闭要求：prose/family 表必须换成**一张** exact 表）。本文件保留为 dependency 清单来源；其中 `D-0NN` 一律按 **Root/child 限定**解读（A-029 F-I-018）：`Root D-012` = voucher 异常值政策；`child D-012` = v73 allocation / 负瞬间承接。
 
 | owner / table | time dependency | current form | target rewrite / verification |
 |---------------|-----------------|--------------|------------------------------|
@@ -33,7 +35,7 @@ version: 0.1.0
 | `core.persistence.mail_outbox` | retention/order | `ORDER BY created_at DESC,id DESC`, bounded delete | canonical text/timestamptz order + id tie-break; existing ms values converted |
 | `admin.channel.telegram` | activity/order | session `last_message_at DESC`; inbound received/outbound created order | canonical time order; no ID prefix confusion |
 | `digital-offer` | order/status/expiry | created order, duration `expires_at` checks/filters | typed time values; duration/count check preserved |
-| `authsession.users/roles` | monotonic update behavior | `nextUpdatedAt = max(now.Unix, old+1)` | D-013: `max(truncatedNow, old+1µs)`; preserve monotonic update invariant and test wall-clock rollback |
+| `authsession.users/roles` | monotonic update behavior | `nextUpdatedAt = max(now.Unix, old+1)` | **Root** D-013: `max(truncatedNow, old+1µs)`; preserve monotonic update invariant and test wall-clock rollback |
 
 ## Explicit old/new predicate forms (draft)
 
