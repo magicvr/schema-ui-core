@@ -15,11 +15,11 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/handler"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	datadictionarystore "github.com/magicvr/schema-ui-core/apps/api/modules/datadictionary/store"
 	recyclestore "github.com/magicvr/schema-ui-core/apps/api/modules/recyclebin/store"
 	tasksstore "github.com/magicvr/schema-ui-core/apps/api/modules/scheduledtasks/store"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
 )
 
 func newServiceEnv(t *testing.T) *Service {
@@ -152,6 +152,47 @@ func TestRestoreTaskRoundTrip(t *testing.T) {
 	}
 }
 
+// workspace-040 R2 (GOAL-004 A-002 F-I-005): the recycle payload is an opaque
+// JSON snapshot, so both time shapes must round-trip — the legacy Unix-number
+// snapshot (written before R2) and the canonical fixed-6 UTC string that the
+// post-R2 read models marshal into the payload. The string case must parse
+// rather than silently fall back to the restore instant.
+func TestRestoreTaskRoundTripCanonicalStringPayload(t *testing.T) {
+	s := newServiceEnv(t)
+	now := time.Now().UTC()
+	original := now.Add(-72 * time.Hour).Truncate(time.Microsecond)
+	actor := account.User{ID: "user-admin", Name: "Admin"}
+	canonical := original.Format("2006-01-02T15:04:05.000000Z")
+	if err := s.tasks.CreateTask(tasksstore.Task{ID: "task-canon", Key: "canonical", Cron: "0 * * * *", Name: "Canonical", Enabled: true, CreatedAt: original, UpdatedAt: original}); err != nil {
+		t.Fatalf("create task: %v", err)
+	}
+	if err := s.Record(t.Context(), "scheduled-tasks", "task-canon", map[string]any{
+		"id": "task-canon", "key": "canonical", "cron": "0 * * * *", "name": "Canonical", "enabled": true,
+		"description": "", "handler": "system.noop",
+		"createdAt": canonical, "updatedAt": canonical,
+	}, actor, now); err != nil {
+		t.Fatalf("record: %v", err)
+	}
+	if err := s.tasks.DeleteTask("task-canon"); err != nil {
+		t.Fatalf("delete task: %v", err)
+	}
+	items, _, _ := s.List(recyclestore.ListFilter{Page: 1, PageSize: 10})
+	if len(items) == 0 {
+		t.Fatal("no recycle items")
+	}
+	if _, err := s.Restore(items[0].ID, now); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	restored, err := s.tasks.GetTask("task-canon")
+	if err != nil {
+		t.Fatalf("task not restored: %v", err)
+	}
+	if !restored.CreatedAt.Equal(original) {
+		t.Fatalf("restored createdAt = %s, want the snapshotted instant %s (string payload must parse)",
+			restored.CreatedAt.UTC(), original)
+	}
+}
+
 func TestPurgeRemovesSnapshot(t *testing.T) {
 	s := newServiceEnv(t)
 	now := time.Now().UTC()
@@ -263,7 +304,7 @@ func TestRestoreAtomicityRollsBackOnFailedMark(t *testing.T) {
 	// A live snapshot for a dict type that does not exist yet.
 	if err := rc.Record(recyclestore.Item{
 		ID: "recycle-atomic-1", Resource: "dict-types", ResourceID: "t-atomic",
-		Payload: map[string]any{"id": "t-atomic", "key": "atomic", "name": "Atomic", "enabled": true, "sort": 0},
+		Payload:   map[string]any{"id": "t-atomic", "key": "atomic", "name": "Atomic", "enabled": true, "sort": 0},
 		DeletedAt: now,
 	}); err != nil {
 		t.Fatalf("record snapshot: %v", err)

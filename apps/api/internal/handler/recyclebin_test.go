@@ -431,7 +431,7 @@ func (r *txRecordingTrash) RecordTx(ctx context.Context, tx kernel.Tx, resource,
 	}
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO recycle_items (id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
-		"recycle-tx-"+id, resource, id, string(payload), actor.ID, actor.Name, now.Unix(),
+		"recycle-tx-"+id, resource, id, string(payload), actor.ID, actor.Name, now,
 	); err != nil {
 		return err
 	}

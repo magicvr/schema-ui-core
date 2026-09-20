@@ -324,13 +324,15 @@ func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
 		`sent_at`, `started_at`, `updated_at`,
 	}
 	var leftover int
+	// Both integer widths: a legacy PG time column was bigint, not int4, so the
+	// check must name both (GOAL-004 A-002 F-I-006).
 	q := `SELECT count(*) FROM information_schema.columns
-WHERE table_schema = 'public' AND data_type = 'integer' AND column_name = ANY($1)`
+WHERE table_schema = 'public' AND data_type IN ('integer', 'bigint') AND column_name = ANY($1)`
 	if err := st2.(*postgres).db.QueryRowContext(ctx, q, timeNames).Scan(&leftover); err != nil {
 		t.Fatal(err)
 	}
 	if leftover != 0 {
-		t.Fatalf("%d Unix time column(s) are still integer/int4 on postgres (violates R1 v1.3)", leftover)
+		t.Fatalf("%d Unix time column(s) are still integer/bigint on postgres (violates R1 v1.3)", leftover)
 	}
 	var unprecise int
 	qp := `SELECT count(*) FROM information_schema.columns

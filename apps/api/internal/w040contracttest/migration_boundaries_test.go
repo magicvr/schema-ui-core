@@ -13,6 +13,7 @@ import (
 	"context"
 	"database/sql"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 )
@@ -178,6 +180,11 @@ func TestRealMigrationsConvertBoundaryInstants(t *testing.T) {
 	mustExec(t, db, `INSERT INTO task_runs (id, task_id, status, started_at, finished_at, detail, created_at)
 		VALUES ('r-1','t-1','failed',1,NULL,NULL,1)`)
 
+	// login_failures.locked_until (#20) is a D0 sentinel column too: legacy 0
+	// must become SQL NULL through the real v74 conversion.
+	mustExec(t, db, `INSERT INTO login_failures (user_id, ip, fail_count, locked_until, updated_at)
+		VALUES ('u-1','10.0.0.1', 0, 0, 1)`)
+
 	if err := db.Close(); err != nil {
 		t.Fatalf("close seed db: %v", err)
 	}
@@ -194,6 +201,7 @@ func TestRealMigrationsConvertBoundaryInstants(t *testing.T) {
 		{"task_runs.finished_at", `SELECT finished_at FROM task_runs WHERE id = 'r-1'`},
 		{"vouchers.expires_at (0)", `SELECT expires_at FROM vouchers WHERE id = 'v-zero'`},
 		{"vouchers.expires_at (NULL)", `SELECT expires_at FROM vouchers WHERE id = 'v-null'`},
+		{"login_failures.locked_until (0)", `SELECT locked_until FROM login_failures WHERE user_id = 'u-1' AND ip = '10.0.0.1'`},
 	} {
 		if got := scanCanonical(t, st, tc.query); got != "" {
 			t.Errorf("%s = %q, want SQL NULL", tc.name, got)
@@ -326,9 +334,103 @@ func TestRealMigrationKeepsOrdinaryNegativeInstant(t *testing.T) {
 	}
 }
 
+// TestV73RefusesWhenRetiredRecordsTableIsPresent is the fail-closed half of the
+// frozen v73 scope ("断言 retired `records` 不存在"): if an abnormal path leaves
+// the retired table behind, the conversion must refuse rather than silently skip
+// records.updated_at (GOAL-003 A-002 F-I-001).
+func TestV73RefusesWhenRetiredRecordsTableIsPresent(t *testing.T) {
+	path, full := atV72(t)
+	db := raw(t, path)
+	// The retired v6 table, recreated to simulate a skipped/partial restore.
+	mustExec(t, db, `CREATE TABLE records (id TEXT PRIMARY KEY, updated_at INTEGER NOT NULL)`)
+	mustExec(t, db, `INSERT INTO records (id, updated_at) VALUES ('r-1', 1)`)
+	if err := db.Close(); err != nil {
+		t.Fatalf("close seed db: %v", err)
+	}
+
+	st, err := store.OpenWithCatalog(path, full)
+	if err == nil {
+		_ = st.Close()
+		t.Fatal("a present `records` table must fail the v73 conversion closed")
+	}
+	if !strings.Contains(err.Error(), "records") {
+		t.Fatalf("error = %v, want a retired-table refusal naming records", err)
+	}
+	// The refused batch leaves v1..v72 untouched: the retired table and its
+	// pre-conversion column shape are still there.
+	verify := raw(t, path)
+	var declared string
+	if err := verify.QueryRow(`SELECT type FROM pragma_table_info('records') WHERE name = 'updated_at'`).Scan(&declared); err != nil {
+		t.Fatalf("probe records.updated_at: %v", err)
+	}
+	if !strings.EqualFold(declared, "INTEGER") {
+		t.Fatalf("records.updated_at = %q after the refusal, want INTEGER (v73 must roll back)", declared)
+	}
+	var schemaApplied string
+	if err := verify.QueryRow(`SELECT type FROM pragma_table_info('schema_migrations') WHERE name = 'applied_at'`).Scan(&schemaApplied); err != nil {
+		t.Fatalf("probe schema_migrations.applied_at: %v", err)
+	}
+	if !strings.EqualFold(schemaApplied, "INTEGER") {
+		t.Fatalf("schema_migrations.applied_at = %q after the refusal, want INTEGER (v73 must roll back)", schemaApplied)
+	}
+}
+
 func mustExec(t *testing.T, db *sql.DB, query string, args ...any) {
 	t.Helper()
 	if _, err := db.Exec(query, args...); err != nil {
 		t.Fatalf("seed exec: %v\n%s", err, query)
+	}
+}
+
+// TestCodecMatchesRealMigration is the D-018 T-*-RT cross-check in-process: for
+// both unit families the value produced by the real v73–v87 conversion SQL must
+// equal temporal.FromUnix / FromUnixMilli formatted by the codec, for the same
+// input. It closes the gap between the codec's frozen expectations and the
+// migration's actual output (GOAL-003 A-002 F-I-003).
+func TestCodecMatchesRealMigration(t *testing.T) {
+	path, full := atV72(t)
+	db := raw(t, path)
+
+	millis := []int64{
+		0, 1, -1, 999, -999, 1000, -1000, 1001, -1001,
+		1758320000123, 1758320000999, -1758320000123,
+		253402300799999, -62135596800000,
+	}
+	seconds := []int64{
+		0, 1, -1, -86400, 1758320000, 253402300799, -62135596800,
+	}
+	for index, ms := range millis {
+		mustExec(t, db, `INSERT INTO jobs (id, kind, status, payload, progress, cancel_requested, attempt,
+			max_attempts, lease_owner, lease_version, lease_expires_at, result, error_code, error_message,
+			actor_id, correlation_id, created_at, updated_at, finished_at, expires_at)
+			VALUES (?, 'codec', 'queued', '{}', 0, 0, 0, 3, NULL, 0, NULL, NULL, NULL, NULL, 'a', 'c', ?, ?, NULL, NULL)`,
+			"codec-ms-"+strconv.Itoa(index), ms, ms)
+	}
+	for index, sec := range seconds {
+		mustExec(t, db, `INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at,
+			token_version, failed_login_count, locked_until, enabled, notifications_enabled, avatar_url,
+			must_change_password, email, email_status, last_login_failure_at)
+			VALUES (?, ?, 'Codec', '[]', 'hash', ?, ?, 0, 0, 0, 1, 1, '', 0, NULL, NULL, 0)`,
+			"codec-sec-"+strconv.Itoa(index), "codec-sec-"+strconv.Itoa(index), sec, sec)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("close seed db: %v", err)
+	}
+
+	st := toHead(t, path, full)
+	for index, ms := range millis {
+		got := scanCanonicalRequired(t, st, `SELECT created_at FROM jobs WHERE id = ?`, "codec-ms-"+strconv.Itoa(index))
+		want := temporal.MustFormat(temporal.FromUnixMilli(ms))
+		if got != want {
+			t.Errorf("milliseconds %d: migration = %q, codec = %q", ms, got, want)
+		}
+	}
+	for index, sec := range seconds {
+		id := "codec-sec-" + strconv.Itoa(index)
+		got := scanCanonicalRequired(t, st, `SELECT created_at FROM users WHERE id = ?`, id)
+		want := temporal.MustFormat(temporal.FromUnix(sec))
+		if got != want {
+			t.Errorf("seconds %d: migration = %q, codec = %q", sec, got, want)
+		}
 	}
 }

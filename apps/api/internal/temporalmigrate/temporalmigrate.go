@@ -30,6 +30,64 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
+// Guard is a fail-closed precondition that a table retired by an earlier
+// version is still absent. The frozen v73 scope names one: the retired
+// `records` table (r1-c2-descriptor-ledger-v1.0-fc.md §1). The normal catalog
+// path drops it in v6, so the guard only fires on an abnormal path (a skipped
+// v6, or a restore that brought it back) — exactly the case where the
+// conversion would otherwise leave `records.updated_at` unconverted.
+type Guard struct {
+	Table string
+}
+
+// GuardStatements returns the exact m0 guard SQL (one statement per table).
+func GuardStatements(guards []Guard) []string {
+	out := make([]string, 0, len(guards))
+	for _, guard := range guards {
+		out = append(out, fmt.Sprintf(
+			`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = '%s'`, guard.Table))
+	}
+	return out
+}
+
+// PostgresGuardStatement is the postgres counterpart of GuardStatements.
+func PostgresGuardStatement(guard Guard) string {
+	return fmt.Sprintf(
+		`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = '%s'`,
+		guard.Table)
+}
+
+// RunGuards executes the m0 guards on SQLite.
+func RunGuards(tx kernel.Tx, guards []Guard, label string) error {
+	ctx := context.Background()
+	for _, guard := range guards {
+		count, err := count1(tx, ctx, fmt.Sprintf(
+			`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = '%s'`, guard.Table))
+		if err != nil {
+			return fmt.Errorf("%s: probe retired table %s: %w", label, guard.Table, err)
+		}
+		if count != 0 {
+			return fmt.Errorf("%s: retired table %s is present; migration refused", label, guard.Table)
+		}
+	}
+	return nil
+}
+
+// RunPostgresGuards executes the m0 guards on postgres.
+func RunPostgresGuards(tx kernel.Tx, guards []Guard, label string) error {
+	ctx := context.Background()
+	for _, guard := range guards {
+		count, err := count1(tx, ctx, PostgresGuardStatement(guard))
+		if err != nil {
+			return fmt.Errorf("%s: probe retired table %s: %w", label, guard.Table, err)
+		}
+		if count != 0 {
+			return fmt.Errorf("%s: retired table %s is present; migration refused", label, guard.Table)
+		}
+	}
+	return nil
+}
+
 // Preflight is the m0 sentinel census of one converted column: the migration
 // refuses to convert a column whose legacy values cannot be classified.
 //
@@ -85,6 +143,10 @@ func PreflightStatements(checks []Preflight) []string {
 }
 
 // VerifyStatements returns the ordered m4 statements of one descriptor.
+//
+// The two PRAGMA checks are emitted once per descriptor, mirroring RunVerify
+// exactly, so the hashed statement list stays identical to what executes
+// (A-002 F-I-002 of GOAL-003).
 func VerifyStatements(checks []Verify) []string {
 	var out []string
 	for _, check := range checks {
@@ -102,6 +164,8 @@ func VerifyStatements(checks []Verify) []string {
 					`AND (instr(lower(sql), 'references %s(') > 0 OR instr(lower(sql), 'references "%s"(') > 0)`,
 				child, check.Table, check.Table))
 		}
+	}
+	if len(checks) > 0 {
 		out = append(out,
 			`PRAGMA foreign_key_check`,
 			`PRAGMA integrity_check`)
@@ -109,12 +173,20 @@ func VerifyStatements(checks []Verify) []string {
 	return out
 }
 
-// Ordered returns the canonical checksum input of a descriptor: m0, then the
-// m1–m3 rebuild slice, then m4, in that literal order (D-017).
-func Ordered(preflight []Preflight, rebuild []string, verify []Verify) []string {
-	out := PreflightStatements(preflight)
+// OrderedWithGuards returns the canonical checksum input of a descriptor: m0
+// (retired-table guards, then the sentinel census), the m1–m3 rebuild slice,
+// then m4, in that literal order (D-017).
+func OrderedWithGuards(guards []Guard, preflight []Preflight, rebuild []string, verify []Verify) []string {
+	out := GuardStatements(guards)
+	out = append(out, PreflightStatements(preflight)...)
 	out = append(out, rebuild...)
 	return append(out, VerifyStatements(verify)...)
+}
+
+// Ordered is OrderedWithGuards for descriptors that declare no retired-table
+// guard.
+func Ordered(preflight []Preflight, rebuild []string, verify []Verify) []string {
+	return OrderedWithGuards(nil, preflight, rebuild, verify)
 }
 
 // RunPreflight executes the m0 census and fails closed when a voucher column

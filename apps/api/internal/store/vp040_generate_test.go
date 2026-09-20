@@ -246,6 +246,9 @@ type descriptorPlan struct {
 	name        string
 	transformID string
 	tables      []tablePlan
+	// guardTables must be absent before the descriptor may run. The frozen v73
+	// scope names the retired `records` table (descriptor ledger §1).
+	guardTables []string
 }
 
 func vp040Plans() []descriptorPlan {
@@ -282,6 +285,7 @@ func vp040Plans() []descriptorPlan {
 		{
 			version: 73, dir: "corepersistence/migration", moduleID: "core.persistence",
 			name: "vp040_temporal_core_persistence", transformID: "0073:vp040-temporal-core-persistence:v1",
+			guardTables: []string{"records"},
 			tables: []tablePlan{
 				{table: "schema_migrations", conversions: sec("applied_at")},
 				{table: "mail_outbox", conversions: ms("created_at")},
@@ -562,6 +566,10 @@ func generateDescriptor(t *testing.T, live map[string]liveTable, children map[st
 	// m0 + m4 + postgres statements.
 	var preflightSpecs []temporalmigrate.Preflight
 	var verifySpecs []temporalmigrate.Verify
+	guardSpecs := make([]temporalmigrate.Guard, 0, len(plan.guardTables))
+	for _, table := range plan.guardTables {
+		guardSpecs = append(guardSpecs, temporalmigrate.Guard{Table: table})
+	}
 	for _, table := range plan.tables {
 		for _, conv := range table.conversions {
 			if conv.flag == "d0" || conv.flag == "voucher" {
@@ -645,15 +653,26 @@ func generateDescriptor(t *testing.T, live map[string]liveTable, children map[st
 	if len(preflight) > 0 {
 		preflightBody = "{\n" + strings.Join(preflight, "\n") + "\n}"
 	}
+	guardBody := "{}"
+	if len(plan.guardTables) > 0 {
+		lines := make([]string, 0, len(plan.guardTables))
+		for _, table := range plan.guardTables {
+			lines = append(lines, fmt.Sprintf("\t{Table: %q},", table))
+		}
+		guardBody = "{\n" + strings.Join(lines, "\n") + "\n}"
+	}
+	fmt.Fprintf(&src, "// %sGuards are the m0 preconditions on tables retired by earlier history\n// (descriptor ledger §1: v73 asserts the retired `records` table is absent).\nvar %sGuards = []temporalmigrate.Guard%s\n\n",
+		prefix, prefix, guardBody)
 	fmt.Fprintf(&src, "// %sPreflight is the m0 sentinel census (Root D-012 / D-015 policy).\nvar %sPreflight = []temporalmigrate.Preflight%s\n\n",
 		prefix, prefix, preflightBody)
 	fmt.Fprintf(&src, "// %sVerify is the m4 post-rebuild assertion set.\nvar %sVerify = []temporalmigrate.Verify{\n%s\n}\n\n",
 		prefix, prefix, strings.Join(verify, "\n"))
 	fmt.Fprintf(&src, "// %sRebuild is the ordered m1–m3 slice: constraint handling, table\n// rebuild with the frozen conversion expressions, then every index.\nvar %sRebuild = []string{\n%s\n}\n\n",
 		prefix, prefix, quoteStatements(rebuild))
-	fmt.Fprintf(&src, "// %sStatements returns the canonical checksum input (D-017: m0 → m1–m3 → m4).\nfunc %sStatements() []string {\n\treturn temporalmigrate.Ordered(%sPreflight, %sRebuild, %sVerify)\n}\n\n",
-		prefix, prefix, prefix, prefix, prefix)
+	fmt.Fprintf(&src, "// %sStatements returns the canonical checksum input (D-017: m0 → m1–m3 → m4).\nfunc %sStatements() []string {\n\treturn temporalmigrate.OrderedWithGuards(%sGuards, %sPreflight, %sRebuild, %sVerify)\n}\n\n",
+		prefix, prefix, prefix, prefix, prefix, prefix)
 	fmt.Fprintf(&src, "// apply%s is the SQLite Apply body.\nfunc apply%s(tx kernel.Tx) error {\n", prefix, prefix)
+	fmt.Fprintf(&src, "\tif err := temporalmigrate.RunGuards(tx, %sGuards, %q); err != nil {\n\t\treturn err\n\t}\n", prefix, fmt.Sprintf("vp040 v%d sqlite guards", v))
 	fmt.Fprintf(&src, "\tif err := temporalmigrate.RunPreflight(tx, %sPreflight); err != nil {\n\t\treturn err\n\t}\n", prefix)
 	fmt.Fprintf(&src, "\tif err := temporalmigrate.Exec(tx, %sRebuild, %q); err != nil {\n\t\treturn err\n\t}\n", prefix, fmt.Sprintf("vp040 v%d sqlite rebuild", v))
 	fmt.Fprintf(&src, "\treturn temporalmigrate.RunVerify(tx, %sVerify, %q)\n}\n\n", prefix, fmt.Sprintf("vp040 v%d sqlite verify", v))
@@ -662,6 +681,7 @@ func generateDescriptor(t *testing.T, live map[string]liveTable, children map[st
 	fmt.Fprintf(&src, "// %sPostgresVerify is the postgres m4 type/precision assertion set.\nvar %sPostgresVerify = []temporalmigrate.PgVerify{\n%s\n}\n\n",
 		prefix, prefix, strings.Join(pgVerify, "\n"))
 	fmt.Fprintf(&src, "// apply%sPostgres is the postgres Apply body.\nfunc apply%sPostgres(tx kernel.Tx) error {\n", prefix, prefix)
+	fmt.Fprintf(&src, "\tif err := temporalmigrate.RunPostgresGuards(tx, %sGuards, %q); err != nil {\n\t\treturn err\n\t}\n", prefix, fmt.Sprintf("vp040 v%d postgres guards", v))
 	fmt.Fprintf(&src, "\tif err := temporalmigrate.RunPreflight(tx, %sPreflight); err != nil {\n\t\treturn err\n\t}\n", prefix)
 	fmt.Fprintf(&src, "\tif err := temporalmigrate.Exec(tx, %sPostgres, %q); err != nil {\n\t\treturn err\n\t}\n", prefix, fmt.Sprintf("vp040 v%d postgres convert", v))
 	fmt.Fprintf(&src, "\treturn temporalmigrate.RunPostgresVerify(tx, %sPostgresVerify, %q)\n}\n\n", prefix, fmt.Sprintf("vp040 v%d postgres verify", v))
@@ -675,19 +695,19 @@ func generateDescriptor(t *testing.T, live map[string]liveTable, children map[st
 	fmt.Fprintf(&section, "\n## v%d · `%s` · `%s`\n\n", v, plan.moduleID, plan.name)
 	fmt.Fprintf(&section, "- `transform_id`: `%s`\n", plan.transformID)
 	fmt.Fprintf(&section, "- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`%s`\n",
-		kernel.MigrationChecksum(temporalmigrate.Ordered(preflightSpecs, rebuild, verifySpecs), plan.transformID))
+		kernel.MigrationChecksum(temporalmigrate.OrderedWithGuards(guardSpecs, preflightSpecs, rebuild, verifySpecs), plan.transformID))
 	fmt.Fprintf(&section, "- 表范围（descriptor 顺序）：%s\n", backtickList(tableNames(plan)))
 	fmt.Fprintf(&section, "- FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 %s；摘除并建回的子表 %s\n",
 		backtickList(mapKeys(parents)), backtickList(detached))
-	fmt.Fprintf(&section, "- m0 预检列：%s\n", backtickList(preflightColumns(plan)))
+	fmt.Fprintf(&section, "- m0 预检列：%s；m0 retired-table guard：%s\n", backtickList(preflightColumns(plan)), backtickList(plan.guardTables))
 	fmt.Fprintf(&section, "- PG 语句数 %d；SQLite 语句数（m1–m3）%d；m4 断言 %d\n\n", len(pgStatements), len(rebuild), len(verify))
 	section.WriteString("canonical（m1–m3）：\n\n```sql\n")
 	for _, stmt := range rebuild {
 		section.WriteString(stmt)
 		section.WriteString(";\n")
 	}
-	section.WriteString("```\n\nm0（预检）/ m4（校验）语句文本：\n\n```sql\n")
-	for _, stmt := range append(append([]string{}, preflight...), verify...) {
+	section.WriteString("```\n\nm0（guard/预检）/ m4（校验）语句文本：\n\n```sql\n")
+	for _, stmt := range append(append(append([]string{}, temporalmigrate.GuardStatements(guardSpecs)...), preflight...), verify...) {
 		section.WriteString(stmt)
 		section.WriteString(";\n")
 	}

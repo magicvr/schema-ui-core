@@ -37,10 +37,10 @@ version: 0.1.0
 ## v73 · `core.persistence` · `vp040_temporal_core_persistence`
 
 - `transform_id`: `0073:vp040-temporal-core-persistence:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`c2d2218e327b6ae859b897ed55ed01793822a6a6fdf52dc9deeb96c565920683`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`4dd07092330cb3b344143f49ec57edd1f89e92cf2786446c0635c4a320eb8a9f`
 - 表范围（descriptor 顺序）：`schema_migrations`, `mail_outbox`, `mail_config`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：`mail_config.updated_at`
+- m0 预检列：`mail_config.updated_at`；m0 retired-table guard：`records`
 - PG 语句数 5；SQLite 语句数（m1–m3）13；m4 断言 3
 
 canonical（m1–m3）：
@@ -90,9 +90,10 @@ DROP TABLE "mail_config_old";
 CREATE INDEX idx_mail_outbox_created_at ON mail_outbox(created_at);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
+SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'records';
 	{Table: "mail_config", Column: "updated_at", Voucher: false},;
 	{Table: "schema_migrations", Columns: []string{"applied_at"}},;
 	{Table: "mail_outbox", Columns: []string{"created_at"}},;
@@ -114,10 +115,10 @@ ALTER TABLE "mail_config" ALTER COLUMN "updated_at" TYPE timestamptz(6) USING (C
 ## v74 · `core.auth-session` · `vp040_temporal_authsession`
 
 - `transform_id`: `0074:vp040-temporal-authsession:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`3ce1174a07300011f182baf93005f8fd2ce4b584f4b02d3f6cbcbc3e0106905c`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`ae1aefe89925f1759e6e0154f64ddf73b9eb04472c1111e1400b473d7c477f55`
 - 表范围（descriptor 顺序）：`system_data_reconcile`, `users`, `roles`, `permissions`, `menu_items`, `refresh_tokens`, `email_verification_challenges`, `password_recovery_challenges`, `login_failures`, `user_password_history`, `user_invites`, `service_credentials`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 `menu_items`, `permissions`, `roles`, `users`；摘除并建回的子表 `email_verification_challenges`, `login_failures`, `mfa_proofs`, `notifications`, `password_recovery_challenges`, `refresh_tokens`, `role_menu_items`, `role_permissions`, `user_invites`, `user_mfa`, `user_password_history`, `user_roles`
-- m0 预检列：`users.locked_until`, `users.last_login_failure_at`, `login_failures.locked_until`
+- m0 预检列：`users.locked_until`, `users.last_login_failure_at`, `login_failures.locked_until`；m0 retired-table guard：（无）
 - PG 语句数 37；SQLite 语句数（m1–m3）94；m4 断言 12
 
 canonical（m1–m3）：
@@ -380,7 +381,7 @@ CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
 CREATE UNIQUE INDEX idx_users_email_lower ON users(lower(email));
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "users", Column: "locked_until", Voucher: false},;
@@ -447,10 +448,10 @@ ALTER TABLE "service_credentials" ALTER COLUMN "updated_at" TYPE timestamptz(6) 
 ## v75 · `core.operationlog` · `vp040_temporal_operationlog`
 
 - `transform_id`: `0075:vp040-temporal-operationlog:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`075d9f69a48c718872f1a3ed148b8b9c6e0da7e2d7fbf46edd9f9d026d4b1581`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`5b038c6cf66f0e01f2446721a246917fc4c0b459dc877242f374aea971322b3a`
 - 表范围（descriptor 顺序）：`operation_log`, `operation_log_archive`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 `operation_log`；摘除并建回的子表 `operation_log_correlation`, `operation_log_session`
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 3；SQLite 语句数（m1–m3）22；m4 断言 2
 
 canonical（m1–m3）：
@@ -511,7 +512,7 @@ CREATE INDEX idx_operation_log_correlation_id ON operation_log_correlation(corre
 CREATE INDEX idx_operation_log_session_id ON operation_log_session(session_id);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "operation_log", Columns: []string{"created_at"}, Children: []string{"operation_log_correlation", "operation_log_session"}},;
@@ -534,7 +535,7 @@ ALTER TABLE "operation_log_archive" ALTER COLUMN "archived_at" TYPE timestamptz(
 - **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`6b3649579cc6aedc713fab8c7f9f6dafbec548317f7395082d9e5ddb730aca56`
 - 表范围（descriptor 顺序）：`jobs`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 5；SQLite 语句数（m1–m3）8；m4 断言 1
 
 canonical（m1–m3）：
@@ -581,7 +582,7 @@ CREATE INDEX idx_jobs_expiry ON jobs(status, expires_at);
 CREATE INDEX idx_jobs_runnable ON jobs(status, cancel_requested, lease_expires_at, created_at);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "jobs", Columns: []string{"lease_expires_at", "created_at", "updated_at", "finished_at", "expires_at"}},;
@@ -602,10 +603,10 @@ ALTER TABLE "jobs" ALTER COLUMN "expires_at" TYPE timestamptz(6) USING (CASE WHE
 ## v77 · `admin.data-dictionary` · `vp040_temporal_dictionary`
 
 - `transform_id`: `0077:vp040-temporal-dictionary:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`ae55a63a4366667f05410a76d15308504cf805540163e85e139b5737c44f3e73`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`0266f2937603f3cbed07b33ee460964ad1fe083e2c0f426c4946b0f922104edb`
 - 表范围（descriptor 顺序）：`dict_types`, `dict_entries`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 `dict_types`；摘除并建回的子表 `dict_entries`
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 4；SQLite 语句数（m1–m3）10；m4 断言 2
 
 canonical（m1–m3）：
@@ -647,7 +648,7 @@ DROP TABLE "dict_entries_bak";
 CREATE INDEX idx_dict_entries_dict_key ON dict_entries(dict_key, sort);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "dict_types", Columns: []string{"created_at", "updated_at"}, Children: []string{"dict_entries"}},;
@@ -668,10 +669,10 @@ ALTER TABLE "dict_entries" ALTER COLUMN "updated_at" TYPE timestamptz(6) USING (
 ## v78 · `admin.data-permission` · `vp040_temporal_data_permission`
 
 - `transform_id`: `0078:vp040-temporal-data-permission:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`db2565e2da3ea3c5fe879bed5a9914a0cff3c0d0d3e59dafd9b68ba5b37055aa`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`b1fa8aa94597a8f48a061efe43d7285300016070d391e38b8df95f49dbcdf7ed`
 - 表范围（descriptor 顺序）：`data_scope_policies`, `user_data_scopes`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 2；SQLite 语句数（m1–m3）8；m4 断言 2
 
 canonical（m1–m3）：
@@ -703,7 +704,7 @@ FROM "user_data_scopes_old";
 DROP TABLE "user_data_scopes_old";
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "data_scope_policies", Columns: []string{"updated_at"}},;
@@ -722,10 +723,10 @@ ALTER TABLE "user_data_scopes" ALTER COLUMN "updated_at" TYPE timestamptz(6) USI
 ## v79 · `admin.login-captcha` · `vp040_temporal_captcha`
 
 - `transform_id`: `0079:vp040-temporal-captcha:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`493d66f70e904249d36bc593d070d0ebef0394a7b855d45a824e60a797599449`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`c6a661ebfb90158f3a712ad149084f3e84f996ca6773f04cb8743b0e2e41142f`
 - 表范围（descriptor 顺序）：`captcha_challenges`, `captcha_config`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 4；SQLite 语句数（m1–m3）8；m4 断言 2
 
 canonical（m1–m3）：
@@ -755,7 +756,7 @@ FROM "captcha_config_old";
 DROP TABLE "captcha_config_old";
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "captcha_challenges", Columns: []string{"expires_at", "created_at"}},;
@@ -776,10 +777,10 @@ ALTER TABLE "captcha_config" ALTER COLUMN "updated_at" TYPE timestamptz(6) USING
 ## v80 · `admin.mfa` · `vp040_temporal_mfa`
 
 - `transform_id`: `0080:vp040-temporal-mfa:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`6537215f79af2ed02e4bbe2218733f8134f7af477b84fb50cc5b931c583762f8`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`2088626f0bdf5c2b9aba9a5faf297762cba553c0cf750c1255e1c8633ed6c2fc`
 - 表范围（descriptor 顺序）：`user_mfa`, `mfa_proofs`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 4；SQLite 语句数（m1–m3）8；m4 断言 2
 
 canonical（m1–m3）：
@@ -813,7 +814,7 @@ FROM "mfa_proofs_old";
 DROP TABLE "mfa_proofs_old";
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "user_mfa", Columns: []string{"created_at", "updated_at"}},;
@@ -837,7 +838,7 @@ ALTER TABLE "mfa_proofs" ALTER COLUMN "created_at" TYPE timestamptz(6) USING (da
 - **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`a7565dc641f3c3291ff25cbefa52199ca06a8f94f7a978efac5b907615442b37`
 - 表范围（descriptor 顺序）：`notifications`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 2；SQLite 语句数（m1–m3）5；m4 断言 1
 
 canonical（m1–m3）：
@@ -860,7 +861,7 @@ DROP TABLE "notifications_old";
 CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "notifications", Columns: []string{"read_at", "created_at"}},;
@@ -881,7 +882,7 @@ ALTER TABLE "notifications" ALTER COLUMN "created_at" TYPE timestamptz(6) USING 
 - **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`0132f6a873dd427b42c3a668bc88badc9b50a6c6729601e7cd1c5d5e4a1568fe`
 - 表范围（descriptor 顺序）：`recycle_items`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 2；SQLite 语句数（m1–m3）6；m4 断言 1
 
 canonical（m1–m3）：
@@ -906,7 +907,7 @@ CREATE INDEX idx_recycle_items_deleted_at ON recycle_items(deleted_at DESC);
 CREATE UNIQUE INDEX idx_recycle_items_active ON recycle_items(resource, resource_id) WHERE restored_at IS NULL;
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "recycle_items", Columns: []string{"deleted_at", "restored_at"}},;
@@ -924,10 +925,10 @@ ALTER TABLE "recycle_items" ALTER COLUMN "restored_at" TYPE timestamptz(6) USING
 ## v83 · `admin.scheduled-tasks` · `vp040_temporal_scheduled_tasks`
 
 - `transform_id`: `0083:vp040-temporal-scheduled-tasks:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`e5df9a9e46bb6d8c259d8e134cb95bd1b7d043f9b108387800b23ee5c0ad6487`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`b6c4f115e54d163a2ec9a1dfab0c74ca5d10c09c9cf1c41c14b02ad5d1186e91`
 - 表范围（descriptor 顺序）：`scheduled_tasks`, `task_runs`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 `scheduled_tasks`；摘除并建回的子表 `task_runs`
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 5；SQLite 语句数（m1–m3）10；m4 断言 2
 
 canonical（m1–m3）：
@@ -967,7 +968,7 @@ DROP TABLE "task_runs_bak";
 CREATE INDEX idx_task_runs_task_started ON task_runs(task_id, started_at DESC);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "scheduled_tasks", Columns: []string{"created_at", "updated_at"}, Children: []string{"task_runs"}},;
@@ -992,7 +993,7 @@ ALTER TABLE "task_runs" ALTER COLUMN "created_at" TYPE timestamptz(6) USING (dat
 - **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`bb3041a3d3fbeb5b3d706209f53cc578dc0e5d15016502919aac040b6bec2112`
 - 表范围（descriptor 顺序）：`site_settings`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 1；SQLite 语句数（m1–m3）5；m4 断言 1
 
 canonical（m1–m3）：
@@ -1012,7 +1013,7 @@ DROP TABLE "site_settings_old";
 CREATE INDEX idx_site_settings_updated_at ON site_settings (updated_at);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "site_settings", Columns: []string{"updated_at"}},;
@@ -1029,10 +1030,10 @@ ALTER TABLE "site_settings" ALTER COLUMN "updated_at" TYPE timestamptz(6) USING 
 ## v85 · `admin.wallet` · `vp040_temporal_wallet`
 
 - `transform_id`: `0085:vp040-temporal-wallet:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`e1b5140669cfe3a7360787578a50d5a978c63f0b3b6ca0e1a1338ba5f33a8b60`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`5c004e0c643f46de5e72035022642f9674ca92306784782014f4e285c07efeb8`
 - 表范围（descriptor 顺序）：`wallet_accounts`, `wallet_ledger_entries`, `wallet_reconciliation_runs`, `subjects`, `vouchers`, `voucher_batches`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：`vouchers.expires_at`, `vouchers.redeemed_at`
+- m0 预检列：`vouchers.expires_at`, `vouchers.redeemed_at`；m0 retired-table guard：（无）
 - PG 语句数 11；SQLite 语句数（m1–m3）28；m4 断言 6
 
 canonical（m1–m3）：
@@ -1143,7 +1144,7 @@ CREATE INDEX idx_vouchers_status ON vouchers(status);
 CREATE INDEX idx_wallet_ledger_account ON wallet_ledger_entries(account_id, created_at DESC);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "vouchers", Column: "expires_at", Voucher: true},;
@@ -1177,10 +1178,10 @@ ALTER TABLE "voucher_batches" ALTER COLUMN "updated_at" TYPE timestamptz(6) USIN
 ## v86 · `channel.telegram` · `vp040_temporal_telegram`
 
 - `transform_id`: `0086:vp040-temporal-telegram:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`80d5ad96381abd85cccf5022530e277b62c3333eb39aad5b5999754904a80973`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`07a9a0ba61110b94acd4f4f7e87144fd297e8a99e44a273059080e07f1d172f1`
 - 表范围（descriptor 顺序）：`telegram_config`, `telegram_sessions`, `telegram_inbound_messages`, `telegram_outbound_messages`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：`telegram_config.updated_at`
+- m0 预检列：`telegram_config.updated_at`；m0 retired-table guard：（无）
 - PG 语句数 9；SQLite 语句数（m1–m3）20；m4 断言 4
 
 canonical（m1–m3）：
@@ -1261,7 +1262,7 @@ CREATE INDEX idx_telegram_sessions_activity
   ON telegram_sessions (bot_id, last_message_at DESC, chat_id DESC);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "telegram_config", Column: "updated_at", Voucher: false},;
@@ -1290,10 +1291,10 @@ ALTER TABLE "telegram_outbound_messages" ALTER COLUMN "updated_at" TYPE timestam
 ## v87 · `biz.digital-offer` · `vp040_temporal_digital_offer`
 
 - `transform_id`: `0087:vp040-temporal-digital-offer:v1`
-- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`31cef809f68578758bb2bf6544a158eaafaea191335b3a9e334933f4e4f56cc2`
+- **`MigrationChecksum`（真实值，D-017 单 checksum / SQLite 切片）**：`753b22027027066bd54b8909974b2f867ac5340bd513ce861bf1e2553f1fc7e4`
 - 表范围（descriptor 顺序）：`digital_offers`, `digital_purchases`, `digital_entitlements`
 - FK 子女盘点（机械解析 v72 DDL 的 `REFERENCES`）：父表 （无）；摘除并建回的子表 （无）
-- m0 预检列：（无）
+- m0 预检列：（无）；m0 retired-table guard：（无）
 - PG 语句数 6；SQLite 语句数（m1–m3）17；m4 断言 3
 
 canonical（m1–m3）：
@@ -1371,7 +1372,7 @@ CREATE INDEX idx_digital_purchases_offer ON digital_purchases(offer_id);
 CREATE INDEX idx_digital_purchases_subject ON digital_purchases(subject_id, created_at DESC);
 ```
 
-m0（预检）/ m4（校验）语句文本：
+m0（guard/预检）/ m4（校验）语句文本：
 
 ```sql
 	{Table: "digital_offers", Columns: []string{"created_at", "updated_at"}},;

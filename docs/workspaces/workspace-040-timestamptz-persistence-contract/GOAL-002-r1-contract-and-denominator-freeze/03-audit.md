@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.23
+version: 0.1.24
 ---
 
 # 审计 · GOAL-002
@@ -113,3 +113,6 @@ version: 0.1.23
 **A-044（independent · F-I-002 负值分档 / PG 毫秒族复现 / D-021 F-I-005 拆分）备注**：对照 A-042 基线（open required = 2）。commit `6ab57dd0` / `d67497d7` 仅文档、`apps/` 未改。inventory v0.3 90 行独立去重 **44** 张表。四份点名 C2 载体负值 **政策表**已按列分档，与 Root D-012/D-015 政策语义同一；mechanism L100「一律不进表达式」与 C3 边界 §5「B 内不应再有负值」仍在。本机临时容器 postgres **16.15 / 15.19 / 17.11**（端口 15441/15442/15443，事后销毁）：原式 `253402300799999` → `.999008`（+8 µs），`::numeric` 无效；受影响区间宽于单点（约 8×10¹³ ms 起部分 remainder ±8/±16 µs）；整数拆分式点名样本 `split_err_us=0`；秒族精确；`information_schema` `timestamp with time zone` / 精度 6。点名五份载体已同步修正式；**Root D-015 / child D-012 仍发布已证伪原式**。D-021 的 R1 约定/名/算法/表范围/append-only 有载体；哈希移交有范围+复审触发，**不是** `fixed`，也不是覆盖测试改写/leftover 21 的完整 `accepted-residual`。无新 required / recommended 编号。**开放 required = 2**（F-I-002 / F-I-005）。**C2 未冻结，R2 未放行，R1 不具备关门条件。** 响应由 `/govern` 处理。
 
 **A-046（independent · R1 关门前审计 · F-I-002 / F-I-005 residual）备注**：对照 A-044 基线（open required = 2）。commit `6029efe9` / `2dc251a7` 仅文档、`apps/` 未改。C3 §5 假命题已删，与 Root D-012/D-015 同一；Root D-015 / child D-012 已标弃用并指向整数拆分式。mechanism「一律不进表达式」A-045 声称已改，文件最后变更仍是 `6ab57dd0`，L100 原句仍在（新 recommended **F-I-028**）。全仓扫描：除 D-021 决定 2 验证目标句（卫生）外，无现行权威仍发布已弃用 PG 毫秒原式。决策索引已补至 D-021，空洞有说明。本机 `go test ./internal/w040contracttest/ -v -count=1` 三测试全绿；inventory 90 / 表 44 / leftover 21 / descriptor 15 复算成立。**F-I-002 可 `fixed`。F-I-005 可 `accepted-residual`**（范围三项穷举、触发与失效条件可操作、不算残余五项有载体、不得读成已验证）。无新 required。**开放 required = 0**（本审判定；台账闭合由 `/govern`）。**C2/C3 仍未冻结；I-040-001～003 仍 collecting；R1 不具备关门条件。** 响应由 `/govern` 处理。
+
+
+**A-048（self · 编排器：D-021 F-I-005 residual 复审触发与闭合）**：R2（`GOAL-003`）已首次记录 v73–v87 的 15 个真实 `MigrationChecksum`（触发 `D-021` 的复审条件），复审由 independent（grok-build grok-4.6 · high）在 `GOAL-003/03-audit/A-002-independent-checkpoints-b-c-d.md` 落盘：残余 ①（真实哈希）/②（v73+ 断言 + 金额列拆分）/③（leftover 21 名）三项均有可核对实现证据，`D-017` 未被修订，**判定可 `fixed` 闭合**；编排器接受该复审并按 `fixed` 闭合，范围仅限 `D-021` 所列三项。完整记录见 [`03-audit/A-048-r1-fi005-residual-rereview-closure.md`](03-audit/A-048-r1-fi005-residual-rereview-closure.md)。**本闭合不放行 R2，不等于 M4 完成。**

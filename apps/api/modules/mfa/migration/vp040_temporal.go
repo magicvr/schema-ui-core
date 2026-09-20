@@ -23,6 +23,10 @@ const (
 	vp040V80TransformID = "0080:vp040-temporal-mfa:v1"
 )
 
+// vp040V80Guards are the m0 preconditions on tables retired by earlier history
+// (descriptor ledger §1: v73 asserts the retired `records` table is absent).
+var vp040V80Guards = []temporalmigrate.Guard{}
+
 // vp040V80Preflight is the m0 sentinel census (Root D-012 / D-015 policy).
 var vp040V80Preflight = []temporalmigrate.Preflight{}
 
@@ -65,11 +69,14 @@ FROM "mfa_proofs_old"`,
 
 // vp040V80Statements returns the canonical checksum input (D-017: m0 → m1–m3 → m4).
 func vp040V80Statements() []string {
-	return temporalmigrate.Ordered(vp040V80Preflight, vp040V80Rebuild, vp040V80Verify)
+	return temporalmigrate.OrderedWithGuards(vp040V80Guards, vp040V80Preflight, vp040V80Rebuild, vp040V80Verify)
 }
 
 // applyvp040V80 is the SQLite Apply body.
 func applyvp040V80(tx kernel.Tx) error {
+	if err := temporalmigrate.RunGuards(tx, vp040V80Guards, "vp040 v80 sqlite guards"); err != nil {
+		return err
+	}
 	if err := temporalmigrate.RunPreflight(tx, vp040V80Preflight); err != nil {
 		return err
 	}
@@ -98,6 +105,9 @@ var vp040V80PostgresVerify = []temporalmigrate.PgVerify{
 
 // applyvp040V80Postgres is the postgres Apply body.
 func applyvp040V80Postgres(tx kernel.Tx) error {
+	if err := temporalmigrate.RunPostgresGuards(tx, vp040V80Guards, "vp040 v80 postgres guards"); err != nil {
+		return err
+	}
 	if err := temporalmigrate.RunPreflight(tx, vp040V80Preflight); err != nil {
 		return err
 	}

@@ -765,21 +765,21 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		// descriptors. Checksums are the real MigrationChecksum values of the
 		// canonical SQLite statement slices (D-017: m0 preflight → m1–m3
 		// rebuild → m4 verification; PG variants are not hashed).
-		{"core.persistence", "vp040_temporal_core_persistence", "c2d2218e327b6ae859b897ed55ed01793822a6a6fdf52dc9deeb96c565920683"},
-		{"core.auth-session", "vp040_temporal_authsession", "3ce1174a07300011f182baf93005f8fd2ce4b584f4b02d3f6cbcbc3e0106905c"},
-		{"core.operationlog", "vp040_temporal_operationlog", "075d9f69a48c718872f1a3ed148b8b9c6e0da7e2d7fbf46edd9f9d026d4b1581"},
+		{"core.persistence", "vp040_temporal_core_persistence", "4dd07092330cb3b344143f49ec57edd1f89e92cf2786446c0635c4a320eb8a9f"},
+		{"core.auth-session", "vp040_temporal_authsession", "ae1aefe89925f1759e6e0154f64ddf73b9eb04472c1111e1400b473d7c477f55"},
+		{"core.operationlog", "vp040_temporal_operationlog", "5b038c6cf66f0e01f2446721a246917fc4c0b459dc877242f374aea971322b3a"},
 		{"core.jobs", "vp040_temporal_jobs", "6b3649579cc6aedc713fab8c7f9f6dafbec548317f7395082d9e5ddb730aca56"},
-		{"admin.data-dictionary", "vp040_temporal_dictionary", "ae55a63a4366667f05410a76d15308504cf805540163e85e139b5737c44f3e73"},
-		{"admin.data-permission", "vp040_temporal_data_permission", "db2565e2da3ea3c5fe879bed5a9914a0cff3c0d0d3e59dafd9b68ba5b37055aa"},
-		{"admin.login-captcha", "vp040_temporal_captcha", "493d66f70e904249d36bc593d070d0ebef0394a7b855d45a824e60a797599449"},
-		{"admin.mfa", "vp040_temporal_mfa", "6537215f79af2ed02e4bbe2218733f8134f7af477b84fb50cc5b931c583762f8"},
+		{"admin.data-dictionary", "vp040_temporal_dictionary", "0266f2937603f3cbed07b33ee460964ad1fe083e2c0f426c4946b0f922104edb"},
+		{"admin.data-permission", "vp040_temporal_data_permission", "b1fa8aa94597a8f48a061efe43d7285300016070d391e38b8df95f49dbcdf7ed"},
+		{"admin.login-captcha", "vp040_temporal_captcha", "c6a661ebfb90158f3a712ad149084f3e84f996ca6773f04cb8743b0e2e41142f"},
+		{"admin.mfa", "vp040_temporal_mfa", "2088626f0bdf5c2b9aba9a5faf297762cba553c0cf750c1255e1c8633ed6c2fc"},
 		{"admin.notifications", "vp040_temporal_notifications", "a7565dc641f3c3291ff25cbefa52199ca06a8f94f7a978efac5b907615442b37"},
 		{"admin.recycle-bin", "vp040_temporal_recycle", "0132f6a873dd427b42c3a668bc88badc9b50a6c6729601e7cd1c5d5e4a1568fe"},
-		{"admin.scheduled-tasks", "vp040_temporal_scheduled_tasks", "e5df9a9e46bb6d8c259d8e134cb95bd1b7d043f9b108387800b23ee5c0ad6487"},
+		{"admin.scheduled-tasks", "vp040_temporal_scheduled_tasks", "b6c4f115e54d163a2ec9a1dfab0c74ca5d10c09c9cf1c41c14b02ad5d1186e91"},
 		{"admin.settings", "vp040_temporal_settings", "bb3041a3d3fbeb5b3d706209f53cc578dc0e5d15016502919aac040b6bec2112"},
-		{"admin.wallet", "vp040_temporal_wallet", "e1b5140669cfe3a7360787578a50d5a978c63f0b3b6ca0e1a1338ba5f33a8b60"},
-		{"channel.telegram", "vp040_temporal_telegram", "80d5ad96381abd85cccf5022530e277b62c3333eb39aad5b5999754904a80973"},
-		{"biz.digital-offer", "vp040_temporal_digital_offer", "31cef809f68578758bb2bf6544a158eaafaea191335b3a9e334933f4e4f56cc2"},
+		{"admin.wallet", "vp040_temporal_wallet", "5c004e0c643f46de5e72035022642f9674ca92306784782014f4e285c07efeb8"},
+		{"channel.telegram", "vp040_temporal_telegram", "07a9a0ba61110b94acd4f4f7e87144fd297e8a99e44a273059080e07f1d172f1"},
+		{"biz.digital-offer", "vp040_temporal_digital_offer", "753b22027027066bd54b8909974b2f867ac5340bd513ce861bf1e2553f1fc7e4"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

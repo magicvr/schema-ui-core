@@ -1,12 +1,12 @@
 ---
 id: GOAL-003-r2-codec-and-descriptor-m1-m2
 title: R2 · 共享 codec 与 15 个 conversion descriptor（M1/M2）
-status: active
+status: done
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.3.0
-progress: 3/4
+version: 1.0.0
+progress: 4/4
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -56,15 +56,15 @@ serves_summary: 承接 Root R2 的 M1/M2：落码共享时间 codec 与 15 个 c
 | **A** | 共享 codec 落码 + 单测全绿（含 `D-018` 的 Go 对拍用例） | **completed**（E-002：`apps/api/internal/temporal`，11 个单测全绿，`go vet`/`go build` 通过，依赖边界实测 `errors fmt time`） |
 | **B** | 15 个 descriptor 的 SQLite `Apply` 落码，v73+ 目录断言通过，**v1–v72 逐条不变** | **completed**（E-003：15 个 descriptor 落码于 `modules/*/migration/vp040_temporal.go`（由 v72 live `sqlite_master` 机械导出）；`migrate_test.go` 目录表追加 v73–v87 真实 checksum；`TestMigrateFreshDB`/`TestCompiledMigrationCatalogOwnership`/`TestCompleteFingerprintTracksCatalogHead` 通过；v1–v72 行逐条不变） |
 | **C** | PG `ApplyPostgres` 显式 DDL 落码（毫秒族整数拆分式），PG 侧类型断言就位 | **completed**（E-003：显式 `ALTER … TYPE timestamptz(6) USING …` 逐列 DDL；`TestFullCatalogPostgresBootstrapIntegration` 在真实 PostgreSQL 15.4 上 **ok**；`postgres_test.go` 时间列断言改 `timestamp with time zone` + `datetime_precision = 6`，金额列保持 `bigint`） |
-| **D** | canonical SQL 与**真实 `MigrationChecksum` 落盘**，并按 `D-021` **发起 independent 复审**（residual 复审触发） | pending |
+| **D** | canonical SQL 与**真实 `MigrationChecksum` 落盘**，并按 `D-021` **发起 independent 复审**（residual 复审触发） | **completed**（E-004：`attachments/r2-v73-v87-generated-statements-v0.1.md` 逐语句 + 15 个真实 checksum；冻结表锁定；independent 复审 A-002 落盘并判 residual 可 `fixed`；编排器响应 A-003 `pass`） |
 
-`progress: 3/4` 由 A～D 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 4/4` 由 A～D 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 |
 |----|------|----------|----------|------|------|
-| I-041-001 | required | Go codec 公共 API 形态（签名、错误分类、导出面）与 `D-018` Go 对拍验收一致 | A / M1 | **collecting（本目标内定稿）** | 定稿落盘于本目标 `01-decision/`；未经用户裁决的技术细节由独立审计复审 |
+| I-041-001 | required | Go codec 公共 API 形态（签名、错误分类、导出面）与 `D-018` Go 对拍验收一致 | A / M1 | **verified**（`D-001` 定稿；codec 落码 + 11 个单测全绿；独立审计 A-002 认可实现，仅要求 `00-meta` 同步——本次同步） | `01-decision/D-001-temporal-codec-api.md`；`internal/temporal` |
 | I-040-001 | required（继承） | 逐列编解码/精度合同 | A/B/C | **verified**（R1 关门时） | `r1-c2-per-column-conversion-contract-v1.0-fc.md` |
 | I-040-003 | required（继承） | 双方言原地转换、失败恢复、备份依赖 | B/C | **verified**（R1 关门时） | `r1-c3-backup-recovery-boundary-v1.0-fc.md`；`D-019` |
 

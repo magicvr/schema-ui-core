@@ -1,11 +1,11 @@
 ---
 id: GOAL-004-r2-repository-and-predicate-rewrites
 title: R2 · 仓储读写与谓词改造（M3）
-status: active
+status: done
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.2.0
+version: 1.0.0
 progress: 3/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract

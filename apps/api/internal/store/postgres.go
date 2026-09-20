@@ -308,13 +308,29 @@ func bindPostgresArgs(args []any) []any {
 	return out
 }
 
+// bindPostgresArg maps dialect-neutral domain time values onto what the
+// postgres timestamptz(6) codec accepts, truncating toward zero to microseconds
+// exactly like the SQLite side.
+//
+// The truncation is load-bearing (Root D-008 / workspace-040 GOAL-004 A-002
+// F-I-001): timestamptz(6)'s typmod ROUNDs, so passing a raw time.Now() through
+// would store a different instant than the SQLite canonical text would
+// (123456789 ns -> ...123457 on postgres vs ...123456 on sqlite).
 func bindPostgresArg(arg any) any {
 	switch v := arg.(type) {
+	case time.Time:
+		return temporal.Truncate(v)
+	case *time.Time:
+		if v == nil {
+			return nil
+		}
+		instant := temporal.Truncate(*v)
+		return &instant
 	case sql.NullTime:
 		if !v.Valid {
 			return nil
 		}
-		return v.Time
+		return temporal.Truncate(v.Time)
 	case temporal.Value:
 		return v.Time()
 	case temporal.NullValue:
