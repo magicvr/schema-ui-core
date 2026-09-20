@@ -154,7 +154,9 @@ func mailConfigPut(svc MailAdminService, operations operationlog.Recorder) http.
 			return
 		}
 		recordAudit(operations, user, operationlog.EventMailChannelUpdate, "", auditDetail("channel-update", map[string]any{"channel": view.Channel}), time.Now().UTC(), r.Context())
-		writeJSON(w, http.StatusOK, view)
+		// Same projection as the GET: the switch response carries the canonical
+		// fixed-6 updated_at too (workspace-040 R3-A fail-closed review F-I-001).
+		writeJSON(w, http.StatusOK, mailConfigWire(view))
 	})
 }
 

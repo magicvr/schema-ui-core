@@ -3,6 +3,8 @@ package handler
 import (
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 )
 
 // TestFormatWireTime pins the public output contract (Root D-003/D-008): fixed
@@ -53,8 +55,13 @@ func TestFormatWireTimePtr(t *testing.T) {
 }
 
 // TestParseWireTimeCompatibility is the D-005 input matrix: 0/3/6/9 fractional
-// digits and equivalent offsets are accepted and normalised, while a zoneless
-// value is rejected rather than guessed.
+// digits and ZERO-EQUIVALENT offsets are accepted and normalised, while a
+// non-zero offset and a zoneless value are rejected rather than guessed.
+//
+// F-I-003 (independent audit A-002): this test used to list "+08:00" as accepted,
+// contradicting D-005 §3 ("非零 offset 解析失败") and GOAL-003 D-001 §3, which
+// assigns that refusal to the API input parser. The codec layer keeps accepting
+// offsets (internal/temporal tests); the wire parser does not.
 func TestParseWireTimeCompatibility(t *testing.T) {
 	accepted := []struct {
 		in   string
@@ -65,7 +72,7 @@ func TestParseWireTimeCompatibility(t *testing.T) {
 		{"2026-08-17T12:00:00.123456Z", "2026-08-17T12:00:00.123456Z"},
 		{"2026-08-17T12:00:00.123456789Z", "2026-08-17T12:00:00.123456Z"},
 		{"2026-08-17T12:00:00+00:00", "2026-08-17T12:00:00.000000Z"},
-		{"2026-08-17T20:00:00+08:00", "2026-08-17T12:00:00.000000Z"},
+		{"2026-08-17T12:00:00-00:00", "2026-08-17T12:00:00.000000Z"},
 	}
 	for _, tc := range accepted {
 		parsed, err := ParseWireTime(tc.in)
@@ -77,9 +84,12 @@ func TestParseWireTimeCompatibility(t *testing.T) {
 		}
 	}
 	rejected := []string{
-		"2026-08-17T12:00:00",     // no zone
-		"2026-08-17 12:00:00Z",    // space separator
-		"2026-08-17T12:00:00.12Z", // unsupported 2-digit fraction
+		"2026-08-17T12:00:00",       // no zone
+		"2026-08-17 12:00:00Z",      // space separator
+		"2026-08-17T12:00:00.12Z",   // unsupported 2-digit fraction
+		"2026-08-17T12:00:00,123Z",  // comma separator: ISO-8601 leniency, not RFC3339
+		"2026-08-17T20:00:00+08:00", // non-zero offset (D-005)
+		"2026-08-17T07:00:00-05:00", // non-zero offset (D-005)
 		"not-a-time",
 		"",
 	}
@@ -87,5 +97,22 @@ func TestParseWireTimeCompatibility(t *testing.T) {
 		if _, err := ParseWireTime(in); err == nil {
 			t.Fatalf("ParseWireTime(%q) must be rejected", in)
 		}
+	}
+	// Premise for the comma refusal: the codec layer really does tolerate it, so
+	// the refusal above is the wire parser's own policy, not a dead assertion.
+	if _, err := temporal.Parse("2026-08-17T12:00:00,123Z"); err != nil {
+		t.Fatalf("premise: temporal.Parse no longer tolerates the comma separator (%v); drop this case", err)
+	}
+}
+
+// TestParseWireTimeRejectsNonZeroOffsetsOnEveryInboundParser keeps the D-005
+// decision at the transport boundary rather than only in the helper: every
+// handler input parser must inherit the refusal.
+func TestParseWireTimeRejectsNonZeroOffsetsOnEveryInboundParser(t *testing.T) {
+	if _, err := ParseWireTime("2026-08-17T20:00:00+08:00"); err == nil {
+		t.Fatal("the shared wire parser accepted a non-zero offset")
+	}
+	if _, err := time.Parse(time.RFC3339Nano, "2026-08-17T20:00:00+08:00"); err != nil {
+		t.Fatalf("premise: Go parses the offset fine, so the refusal is our policy: %v", err)
 	}
 }

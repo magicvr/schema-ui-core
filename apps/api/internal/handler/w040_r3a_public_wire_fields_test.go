@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -267,5 +268,106 @@ func TestMailConfigUpdatedAtIsCanonicalWire(t *testing.T) {
 	}
 	if _, ok := body["channel"]; !ok {
 		t.Fatalf("config body lost channel after null updated_at: %v", body)
+	}
+}
+
+// TestMailConfigPutUpdatedAtIsCanonicalWire is the F-I-001 regression from the
+// independent audit (A-002): the GET projection was fixed while the PUT response
+// still wrote the raw *mail.PublicView, so the two halves of one resource
+// disagreed about the width of the same instant.
+//
+// The assertion is deterministic rather than shape-only: mail.Switcher.Update
+// stamps updated_at with time.Now() and stores that same value, so the canonical
+// projection of the response must equal the canonical value the database kept. A
+// regression to encoding/json's default marshaller can only match by coincidence
+// (it would have to drop no digit at all), and the loop switches twice to make
+// that coincidence vanishingly unlikely.
+func TestMailConfigPutUpdatedAtIsCanonicalWire(t *testing.T) {
+	env := newAuthTestEnv(t)
+	key := []byte(strings.Repeat("m", 32))
+	sw, err := mail.NewSwitcher(env.st, key, mail.SeedConfig{Channel: mail.RuntimeChannelMock}, nil)
+	if err != nil {
+		t.Fatalf("NewSwitcher: %v", err)
+	}
+	RegisterMailAdmin(env.mux, env.a, sw, env.operations)
+	token := adminToken(t, env)
+
+	for attempt := 0; attempt < 2; attempt++ {
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, token, http.MethodPut, "/api/mail/config",
+			`{"channel":"mock","mockRetention":`+strconv.Itoa(attempt+1)+`}`))
+		if rr.Code != http.StatusOK {
+			t.Fatalf("PUT /api/mail/config = %d body=%s", rr.Code, rr.Body.String())
+		}
+		body := decodeObject(t, rr.Body.Bytes())
+		var got string
+		if err := json.Unmarshal(body["updated_at"], &got); err != nil {
+			t.Fatalf("PUT updated_at is not a string: %s", body["updated_at"])
+		}
+		if !wireInstantPattern.MatchString(got) {
+			t.Fatalf("PUT updated_at = %q, want fixed-6 UTC", got)
+		}
+		var stored string
+		if err := env.st.Run(context.Background(), func(tx kernel.Tx) error {
+			return tx.QueryRow(context.Background(),
+				`SELECT updated_at FROM mail_config WHERE id = 1`).Scan(&stored)
+		}); err != nil {
+			t.Fatalf("read stored updated_at: %v", err)
+		}
+		if got != stored {
+			t.Fatalf("PUT updated_at = %q but the stored canonical value is %q: the response bypassed the shared formatter",
+				got, stored)
+		}
+		// Non-time keys must survive the projection on this path too.
+		for _, field := range []string{"channel", "mockRetention", "resend", "smtp", "secrets"} {
+			if _, ok := body[field]; !ok {
+				t.Fatalf("PUT response dropped %q: %v", field, body)
+			}
+		}
+	}
+}
+
+// TestMFAStatusEnrolledAtIsCanonicalWire is the F-I-002 regression from the
+// independent audit (A-002): GET /api/mfa/status carried a bare time.Time in a
+// response map, which encoding/json rendered with variable width — and as the
+// fabricated year-1 instant "0001-01-01T00:00:00Z" for a user with no enrollment,
+// while the client type is `string | null`.
+func TestMFAStatusEnrolledAtIsCanonicalWire(t *testing.T) {
+	env := newAuthTestEnv(t)
+	fake := newFakeMFAService()
+	mountMFASurface(t, env, fake, &fakeSessionRevoker{})
+	token := adminToken(t, env)
+
+	get := func() map[string]json.RawMessage {
+		t.Helper()
+		rr := httptest.NewRecorder()
+		env.mux.ServeHTTP(rr, bearer(t, token, http.MethodGet, "/api/mfa/status", ""))
+		if rr.Code != http.StatusOK {
+			t.Fatalf("GET /api/mfa/status = %d body=%s", rr.Code, rr.Body.String())
+		}
+		return decodeObject(t, rr.Body.Bytes())
+	}
+
+	body := get()
+	if got := string(body["enrolledAt"]); got != "null" {
+		t.Fatalf("enrolledAt = %s for an unenrolled user, want JSON null (never a year-1 instant)", got)
+	}
+	if got := string(body["enabled"]); got != "false" {
+		t.Fatalf("enabled = %s, want false", got)
+	}
+
+	// The present-instant direction: a trailing-zero microsecond value must come
+	// back byte-identical, which the default marshaller rendered as ".9Z".
+	at, err := time.Parse("2006-01-02T15:04:05.000000Z", trailingZeroInstant)
+	if err != nil {
+		t.Fatalf("parse instant: %v", err)
+	}
+	fake.statusEnrolledAt = at
+	var got string
+	if err := json.Unmarshal(get()["enrolledAt"], &got); err != nil {
+		t.Fatalf("enrolledAt is not a string once enrolled: %s", get()["enrolledAt"])
+	}
+	if got != trailingZeroInstant {
+		t.Fatalf("enrolledAt = %q, want %q", got, trailingZeroInstant)
 	}
 }

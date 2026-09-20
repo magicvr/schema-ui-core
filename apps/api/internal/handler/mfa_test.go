@@ -20,6 +20,10 @@ type fakeMFAService struct {
 	required map[string]bool
 	proofs   map[string]string // proof → userID
 	enrolled map[string]bool
+	// statusEnrolledAt, when non-zero, is the enrollment instant Status reports
+	// for every user (workspace-040 R3-A test seam: the status projection must
+	// format a PRESENT instant canonically, not only the absent one).
+	statusEnrolledAt time.Time
 }
 
 func newFakeMFAService() *fakeMFAService {
@@ -51,7 +55,7 @@ func (s *fakeMFAService) Verify(proof, code, recoveryCode string, now time.Time)
 }
 
 func (s *fakeMFAService) Status(userID string) (bool, time.Time, error) {
-	return s.enrolled[userID], time.Time{}, nil
+	return s.enrolled[userID], s.statusEnrolledAt, nil
 }
 
 func (s *fakeMFAService) Enroll(userID, name string, now time.Time) (string, string, []string, error) {

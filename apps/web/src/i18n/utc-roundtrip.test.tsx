@@ -196,6 +196,20 @@ describe("VP-020 UTC storage ↔ session timezone display round-trip", () => {
     }
   });
 
+  it.each([
+    ["UTC", "12:57"],
+    ["Asia/Shanghai", "20:57"],
+    ["America/New_York", "08:57"],
+    ["Asia/Kathmandu", "18:42"],
+  ])("the local wall-clock helper agrees with the production formatter in %s (%s)", (zone, hhmm) => {
+    // The round-trip helpers below are test-local; tie them to the production
+    // renderer so a helper that silently disagrees with the shipped display is
+    // caught here (independent audit A-002 F-I-005).
+    expect(formatDate(WIRE, "zh-CN", { timeZone: zone })).toContain(hhmm);
+    const wall = wallClockIn(Date.parse(WIRE), zone);
+    expect(`${String(wall.hour).padStart(2, "0")}:${String(wall.minute).padStart(2, "0")}`).toBe(hhmm);
+  });
+
   it("covers a non-hour zone offset (+05:45) and both US DST edges", () => {
     // Asia/Kathmandu is UTC+05:45: a naive whole-hour assumption would shift it.
     const kathmandu = wallClockIn(Date.parse("2026-09-20T12:57:15.900000Z"), "Asia/Kathmandu");

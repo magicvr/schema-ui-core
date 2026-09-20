@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
@@ -15,9 +16,13 @@ import (
 // scope names; per-handler inline layouts are forbidden so the shape cannot
 // drift.
 //
-// Input: legal RFC3339 with 0, 3, 6 or 9 fractional digits and an equivalent
-// offset, normalized to UTC; a zoneless or ambiguous local timestamp is
-// rejected (ambiguous local time must never be guessed).
+// Input: legal RFC3339 with 0, 3, 6 or 9 fractional digits and a ZERO-EQUIVALENT
+// offset ("Z", "+00:00", "-00:00"), normalized to UTC; a non-zero offset and a
+// zoneless/ambiguous local timestamp are both rejected (Root D-005 §3: "非法时间、
+// 非零 offset 解析失败；不接受模糊本地时间字符串"). The codec layer
+// (internal/temporal) deliberately keeps accepting non-zero offsets for stored
+// payloads; refusing them is this API input parser's policy, which GOAL-003
+// D-001 §3 assigned to R3.
 //
 // Human prose (email bodies, audit detail JSON strings, arbitrary payload
 // fields) stays outside this contract per D-009 and keeps its own rules.
@@ -46,12 +51,37 @@ func FormatWireTimePtr(t *time.Time) (string, bool) {
 var ErrWireTimeInvalid = errors.New("handler: invalid wire timestamp")
 
 // ParseWireTime parses an input wire timestamp per D-005: 0/3/6/9 fractional
-// digits and any explicit offset are accepted and normalized to UTC, while a
-// zoneless value is rejected.
+// digits and a zero-equivalent offset are accepted and normalized to UTC; a
+// non-zero offset or a zoneless value is rejected.
+//
+// The offset is inspected on the raw string, because temporal.Parse normalizes
+// to UTC and would otherwise hide the very offset D-005 refuses. "±00:00" and
+// "Z" both carry offset zero and stay accepted. A comma fractional separator is
+// refused too: Go's RFC3339 parser tolerates it, but RFC3339 itself defines the
+// separator as "." and D-005 accepts only legal RFC3339 input.
 func ParseWireTime(value string) (time.Time, error) {
+	if strings.ContainsRune(value, ',') {
+		return time.Time{}, ErrWireTimeInvalid
+	}
 	parsed, err := temporal.Parse(value)
 	if err != nil {
 		return time.Time{}, ErrWireTimeInvalid
 	}
+	if offset := carriedOffsetSeconds(value); offset != 0 {
+		return time.Time{}, ErrWireTimeInvalid
+	}
 	return parsed, nil
+}
+
+// carriedOffsetSeconds reports the UTC offset (in seconds) the wire value
+// literally carries. It only runs after temporal.Parse has accepted the value,
+// so a parse failure here is unreachable; it therefore reports 0 (no offset
+// found) rather than inventing a second error path.
+func carriedOffsetSeconds(value string) int {
+	withZone, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return 0
+	}
+	_, offset := withZone.Zone()
+	return offset
 }

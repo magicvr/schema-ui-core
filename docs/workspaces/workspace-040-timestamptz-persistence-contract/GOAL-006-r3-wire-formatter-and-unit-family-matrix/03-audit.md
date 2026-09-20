@@ -19,6 +19,8 @@ version: 0.1.0
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
 | A-001 | self | 2026-09-20 | GOAL-006 检查点 A/B（formatter、fixture、单位族矩阵、VP-020 round-trip） | conditional | 8 项成果可核对；开放 required = 0；`F-S-001`/`F-S-002` 已 fixed；`F-S-003`～`F-S-006` 提交 independent 复核；`N-001`～`N-005` 已核对为非问题 | `03-audit/A-001-self-r3ab-checkpoints.md` |
+| A-002 | independent（grok build · grok-4.6 · high） | 2026-09-20 | 同上（独立复核） | **fail** | 3 条 required：`F-I-001` PUT `/api/mail/config` 仍走默认编解码；`F-I-002` `GET /api/mfa/status` `enrolledAt` 为 map 内裸 `time.Time`（含零值伪造年 1）；`F-I-003` `ParseWireTime` 接受非零 offset 违反 `D-005`。另有 recommended `F-I-004`（族身份不可核对）、`F-I-005`（Web 自实现表面积）。**同意** `I-041-008`、`I-040-004` 与检查点 B 成立；判定检查点 A 未完成 | `03-audit/A-002-independent-r3ab-checkpoints.md` |
+| A-003 | self（编排器响应） | 2026-09-20 | 响应 A-002 全部 findings | **pass** | 3 条 required 全部 **fixed**（PUT 共用 `mailConfigWire`；MFA `enrolledAt` 走 formatter 且缺席为 `null`；`ParseWireTime` 拒绝非零 offset——按 `D-005`/GOAL-003 `D-001` 已冻结决策实现，非新决策）；两条 recommended 亦 **fixed**；新增两条**常驻守卫**把「结构体直接上线」与「时间键 map」变成构建期失败（含合成违规文件的决定性验证）。开放 required = 0；请求 `A-004` 定向复审 | `03-audit/A-003-response-to-independent-a002.md` |
 
 ## 待复审事项（编排器登记，供独立审计取证）
 
