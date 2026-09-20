@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.19
+version: 0.1.20
 ---
 
 # 审计 · GOAL-002
@@ -14,11 +14,11 @@ version: 0.1.19
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 Root D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（当时 `02-execution.md` 为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006；A-027 确认 A-026 的 Root D-014/D-015 与 child D-012 可收窄 F-I-005（未发布 allocation baseline）与 F-I-002（负瞬间 Go Truncate 解释），仍不可闭合五条 required；A-029 确认 A-028 未关 F-I-002～006：已接受 allocation 列号不相交，但 owner spec v74「ledger/reconcile」仍在；E-017 双文件已改为唯一 E-024（F-I-017 closed）；SQLite runbook 已区分 rollback snapshot 与 RecoveryPoint，PG restore 仍绑预转换 `<artifact>`；D-015「integer interval」与秒列 `to_timestamp(double)` 仍未收口；F-I-018 保持 open（冻结包仍无限定 D-012）；新增 F-I-019（E-024 插在 E-016 与 E-017 之间）；草案/baseline 不是实施证据；A-030 接受 E-025/E-026 后 **F-I-003 closed**（90 列 mapping）、**F-I-018/F-I-019 closed**、F-I-002 的 D-015 字面子项 `fixed`、F-I-005 的 v74 同文子项 `fixed`；A-031 self 响应 A-030 未闭合任何 required；A-032 independent 确认 E-028 FK 父表重建阻塞成立，新增 **F-I-021 / F-I-022**，F-I-002 仍不能闭合；A-033 self 响应 A-032 未闭合任何 required（P-004 已落盘 `D-019`）；A-034 independent 接受 **F-I-021 / F-I-022 closed**，F-I-002.1 仍不能闭合（v78 缺席 + `site_settings` live CREATE 未写），新增 **F-I-023 / F-I-024**；A-035 self 响应 A-034 未闭合任何 required；A-036 independent 接受 **F-I-023 / F-I-024 / F-I-006 / F-I-020 closed**，F-I-002 仍不能闭合（`dict_entries` new CREATE 仍省略），新增 **F-I-026**（PG 显式 DDL 缺 v78）；A-037 self 响应 A-036 未闭合任何 required；A-038 independent 接受 **F-I-026 closed**，F-I-002 三项设计剩余 `fixed`、整条仍 open（可执行测试）；**仍 open required = 3**（F-I-002/004/005）；freeze-candidate 不是实施证据 |
+| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 Root D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（当时 `02-execution.md` 为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006；A-027 确认 A-026 的 Root D-014/D-015 与 child D-012 可收窄 F-I-005（未发布 allocation baseline）与 F-I-002（负瞬间 Go Truncate 解释），仍不可闭合五条 required；A-029 确认 A-028 未关 F-I-002～006：已接受 allocation 列号不相交，但 owner spec v74「ledger/reconcile」仍在；E-017 双文件已改为唯一 E-024（F-I-017 closed）；SQLite runbook 已区分 rollback snapshot 与 RecoveryPoint，PG restore 仍绑预转换 `<artifact>`；D-015「integer interval」与秒列 `to_timestamp(double)` 仍未收口；F-I-018 保持 open（冻结包仍无限定 D-012）；新增 F-I-019（E-024 插在 E-016 与 E-017 之间）；草案/baseline 不是实施证据；A-030 接受 E-025/E-026 后 **F-I-003 closed**（90 列 mapping）、**F-I-018/F-I-019 closed**、F-I-002 的 D-015 字面子项 `fixed`、F-I-005 的 v74 同文子项 `fixed`；A-031 self 响应 A-030 未闭合任何 required；A-032 independent 确认 E-028 FK 父表重建阻塞成立，新增 **F-I-021 / F-I-022**，F-I-002 仍不能闭合；A-033 self 响应 A-032 未闭合任何 required（P-004 已落盘 `D-019`）；A-034 independent 接受 **F-I-021 / F-I-022 closed**，F-I-002.1 仍不能闭合（v78 缺席 + `site_settings` live CREATE 未写），新增 **F-I-023 / F-I-024**；A-035 self 响应 A-034 未闭合任何 required；A-036 independent 接受 **F-I-023 / F-I-024 / F-I-006 / F-I-020 closed**，F-I-002 仍不能闭合（`dict_entries` new CREATE 仍省略），新增 **F-I-026**（PG 显式 DDL 缺 v78）；A-037 self 响应 A-036 未闭合任何 required；A-038 independent 接受 **F-I-026 closed**，F-I-002 三项设计剩余 `fixed`、整条仍 open（可执行测试）；A-039 self 响应 A-038 未闭合任何 required（C3 边界首次落盘）；A-040 independent 确认 C3 边界收窄 F-I-004、**整条仍 open**（旧 runbook `<artifact>` 仍在 + PG 调用点未写 + 反向断言未钉错误类），新增 recommended **F-I-027**；**仍 open required = 3**（F-I-002/004/005）；freeze-candidate 不是实施证据 |
 | I-040-004 | open | R3 回归矩阵；R1 接口仍未登记（A-002/A-004/A-006/A-010/A-012/A-014 F-I-009） |
 | 资料引用 | 无 | 工作区 `shared_materials_catalog: none` |
 
-> **2026-09-20 本轮（A-038）后的口径**：A-038 为最新 independent 意见，`open required = 3`（F-I-002 / F-I-004 / F-I-005）。E-032 / commit `d1fdb4cc` 使 **F-I-026 closed**（PG §4.1 v78 两列 NN 秒族骨架；90 列全部点名）；F-I-002 的三项设计剩余 `fixed`（`dict_entries` 10 列可粘贴 CREATE、`#72/#73` 单路径），整条仍 open（用例仍是 ID；非法/越界可执行测试未发生）。A-036 的 F-I-023 / F-I-024 / F-I-006 / F-I-020 closed 维持。**C2/C3 未冻结；R2 未放行。** freeze-candidate 不是实施证据。
+> **2026-09-20 本轮（A-040）后的口径**：A-040 为最新 independent 意见，`open required = 3`（F-I-002 / F-I-004 / F-I-005）。E-033 / commit `e2c0dac2` 使 C3 边界文件进入证据窗并**收窄** F-I-004（三类产物 + 双 token + 包路径本审接受），**整条仍 open**：旧 runbook L28/L38/L41 仍用预转换 `<artifact>` 做目标形状 restore；PG 调用点未写到 `postgres.go`；`TestLegacyArtifactMustFail` 未钉错误类。新增 recommended **F-I-027**（conversion §0 仍称尚未落盘；runbook/Port 未收口）。A-038 的 F-I-026 closed 与 F-I-002 三项设计 `fixed` 维持。**C2/C3 未冻结；R2 未放行。** freeze-candidate 不是实施证据。
 
 ## 意见台账索引
 
@@ -63,6 +63,7 @@ version: 0.1.19
 | A-037 | 2026-09-20 | self | response to A-036 / PG v78、dict_entries 可粘贴 CREATE、`#72/#73` 单分支、sqlite_master 表述更正 | conditional | 4 | `03-audit/A-037-r1-self-response-to-a036.md` |
 | A-038 | 2026-09-20 | independent | E-032 / commit d1fdb4cc 对照 A-036 F-I-026 + F-I-002 三项设计剩余 | conditional | 3 | `03-audit/A-038-r1-independent-e032-a036-response-fi026.md` |
 | A-039 | 2026-09-20 | self | response to A-038 / F-I-026 closed intake, C3 boundary first landed, F-I-002 test-scope observation | conditional | 3 | `03-audit/A-039-r1-self-response-to-a038.md` |
+| A-040 | 2026-09-20 | independent | E-033 / commit e2c0dac2 C3 备份回滚边界对照 A-032/A-027/A-029 F-I-004 | conditional | 3 | `03-audit/A-040-r1-independent-e033-c3-boundary-fi004.md` |
 
 ## 结论状态
 
@@ -83,3 +84,7 @@ version: 0.1.19
 **A-037（self 响应 A-036）备注**：接受 F-I-023 / F-I-024 / F-I-006 / F-I-020 closed；补 PG v78、`dict_entries` 可粘贴 CREATE、`#72/#73` 单分支；更正 sqlite_master 文本序表述。**本条不闭合任何 required。**
 
 **A-038（independent · E-032 / A-036 响应复审）备注**：对照 A-036 基线（open required = 4）。commit `d1fdb4cc` 仅文档、`apps/` 未改。本机 `OpenSeeded`（sqlite 3.53.3）独立复现：`dict_entries` live cid 0–9 与附件 10 列 new CREATE 一致（仅时间列 `INTEGER`→`TEXT`）；`site_settings` cid 序 = `sqlite_master` 折入文本序（`default_currency` 末列）；Go 文件物理行号 v62 `:207` 在 v46 `:222` 之前，但 `Descriptors()` Version 序与 cid 同序。接受 **F-I-026 closed**（§4.1 NN 秒族骨架；90 列全部点名；非 F-5）。F-I-002 三项设计剩余 `fixed`；**整条仍 open**（用例仍是 ID；非法/越界可执行测试未发生）。A-036 接受的占位/行号/骨架形式保持。§4/§5 编号未破坏；`dict_entries` 与 C 组两次重建不冲突。无新 required/recommended。F-I-025 收窄仍 open（「20 张时间列表」）。**开放 required = 3**（F-I-002 / F-I-004 / F-I-005）。**C2/C3 仍未冻结，R2 仍未放行。** 响应由 `/govern` 处理。
+
+**A-039（self 响应 A-038）备注**：接受 F-I-026 closed 与 F-I-002 三项设计 `fixed`；C3 边界文件首次落盘。**本条不闭合任何 required。**
+
+**A-040（independent · E-033 / C3 边界对照 F-I-004）备注**：对照 A-038 基线（open required = 3）。commit `e2c0dac2` 仅文档、`apps/` 未改。独立核实 §1 四条现状成立（`CreateRecoveryPoint`/`BackupService`/`RecoveryPoint` 0 匹配；`kernel.Store` 无 Backup 面；`internal/temporal` absent；`snapshotBeforePending` 为 per-migration rollback）。**F-I-004 收窄、仍 open**：新文件内部三类产物与双 token 成立，包路径本审接受，harness 规格作为 R1 设计足够；旧 runbook L28/L38/L41 **仍**把预转换 `<artifact>` 当目标形状 restore 输入；PG 调用点未写到 `postgres.go`（`applyPendingPG` 无 snapshot / 无 `verifyIntegrity`）；`TestLegacyArtifactMustFail` 未钉形状错误类；调用点 2 失败后 `actionNoop` 无重试。新增 recommended **F-I-027**（conversion §0 仍称尚未落盘；runbook/Port 未收口；无限定 D-010/D-007）。§7 与 `D-019` 自洽。§8 四项真实但不完整。无新 required。**开放 required = 3**（F-I-002 / F-I-004 / F-I-005）。**C2/C3 仍未冻结，R2 仍未放行。** 响应由 `/govern` 处理。

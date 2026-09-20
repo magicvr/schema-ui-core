@@ -47,8 +47,9 @@ version: 0.1.0
 | E-031 | 2026-09-20 | A-034 响应：补 v78 与 site_settings DDL，起草 PG 显式 DDL | recorded | `02-execution/E-031-v78-and-site-settings-ddl-added.md` |
 | E-032 | 2026-09-20 | A-036 响应：四项闭合、PG v78 与 dict_entries 补齐 | recorded | `02-execution/E-032-a036-response.md` |
 | E-033 | 2026-09-20 | A-038 响应与 C3 备份/回滚边界首次落盘 | recorded | `02-execution/E-033-c3-boundary-drafted.md` |
+| E-034 | 2026-09-20 | F-I-002 可执行边界测试落地（D-020）与 A-040 响应 | recorded | `02-execution/E-034-fi002-executable-boundary-tests.md` |
 
-> 索引行序自本版起为 **E-001 → E-033 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
+> 索引行序自本版起为 **E-001 → E-034 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
 >
 > **Git checkpoint**：本轮（E-025/E-026）落盘后提交 `2d0734a1` — `govern(workspace-040): C2 freeze candidate batch 1 (90-column contract, predicate SQL, descriptor ledger)`。只暂存显式 owned paths（15 个文件，全部位于 workspace-040 与 Root `D-015`），未使用 `git add -A`；`apps/**` 无变更。commit hash 不作为审计或验收证据，仅用于可追溯。
 
