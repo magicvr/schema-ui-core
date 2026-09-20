@@ -33,6 +33,10 @@ version: 0.1.0
 | E-017 | 2026-09-20 | C2 90 列 codec/NULL mapping matrix 草案 | recorded | `02-execution/E-017-c2-column-matrix-draft.md` |
 | E-018 | 2026-09-20 | predicate/index/check 矩阵草案 | recorded | `02-execution/E-018-predicate-index-matrix-draft.md` |
 | E-019 | 2026-09-20 | v73+ module conversion owner allocation draft | recorded | `02-execution/E-019-v73-owner-allocation-draft.md` |
+| E-020 | 2026-09-20 | module-owned migration specification draft | recorded | `02-execution/E-020-owner-migration-spec-draft.md` |
+| E-021 | 2026-09-20 | runtime read/write and predicate spec draft | recorded | `02-execution/E-021-readwrite-predicate-spec-draft.md` |
+| E-022 | 2026-09-20 | backup/restore-to-new-db runbook draft | recorded | `02-execution/E-022-backup-restore-runbook-draft.md` |
+| E-023 | 2026-09-20 | v73+ append-only test rewrite checklist draft | recorded | `02-execution/E-023-v73-test-rewrite-checklist-draft.md` |
 
 ## 事实边界
 

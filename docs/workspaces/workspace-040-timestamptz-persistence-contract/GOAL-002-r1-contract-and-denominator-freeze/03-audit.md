@@ -45,6 +45,7 @@ version: 0.1.10
 | A-021 | 2026-09-20 | self | response to A-020 / E-index correction | conditional | 5 | `03-audit/A-021-r1-self-response-to-a020.md` |
 | A-022 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-021 / F-I-016 closure | conditional | 5 | `03-audit/A-022-r1-independent-after-a021-c2-c3-evidence.md` |
 | A-023 | 2026-09-20 | self | response to A-022 / E-index closure | conditional | 5 | `03-audit/A-023-r1-self-response-to-a022.md` |
+| A-024 | 2026-09-20 | self | C2/C3 design evidence expansion | conditional | 5 | `03-audit/A-024-r1-self-response-design-evidence-expansion.md` |
 
 ## 结论状态
 
