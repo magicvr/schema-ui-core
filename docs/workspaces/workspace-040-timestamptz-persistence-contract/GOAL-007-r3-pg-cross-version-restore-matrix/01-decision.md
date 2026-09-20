@@ -15,13 +15,13 @@ version: 0.1.0
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 / 决策 |
 |----|------|----------|----------|------|-------------|
 | I-041-004 | non-blocking（继承） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | B | open | `D-018` §5；关闭或 residual 见本表更新 |
-| I-041-009 | required（本目标新增） | 「supported / unsupported」判定口径与组合边界 | A | open | 检查点 A 冻结时关闭 |
+| I-041-009 | required（本目标新增） | 「supported / unsupported」判定口径与组合边界 | A | **verified（2026-09-21）** | `D-001` §2–§3（先于矩阵本体冻结）；前置实测 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md` |
 
 ## 决策索引
 
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|--------|------|
-| — | — | 尚无本目标决策（境界由 Root `D-018` §2 第 4 项冻结；`D-017` §3 约束②限定证据定位） | — | — |
+| D-001 | 2026-09-21 | R3-C 矩阵定义与 supported/unsupported 判定口径（检查点 A；关闭 `I-041-009`） | accepted | `01-decision/D-001-r3c-matrix-definition-and-criterion.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。
 

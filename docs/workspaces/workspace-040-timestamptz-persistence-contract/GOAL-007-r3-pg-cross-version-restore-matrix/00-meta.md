@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-21
 updated: 2026-09-21
-version: 0.1.0
-progress: 0/3
+version: 0.2.0
+progress: 1/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -52,18 +52,18 @@ serves_summary: 承接 Root R3 的 R3-C：在固定版本的 PostgreSQL 15/16/17
 
 | 检查点 | 判据 | 状态 |
 |--------|------|------|
-| **A** | 组合定义与驱动落盘（容器版本、client 版本、驱动命令、可复现入口）；每组合的预期判定口径（supported/unsupported 的定义）明确 | pending |
+| **A** | 组合定义与驱动落盘（容器版本、client 版本、驱动命令、可复现入口）；每组合的预期判定口径（supported/unsupported 的定义）明确 | **completed**（`D-001` §1–§3、§5 冻结矩阵两轴 9+27 格、三类判定与驱动机制；前置实测 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md`；`I-041-009` → verified） |
 | **B** | 全部组合实测并逐条记录（含 unsupported 的原因与退出码）；升级后恢复有界核对完成；`I-041-004` 关闭或书面 residual | pending |
 | **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | pending |
 
-`progress: 0/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 1/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 |
 |----|------|----------|----------|------|------|
 | I-041-004 | non-blocking（继承，`D-018` §5） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | B | **open**（本目标 B 关闭或 residual） | `D-018` §5；`D-017` §3 约束② |
-| I-041-009 | required（本目标新增） | 「supported / unsupported」的判定口径与组合边界（是否需用户裁决某些组合不作为支持承诺） | A | **open** | `D-018` §2 第 4 项；`D-017` §3 约束② |
+| I-041-009 | required（本目标新增） | 「supported / unsupported」的判定口径与组合边界（是否需用户裁决某些组合不作为支持承诺） | A | **verified（2026-09-21）** | `01-decision/D-001-r3c-matrix-definition-and-criterion.md` §2–§3；前置实测附件 |
 
 ## 已知环境事实（立项时）
 

@@ -4,7 +4,7 @@ status: active
 created: 2026-09-20
 updated: 2026-09-21
 parent: null
-version: 0.10.0
+version: 0.11.0
 workspace_id: workspace-040-timestamptz-persistence-contract
 ---
 
@@ -32,7 +32,7 @@ GOAL-001-timestamptz-persistence-contract [active] (2/3) · 纲领容器
 ```text
 R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
    → R2 双方言迁移 + Store 编解码 [completed · M1/M2 = GOAL-003 (4/4)、M3 = GOAL-004 (3/3)、M4 = GOAL-005 (3/3) · 独立关门审计 A-004 pass / open required = 0]
-      → R3 读写/时区回归、备份核对、证据与关门 [active · 边界已冻结（Root D-018）· R3-A/B = GOAL-006 (done · 3/3) · R3-C = GOAL-007 (active · 0/3) · R3-D 待渐进立项（slug 已经用户预确认，见 Root D-019 §2）]
+      → R3 读写/时区回归、备份核对、证据与关门 [active · 边界已冻结（Root D-018）· R3-A/B = GOAL-006 (done · 3/3) · R3-C = GOAL-007 (active · 1/3，检查点 A 已冻结矩阵定义) · R3-D 待渐进立项（slug 已经用户预确认，见 Root D-019 §2）]
 ```
 
 > R1 = `GOAL-002`（`done · 4/4`）；R2 = `GOAL-003`（4/4）+ `GOAL-004`（3/3）+ `GOAL-005`（3/3），M1–M4 全绿并经两轮独立关门审计（`A-004` **pass / open required = 0**）。Root `progress: 2/3` 由 Root `00-meta.md` 的三个显式检查点派生；**R3-A/B 已完成并关门**（`GOAL-006` `done · 3/3`，2026-09-21 静默关门），**R3-C 已立项开工**（`GOAL-007` `active · 0/3`），R3-D 待立项。
@@ -47,7 +47,7 @@ R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
 | GOAL-004-r2-repository-and-predicate-rewrites | R2 · 仓储读写与谓词改造（M3） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
 | GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
 | GOAL-006-r3-wire-formatter-and-unit-family-matrix | R3 · 公共 wire fixed-6 formatter 与单位族/时区矩阵（R3-A/B） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-21 |
-| GOAL-007-r3-pg-cross-version-restore-matrix | R3 · PostgreSQL 15/16/17 pg_restore 跨版本矩阵与升级后恢复有界核对（R3-C） | GOAL-001-timestamptz-persistence-contract | **active** | 0/3 | 2026-09-21 |
+| GOAL-007-r3-pg-cross-version-restore-matrix | R3 · PostgreSQL 15/16/17 pg_restore 跨版本矩阵与升级后恢复有界核对（R3-C） | GOAL-001-timestamptz-persistence-contract | **active** | 1/3 | 2026-09-21 |
 
 ## 说明
 
