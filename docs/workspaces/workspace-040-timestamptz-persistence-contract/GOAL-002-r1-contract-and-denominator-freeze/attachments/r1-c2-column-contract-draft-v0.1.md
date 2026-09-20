@@ -70,7 +70,7 @@ version: 0.1.0
 - v1–v72 canonical SQL/checksum immutable; no historical DDL edits.
 - New conversion descriptors start at v73 and are owned by the module owning the table. A module can add one or more append-only descriptors; each descriptor has SQLite `Apply`, PG `ApplyPostgres`, unique global version/name/checksum.
 - `migrate_test.go`/restart/operations frozen catalog assertions append v73+ rows; PG type assertions change from legacy BIGINT to `timestamp with time zone` precision 6 and include all v0.3.1 rows.
-- `schema_migrations.applied_at` conversion descriptor owner = `core.persistence` (D-011); Store runner still writes the row; authsession v1/Store identity historical CREATE remains immutable.
+- `schema_migrations.applied_at` conversion descriptor owner = **Root** D-011 `core.persistence`；Store runner still writes the row；authsession v1/Store identity historical CREATE remains immutable。**编号限定（A-030 F-I-020.3）**：`Root D-011` = schema-ledger owner 政策；`child D-011-voucher-monotonic-policies.md` = voucher/monotonic 承接，二者不同义。
 - Shared `internal/temporal` codec and test helpers are allowed; module public APIs remain time.Time/domain-level and never import driver types.
 
 ## 5. Wire and backup boundaries

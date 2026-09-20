@@ -27,20 +27,35 @@ version: 1.0.0
 
 | # | 列 | owner | disposition | old SQL（现行，逐字） | new SQL（目标） | callsite | 测试 |
 |--:|----|-------|-------------|------------------------|-----------------|----------|------|
-| 5 | `users.locked_until` | v74 | DB+RT | 读：`u.locked_until > ?` / `u.locked_until <= ?`（整数秒参数）；写：`UPDATE users SET locked_until = ?`，插入时 `DEFAULT 0` | 读：`(u.locked_until IS NULL OR u.locked_until > ?)`（未锁定分支）/ `(u.locked_until IS NOT NULL AND u.locked_until <= ?)`（已锁定分支）；写：`time.Time` 绑定或 NULL | `apps/api/modules/authsession/users_repository.go:498,500`；DDL `authsession/migration/migration.go:126,435` | `P-5-SENT`,`P-5-NULL`,`P-5-ORD` |
-| 6 | `users.last_login_failure_at` | v74 | DB+RT | 读：失败衰减窗口比较（整数秒）；DDL `last_login_failure_at INTEGER/BIGINT NOT NULL DEFAULT 0` | 读：`(u.last_login_failure_at IS NULL OR u.last_login_failure_at < ?)`（NULL = 无近期失败）；写：NULL 或 `Truncate(µs)` 时刻 | `authsession/migration/migration.go:208,220`；`authsession/users_repository.go`（衰减比较） | `P-6-SENT`,`P-6-NULL` |
+| 5 | `users.locked_until` | v74 | DB+RT | 读：`if *locked { clauses = "u.locked_until > ?" } else { clauses = "u.locked_until <= ?" }`（整数秒参数，`users_repository.go:498,500`）；写：`UPDATE users SET locked_until = ?`，插入时 `DEFAULT 0` | **已锁定分支**（`locked==true`，对位现行 `> ?`）：`u.locked_until IS NOT NULL AND u.locked_until > ?`；**未锁定分支**（`locked==false`，对位现行 `<= ?`）：`u.locked_until IS NULL OR u.locked_until <= ?`；写：`time.Time` 绑定或 NULL（session 结束清锁写 NULL） | `apps/api/modules/authsession/users_repository.go:496-503`；DDL `authsession/migration/migration.go:126,435` | `P-5-SENT`,`P-5-NULL`,`P-5-ORD` |
+| 6 | `users.last_login_failure_at` | v74 | DB+RT | 衰减比较（现行 SQL 在 `accounts.go`，**不是** `users_repository.go`）：`UPDATE users SET failed_login_count = CASE WHEN last_login_failure_at < ? THEN 1 ELSE failed_login_count + 1 END, last_login_failure_at = ?, updated_at = ? WHERE id = ?`；DDL `last_login_failure_at INTEGER/BIGINT NOT NULL DEFAULT 0`；另见写 0：`accounts.go:235`、`account_operations.go:181` | 读：`(u.last_login_failure_at IS NULL OR u.last_login_failure_at < ?)`（NULL = 无近期失败）；写：NULL 或 `Truncate(µs)` 时刻；**去除 `last_login_failure_at = 0` 写 0 路径**（改为写 NULL） | `authsession/accounts.go:194-201,235`；`authsession/account_operations.go:181`；DDL `authsession/migration/migration.go:208,220` | `P-6-SENT`,`P-6-NULL` |
 | 20 | `login_failures.locked_until` | v74 | DB+RT | `UPDATE login_failures SET fail_count = CASE WHEN updated_at < ? THEN 1 ELSE fail_count + 1 END, updated_at = ? WHERE user_id = ? AND ip = ?`；插入 `INSERT INTO login_failures (user_id, ip, fail_count, locked_until, updated_at) VALUES (?, ?, 1, 0, ?)`；读 `SELECT locked_until … ` 后 Go 侧 `lockedUntil > now.Unix()`；开锁 `UPDATE login_failures SET locked_until = ?, fail_count = 0, updated_at = ? …` | 插入：`locked_until` 绑定 NULL；读：`SELECT locked_until` 扫入 `sql.NullTime` → `lockedUntil.Valid && lockedUntil.Time.After(nowUTC)`；开锁：绑定 `time.Time`；窗口比较参数改 `time.Time` | `authsession/accounts_lock_source.go:67-71,78-79,101-102,115-128`；DDL `authsession/migration/migration.go:204,216` | `P-20-SENT`,`P-20-NULL`,`P-20-ORD` |
 | 34 | `mail_config.updated_at` | v73 | DB+RT | DDL `updated_at INTEGER/BIGINT NOT NULL DEFAULT 0`；读模型把 `0` 当未初始化 | DDL 去 `DEFAULT 0` + 可空；读：`updated_at IS NULL` = 未初始化；写：NULL 或 `Truncate(µs)` | `corepersistence/migration/migration.go:105,123`；`apps/api/internal/mail/runtime.go:169-176,308,382-390` | `P-34-SENT`,`P-34-NULL` |
 | 78 | `telegram_config.updated_at` | v86 | DB+RT | DDL `updated_at INTEGER/BIGINT NOT NULL DEFAULT 0` | 同 #34 | `channel/telegram/migration/migration.go:15,24`；`apps/api/internal/channel/telegram/runtime.go:166-177,395-405` | `P-78-SENT`,`P-78-NULL` |
 
 > **Root** `D-012-voucher-invalid-value-policy.md` 的三桶预检要求（0 / 负值 / 正值分别计数）对 **#5/#6/#20/#34/#72/#73/#78** 强制；预检脚本计入 owner descriptor 的 `preflight` 步骤（§6 `m0`），计数不达标即 fail closed。**注意**：child `D-012-v73-allocation-negative-truncation.md` 是 v73 allocation / 负瞬间承接，与本节 voucher 政策无关（F-I-018）。
+>
+> **负值（`< 0`）路径唯一性（响应 A-030 F-I-002.2）**：`< 0` **只**由 `m0` 预检 fail closed 处理，**不**写成 USING 分支。`USING`/rebuild 只承担 `= 0 → NULL` 与正值转换。`m0` 的 exact 形态（每个 sentinel 列一条，PG 与 SQLite 共用同一仓内 Go 预检函数）：
+>
+> ```sql
+> -- m0（每 sentinel 列一条；计数非零即 ROLLBACK，报 table/column/row 证据）
+> SELECT
+>   SUM(CASE WHEN "<col>" = 0  THEN 1 ELSE 0 END) AS bucket_zero,
+>   SUM(CASE WHEN "<col>" < 0  THEN 1 ELSE 0 END) AS bucket_negative,
+>   SUM(CASE WHEN "<col>" > 0  THEN 1 ELSE 0 END) AS bucket_positive
+> FROM "<table>";
+> -- 判定：bucket_negative > 0 → fail closed（voucher 列与全部 sentinel 列一致）；
+> --       bucket_zero 仅对 sentinel 列允许并全部映射 NULL；非 sentinel 列的 bucket_zero > 0 → fail closed
+> ```
+>
+> 此后各列的 USING/rebuild 分支一律只写 `= 0`（或 `IS NULL`），**不再出现 `< 0` 条件**。
 
 ## 2. voucher / entitlement 异常值（**Root** `D-012` + child `D-011`，负值 fail closed）
 
 | # | 列 | owner | disposition | old SQL（现行，逐字） | new SQL（目标） | callsite | 测试 |
 |--:|----|-------|-------------|------------------------|-----------------|----------|------|
-| 72 | `vouchers.expires_at` | v85 | DB+RT | `SELECT id, batch_id, code_prefix, amount, currency, status, expires_at, redeemed_by, redeemed_at, created_at, updated_at …` 后 Go 侧 `if exp.Valid && exp.Int64 > 0 {`（`<=0` 一律当缺失） | 迁移：`=0 → NULL`；`<0` → 迁移期报错 fail closed（不静默转 NULL）。运行时：`if exp.Valid {`（不再用 `>0` 判存在），过期判定用 `exp.Time.Before(nowUTC)` | `wallet/voucher/service.go:330,340` | `P-72-SENT`,`P-72-NEG` |
-| 73 | `vouchers.redeemed_at` | v85 | DB+RT | 同上，`if redAt.Valid && redAt.Int64 > 0 {` | 迁移同 #72；运行时 `if redAt.Valid {` | `wallet/voucher/service.go:347` | `P-73-SENT`,`P-73-NEG` |
+| 72 | `vouchers.expires_at` | v85 | DB+RT | `SELECT id, batch_id, code_prefix, amount, currency, status, expires_at, redeemed_by, redeemed_at, created_at, updated_at …` 后 Go 侧 `if exp.Valid && exp.Int64 > 0 {`（`<=0` 一律当缺失） | **`<0` 的唯一机制 = `m0` 预检 fail closed**（不进入 USING；负值即事务回滚，见 §6 与下方 SQL）。**`USING` 只处理 `= 0 → NULL` + 正值**：`CASE WHEN "expires_at" = 0 THEN NULL ELSE date_trunc('microseconds', to_timestamp("expires_at"::double precision)) END`。运行时：`if exp.Valid {`（不再用 `>0` 判存在），过期判定用 `exp.Time.Before(nowUTC)` | `wallet/voucher/service.go:330,340` | `P-72-SENT`,`P-72-NEG` |
+| 73 | `vouchers.redeemed_at` | v85 | DB+RT | 同上，`if redAt.Valid && redAt.Int64 > 0 {` | 同 #72 的唯一机制与 USING（列名换 `redeemed_at`）；运行时 `if redAt.Valid {` | `wallet/voucher/service.go:347` | `P-73-SENT`,`P-73-NEG` |
 | 88 | `digital_entitlements.expires_at` | v87 | DB+RT | form CHECK：duration 要求 `expires_at IS NOT NULL`、count 要求 `expires_at IS NULL` | CHECK 谓词逐字保留，仅列类型改 `TEXT`/`timestamptz(6)`；重建后重放两类 form 断言 | `digitaloffer/migration/migration.go:57-73`；`digitaloffer/store/store.go:440-601` | `P-88-NULL`,`P-88-ORD` |
 
 ## 3. 单调 `updated_at`（**Root** `D-013` + child `D-011`）
@@ -91,10 +106,23 @@ CHECK (
 | voucher/entitlement 异常值（§2） | #72, #73, #88 | 3 |
 | 单调 updated_at（§3） | #4, #11 | 2 |
 | 运行时空值/状态谓词（§4） | #8, #16, #18, #24, #25, #29, #30, #38, #41, #44, #45, #52, #57, #61, #65 | 15 |
-| 仅 `ORDER BY`（保留，无类型相关改写） | #1, #2, #35, #36, #37, #39, #56, #62, #69, #70, #76, #82, #83, #87, #89 | 15 |
-| **none**（无谓词/索引/CHECK） | #3, #7, #9, #10, #12, #13, #14, #15, #17, #19, #21, #22, #23, #26, #27, #28, #31, #32, #33, #40, #42, #43, #46, #47, #48, #49, #50, #51, #53, #54, #55, #58, #59, #60, #63, #64, #66, #67, #68, #71, #74, #75, #77, #79, #80, #81, #84, #85, #86, #90 | 50 |
+| 仅 `ORDER BY`（保留，无类型相关改写） | #1, #2, #22, #31, #33, #35, #36, #37, #39, #56, #60, #67, #69, #70, #74, #76, #79, #82, #83, #87, #89 | 21 |
+| **none**（无谓词/索引/CHECK） | #3, #7, #9, #10, #12, #13, #14, #15, #17, #19, #21, #23, #26, #27, #28, #32, #40, #42, #43, #46, #47, #48, #49, #50, #51, #53, #54, #55, #58, #59, #62, #63, #64, #66, #68, #71, #75, #77, #80, #81, #84, #85, #86, #90 | 44 |
 
-合计 **5 + 3 + 2 + 15 + 15 + 50 = 90**。`ORDER BY` 行清单（逐字现行）：`wallet_accounts … ORDER BY created_at DESC, id DESC`（`wallet/store/repository.go:200`）、`wallet_ledger_entries … ORDER BY created_at DESC, id DESC`（`:782`）与 `ORDER BY created_at ASC, id ASC`（`:922`）、`wallet_reconciliation_runs … ORDER BY created_at DESC, id DESC`（`:987`）、`vouchers … ORDER BY created_at DESC`（`voucher/service.go:391`）、`mail_outbox … ORDER BY created_at DESC, id DESC`（`internal/mail/outbox.go:107`）、`operation_log` retention/archive 序（`operationlog/repository.go:172-177,312-337`；`retention.go:21-42`）、`telegram_sessions … last_message_at DESC` 与 inbound/outbound 序（`channel/telegram/store/repository.go:161-284,125-179,375-384,608-724`）、`digital_offers/purchases/entitlements` 序（`digitaloffer/store/store.go:233,292,419,480,573,651`）、`task_runs … ORDER BY started_at DESC`（`scheduledtasks/store/repository.go:289-290,343-344`）、`user_password_history … ORDER BY created_at DESC, id DESC`（`authsession/password_policy.go:148,184`）、`refresh_tokens` 序（`authsession/account_operations.go:29`）、`service_credentials … ORDER BY created_at DESC, id DESC`（`authsession/service_credentials.go:91`）、`notifications … ORDER BY created_at DESC, id DESC`（`authsession/notifications_repository.go:164`）。
+合计 **5 + 3 + 2 + 15 + 21 + 44 = 90**。**核对方式**：每列的 `ORDER BY` 归属取自现行 SQL 逐字引用（下方列表），曾在上一版本被误标 `none` 的 `#22 user_password_history.created_at`、`#31 service_credentials.created_at`、`#33 mail_outbox.created_at`、`#60 task_runs.started_at`、`#67 wallet_accounts.created_at`、`#74 vouchers.created_at`、`#79 telegram_sessions.last_message_at` 已上移到 ORDER BY 组；`#62 task_runs.created_at` 原在 ORDER BY 组但现行 SQL 排序键是 `started_at`，已下移到 `none`（响应 A-030 F-I-006.3）。
+
+`ORDER BY` 行清单（逐字现行）：`wallet_accounts … ORDER BY created_at DESC, id DESC`（`wallet/store/repository.go:200`）、`wallet_ledger_entries … ORDER BY created_at DESC, id DESC`（`:782`）与 `ORDER BY created_at ASC, id ASC`（`:922`）、`wallet_reconciliation_runs … ORDER BY created_at DESC, id DESC`（`:987`）、`vouchers … ORDER BY created_at DESC`（`voucher/service.go:391`）、`mail_outbox … ORDER BY created_at DESC, id DESC`（`internal/mail/outbox.go:107`）、`operation_log` retention/archive 序（`operationlog/repository.go:172-177,312-337`；`retention.go:21-42`）、`telegram_sessions … last_message_at DESC`（`channel/telegram/store/repository.go:161-284`）与 inbound/outbound 序（`:125-179,375-384,608-724`）、`digital_offers/purchases/entitlements` 序（`digitaloffer/store/store.go:233,292,419,480,573,651`）、`task_runs … ORDER BY started_at DESC`（`scheduledtasks/store/repository.go:289-290,343-344`）、`user_password_history … ORDER BY created_at DESC, id DESC`（`authsession/password_policy.go:148,184`）、`refresh_tokens` 序（`authsession/account_operations.go:29`）、`service_credentials … ORDER BY created_at DESC, id DESC`（`authsession/service_credentials.go:91`）、`notifications … ORDER BY created_at DESC, id DESC`（`authsession/notifications_repository.go:164`）、`refresh_tokens/roles/…` 身份序同族。
+
+**jobs 四索引 exact old/new（逐字，响应 A-030 F-I-006.4）**：
+
+| 索引 | old（现行，逐字） | new（目标，逐字） |
+|------|-------------------|-------------------|
+| `idx_jobs_runnable` | `CREATE INDEX idx_jobs_runnable ON jobs(status, cancel_requested, lease_expires_at, created_at)`（`jobs/migration/migration.go:45`，PG 变体 `:84`） | 同文字重建；列已为 `timestamptz(6)`/TEXT。**列序与表达式不变** |
+| `idx_jobs_actor` | `CREATE INDEX idx_jobs_actor ON jobs(actor_id, kind, updated_at DESC)`（`:46`，PG `:85`） | 同文字重建；**列序含 `DESC` 不变** |
+| `idx_jobs_expiry` | `CREATE INDEX idx_jobs_expiry ON jobs(status, expires_at)`（`:47`，PG `:86`） | 同文字重建 |
+| `idx_jobs_created_at` | `CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC, id DESC)`（`:127`，v72 追加索引） | 同文字重建；**`IF NOT EXISTS` 与 `DESC, id DESC` 不变** |
+
+六态 CHECK（`jobs/migration/migration.go:36-43` SQLite / `:75-82` PG）在 v76 重建中**逐字保留**，仅列类型由 `INTEGER`/`BIGINT` 变为 `TEXT`/`timestamptz(6)`；`lease_expires_at`/`finished_at`/`expires_at` 的 `IS NULL` 分支语义不变（`P-41-ORD` 覆盖六态 + 四索引）。
 
 **序语义前提**：SQLite 目标为定宽 fixed-6 UTC TEXT，其**词法序 = 时刻序**（`T-*-SORT` 用例族逐列验证）；PG 为原生 `timestamptz`。所有 `ORDER BY` 的 id tie-break 保持不变；`idx_jobs_runnable` / `idx_jobs_actor` / `idx_jobs_expiry` / `idx_jobs_created_at`、`idx_recycle_items_active` 重建后列序与部分谓词逐字不变（`P-41-ORD`/`P-57-ORD`）。
 

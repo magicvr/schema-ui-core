@@ -2,14 +2,18 @@
 id: r1-c2-readwrite-predicate-spec-v0.1
 doc_type: design-attachment
 title: C2 runtime read/write and predicate specification draft
-status: proposed
+status: superseded
 created: 2026-09-20
 updated: 2026-09-20
 parent: GOAL-002-r1-contract-and-denominator-freeze
-version: 0.1.0
+version: 0.1.1
 ---
 
 # C2 runtime read/write and predicate specification v0.1
+
+> **已取代（superseded，2026-09-20）**：本文件的 family 级 old/new 谓词表**不再具权威**。A-029/A-030 **F-I-006** 要求「prose/family 表必须换成**一张** exact old/new SQL 表」，该唯一权威现为 **`r1-c2-predicate-exact-sql-v1.0-fc.md`**（exact old/new SQL + `m0–m5` 迁移顺序 + `P-*`/`T-*` 测试 ID + Root D-012/D-013 限定）。
+>
+> **不得**把本文件的 any old/new 行与 exact 表分叉使用。特别注意：本文件 L26 `locked_until IS NULL OR locked_until > nowUTC` 是**方向错误**的锁谓词（A-030 F-I-006.2）；正确方向见 exact 表 §1 `#5`（已锁定 = `IS NOT NULL AND > now`；未锁定 = `IS NULL OR <= now`）。§Shared read/write contract 的方向仍有效，但以 exact 表为准。
 
 ## Shared read/write contract
 

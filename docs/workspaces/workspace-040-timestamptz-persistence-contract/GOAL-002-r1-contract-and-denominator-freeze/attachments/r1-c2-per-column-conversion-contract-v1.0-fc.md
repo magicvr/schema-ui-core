@@ -23,7 +23,7 @@ version: 1.0.0
 | `r1-c2-column-contract-matrix-v0.2.md` | 6-key 映射族 | 本文件是其逐列展开；两者精度规则必须同一 |
 | `r1-c2-owner-migration-spec-v0.1.md` | owner / version / descriptor 名 | 本文件是其验收清单第 1/2/3/4 项 |
 | `r1-c2-predicate-exact-sql-v1.0-fc.md` | 谓词 exact old/new SQL | 本文件「read/write」列引用其 `P-*` 行号，不重复 SQL |
-| `r1-c3-backup-recovery-boundary-v1.0-fc.md` | C3 备份/回滚边界 | 本文件不覆盖 C3 |
+| `r1-c3-backup-recovery-boundary-v1.0-fc.md` | C3 备份/回滚边界 | **本文件不覆盖 C3**。该 C3 附件**尚未落盘**（A-030 F-I-020.1 点名悬空引用）；C3 权威在落盘前仍为 `r1-c3-backup-restore-runbook-v0.1.md` + `r1-backup-port-contract-draft-v0.1.md`。 |
 
 ## 1. 冻结表达式（唯一形态，全文件只允许这三种）
 
@@ -91,7 +91,7 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
 | 31 | 74 | `core.auth-session` | `service_credentials.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-31-RT`,`T-31-SORT` |
 | 32 | 74 | `core.auth-session` | `service_credentials.updated_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-32-RT`,`T-32-SORT` |
 | 33 | 73 | `core.persistence` | `mail_outbox.created_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-33-RT`,`T-33-SORT` |
-| 34 | 73 | `core.persistence` | `mail_config.updated_at` | ms D0 | `timestamptz(6) NULL`，去 `DEFAULT 0` | E3（`INTERVAL '1 millisecond'`，**无** `date_trunc`/`to_timestamp`） | `TEXT NULL` | R:NULL→未初始化；W:NULL 写入 | `T-34-ZL`,`T-34-NULL` |
+| 34 | 73 | `core.persistence` | `mail_config.updated_at` | ms D0 | `timestamptz(6) NULL`，去 `DEFAULT 0` | E3（毫秒 ELSE 主体 = **E2**：`date_trunc('microseconds', TIMESTAMPTZ 'epoch' + "<col>" * INTERVAL '1 millisecond')`） | `TEXT NULL` | R:NULL→未初始化；W:NULL 写入 | `T-34-ZL`,`T-34-NULL` |
 | 35 | 75 | `core.operationlog` | `operation_log.created_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-35-RT`,`T-35-SORT` |
 | 36 | 75 | `core.operationlog` | `operation_log_archive.created_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-36-RT`,`T-36-SORT` |
 | 37 | 75 | `core.operationlog` | `operation_log_archive.archived_at` | ms NN | `timestamptz(6) NOT NULL` | E2 | `TEXT NOT NULL` | R:`FromUnixMilli`；W:`Truncate(µs)` | `T-37-RT`,`T-37-SORT` |
@@ -153,9 +153,12 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
 
 ## 3. C2 冻结前必须收口的 3 项（本候选仍未满足）
 
-1. **D-015 字面已按裁决 B 收口（待落盘）**：秒族保留三份载体已接受的 E1（`to_timestamp(double)` + `date_trunc`），毫秒族为整数 interval；修订 `D-015-negative-instant-truncation.md` 与 child `D-012-v73-allocation-negative-truncation.md` 的「sec/ms 均整数 interval」措辞。**收口落盘 + independent 复审接受前，本文件不得升格为冻结合同。**
+1. **D-015 字面已按裁决 B 收口并落盘**：秒族保留三份载体已接受的 E1（`to_timestamp(double)` + `date_trunc`），毫秒族为整数 interval。Root `D-015-negative-instant-truncation.md` 与 child `D-012-v73-allocation-negative-truncation.md` 已改为分族表述（E-026）。**A-030 已确认该子项 `fixed`**；本文件仍为冻结候选（整条 F-I-002 未闭合，见 §3.4 与 A-030）。
 2. **不可逆点清单**：已在 `r1-c2-predicate-exact-sql-v1.0-fc.md` §6 单列（0→NULL、精度截断、非规范 TEXT fail closed）；本文件 §2 的 `ZL`/`NEG`/`NULL` 用例族与之对应。
 3. **per-owner `MigrationChecksum` 尚未记录**：见 `r1-c2-descriptor-ledger-v1.0-fc.md`（结构、名称、transform ID 已定，哈希值需 R2 落码后填充）。
+4. **逐表 exact SQLite rebuild DDL 仍未写出**（A-030 F-I-002.1）：本文件 §1 给的是共享模板与逐列目标形状；每张受影响表的完整 `<t>_new` DDL + `INSERT SELECT` 正文仍是 C2 冻结前必交项。
+5. **非法值单路径**：`< 0` 只走 `m0` 预检 fail closed，不写 USING 分支——该唯一机制见 `r1-c2-predicate-exact-sql-v1.0-fc.md` §1 说明块与 §6 `m0`。
+6. **双方言 checksum 约定二选一**：未选定（P-004 待用户/编排器裁决；见 descriptor 台账 §5.3）。
 
 ## 4. 声明
 
