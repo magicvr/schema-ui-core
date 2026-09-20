@@ -18,7 +18,9 @@ version: 0.1.0
 
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
-| — | — | — | — | — | 尚无意见（本目标刚立项） | — |
+| A-001 | self | 2026-09-21 | GOAL-008 检查点 A（退出判据矩阵、判据 5 反向核验、残留清账）+ Root 关门就绪度 | conditional | 9 项成果可核对；开放 required = 0；两条限定（`L-1` 本环境绑定 / `L-2` 变更范围口径）已写入矩阵；`F-S-001`～`F-S-005` 提交 independent 复核；判据 6 未被越读，Root 关门仍待用户确认 | `03-audit/A-001-self-r3d-exit-matrix.md` |
+| A-002 | independent（grok build · grok-4.6 · high） | 2026-09-21 | 关门审计：R3-D 退出矩阵六判据 + 跨目标开放 required + Root 关门就绪度（含独立复跑四个真实路径测试与判据 5 四类扫描） | **conditional**（开放 required = **0**） | 判据 1–5 **实质满足**；判据 6 部分满足（用户确认未发生）。**同意把 Root 交给用户确认关门**，**不同意**自行标 `done`。跨 GOAL-002～007 开放 required 逐目标核对 = 0。6 条 recommended：`F-I-001`（矩阵引用死链）、`F-I-002`（Root 信息表未同步）、`F-I-003`（goal-tree 说明段矛盾）、`F-I-004`（GOAL-004 overruled 载体偏弱）、`F-I-005`（GOAL-002 索引缺 A-048）、`F-I-006`（vision/workspace 投影过时）。复跑：四测试全 PASS 无 SKIP；判据 5 扫描与矩阵一致 | `03-audit/A-002-independent-r3d-root-closeout.md` |
+| A-003 | self（编排器响应） | 2026-09-21 | 响应 A-002 全部 findings + 检查点 C 就绪声明 | **pass** | 6 条 recommended 全部闭合或登记（`F-I-001`～`F-I-005` fixed；`F-I-006` 登记为 C 动作）；检查点 B 判定完成；**Root 关门未发生**，三问确认包（`I-041-010` required + `I-041-011` + GOAL-004 overruled 确认）已提交用户 | `03-audit/A-003-response-to-a002-and-checkpoint-c-readiness.md` |
 
 ## 待复审事项（编排器登记，供独立审计取证）
 

@@ -71,6 +71,9 @@ version: 0.1.24
 | A-045 | 2026-09-20 | self | response to A-044 / C3 §5 假命题、Root D-015 与 child D-012 弃用、索引补齐；F-I-005 待用户 residual 裁决 | conditional | 2 | `03-audit/A-045-r1-self-response-to-a044.md` |
 | A-046 | 2026-09-20 | independent | 6029efe9 A-044 残留 + 2dc251a7 F-I-005 residual · R1 关门前审计 | conditional | 0 | `03-audit/A-046-r1-independent-closeout-fi002-fi005-residual.md` |
 | A-047 | 2026-09-20 | self | R1 关门向编排响应 / F-I-002 fixed、F-I-005 accepted-residual、C2+C3 冻结、I-040-001～003 verified | pass | 0 | `03-audit/A-047-r1-self-closeout-response-to-a046.md` |
+| A-048 | 2026-09-21 | self（编排器：`D-021` `F-I-005` residual 复审触发与闭合） | R2（`GOAL-003`）首次记录 v73–v87 真实 `MigrationChecksum` → 触发 `D-021` 复审；独立复审（grok build · grok-4.6 · high，落盘于 `GOAL-003/03-audit/A-002`）判定残余三项均有可核对证据 | pass | 0 | `03-audit/A-048-r1-fi005-residual-rereview-closure.md` |
+
+> **索引补登说明（2026-09-21，响应 GOAL-008 `A-002` `F-I-005`）**：`A-048` 此前仅在正文出现（L118），未登记进本索引表；现补登条目头。`A-048` 把 `F-I-005` 由 `accepted-residual` 复审为 **`fixed`**（触发条件已发生且经独立复审），索引缺口不影响该闭合的合法性，但会影响「开放 required = 0」的核对路径——已修复。
 
 ## 结论状态（R1 关门向）
 

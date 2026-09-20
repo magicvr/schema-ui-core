@@ -52,3 +52,11 @@ verdict: pass
 
 - **A-002 `F-I-002`**：已由用户 2026-09-20 P-004 书面裁决 —— **接受** `*time.Time` + JSON `null` 属 R2 的必然后果（`mail_config.updated_at` NULL = 未配置，不再伪造 1970/零值瞬时；web 客户端仅在字段为 string 时使用，已容忍 null）。该 recommended finding 以 `user-overruled` 闭合，**不再要求改动**。\n- 至此 GOAL-004 无未闭合 required / recommended；`user-overruled` 依据见本文件与 `03-audit.md`。
 - 其余 required / recommended 均已处置或按 A-002 判定记录。
+
+## 修订（2026-09-21，响应 GOAL-008 `A-002` `F-I-004`）
+
+上表 `F-I-002` 行末尾残留「**等用户选择**：接受（R2 内必要后果）/ 退回 R3 与 wire formatter 同批 / 恢复伪造瞬时」——该句是**作出裁决之前**的选项陈述，与同行的最终处置（**`user-overruled`**）及 `03-audit.md` 关门记录自相矛盾。**保留原文以便追溯，以本修订为准**：
+
+- 该 recommended finding 已按 **`user-overruled`** 闭合（用户 2026-09-20 P-004 书面裁决：接受 `*time.Time` + JSON `null` 属 R2 必要后果）；「等用户选择」的三种选项**不再开放**。
+- 后续 R3-A/B 已把该字段的**非空值**纳入共享 fixed-6 formatter（`mailConfigWire`，GET 与 PUT 共用）；`*time.Time` + JSON `null` 的模型语义保持不变——两条用户裁决同时成立。
+- **载体说明（诚实边界）**：该 `user-overruled` 的用户书面依据**没有**独立的 `D-` 条目，只见于本条与 `03-audit.md` 的关门记录；GOAL-008 `A-002` `F-I-004` 建议在 Root 关门确认包中顺带请用户确认该记录。故本项**不**升为 required，也**不**阻断 Root 关门。

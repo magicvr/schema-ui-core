@@ -14,9 +14,9 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 决策 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-040-001 | required | SQLite 与 PG 的合同平等物理类型、精度、UTC 表示、NULL/零值、编解码 | R1/R2 | R1 | 对照 VP-013 与现有时间列；形成 R1 冻结决策 | collecting | R1 冻结前复核 | 用户 D-002：PG `timestamptz(6)`；SQLite fixed-6 UTC RFC3339 TEXT；sentinel 0 → NULL；待逐列证据 |
-| I-040-002 | required | 首波时间列分母与非时间 INTEGER 排除清单 | R1/R2 | R1 | 全仓扫描并冻结列清单 | collecting | R1 冻结前复核 | 用户 D-002：全部绝对时刻列纳入，ID/duration/step/version/计数/金额/flag 排除 |
-| I-040-003 | required | 存量升级与备份 residual | R1/R3 | R1 | 对照 dump/restore 路径并取得必要书面裁决 | collecting | R1 冻结前复核 | 用户 D-002：SQLite/PG 各自原地转换；不提供 SQLite→PG 产品搬运器 |
+| I-040-001 | required | SQLite 与 PG 的合同平等物理类型、精度、UTC 表示、NULL/零值、编解码 | R1/R2 | R1 | 对照 VP-013 与现有时间列；形成 R1 冻结决策 | **verified**（R1 关门 `GOAL-002` `A-046`/`A-047`） | — | Root `D-002`（承接 `GOAL-002/D-001`）：PG `timestamptz(6)`；SQLite fixed-6 UTC RFC3339 TEXT；sentinel 0 → NULL；逐列证据 = `r1-time-column-inventory-v0.3.md` |
+| I-040-002 | required | 首波时间列分母与非时间 INTEGER 排除清单 | R1/R2 | R1 | 全仓扫描并冻结列清单 | **verified**（R1 关门 `GOAL-002` `A-046`/`A-047`） | — | 冻结分母 = 90 列 / 44 表（`internal/temporalcontract`）；ID/duration/step/version/计数/金额/flag 排除 |
+| I-040-003 | required | 存量升级与备份 residual | R1/R3 | R1 | 对照 dump/restore 路径并取得必要书面裁决 | **verified**（R1 关门；`D-021` residual 已按 `fixed` 闭合 = `GOAL-002/A-048`） | — | Root `D-002`：SQLite/PG 各自原地转换；不提供 SQLite→PG 产品搬运器 |
 | I-040-004 | required | VP-020 展示/输入与 UTC 存储回归矩阵 | R3 | R1 | 复用 VP-020 验收用例，补存储形状对照 | verified | — | `D-018` 修订（2026-09-20）：`GOAL-006/02-execution/E-004` 双载体矩阵（Go wire/瞬时 round-trip + Web 会话时区展示 round-trip） |
 | I-040-005 | required | 激活前置与工作区绑定 | 激活 | 激活前 | `/vision` self Review + `/govern` scaffold | verified | — | VRev-104；workspace/Root 已建立 |
 

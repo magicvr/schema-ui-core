@@ -19,7 +19,7 @@ version: 0.1.0
 
 | # | Root 成功标准（`GOAL-001/00-meta.md`） | 结论 | 主要证据 |
 |--:|----------------------------------------|------|----------|
-| 1 | PG 物理类型、SQLite 合同平等物理类型、UTC 语义、NULL/零值、编解码与公共面禁止泄漏**已书面冻结** | **满足** | `GOAL-002` `D-002`/`D-003`；22 份冻结附件（含 v0.3 列清单与 wire inventory）；`internal/temporal` codec |
+| 1 | PG 物理类型、SQLite 合同平等物理类型、UTC 语义、NULL/零值、编解码与公共面禁止泄漏**已书面冻结** | **满足** | Root `D-002`/`D-003`（承接 `GOAL-002/D-001`）；22 份冻结附件（含 v0.3 列清单与 wire inventory）；`internal/temporal` codec |
 | 2 | R1 纳入分母的时间列**双方言迁移完成并通过 checksum**；非时间 `INTEGER` 显式排除 | **满足** | 15 个 v73–v87 descriptor；**15/15** checksum 冻结在 `internal/store/migrate_test.go`；分母 90 列 / 44 表 |
 | 3 | 写入绝对时刻与读回一致；VP-020 展示/输入时区不漂移；双方言回归**含至少一条 PG 路径** | **满足** | R2 写入截断与读侧 fail-closed 适配器；R3-A/B wire formatter + 单位族矩阵 + VP-020 round-trip；**真实 PG 路径本轮实测非 skip**（见 §3） |
 | 4 | R1 范围内 SQLite 快照 / PG dump 路径**可升级后恢复**，或用户书面 residual 点名 | **满足** | C3 SQLite/PG restore harness；**升级路径** `TestC3RecoveryAnchorsOnPostgresUpgrade`；R3-C 跨版本矩阵 18 个 supported 格（含 15→16/17） |
@@ -32,11 +32,11 @@ version: 0.1.0
 
 | 证据 | 位置 | 内容 |
 |------|------|------|
-| 用户方案裁决 | `GOAL-002/01-decision/D-002-r1-contract-freeze-user-decisions.md` | PG `timestamptz(6)`；SQLite fixed-6 UTC RFC3339 `TEXT`；sentinel `0 → NULL`；不提供 SQLite→PG 搬运器 |
-| 公共 wire 输出裁决 | `GOAL-002/01-decision/D-003-...`（Root `D-003`） | 输出固定 `YYYY-MM-DDTHH:MM:SS.ffffffZ`；`VR-091` 同 |
-| 输入兼容裁决 | Root `D-005`（2026-09-20） | 0/3/6/9 位小数与零等价 offset 接受；**非零 offset 与无时区拒绝** |
-| 负瞬间与截断 | Root `D-015` | 写入先在 Go codec 截断到微秒（向零）；毫秒族 PG 表达式为整数拆分式（原浮点式已弃用） |
-| 非 DB 例外范围 | Root `D-009` | 邮件正文 / audit `detail` / 任意 payload 不进固定 6 位合同 |
+| 用户方案裁决 | `GOAL-001/01-decision/D-002-r1-contract-freeze-user-decisions.md`（R1 承接：`GOAL-002/01-decision/D-001-r1-contract-freeze.md`） | PG `timestamptz(6)`；SQLite fixed-6 UTC RFC3339 `TEXT`；sentinel `0 → NULL`；不提供 SQLite→PG 搬运器 |
+| 公共 wire 输出裁决 | `GOAL-001/01-decision/D-003-r1-public-wire-contract-user-decision.md`（Root `D-003`） | 输出固定 `YYYY-MM-DDTHH:MM:SS.ffffffZ`；`VR-091` 同 |
+| 输入兼容裁决 | Root `D-005`（`GOAL-001/01-decision/D-005-r1-wire-input-compat.md`；R1 承接 `GOAL-002/01-decision/D-003-wire-input-compat.md`） | 0/3/6/9 位小数与零等价 offset 接受；**非零 offset 与无时区拒绝** |
+| 负瞬间与截断 | Root `D-015`（`GOAL-001/01-decision/D-015-negative-instant-truncation.md`） | 写入先在 Go codec 截断到微秒（向零）；毫秒族 PG 表达式为整数拆分式（原浮点式已弃用） |
+| 非 DB 例外范围 | Root `D-009`（`GOAL-001/01-decision/D-009-wire-nondb-exceptions.md`） | 邮件正文 / audit `detail` / 任意 payload 不进固定 6 位合同 |
 | 逐列表清单 | `GOAL-002/attachments/r1-time-column-inventory-v0.3.md` | 90 列、44 表、sec/ms 两族、D0 sentinel 与 D0-nullable 分类 |
 | wire 清单 | `GOAL-002/attachments/r1-public-wire-inventory-v0.1.md` | Go/Web 输出面、parser、fixture 与例外 |
 | 冻结列分母（机读） | `internal/temporalcontract/columns.go` | `Count = 90`、`Columns()`、`Tables()`；被 backup 与 store 共用 |

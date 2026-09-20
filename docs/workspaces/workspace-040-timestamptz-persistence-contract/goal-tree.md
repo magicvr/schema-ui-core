@@ -53,7 +53,7 @@ R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
 
 ## 说明
 
-- Root `active · 2/3`——**R1 与 R2 均已完成并关门**（R1 2026-09-20 用户书面确认，关门向 independent = A-046，开放 required = 0；R2 独立复审 `A-004` pass / open required = 0）。**R3-A/B（`GOAL-006`）于 2026-09-21 静默关门**（`done · 3/3`）。**R3-C（`GOAL-007`）同批立项并关门**（`done · 3/3`；9 dump + 54 restore 格逐格落盘，18 supported 形状校验全通过，`I-041-004`/`I-041-009` verified；independent `A-002` `conditional`/开放 required = 0 并自行复跑矩阵）。**仅剩 R3-D（`GOAL-008-r3-exit-matrix-and-root-closeout`）待立项**，含**用户确认关门**（判据 6）；产品级「支持哪些组合」的书面承诺留作其 P-004。
+- Root `active · 2/3`——**R1 与 R2 均已完成并关门**（R1 2026-09-20 用户书面确认，关门向 independent = A-046，开放 required = 0；R2 独立复审 `A-004` pass / open required = 0）。**R3-A/B（`GOAL-006`）与 R3-C（`GOAL-007`）均于 2026-09-21 静默关门**（各 `done · 3/3`；R3-C 证据 = 9 dump + 54 restore 格逐格落盘、18 supported 形状校验全通过；两目标的 independent 收口意见开放 required 均为 0）。**R3-D（`GOAL-008`）进行中**（`active · 1/3`）：退出判据矩阵已落盘（判据 1–5 满足、判据 6 部分满足），self `A-001` 与 independent `A-002`（`conditional`/**开放 required = 0**，同意交给用户确认关门）均已落盘；**尚待用户确认关门**（`I-041-010` required）与 `docs/vision`/`workspace.md` 投影同步。
 - **R1 关门边界**：只放行**设计面**。F-I-005 = **用户书面 `accepted-residual`**（范围 + 复审触发 + 失效条件见 child `D-021`），**不得读作哈希已验证**；R2 的生产 schema 变更仍须经 R2 自身验收（residual 复审触发 = R2 首次记录任一 v73+ 哈希时）。
 - **M2/M3 次序**（**Root `D-017`**，用户 2026-09-20 裁决）：M2 落码后按 `D-018` 无过渡期使全仓测试红 → **M2 不单独提交**；M3 `GOAL-004-r2-repository-and-predicate-rewrites`（用户确认 slug）已立项并开工，转绿后与 M2 一并提交。`I-041-003` 已按常驻 PostgreSQL 15.4 实测证据关闭（约束：破坏性 migration 只可作用于一次性/专用测试 database）。M4 `GOAL-005-r2-backup-port-and-closeout` 已按用户确认 slug 立项（`active · 0/3`）：`D-016` 第 9 项 Backup Port 类型表面与 provider + `D-021` residual 收尾 + R2 关门审计。
 - R2/R3 的门禁不得由激活状态或 progress 投影替代。

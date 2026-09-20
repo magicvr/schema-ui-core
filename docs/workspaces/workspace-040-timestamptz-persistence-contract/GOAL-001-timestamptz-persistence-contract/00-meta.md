@@ -69,9 +69,9 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-040-001 | required | SQLite 用什么物理类型与 PG 合同平等？精度、UTC 表示、NULL/零值与编解码如何定义？ | R1 冻结、R2 迁移 | R1 | 对照 VP-013 合同与用户 D-002；R1 冻结前不得实施不可逆迁移 | collecting | R1 冻结前复核；责任人：R1 子目标 | 用户已选 PG `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 TEXT；sentinel 0 → NULL；待逐列证据 |
-| I-040-002 | required | 哪些绝对时刻列进入首波分母，哪些 INTEGER 明确排除？ | R1/R2 | R1 | 全仓扫描并冻结列清单 | collecting | R1 冻结前复核；责任人：R1 子目标 | 用户已选全部绝对时刻列；ID/duration/step/version/计数/金额/flag 排除 |
-| I-040-003 | required | 存量库升级策略与备份 residual 是什么？ | R1/R3 | R1 | 对照 VP-013/016 dump/restore 路径；设计双方言原地转换失败策略 | collecting | R1 冻结前复核；责任人：R1 子目标 | 用户已选 SQLite/PG 各自原地转换；不提供 SQLite→PG 产品搬运器 |
+| I-040-001 | required | SQLite 用什么物理类型与 PG 合同平等？精度、UTC 表示、NULL/零值与编解码如何定义？ | R1 冻结、R2 迁移 | R1 | 对照 VP-013 合同与用户 D-002；R1 冻结前不得实施不可逆迁移 | **verified**（R1 关门 `GOAL-002` `A-046`/`A-047`） | — | 用户裁决 = Root `D-002`（承接 `GOAL-002/D-001`）：PG `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 TEXT；sentinel 0 → NULL；逐列证据见 `GOAL-002/attachments/r1-time-column-inventory-v0.3.md`（90 列）与 `internal/temporalcontract` |
+| I-040-002 | required | 哪些绝对时刻列进入首波分母，哪些 INTEGER 明确排除？ | R1/R2 | R1 | 全仓扫描并冻结列清单 | **verified**（R1 关门 `GOAL-002` `A-046`/`A-047`） | — | 冻结分母 = 90 列 / 44 表（`internal/temporalcontract.Columns()`）；ID/duration/step/version/计数/金额/flag 排除（inventory §排除 + PG leftover 守卫） |
+| I-040-003 | required | 存量库升级策略与备份 residual 是什么？ | R1/R3 | R1 | 对照 VP-013/016 dump/restore 路径；设计双方言原地转换失败策略 | **verified**（R1 关门 + `D-021` residual 已 `fixed`：`GOAL-002/A-048`） | — | 用户裁决 = Root `D-002`：SQLite/PG 各自原地转换；不提供 SQLite→PG 产品搬运器；residual `F-I-005` 由 `D-021` 复审触发后按 `fixed` 闭合 |
 | I-040-004 | required | 与 VP-020 展示合同的回归矩阵如何覆盖会话时区与 UTC 存储？ | R3 | R1 | 复用 VP-020 用例并补存储形状对照 | **verified** | — | `GOAL-006/02-execution/E-004`：Go wire/瞬时 round-trip（含 DST 边界、+05:45、负 epoch）+ Web 会话时区展示 round-trip（L1/L2/L3 层解析 + 秒粒度恒等） |
 | I-040-005 | required | 激活前置：VP-039 波次、架构 freshness、激活 self Review、slug 是否满足？ | 激活 | 激活前 | `/vision` 核对 VP-039 `closed`、`6197e802` → `b0a6789b` freshness 与 VRev-104 | verified | — | VRev-104 `pass`；VP-039 `closed` v0.3.0；workspace/Root slug 已落盘 |
 
