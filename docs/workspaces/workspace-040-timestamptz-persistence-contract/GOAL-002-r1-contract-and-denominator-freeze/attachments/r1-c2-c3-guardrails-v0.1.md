@@ -21,7 +21,7 @@ version: 0.1.0
   - canonical SQLite `TEXT` formatter/parser：固定 `YYYY-MM-DDTHH:MM:SS.ffffffZ`；
   - strict output + compatible RFC3339 input parser（0/3/6/9 fractional digits、`+00:00` 等等价 offset）；
   - sentinel/NULL mapping helpers；
-  - precision validation（超过微秒的旧值按 C2 冻结的截断/舍入规则处理，默认 fail closed 或显式 truncation，不静默丢失）。
+  - precision validation（用户已选：新写入与迁移统一向零截断到微秒；不得按模块选择不同 rounding mode）。
 - Store Tx adapters 负责参数/扫描边界：SQLite 把时间参数规范化为 canonical TEXT；PG 绑定 `time.Time`/`timestamptz(6)`；Repository 不按 dialect 分支。
 - `schema_migrations.applied_at` 仍由 store runner owner 负责，不转移到模块 Repository；其新 conversion owner 在 catalog 追加表中单列。
 
@@ -44,7 +44,7 @@ version: 0.1.0
 At minimum C2 must enumerate and rewrite:
 
 - `users.locked_until`, `users.last_login_failure_at`, `login_failures.locked_until`: 0 sentinel → NULL; predicates become NULL-aware (`IS NULL OR ...`) with explicit unlocked semantics.
-- `mail_config.updated_at`, `telegram_config.updated_at`: D0 current rows require data audit; decide NULL/backfill before dropping NOT NULL/default.
+- `mail_config.updated_at`, `telegram_config.updated_at`: user selected legacy 0 → NULL; widen nullable/remove default 0 after preflight count; read/write stop treating 0 as instant.
 - `task_runs.finished_at`: remove runtime write-0 and `COALESCE(...,0)`; preserve NULL for unfinished runs.
 - `jobs.lease_expires_at`, `finished_at`, `expires_at`: preserve SQL NULL; state CHECK remains semantically equivalent after type conversion.
 - `notifications.read_at`, `recycle_items.restored_at`, voucher/entitlement nullable times: preserve NULL and partial-index/check semantics.
@@ -61,7 +61,7 @@ At minimum C2 must enumerate and rewrite:
 
 - A **minimal kernel Backup/RecoveryPoint Port** is allowed; the full `BackupService` orchestration and providers remain in `apps/api/internal`.
 - Port must not expose pgx/SQLite driver types. It should express only dialect-neutral artifact/metadata/verification/recovery-point semantics.
-- SQLite provider uses existing snapshot/native SQLite mechanism; PG provider uses native `pg_dump`/`pg_restore` (same-version client guidance) or an explicitly documented equivalent.
+- SQLite provider uses existing snapshot/native SQLite mechanism; PG provider is fixed by user decision to `pg_dump -F c` + `pg_restore` with same-version client guidance and explicit restore verification.
 - Common metadata should include: dialect, source/target identifier, catalog/schema version, checksum set, time-contract version, created-at, artifact identity and verification result.
 - Migration transaction rollback remains the first failure path; backup is higher-level recovery, not an application scheduler/API.
 - No scheduling, user authorization, remote storage, retention, KMS/TLS or UI in this VP; those remain internal/future scope.
@@ -73,8 +73,9 @@ C2 must enumerate and later R3 execute:
 - fixed-3 shared formatter and all inline handler formatters;
 - RFC3339 outputs and parsers;
 - Go/Web fixtures and tests;
-- `filelibrary` ModTime and config package metadata as explicit include/exclude decisions;
-- D-005 compatible input parser tests and strict fixed-6 output tests;
+- `filelibrary` ModTime and config package metadata are **included** by user D-009; natural-language email/audit detail and embedded JSON/TEXT payload times remain excluded;
+- D-005 compatible input parser tests and strict fixed-6 output tests; API input parser rejects non-zero offset while Web display parser may continue accepting equivalent offsets;
+- no `RFC3339Nano` output or trailing-zero elision;
 - VP-020 session/user timezone display/input round-trip matrix.
 
 ## 7. R2 entry gate

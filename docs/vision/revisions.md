@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-20
 parent: null
-version: 0.4.66
+version: 0.4.67
 ---
 
 # Charter 修订台账
@@ -107,3 +107,4 @@ version: 0.4.66
 | VR-090 | 2026-09-20 | editorial | VP-040 R1 用户方案裁决投影 | 用户 P-004 选择：PostgreSQL `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`；全部绝对时刻列进入分母，ID/duration/step/version/计数/金额/flag 排除；SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PG 产品搬运器；sentinel 0 → NULL。VP-040 修订为 v0.2.1；Charter 目的/边界/非目标与 `vision_id@version` 不变；R1 逐列证据由 `[workspace-040] GOAL-002-r1-contract-and-denominator-freeze` 承接。 |
 | VR-091 | 2026-09-20 | editorial | VP-040 公共时间 wire 合同裁决投影 | 用户 P-004 追加选择：公共 API 时间输出统一为 6 位微秒 RFC3339 UTC `Z`；影响 formatter、入站 parser、protocol fixtures、Web/Go 回归与 VP-020 R3 矩阵；不改 Charter 目的/边界/非目标或 `vision_id@version`，由 GOAL-002 C2/C4 与 R3 承接。 |
 | VR-092 | 2026-09-20 | editorial | VP-040 C3 Backup SPI/Service 裁决投影 | 用户 P-004 选择在本 VP 建立统一 Backup SPI/Service：SQLite/PG native provider、统一 metadata/verification/restore-to-new-db、事务 rollback 优先；不含调度、权限、远程存储、保留策略、KMS/TLS/UI。VP-040 修订为 v0.2.2；Charter 与 `vision_id@version` 不变。 |
+| VR-093 | 2026-09-20 | editorial | VP-040 R2 migration 归属与最小 Backup Port 投影 | 用户 P-004 选择按模块从 v73 append-only 追加 conversion migrations；最小 Backup/RecoveryPoint Port 进入 kernel，orchestration/providers 留在 internal；C2/C3 guardrails 草案承接。VP-040 修订为 v0.2.3；Charter 与 `vision_id@version` 不变。 |

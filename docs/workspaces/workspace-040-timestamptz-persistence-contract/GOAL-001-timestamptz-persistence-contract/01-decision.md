@@ -31,5 +31,7 @@ version: 0.1.0
 | D-005 | 2026-09-20 | 公共 wire 输入兼容裁决 | accepted | `01-decision/D-005-r1-wire-input-compat.md` |
 | D-006 | 2026-09-20 | C3 统一 Backup SPI/Service 裁决 | accepted | `01-decision/D-006-r1-backup-spi-user-decision.md` |
 | D-007 | 2026-09-20 | 最小 Backup/RecoveryPoint Port 公共边界裁决 | accepted | `01-decision/D-007-backup-port-surface-user-decision.md` |
+| D-008 | 2026-09-20 | C2 精度、D0 与 PG backup provider 裁决 | accepted | `01-decision/D-008-c2-precision-zero-backup-decisions.md` |
+| D-009 | 2026-09-20 | 公共 wire 非 DB 例外范围裁决 | accepted | `01-decision/D-009-wire-nondb-exceptions.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

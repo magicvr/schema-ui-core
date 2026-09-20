@@ -22,6 +22,8 @@ version: 0.1.0
 | E-006 | 2026-09-20 | wire 输入兼容用户裁决 | recorded | `02-execution/E-006-wire-input-compat-decision.md` |
 | E-007 | 2026-09-20 | Backup SPI/Service 用户裁决 | recorded | `02-execution/E-007-backup-spi-user-decision.md` |
 | E-008 | 2026-09-20 | Backup/RecoveryPoint Port 公共边界裁决 | recorded | `02-execution/E-008-backup-port-surface-user-decision.md` |
+| E-009 | 2026-09-20 | C2 精度、D0 与 PG backup provider 用户裁决 | recorded | `02-execution/E-009-c2-precision-zero-backup-decisions.md` |
+| E-010 | 2026-09-20 | wire 非 DB 例外范围用户裁决 | recorded | `02-execution/E-010-wire-nondb-exceptions-decision.md` |
 
 ## 事实边界
 

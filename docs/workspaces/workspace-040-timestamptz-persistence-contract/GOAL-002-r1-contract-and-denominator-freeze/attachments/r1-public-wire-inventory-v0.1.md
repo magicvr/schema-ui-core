@@ -26,7 +26,7 @@ version: 0.1.0
 
 ### 当前 inline fixed-3 outputs（需迁移到 shared formatter）
 
-- `apps/api/internal/handler/account_self.go:105-106,381-382`
+- `apps/api/internal/handler/account_self.go:105-106,381-382,391`
 - `apps/api/internal/handler/datapermission.go:85`
 - `apps/api/internal/handler/digitaloffer.go:291-292,335,347-351`
 - `apps/api/internal/handler/jobs.go:325-347`
@@ -35,6 +35,8 @@ version: 0.1.0
 - `apps/api/internal/handler/recyclebin.go:179,183`
 - `apps/api/internal/handler/roles.go:81-82`
 - `apps/api/internal/handler/settings.go:128`
+- `apps/api/internal/handler/dictionary.go:329,337`
+- `apps/api/internal/handler/scheduledtasks.go:506,513,516`
 - `apps/api/internal/handler/users.go:130-131`
 - `apps/api/internal/handler/wallet.go:85-95,575-578,938,980,992,1000-1007`
 - `apps/api/modules/wallet/jobs.go:219`
@@ -52,13 +54,21 @@ version: 0.1.0
 - `apps/api/modules/authsession/recovery.go:52`
 - `apps/api/internal/handler/operations.go:111` (filter parser)
 - `apps/api/internal/handler/jobs.go:389` (input parser)
-- `apps/api/internal/handler/service_credentials.go:170` (input parser)
+- `apps/api/internal/handler/service_credentials.go:170` (input parser), `:218` (audit detail time field)
+- `apps/api/internal/handler/service_credentials_test.go:22,119,172` (RFC3339 fixtures)
+- `apps/api/internal/handler/telegram_operator_test.go:477` (RFC3339 fixture)
 - `apps/api/modules/recyclebin/service.go:277-280` (payload parser)
 
 ### Non-DB filesystem output
 
-- `apps/api/internal/handler/filelibrary.go` formats filesystem `ModTime`; C2 must explicitly decide whether it joins the public fixed-6 output contract. It is not a DB column.
-- `apps/api/cmd/schema-ui/configpkg.go:307,324` emits package metadata `ExportedAt/ImportedAt` via `time.RFC3339`; C2 must explicitly keep or migrate this non-DB metadata surface.
+- `apps/api/internal/handler/filelibrary.go` formats filesystem `ModTime`; user D-009 includes it in fixed-6 output.
+- `apps/api/cmd/schema-ui/configpkg.go:307,324` emits package metadata `ExportedAt/ImportedAt`; user D-009 includes it in fixed-6 output.
+
+### C2 boundary (user D-009/D-005)
+
+- Include structured JSON/HTTP DTO timestamps, config package metadata, filesystem `ModTime`, dictionary/scheduled-task outputs and all listed Go/Web fixtures.
+- Keep human prose (email bodies, audit `detail` JSON strings, arbitrary `recycle_items.payload` fields) outside the public wire formatter contract; preserve their own parser/compatibility rules.
+- API input parser uses D-005 compatibility and rejects non-zero offsets; Web display parsing may continue accepting equivalent offsets as presentation input.
 
 ## Web consumer / fixtures
 
