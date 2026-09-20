@@ -22,7 +22,7 @@ version: 0.1.0
 - Existing seconds values: `time.Unix(v, 0).UTC()` → canonical; PG uses `to_timestamp(v)`/equivalent explicit UTC expression.
 - Existing milliseconds values: `time.UnixMilli(v).UTC()` → canonical; PG uses `to_timestamp(v / 1000.0)`/equivalent explicit expression.
 - Seconds/milliseconds are never inferred from magnitude at runtime; unit comes from the v0.3.1 per-column row.
-- Existing integer seconds gain `.000000`; existing milliseconds gain three trailing zero microdigits. No invented sub-millisecond precision.
+- Existing integer seconds gain `.000000`; existing milliseconds gain three trailing zero microdigits. New values and migrations **truncate toward zero to microseconds**; no module-specific rounding/fail-closed alternative.
 - Legacy sentinel 0 becomes SQL NULL only for the explicit sentinel rows in §2; non-sentinel required time 0 is a migration error, not a silent NULL.
 
 ## 2. Sentinel/nullable mapping
@@ -30,12 +30,12 @@ version: 0.1.0
 | Columns / family | Old state | New state | Runtime change required |
 |------------------|-----------|-----------|-------------------------|
 | `users.locked_until`, `users.last_login_failure_at`, `login_failures.locked_until` | `NOT NULL DEFAULT 0`, 0 = inactive | nullable `timestamptz(6)` / TEXT, no 0 default | `IS NULL OR` predicates; domain absence maps NULL; INSERT/UPDATE stop writing 0 |
-| `mail_config.updated_at`, `telegram_config.updated_at` | `NOT NULL DEFAULT 0`; 0 = uninitialized legacy row | nullable or explicit initialization policy | data preflight counts 0; choose NULL/backfill; read/write stop treating 0 as instant |
+| `mail_config.updated_at`, `telegram_config.updated_at` | `NOT NULL DEFAULT 0`; 0 = uninitialized legacy row | nullable, no default 0 | user D-008: preflight counts 0; convert 0 → NULL; read/write stop treating 0 as instant |
 | `task_runs.finished_at` | DDL nullable, runtime writes 0 and reads `COALESCE(...,0)` | nullable; unfinished = NULL | remove numeric sentinel and COALESCE; scan nullable time |
 | `notifications.read_at`, `recycle_items.restored_at`, jobs nullable times, voucher/entitlement optional times | SQL NULL already means absence | SQL NULL preserved | parser/scan uses nullable time, no epoch fallback |
 | all other `NN` time rows | no sentinel accepted | `NOT NULL` canonical | old 0/invalid values fail migration with table/column/row evidence |
 
-`vouchers.expires_at` / `redeemed_at` legacy values `<=0` require a preflight count; only values proven to be absence may map to NULL, otherwise migration fails closed.
+`vouchers.expires_at` / `redeemed_at` legacy values: `0` → `NULL` as absence; negative values are invalid and fail closed; positive values use seconds conversion. Preflight counts all three buckets.
 
 ## 3. SQL/DDL and constraint order
 
@@ -73,8 +73,8 @@ version: 0.1.0
 ## 5. Wire and backup boundaries
 
 - Output formatter: fixed 6-digit UTC `Z`; input parser accepts legal RFC3339 0/3/6/9 fraction and `+00:00`, normalizes UTC.
-- Structured API DTOs, file ModTime output, and config package metadata require explicit C2 include/exclude decisions; human prose stays outside unless separately scoped.
-- Minimal kernel Backup/RecoveryPoint Port only; orchestration/providers/metadata storage/restore verification remain internal. Provider evidence must cover SQLite native snapshot and PG native dump/restore with new time types.
+- Structured API DTOs, file ModTime output, and config package metadata are included by D-009; human prose stays outside unless separately scoped.
+- Minimal kernel Backup/RecoveryPoint Port only; orchestration/providers/metadata storage/restore verification remain internal. Provider evidence must cover SQLite native snapshot and fixed `pg_dump -F c`/`pg_restore` with new time types.
 
 ## 6. Required evidence before C2 acceptance
 
