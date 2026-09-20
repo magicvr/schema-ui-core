@@ -48,9 +48,9 @@ The row assignment sums to 90 and includes `login_failures.locked_until`/`update
 
 ## Explicit conversion expressions
 
-- PG legacy seconds, non-sentinel: `to_timestamp(value::double precision)` from integer seconds (source has no sub-microsecond fraction; no server rounding is involved).
-- PG legacy milliseconds, non-sentinel: `to_timestamp(value::double precision / 1000.0)` from integer milliseconds (source has exactly three fractional digits).
-- PG sentinel rows: `CASE WHEN value = 0 THEN NULL ELSE to_timestamp(...) END` before type/constraint restoration; do not feed arbitrary fractional source through a server cast and call it truncation.
+- PG legacy seconds, non-sentinel: `date_trunc('microseconds', to_timestamp(value::double precision))` from integer seconds.
+- PG legacy milliseconds, non-sentinel: `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` from integer milliseconds; integer interval avoids binary-float conversion.
+- PG sentinel rows: `CASE WHEN value = 0 THEN NULL ELSE date_trunc(...) END` before type/constraint restoration; do not feed arbitrary fractional source through a typmod cast and call it truncation.
 - SQLite: never use SQLite date functions for the conversion; read the legacy integer through the shared Go codec, bind canonical fixed-6 UTC TEXT, then rebuild indexes/checks/FKs.
 - New Go writes: `t.UTC().Truncate(time.Microsecond)` before PG bind or SQLite formatting; tests must prove the bound value was truncated before the driver sees it.
 
