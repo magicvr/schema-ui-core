@@ -157,7 +157,7 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
 2. **不可逆点清单**：已在 `r1-c2-predicate-exact-sql-v1.0-fc.md` §6 单列（0→NULL、精度截断、非规范 TEXT fail closed）；本文件 §2 的 `ZL`/`NEG`/`NULL` 用例族与之对应。
 3. **per-owner `MigrationChecksum` 尚未记录**：见 `r1-c2-descriptor-ledger-v1.0-fc.md`（结构、名称、transform ID 已定，哈希值需 R2 落码后填充）。
 4. **逐表 exact SQLite rebuild DDL 仍未写出**（A-030 F-I-002.1）：本文件 §1 给的是共享模板与逐列目标形状；每张受影响表的完整 `<t>_new` DDL + `INSERT SELECT` 正文仍是 C2 冻结前必交项。
-5. **非法值单路径**：`< 0` 只走 `m0` 预检 fail closed，不写 USING 分支——该唯一机制见 `r1-c2-predicate-exact-sql-v1.0-fc.md` §1 说明块与 §6 `m0`。
+5. **负值单路径 + 分档政策**：`< 0` 不进任何 `USING` 分支。**仅 `#72`/`#73`（voucher 两列）**由 `m0` 预检 **fail closed**（**Root** `D-012`）；**其余全部时间列正常转换**——负 epoch 是合法 instant（**Root** `D-015`）。见 `r1-c2-predicate-exact-sql-v1.0-fc.md` §1 说明块与 §6 `m0`；可执行断言见 `apps/api/internal/w040contracttest/`。
 6. **双方言 checksum 约定二选一**：未选定（P-004 待用户/编排器裁决；见 descriptor 台账 §5.3）。
 
 ## 4. 声明

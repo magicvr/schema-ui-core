@@ -26,7 +26,7 @@ version: 0.2.0
 2. Run conversion inside the migration transaction; failure rolls back table/constraint changes. The pre-conversion snapshot is a **rollback/recovery artifact**, not a successful target-contract RecoveryPoint.
 3. After a successful conversion, invoke the internal BackupService/provider path for the target database; only its post-restore verification can produce a kernel `CreateRecoveryPoint` result.
 4. Restore the pre-conversion snapshot to a new SQLite file only for rollback rehearsal; restore the converted target artifact separately to a new SQLite file and run `PRAGMA integrity_check`, `PRAGMA foreign_key_check`, catalog/checksum verification and current-schema retired-record assertion.
-5. Verify the converted target has all 90 temporal columns with target TEXT/NULL policy and samples cover seconds, milliseconds, sentinel 0, nullable absence, negative-invalid and fixed-6 lexical ordering.
+5. Verify the converted target has all 90 temporal columns with target TEXT/NULL policy and samples cover seconds, milliseconds, sentinel 0, nullable absence and fixed-6 lexical ordering. **「negative-invalid」已移除**（2026-09-20，响应 A-042）：负值**只对 voucher 两列**是错误（Root `D-012`）；其余列的负 epoch 是合法 instant（Root `D-015`），不属于 B 的正向 round-trip 断言。
 6. Record rollback and target RecoveryPoint verification separately; preserve artifacts until audit evidence is persisted.
 
 > **错误点 1（历史）**：第 1 步的 per-migration snapshot 是「批次边界产物」，**随批次推进而变化**，不是「旧合同产物」；不得当作目标形状校验输入。见权威文件 §2 的 C 类。

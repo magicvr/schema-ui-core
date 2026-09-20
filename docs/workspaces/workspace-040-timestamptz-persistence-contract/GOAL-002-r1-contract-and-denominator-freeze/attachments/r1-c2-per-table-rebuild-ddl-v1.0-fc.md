@@ -13,7 +13,7 @@ version: 1.0.0
 
 > **状态：`freeze-candidate`。** 本文件是 A-030/A-032 **F-I-002.1** 点名的**逐表 exact SQLite rebuild DDL 正文**（`CREATE TABLE` / `INSERT … SELECT` / `CREATE INDEX`），按用户 `D-019` 裁决的 **F-5 子女先行**模式与 `D-018` 选项 C 的行拷贝机制书写，表达式取 `r1-c2-sqlite-rebuild-mechanism-v1.0-fc.md` §2（已由 A-032 复证）。**不是实施证据**；R2 才落码。
 >
-> 覆盖：`D-014` allocation 的 v73–v87 共 15 个 descriptor，含 **20 张带时间列的表**（分母 90 列），加 `D-019` §2/§3 的 **FK-preserve 子表**（3 张无时间列联接表 + 3 张跨 descriptor 子表，后者时间列由 v80/v81 另行转换）。
+> 覆盖：`D-014` allocation 的 v73–v87 共 15 个 descriptor，涉及 **44 张不同的表**（对 inventory v0.3 的 90 行按「倒数第二段 = 表名」机械去重所得；分母仍为 **90 列**），加 `D-019` §2/§3 的 **FK-preserve 子表**（3 张无时间列联接表 + 3 张跨 descriptor 子表，后者时间列由 v80/v81 另行转换）。
 >
 > **PG 侧**由配套附件承载（`D-019` §6：必须**显式书写**，禁止 `pgTimeColRe` 派生）。
 
@@ -28,7 +28,7 @@ version: 1.0.0
 | NULL 包裹 | 可空列：`CASE WHEN <col> IS NULL THEN NULL ELSE <表达式> END` |
 | D0 包裹 | `DEFAULT 0` sentinel 列：`CASE WHEN <col> = 0 THEN NULL ELSE <表达式> END`；新 DDL **去 `NOT NULL`、去 `DEFAULT 0`** |
 | voucher 包裹 | `#72/#73`：`CASE WHEN <col> IS NULL OR <col> = 0 THEN NULL ELSE <表达式> END` |
-| 负值 `< 0` | **不进任何表达式**；只由 `m0` 预检 fail closed |
+| 负值 `< 0` | **不进**任何 `USING`/rebuild 的 `CASE` 分支。**政策按列分档**：仅 `vouchers.expires_at`/`redeemed_at`（`#72`/`#73`）由 `m0` 预检 **fail closed**（**Root** `D-012`）；其余全部时间列**正常转换**——负 epoch 是合法 instant（**Root** `D-015`）。见 `r1-c2-predicate-exact-sql-v1.0-fc.md` §1 |
 | 列序权威 | live `PRAGMA table_info`（v72 已 apply 库）；ALTER 追加列在末尾。**禁止**按模块文件分组拼列序 |
 | 子表 live DDL 权威 | v72 已 apply 库的 `sqlite_master.sql` + 索引清单（**含** ALTER 追加列） |
 | DDL 附加校验（进 `m4`） | `foreign_key_check` 无行；`integrity_check` = `ok`；`<t>_old` 不存在；目标列类型 = `TEXT`；**父表另加**：全部子表 `REFERENCES` 指向同名新父表（不含 `_old`） |

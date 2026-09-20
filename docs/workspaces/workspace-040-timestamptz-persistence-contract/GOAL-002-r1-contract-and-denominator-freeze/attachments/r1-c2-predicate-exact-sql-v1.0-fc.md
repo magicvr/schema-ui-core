@@ -35,7 +35,13 @@ version: 1.0.0
 
 > **Root** `D-012-voucher-invalid-value-policy.md` 的三桶预检要求（0 / 负值 / 正值分别计数）对 **#5/#6/#20/#34/#72/#73/#78** 强制；预检脚本计入 owner descriptor 的 `preflight` 步骤（§6 `m0`），计数不达标即 fail closed。**注意**：child `D-012-v73-allocation-negative-truncation.md` 是 v73 allocation / 负瞬间承接，与本节 voucher 政策无关（F-I-018）。
 >
-> **负值（`< 0`）路径唯一性（响应 A-030 F-I-002.2）**：`< 0` **只**由 `m0` 预检 fail closed 处理，**不**写成 USING 分支。`USING`/rebuild 只承担 `= 0 → NULL` 与正值转换。`m0` 的 exact 形态（每个 sentinel 列一条，PG 与 SQLite 共用同一仓内 Go 预检函数）：
+> **负值（`< 0`）路径唯一性 + 适用范围（响应 A-030 F-I-002.2；政策范围经 A-042 更正）**：`< 0` **不进**任何 USING 分支。但它**并非对所有列都是错误**：
+>
+> - **仅 Root `D-012` 点名的 voucher 两列**（`vouchers.expires_at` / `vouchers.redeemed_at`）把负值视为数据损坏 → 由 `m0` 预检 fail closed。
+> - **其余全部时间列**：**Root `D-015` 明确「负 epoch 不是 sentinel」**，负值是**合法 instant**（epoch 之前），必须**正常转换**、**不得** fail closed。对应可执行断言见 `apps/api/internal/wcontracttest`（`TestNegativeMustFailClosed/ordinary_negative_is_valid_instant`）。
+> - `USING`/rebuild 承担：正值转换 + `= 0 → NULL`（sentinel 列）/ `IS NULL OR = 0 → NULL`（voucher 列）。
+>
+> `m0` 的 exact 形态（每个 sentinel 列一条，PG 与 SQLite 共用同一仓内 Go 预检函数）：
 >
 > ```sql
 > -- m0（每 sentinel 列一条；计数非零即 ROLLBACK，报 table/column/row 证据）
@@ -44,8 +50,11 @@ version: 1.0.0
 >   SUM(CASE WHEN "<col>" < 0  THEN 1 ELSE 0 END) AS bucket_negative,
 >   SUM(CASE WHEN "<col>" > 0  THEN 1 ELSE 0 END) AS bucket_positive
 > FROM "<table>";
-> -- 判定：bucket_negative > 0 → fail closed（voucher 列与全部 sentinel 列一致）；
-> --       bucket_zero 仅对 sentinel 列允许并全部映射 NULL；非 sentinel 列的 bucket_zero > 0 → fail closed
+> -- 判定（★ A-042 更正后的唯一政策）：
+> --   仅 voucher 两列：#72/#73 —— bucket_negative > 0 → fail closed（Root D-012）
+> --   其余时间列：     bucket_negative 仅记录，**不**阻断（Root D-015：负 epoch 合法）
+> --   sentinel 列：     bucket_zero 允许并全部映射 NULL
+> --   非 sentinel 列出现 0：记录并按 epoch instant 转换；是否异常由业务判定，不由时间合同阻断
 > ```
 >
 > 此后各列的 USING/rebuild 分支一律只写 `= 0`（或 `IS NULL`），**不再出现 `< 0` 条件**。
@@ -129,7 +138,7 @@ CHECK (
 ## 6. 迁移顺序（每个 owner descriptor 内）
 
 ```text
-m0  preflight：逐列 0 / 负值 / 正值分桶计数（Root D-012）；非法值或计数不符 → 事务回滚，fail closed
+m0  preflight：逐列 0 / 负值 / 正值分桶计数。**仅 voucher #72/#73 的 `bucket_negative > 0` 触发回滚（Root D-012）**；其余列的负值按 Root D-015 视为合法 instant 并继续；sentinel 列的 `bucket_zero` 映射 NULL；计数不符即 fail closed
 m1  放开受影响约束：DROP DEFAULT / DROP NOT NULL / DROP CHECK / DROP 部分索引（仅被本 descriptor 触及者）
 m2  逐列转换：PG 用 §1 E1/E2/E3 的 ALTER … TYPE … USING；SQLite 用 <t>_new 重建 + codec 拷贝
 m3  重建约束：CHECK / NOT NULL / 部分唯一索引 / 普通索引（列序与谓词逐字不变）

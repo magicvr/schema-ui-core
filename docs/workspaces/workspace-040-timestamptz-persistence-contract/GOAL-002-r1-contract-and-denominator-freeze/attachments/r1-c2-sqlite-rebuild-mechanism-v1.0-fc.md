@@ -97,7 +97,15 @@ strftime('%Y-%m-%dT%H:%M:%S',
 | `D0`（`NOT NULL DEFAULT 0`，0 = 缺失） | `CASE WHEN <col> = 0 THEN NULL ELSE <表达式> END`；新 DDL **去 `NOT NULL`、去 `DEFAULT 0`** |
 | `#72/#73 vouchers`（可空且 legacy `0` 亦为缺失） | `CASE WHEN <col> IS NULL OR <col> = 0 THEN NULL ELSE <表达式> END` |
 
-**负值 `< 0` 一律不进表达式**：只由 `m0` 预检 fail closed（`r1-c2-predicate-exact-sql-v1.0-fc.md` §1 说明块）。本文件所有 `CASE` 分支**不得**出现 `< 0` 条件。
+**负值 `< 0` 一律不进表达式**（不进 `USING`/rebuild 的任何 `CASE` 分支）。但**政策按列分档**（经 A-042 更正，与 Root `D-012`/`D-015` 一致）：
+
+| 列 | 负值处置 | 依据 |
+|----|----------|------|
+| **仅** `vouchers.expires_at` / `vouchers.redeemed_at`（`#72`/`#73`） | `m0` 预检 **fail closed**（数据损坏） | **Root** `D-012`（voucher 专属） |
+| **其余全部时间列** | **正常转换**（负 epoch 是合法 instant，epoch 之前） | **Root** `D-015`：负 epoch **不是** sentinel |
+
+- 本文件所有 `CASE` 分支**不得**出现 `< 0` 条件（转换表达式本身对负值已是正确的 floor 语义，见 §2.3）。
+- 可执行断言见 `apps/api/internal/w040contracttest/contract_boundaries_test.go` 的 `TestNegativeMustFailClosed`（voucher 子测试必须失败；`ordinary_negative_is_valid_instant` 子测试必须通过）。
 
 ## 3. `#34` / `#72` / `#73` 的唯一化结果（响应 A-030 F-I-002.2）
 
