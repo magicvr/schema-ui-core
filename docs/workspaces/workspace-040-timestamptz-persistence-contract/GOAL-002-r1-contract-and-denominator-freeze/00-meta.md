@@ -6,7 +6,7 @@ parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
 version: 0.1.0
-progress: 1/4
+progress: 0/4
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -31,7 +31,7 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 ## 成功标准
 
 - [ ] C1：全仓 compiled catalog 与运行时读写 inventory 完成；每列有旧单位、目标物理类型、精度、NULL/默认值、读写路径与证据。
-- [ ] C2：合同冻结：PG `timestamptz(6)` + SQLite 固定 6 位 UTC RFC3339 `TEXT`；sentinel 0 → NULL 的逐列规则落盘；未选方案与影响明确。
+- [ ] C2：合同冻结：PG `timestamptz(6)` + SQLite 固定 6 位 UTC RFC3339 `TEXT`；sentinel 0 → NULL 的逐列规则落盘；统一 6 位微秒 RFC3339 wire；未选方案与影响明确。
 - [ ] C3：原地转换与失败/回滚策略冻结；不提供跨引擎产品级搬运器；备份/恢复对 R2/R3 的依赖与 residual 明确。
 - [ ] C4：Root self 审计 + 本地 grok build（grok 4.6 · high）independent 审计完成；required findings 合法闭合；Root R1 可标 completed。
 
@@ -39,12 +39,12 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
-| C1 | 逐列 inventory 与单位/类型/读写路径证据 | **completed** |
+| C1 | 逐列 inventory 与单位/类型/读写路径证据 | **active**（v0.3 复核中） |
 | C2 | 物理合同、精度、NULL/零值与未选方案冻结 | pending |
 | C3 | 双方言原地转换、备份依赖与失败策略冻结 | pending |
 | C4 | self + grok independent 审计、响应与 R1 放行 | pending |
 
-`progress: 1/4` 由 C1～C4 派生（C1 inventory 已完成，C2～C4 未完成）；progress 不替代信息门禁或审计结论。
+`progress: 0/4` 由 C1～C4 派生（inventory v0.3 已补齐，等待 independent 复核后才标 C1 completed；C2～C4 未完成）；progress 不替代信息门禁或审计结论。
 
 ## 信息需求与阶段门禁
 

@@ -26,5 +26,6 @@ version: 0.1.0
 |------|------|------|--------|------|
 | D-001 | 2026-09-20 | 激活边界与 R1 默认候选登记 | accepted | `01-decision/D-001-activation-and-r1-candidate.md` |
 | D-002 | 2026-09-20 | R1 合同选型与用户裁决 | accepted | `01-decision/D-002-r1-contract-freeze-user-decisions.md` |
+| D-003 | 2026-09-20 | R1 公共时间输出合同裁决 | accepted | `01-decision/D-003-r1-public-wire-contract-user-decision.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

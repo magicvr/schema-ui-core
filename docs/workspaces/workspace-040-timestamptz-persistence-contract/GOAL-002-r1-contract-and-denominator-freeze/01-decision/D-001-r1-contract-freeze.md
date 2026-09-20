@@ -17,6 +17,7 @@ version: 0.1.0
 - 分母：全部表达绝对时刻的持久化列；排除 ID、duration、TOTP step、version、计数、金额、flag。
 - 升级：SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PG 产品级搬运器，沿 VP-013 residual。
 - sentinel：按语义把“未发生/无期限”的 `0` 转为 `NULL`；非空绝对时刻禁止零值。
+- 公共 wire：用户选择统一输出 6 位微秒 RFC3339 UTC `Z`，R3 需同步验证 formatter、协议 fixtures 与 VP-020 展示回归。
 
 ## 仍需验证
 

@@ -16,6 +16,8 @@ version: 0.1.0
 |------|------|------|--------|------|
 | E-001 | 2026-09-20 | VP-040 激活与工作区骨架建立 | recorded | `02-execution/E-001-activation-and-scaffold.md` |
 | E-002 | 2026-09-20 | R1 用户裁决与子目标建立 | recorded | `02-execution/E-002-r1-user-decisions-and-child-goal.md` |
+| E-003 | 2026-09-20 | R1 inventory 与交叉审计启动 | recorded | `02-execution/E-003-r1-inventory-and-audit-start.md` |
+| E-004 | 2026-09-20 | 公共时间输出合同用户裁决 | recorded | `02-execution/E-004-public-wire-decision-recorded.md` |
 
 ## 事实边界
 
