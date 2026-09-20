@@ -32,9 +32,13 @@ ALTER TABLE users RENAME TO users_old;
 
 ### F-3 · `PRAGMA foreign_keys=OFF` 在本项目**不可用**
 
-- DSN 固定 `_foreign_keys=on`（`apps/api/internal/store/store.go:57`）且 `SetMaxOpenConns(1)`（`:107`）；`Store.migrate` 启动即 `assertForeignKeysOn`（`migrate.go:32`，实现 `:253-265`）。
-- `PRAGMA foreign_keys` 在**事务内是 no-op**；而 `applyMigration`（`migrate.go:108-132`）把每个 descriptor 的 `Apply` 与 ledger 写入包在**同一个事务**里。
+- DSN 固定 `_foreign_keys=on`（`apps/api/internal/store/store.go:57`），且启动即 `assertForeignKeysOn`（`migrate.go:32`，实现 `:253-265`）使每个连接默认 ON。
+- `PRAGMA foreign_keys` 在**事务内是 no-op**（A-032 实测：事务内设 OFF 后 `PRAGMA foreign_keys` 仍为 1）；而 `applyMigration`（`migrate.go:108-132`）把每个 descriptor 的 `Apply` 与 ledger 写入包在**同一个事务**里。
 - 故 SQLite 官方 12 步 rebuild 的前置条件（事务外关 FK）无法满足。
+
+> **更正（A-032）**：本文件早前引用 `SetMaxOpenConns(1)` 作为约束，**不精确**——`SetMaxOpenConns(1)` 只用于 **in-memory**（`store.go:107`）；文件库默认 `sqlitePoolDefault = 4`（`:29,:109-113`），生产路径是**连接池**。pragma 是 per-connection，因此在 pool=4 上 `db.Exec("PRAGMA foreign_keys=OFF")` 后再 `db.Begin()` **不保证落在同一连接**。官方 12 步若要启用，必须把 `applyMigration` 改为 `Conn` 钉住后再 Begin——那是**平台 runner 变更**，不是 descriptor 内可做的事。
+>
+> **另需注意（A-032）**：官方 12 步本身在引擎层**可行**（事务外 FK=OFF 时实测：子表 `REFERENCES parent(id)` 保持、行保留）；**不可用的是它的前置条件**在现行 runner 里。不要把本条读成「官方 12 步在 SQLite 引擎层无效」。
 
 ### F-4 · 朴素重建在子表有行时会**级联删除子表数据**
 
@@ -175,15 +179,24 @@ CREATE INDEX idx_role_menu_items_menu_item_id ON role_menu_items(menu_item_id)
 
 **列序由全局版本序决定**（`token_version` v0011 → `failed_login_count`/`locked_until` v0012 + `enabled` v0013 → `notifications_enabled` v0017 → `avatar_url` v0035 → `must_change_password` v0038 → `email`/`email_status` v0054 → `last_login_failure_at` v0061），**不是**按模块文件分组；且三个跨模块列夹在 authsession 自己的列**中间**（v0013/v0017/v0035 插在 v0038 之前）。v74 的 `users` 新 DDL 必须按**本表列序**书写，遗漏任一列即静默丢数据。
 
+> **计数更正（A-032）**：本段早前写「authsession 内的 6 个 ALTER 列」却列出 7 个名字。正确的 authsession 侧是 **7 列**：`token_version`(v11)、`failed_login_count`+`locked_until`(v12)、`must_change_password`(v38)、`email`+`email_status`(v54)、`last_login_failure_at`(v61)；加 3 个跨模块列，即基线 7 列之后共追加 **10 列**，合计 17 列（与 §F-6.1 实测一致）。
+>
+> **权威列序（A-032 建议，P-004 若有异议再改）**：**主权威** = 对 catalog 已 apply 到 v72 的 SQLite 库做 `PRAGMA table_info(users)`（测试夹具 / `OpenWithCatalog`，**不用生产库**）；**交叉核对** = 全局版本序推导，与 live 快照不一致则 fail closed；**禁止**按模块文件分组拼列序。
+
 ### F-7 · `operation_log` 的 PG DDL 由正则派生，改 SQLite 字面会**静默失效**
 
 `operationlog/migration/migration.go:250` 的 `pgTimeColRe` 匹配 `(created_at|archived_at)\s+INTEGER NOT NULL`；一旦 SQLite 字面改为 `TEXT NOT NULL`，该派生变成**静默 no-op**（PG 侧保留陈旧 BIGINT 映射且不报错）。→ 这些表的 PG DDL 必须改为**显式书写**，与 `D-017` 的单 checksum 约定一致（PG 不进 checksum，但必须显式落盘）。
 
-### F-8 · `schema_migrations` 自引用无危害，但 `restoreLedger` 路径有残留
+### F-8 · `schema_migrations` 自引用无危害，但写入路径需一并改（**已按 A-032 更正**）
 
 - **无中途读**：ledger 只在 `applyPending` 之前读取（`identity.go:334`、`migrate.go:63`），循环内与 `applyMigration` 内都不再读；`verifyIntegrity` 在批次后（`migrate.go:102`）。
 - **无自插入**：`applyMigration` 先 `Apply` 再 `INSERT INTO schema_migrations (version,…)`（`migrate.go:113-123`），同事务、插入在后；v73 行在重建 copy 时**尚不存在**，故不会被自我复制。
-- **残留**：`actionRestoreLedger`（`migrate.go:71-75`）**不重放** pending descriptor，此类库的 ledger 形状**只**来自 `identity.go:58` / `:65` 两个字面。→ 这两个字面必须与 v73 同批改为 `TEXT applied_at`，否则恢复路径的库与迁移路径的库形状分叉。
+- **更正（A-032，即新 required F-I-022）**：早前写「restore 路径**只**依赖 `identity.go:58/:65` 两个字面」**不完整**。`actionRestoreLedger` 的 **CREATE** 确实只用那两个字面（`:365-371` / PG `:390-396`），但**写入 `applied_at` 的还有三处**：
+  1. `stampCatalog`（`identity.go:317`）——`time.Now().UTC().Unix()`
+  2. `applyMigration`（`migrate.go:122-123`）——同样 Unix 秒
+  3. PG `applyMigrationPG`（`postgres.go:166-167`）——同样
+- **后果**：v73 若只把列改成 `TEXT` 而不同批改这三处写入，则 restore 库与 migrate 库**形状分叉**，且 v73 自己的 ledger 行会把**整数**写进 TEXT 列（SQLite 不报错，合同被**静默破坏**）。
+- **边界**：须与 v73 同批改的是「DDL 字面 + 上述三处 INSERT 的写入格式（fixed-6 RFC3339；PG 为 `timestamptz(6)`）」。这**不**改 v1 checksum：`identity.go` 的 restore 字面**不在** `0001:r2-baseline` 的 `r2BaselineDDL` 哈希输入里；而 authsession `schemaMigrationsDDL`（`migration.go:18-23`）属于 **v1，禁止改**。
 
 ## 4. 待 independent 复审的问题
 

@@ -13,29 +13,35 @@ version: 1.0.0
 
 > **状态：`freeze-candidate`。** 本文件承载 A-030 **F-I-002.1**（逐表 exact SQLite rebuild DDL）所需的**机制与表达式层**：重建路径、免 pragma 的可行性论证、两条经实测验证的整数转换表达式、以及 `#34`/`#72/#73` 特化后的唯一形态。逐表 `CREATE TABLE` / `CREATE INDEX` / `INSERT … SELECT` 正文在配套的逐表附件中，二者共同构成 F-I-002.1 的交付物。
 
-## 1. 重建机制（沿用仓库既有先例，无需 pragma）
+## 1. 重建机制（无 pragma 可用；**仅对无 FK 子表的表**可裸用四步）
 
-**采用的路径**（与 `apps/api/modules/wallet/migration/migration.go:180-201`、`apps/api/modules/operationlog/migration/migration.go:756-776` 逐字同构）：
+> **⚠️ 本节已按 A-032 更正（2026-09-20）。** v1.0.0 初稿在「被其他表 FK 引用的表能否这样重建」一行断言为「**能**」，理由是「`<t>_old` 被 DROP 后引用重新指向同名新表」。**该断言经独立审计实测否定，是错的**，已删除。正确结论见下：裸四步**只对没有 FK 子表的表安全**；有 FK 子表的父表必须走 **子女先行（F-5）**，见 `r1-c2-fk-parent-rebuild-finding-v1.0-fc.md` §F-5 / §F-5.1。
+
+**裸四步（适用于无 FK 子表的表）**（与 `apps/api/modules/wallet/migration/migration.go:180-201` 同构）：
 
 ```text
 1. ALTER TABLE "<t>" RENAME TO "<t>_old";
 2. CREATE TABLE "<t>" ( ...目标形状... );
 3. INSERT INTO "<t>" (<列清单>) SELECT <列清单/转换表达式> FROM "<t>_old";
 4. DROP TABLE "<t>_old";
-5. CREATE INDEX / CREATE UNIQUE INDEX ...（逐字重建）
+5. CREATE INDEX / CREATE UNIQUE INDEX ...（逐字重建，必须在 4 之后）
 ```
 
-**免 pragma 论证（本次实测 + 代码核对）**：
+**先决条件（A-032 新增）= 该表没有任何存留 DDL 含 `REFERENCES <t>` 的子表。** 若不满足，必须改用 F-5 子女先行模式。
 
-| 关注点 | 事实 | 结论 |
-|--------|------|------|
-| 经典 SQLite rebuild 要求 `PRAGMA foreign_keys=OFF` | 本项目 DSN 固定 `_foreign_keys=on`（`apps/api/internal/store/store.go:57`），且 `SetMaxOpenConns(1)`（`:107`）；`PRAGMA foreign_keys` 在事务内是 **no-op**，无法在迁移事务里关闭 | **不采用** `foreign_keys=OFF` 路径 |
-| 是否存在可行的替代 | 仓库既有 rebuild **不使用任何 pragma**，直接 `RENAME TO <t>_old` → 建新表 → 拷行 → DROP | **沿用**，并已核实其在生产路径上运行（v0031/v0033/v0047 等） |
-| 被其他表 FK 引用的表能否这样重建 | `operation_log` 被 `operation_log_correlation`、`operation_log_session` 以 `REFERENCES operation_log(id) ON DELETE CASCADE` 引用，`rebuildOperationLog`（`operationlog/migration/migration.go:756-776`）仍按上述四步重建而不关 FK | **能**；FK 解析按表名进行，`<t>_old` 被 DROP 后引用重新指向同名新表 |
-| 迁移事务边界 | `applyMigration` 一个 descriptor 一个事务，`Apply(sqlTx{tx})` 内执行全部语句，随后同事务写 ledger（`internal/store/migrate.go:108-132`） | 重建四步 + 索引 + ledger 在同一事务内，**失败即整体回滚** |
-| 重建后校验 | runner 已在批次后跑 `PRAGMA foreign_key_check`（`migrate.go:349`）与 `integrity_check`（`:367`） | **复用**；逐表用例再加 `P-*-ORD` 断言 |
+**为什么（更正后的事实）**：
 
-**逐表必须附带的校验步骤**（进 owner descriptor 的 `m4`）：`PRAGMA foreign_key_check` 无行、`PRAGMA integrity_check` = `ok`、`sqlite_master` 中 `<t>_old` 不存在、目标列 `PRAGMA table_info` 类型为 `TEXT`。
+| 关注点 | 事实（实测 / A-032 复现） | 结论 |
+|--------|---------------------------|------|
+| 经典 SQLite rebuild 要求 `PRAGMA foreign_keys=OFF` | DSN 固定 `_foreign_keys=on`（`apps/api/internal/store/store.go:57`）；`assertForeignKeysOn` 启动强制 ON（`migrate.go:32,253-265`）；`PRAGMA foreign_keys` 在**事务内是 no-op** | **不采用** `foreign_keys=OFF` 路径 |
+| 连接池事实（**更正**） | `SetMaxOpenConns(1)` **只用于 in-memory**（`store.go:107`）；文件库默认 `sqlitePoolDefault = 4`（`:29,:109-113`）。pragma 是 per-connection，pool=4 上 `db.Exec("PRAGMA foreign_keys=OFF")` 后再 `db.Begin()` **不保证同连接** | 官方 12 步若要启用须把 `applyMigration` 改为 `Conn` 钉住后再 Begin——平台 runner 变更，**不是** descriptor 内可做的事 |
+| `legacy_alter_table=ON` 能否救 | 事务外设 `legacy_alter_table=ON` + `foreign_keys=ON` 时子表**仍被改写**；`foreign_keys=OFF` **单独**也不能阻止改写；只有 `foreign_keys=OFF` **且** `legacy_alter_table=ON` 才保持 `REFERENCES <t>(id)`（A-032 的 A2c） | 不是可用解 |
+| 裸四步用于有 FK 子表的父表 | 子表 DDL 被**永久**改写为 `REFERENCES "<t>_old"(id)`（重连、DROP 后仍在）；`DROP <t>_old` 时 CASCADE 子表会**丢行**、NO ACTION/RESTRICT 子表会 `FOREIGN KEY constraint failed` | **禁止**裸用；须 F-5 |
+| 无 FK 子表的表 | `wallet/migration.go:182,356` 的既有 rename 重建当前**没有** `REFERENCES wallet_*` 子表，故未受损（但 v85 仍须先做子表盘点） | 裸四步可用 |
+| 迁移事务边界 | `applyMigration` 一个 descriptor 一个事务，`Apply(sqlTx{tx})` 执行全部语句，随后同事务写 ledger（`migrate.go:108-132`）；F-5 的 TEMP 表绑在该连接/事务上，相容 | 全部步骤 + 索引 + ledger 在同一事务内，**失败即整体回滚** |
+| 重建后校验 | runner 已在批次后跑 `PRAGMA foreign_key_check`（`migrate.go:349`）与 `integrity_check`（`:367`） | **复用**；逐表用例再加 `P-*-ORD` 与「子表 FK 文本解析回同名父表」断言 |
+
+**逐表必须附带的校验步骤**（进 owner descriptor 的 `m4`）：`PRAGMA foreign_key_check` 无行、`PRAGMA integrity_check` = `ok`、`sqlite_master` 中 `<t>_old` 不存在、目标列 `PRAGMA table_info` 类型为 `TEXT`；**父表另加**：全部子表已重建且其 `sqlite_master.sql` 中 `REFERENCES` 指向同名新父表（不含 `_old`）。
 
 ## 2. 唯一转换表达式（实测验证，纯整数，禁用 `%f`）
 
