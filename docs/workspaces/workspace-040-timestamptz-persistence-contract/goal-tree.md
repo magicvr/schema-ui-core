@@ -25,7 +25,7 @@ GOAL-001-timestamptz-persistence-contract [active] (2/3) · 纲领容器
 ├── GOAL-005-r2-backup-port-and-closeout [done] (3/3) · R2 M4 Backup Port 与阶段关门
 ├── GOAL-006-r3-wire-formatter-and-unit-family-matrix [done] (3/3) · R3 公共 wire formatter 与单位族/时区矩阵
 ├── GOAL-007-r3-pg-cross-version-restore-matrix [done] (3/3) · R3 PG 15/16/17 pg_restore 跨版本矩阵与升级后恢复核对
-└── GOAL-008-r3-exit-matrix-and-root-closeout [active] (0/3) · R3 退出判据矩阵、关门审计与 Root 确认关门
+└── GOAL-008-r3-exit-matrix-and-root-closeout [active] (1/3) · R3 退出判据矩阵、关门审计与 Root 确认关门
 ```
 
 ## 纲领路线图
@@ -33,10 +33,10 @@ GOAL-001-timestamptz-persistence-contract [active] (2/3) · 纲领容器
 ```text
 R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
    → R2 双方言迁移 + Store 编解码 [completed · M1/M2 = GOAL-003 (4/4)、M3 = GOAL-004 (3/3)、M4 = GOAL-005 (3/3) · 独立关门审计 A-004 pass / open required = 0]
-      → R3 读写/时区回归、备份核对、证据与关门 [active · 边界已冻结（Root D-018）· R3-A/B = GOAL-006 (done · 3/3) · R3-C = GOAL-007 (done · 3/3) · R3-D 待渐进立项（slug 已经用户预确认，见 Root D-019 §2）]
+      → R3 读写/时区回归、备份核对、证据与关门 [active · 边界已冻结（Root D-018）· R3-A/B = GOAL-006 (done · 3/3) · R3-C = GOAL-007 (done · 3/3) · R3-D = GOAL-008 (active · 1/3，退出矩阵已落盘；待关门审计与用户确认)]
 ```
 
-> R1 = `GOAL-002`（`done · 4/4`）；R2 = `GOAL-003`（4/4）+ `GOAL-004`（3/3）+ `GOAL-005`（3/3），M1–M4 全绿并经两轮独立关门审计（`A-004` **pass / open required = 0**）。Root `progress: 2/3` 由 Root `00-meta.md` 的三个显式检查点派生；**R3-A/B 与 R3-C 均已完成并关门**（`GOAL-006` 与 `GOAL-007` 各 `done · 3/3`，2026-09-21 静默关门），**仅剩 R3-D**（退出矩阵 + 用户确认关门）。
+> R1 = `GOAL-002`（`done · 4/4`）；R2 = `GOAL-003`（4/4）+ `GOAL-004`（3/3）+ `GOAL-005`（3/3），M1–M4 全绿并经两轮独立关门审计（`A-004` **pass / open required = 0**）。Root `progress: 2/3` 由 Root `00-meta.md` 的三个显式检查点派生；**R3-A/B 与 R3-C 均已完成并关门**（`GOAL-006` 与 `GOAL-007` 各 `done · 3/3`，2026-09-21 静默关门），**R3-D 进行中**（`GOAL-008` `active · 1/3`：退出矩阵落盘、判据 1–5 满足、判据 6 待关门审计与**用户确认**）。
 
 ## 状态表
 
@@ -49,7 +49,7 @@ R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
 | GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
 | GOAL-006-r3-wire-formatter-and-unit-family-matrix | R3 · 公共 wire fixed-6 formatter 与单位族/时区矩阵（R3-A/B） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-21 |
 | GOAL-007-r3-pg-cross-version-restore-matrix | R3 · PostgreSQL 15/16/17 pg_restore 跨版本矩阵与升级后恢复有界核对（R3-C） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-21 |
-| GOAL-008-r3-exit-matrix-and-root-closeout | R3 · 退出判据证据矩阵、关门审计与 Root 确认关门（R3-D） | GOAL-001-timestamptz-persistence-contract | **active** | 0/3 | 2026-09-21 |
+| GOAL-008-r3-exit-matrix-and-root-closeout | R3 · 退出判据证据矩阵、关门审计与 Root 确认关门（R3-D） | GOAL-001-timestamptz-persistence-contract | **active** | 1/3 | 2026-09-21 |
 
 ## 说明
 

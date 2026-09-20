@@ -53,7 +53,7 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 |---------|------|------|
 | R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **completed**（GOAL-002 `done · 4/4`；关门向 independent = A-046，开放 required = 0；用户 2026-09-20 书面确认） |
 | R2 | 双方言迁移 + Store 编解码 | **completed**（M1–M4 全绿：M1/M2 = `GOAL-003` `done · 4/4`、M3 = `GOAL-004` `done · 3/3`、M4 = `GOAL-005` `done · 3/3`；独立关门审计 `A-004` **pass / open required = 0**） |
-| R3 | 读写/时区回归、备份有界核对、证据与关门 | **active**（边界与门禁已冻结：Root `D-018`；**R3-A/B = `GOAL-006` `done · 3/3`**；**R3-C = `GOAL-007` `done · 3/3`**（2026-09-21 静默关门；9 dump + 54 restore 格逐格落盘，18 supported 形状校验全通过；independent `A-002` `conditional`/开放 required = 0 并**自行复跑矩阵**；`I-041-004`/`I-041-009` 均 verified）；**R3-D = `GOAL-008-r3-exit-matrix-and-root-closeout` `active · 0/3`**（2026-09-21 按用户预确认 slug 立项：六判据证据矩阵 + 判据 5 反向核验 + self/independent 关门审计 + **用户确认关门**（`I-041-010` required）） |
+| R3 | 读写/时区回归、备份有界核对、证据与关门 | **active**（边界与门禁已冻结：Root `D-018`；**R3-A/B = `GOAL-006` `done · 3/3`**；**R3-C = `GOAL-007` `done · 3/3`**（2026-09-21 静默关门；9 dump + 54 restore 格逐格落盘，18 supported 形状校验全通过；independent `A-002` `conditional`/开放 required = 0 并**自行复跑矩阵**；`I-041-004`/`I-041-009` 均 verified）；**R3-D = `GOAL-008-r3-exit-matrix-and-root-closeout` `active · 1/3`**（2026-09-21 立项；**退出判据矩阵已落盘**：判据 1–5 满足、判据 6 待用户确认；判据 5 由本轮亲自扫描核验，判据 3/4 的真实 PG/SQLite 路径实测非 skip；待 self/independent 关门审计与**用户确认关门**（`I-041-010` required）） |
 
 `progress: 2/3` = 2/3 个检查点完成（**R1、R2 completed**；R3 pending）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 
