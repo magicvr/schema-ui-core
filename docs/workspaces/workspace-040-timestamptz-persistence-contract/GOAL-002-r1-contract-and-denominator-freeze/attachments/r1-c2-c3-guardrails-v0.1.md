@@ -29,8 +29,8 @@ version: 0.1.0
 
 | 旧单位/语义 | PG conversion | SQLite conversion | 约束 |
 |--------------|---------------|-------------------|------|
-| Unix seconds，非 sentinel | `to_timestamp(value)::timestamptz(6)` | Go codec `FromUnix(value)` → fixed-6 TEXT | 非法/越界 fail closed |
-| Unix milliseconds，非 sentinel | `to_timestamp(value / 1000.0)::timestamptz(6)` | Go codec `FromUnixMilli(value)` → fixed-6 TEXT | 不把 ms 当 sec；保留毫秒精度，其余补零 |
+| Unix seconds，非 sentinel | `date_trunc('microseconds', to_timestamp(value::double precision))` | Go codec `FromUnix(value)` → fixed-6 TEXT | 非法/越界 fail closed |
+| Unix milliseconds，非 sentinel | `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + value * INTERVAL '1 millisecond')` | Go codec `FromUnixMilli(value)` → fixed-6 TEXT | 不把 ms 当 sec；整数间隔避免浮点误差；其余补零 |
 | sentinel `0` 表示 absence | `NULL` via explicit `CASE` | `NULL` via table rebuild / row transform | 仅适用于逐列标记为 sentinel 的列 |
 | nullable SQL NULL | 保持 NULL | 保持 NULL | 不把 NULL 写成 epoch/字符串 |
 | non-sentinel 0 in required instant | fail closed / data anomaly report | fail closed / data anomaly report | 不静默转 NULL |
@@ -47,7 +47,8 @@ At minimum C2 must enumerate and rewrite:
 - `mail_config.updated_at`, `telegram_config.updated_at`: user selected legacy 0 → NULL; widen nullable/remove default 0 after preflight count; read/write stop treating 0 as instant.
 - `task_runs.finished_at`: remove runtime write-0 and `COALESCE(...,0)`; preserve NULL for unfinished runs.
 - `jobs.lease_expires_at`, `finished_at`, `expires_at`: preserve SQL NULL; state CHECK remains semantically equivalent after type conversion.
-- `notifications.read_at`, `recycle_items.restored_at`, voucher/entitlement nullable times: preserve NULL and partial-index/check semantics.
+- `notifications.read_at`, `recycle_items.restored_at`, voucher/entitlement nullable times: preserve NULL and partial-index/check semantics; voucher 0→NULL and negative fail closed per D-012.
+- users/roles monotonic updates: D-013 `max(truncatedNow, old+1µs)` must preserve cache/ETag/order behavior.
 - All `WHERE`, range filters, `ORDER BY`, `CHECK`, partial indexes and `IS NULL` predicates touching the 90 columns must be listed with old/new form.
 
 ## 4. Append-only migration catalog

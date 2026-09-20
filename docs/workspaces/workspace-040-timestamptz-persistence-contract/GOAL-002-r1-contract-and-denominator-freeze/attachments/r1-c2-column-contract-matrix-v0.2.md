@@ -42,16 +42,17 @@ The row assignment sums to 90 and includes `login_failures.locked_until`/`update
 - `#5 users.locked_until`, `#6 users.last_login_failure_at`, `#20 login_failures.locked_until`: 0→NULL; remove default 0; change predicates to NULL-aware.
 - `#34 mail_config.updated_at`, `#78 telegram_config.updated_at`: 0→NULL; remove NOT NULL/default 0 after preflight count.
 - `#61 task_runs.finished_at`: remove runtime write-0 and `COALESCE(...,0)`; SQL NULL is unfinished.
-- `#72/#73 vouchers.expires_at/redeemed_at`: 0→NULL; negative values fail closed; positive seconds convert.
+- `#72/#73 vouchers.expires_at/redeemed_at`: D-012 0→NULL; negative values fail closed; positive seconds convert; runtime `>0` scan must be tightened.
+- users/roles `updated_at` writes use D-013 `max(truncatedNow, old+1µs)` to preserve monotonic behavior.
 - `#8/#24/#25/#29/#30/#38/#41/#44/#45/#57/#72/#73/#88`: SQL NULL preserved; each row’s predicate/index/check must be listed in C2.
 
 ## Explicit conversion expressions
 
-- PG seconds, non-sentinel: `date_trunc('microseconds', to_timestamp(value::double precision))`.
-- PG milliseconds, non-sentinel: `date_trunc('microseconds', to_timestamp(value::double precision / 1000.0))`.
-- PG sentinel rows: `CASE WHEN value = 0 THEN NULL ELSE date_trunc(...) END` before type/constraint restoration.
+- PG legacy seconds, non-sentinel: `to_timestamp(value::double precision)` from integer seconds (source has no sub-microsecond fraction; no server rounding is involved).
+- PG legacy milliseconds, non-sentinel: `to_timestamp(value::double precision / 1000.0)` from integer milliseconds (source has exactly three fractional digits).
+- PG sentinel rows: `CASE WHEN value = 0 THEN NULL ELSE to_timestamp(...) END` before type/constraint restoration; do not feed arbitrary fractional source through a server cast and call it truncation.
 - SQLite: never use SQLite date functions for the conversion; read the legacy integer through the shared Go codec, bind canonical fixed-6 UTC TEXT, then rebuild indexes/checks/FKs.
-- New Go writes: `t.UTC().Truncate(time.Microsecond)` before PG bind or SQLite formatting.
+- New Go writes: `t.UTC().Truncate(time.Microsecond)` before PG bind or SQLite formatting; tests must prove the bound value was truncated before the driver sees it.
 
 ## Precision and invalid-value rules
 

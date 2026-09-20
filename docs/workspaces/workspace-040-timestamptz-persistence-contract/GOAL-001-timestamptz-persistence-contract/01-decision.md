@@ -35,5 +35,7 @@ version: 0.1.0
 | D-009 | 2026-09-20 | 公共 wire 非 DB 例外范围裁决 | accepted | `01-decision/D-009-wire-nondb-exceptions.md` |
 | D-010 | 2026-09-20 | Backup Port 最小方法裁决 | accepted | `01-decision/D-010-backup-port-methods-user-decision.md` |
 | D-011 | 2026-09-20 | schema_migrations conversion owner 裁决 | accepted | `01-decision/D-011-schema-ledger-owner.md` |
+| D-012 | 2026-09-20 | Voucher 时间异常值策略裁决 | accepted | `01-decision/D-012-voucher-invalid-value-policy.md` |
+| D-013 | 2026-09-20 | 微秒单调 updated_at 裁决 | accepted | `01-decision/D-013-monotonic-updated-at-policy.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

@@ -26,6 +26,7 @@ version: 0.1.0
 | E-010 | 2026-09-20 | wire 非 DB 例外范围用户裁决 | recorded | `02-execution/E-010-wire-nondb-exceptions-decision.md` |
 | E-011 | 2026-09-20 | Backup Port 最小方法裁决 | recorded | `02-execution/E-011-backup-port-methods-user-decision.md` |
 | E-012 | 2026-09-20 | schema_migrations owner 用户裁决 | recorded | `02-execution/E-012-schema-ledger-owner.md` |
+| E-013 | 2026-09-20 | Voucher 与微秒单调策略用户裁决 | recorded | `02-execution/E-013-voucher-monotonic-policy-decisions.md` |
 
 ## 事实边界
 

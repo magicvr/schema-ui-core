@@ -19,8 +19,8 @@ version: 0.1.0
 - PostgreSQL physical type = `timestamptz(6)`; all parameters/scans normalize to UTC.
 - SQLite physical type = `TEXT`; canonical storage = exactly `YYYY-MM-DDTHH:MM:SS.ffffffZ`.
 - Canonical SQLite text is fixed-width and lexically sortable as an instant. `+00:00`, offsets, spaces, variable fraction, and local-zone text are rejected at persistence boundary.
-- Existing seconds values: `time.Unix(v, 0).UTC()` → canonical; PG uses `to_timestamp(v)`/equivalent explicit UTC expression.
-- Existing milliseconds values: `time.UnixMilli(v).UTC()` → canonical; PG uses `to_timestamp(v / 1000.0)`/equivalent explicit expression.
+- Existing seconds values: `time.Unix(v, 0).UTC()` → canonical; PG uses `date_trunc('microseconds', to_timestamp(v::double precision))`.
+- Existing milliseconds values: `time.UnixMilli(v).UTC()` → canonical; PG uses `date_trunc('microseconds', TIMESTAMPTZ 'epoch' + v * INTERVAL '1 millisecond')`; integer interval avoids binary-float conversion.
 - Seconds/milliseconds are never inferred from magnitude at runtime; unit comes from the v0.3.1 per-column row.
 - Existing integer seconds gain `.000000`; existing milliseconds gain three trailing zero microdigits. New values and migrations **truncate toward zero to microseconds**; no module-specific rounding/fail-closed alternative.
 - Legacy sentinel 0 becomes SQL NULL only for the explicit sentinel rows in §2; non-sentinel required time 0 is a migration error, not a silent NULL.

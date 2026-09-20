@@ -33,7 +33,7 @@ version: 0.1.0
 | `core.persistence.mail_outbox` | retention/order | `ORDER BY created_at DESC,id DESC`, bounded delete | canonical text/timestamptz order + id tie-break; existing ms values converted |
 | `admin.channel.telegram` | activity/order | session `last_message_at DESC`; inbound received/outbound created order | canonical time order; no ID prefix confusion |
 | `digital-offer` | order/status/expiry | created order, duration `expires_at` checks/filters | typed time values; duration/count check preserved |
-| `authsession.users/roles` | monotonic update behavior | `nextUpdatedAt = max(now.Unix, old+1)` | C2 must decide microsecond equivalent after truncate-to-microsecond; preserve monotonic update invariant |
+| `authsession.users/roles` | monotonic update behavior | `nextUpdatedAt = max(now.Unix, old+1)` | D-013: `max(truncatedNow, old+1µs)`; preserve monotonic update invariant and test wall-clock rollback |
 
 ## Explicit old/new predicate forms (draft)
 
