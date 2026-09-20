@@ -21,6 +21,9 @@ version: 0.1.0
 | E-005 | 2026-09-20 | compiled catalog v72 口径纠正 | recorded | `02-execution/E-005-catalog-72-correction.md` |
 | E-006 | 2026-09-20 | wire 输入兼容用户裁决 | recorded | `02-execution/E-006-wire-input-compat-decision.md` |
 | E-007 | 2026-09-20 | 公共时间 wire inventory v0.1 | recorded | `02-execution/E-007-public-wire-inventory-v0.1.md` |
+| E-008 | 2026-09-20 | Backup SPI/Service 用户裁决 | recorded | `02-execution/E-008-backup-spi-user-decision.md` |
+| E-009 | 2026-09-20 | C2/C3 guardrails 草案 | recorded | `02-execution/E-009-c2-c3-guardrails-draft.md` |
+| E-010 | 2026-09-20 | Backup/RecoveryPoint Port 公共边界裁决 | recorded | `02-execution/E-010-backup-port-surface-user-decision.md` |
 
 ## 事实边界
 

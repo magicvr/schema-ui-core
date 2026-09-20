@@ -32,7 +32,7 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 
 - [ ] C1：全仓 compiled catalog 与运行时读写 inventory 完成；每列有旧单位、目标物理类型、精度、NULL/默认值、读写路径与证据。
 - [ ] C2：合同冻结：PG `timestamptz(6)` + SQLite 固定 6 位 UTC RFC3339 `TEXT`；sentinel 0 → NULL 的逐列规则落盘；统一 6 位微秒 RFC3339 wire；未选方案与影响明确。
-- [ ] C3：原地转换与失败/回滚策略冻结；不提供跨引擎产品级搬运器；备份/恢复对 R2/R3 的依赖与 residual 明确。
+- [ ] C3：原地转换与失败/回滚策略冻结；不提供跨引擎产品级搬运器；统一 Backup SPI/Service（方言 native provider、metadata、verification、restore-to-new-db、失败边界）与 R2/R3 residual 明确。
 - [ ] C4：Root self 审计 + 本地 grok build（grok 4.6 · high）independent 审计完成；required findings 合法闭合；Root R1 可标 completed。
 
 ## 纲领路线图
@@ -40,7 +40,7 @@ serves_summary: 承接 Root R1：逐列盘点绝对时刻、冻结 PostgreSQL ti
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
 | C1 | 逐列 inventory 与单位/类型/读写路径证据 | **completed**（A-006 independent accepted） |
-| C2 | 物理合同、精度、NULL/零值与未选方案冻结 | pending |
+| C2 | 物理合同、精度、NULL/零值、wire 与未选方案冻结 | **active**（guardrails draft） |
 | C3 | 双方言原地转换、备份依赖与失败策略冻结 | pending |
 | C4 | self + grok independent 审计、响应与 R1 放行 | pending |
 

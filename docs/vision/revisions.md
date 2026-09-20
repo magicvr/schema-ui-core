@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-20
 parent: null
-version: 0.4.65
+version: 0.4.66
 ---
 
 # Charter 修订台账
@@ -106,3 +106,4 @@ version: 0.4.65
 | VR-089 | 2026-09-20 | editorial | VP-040 激活 + workspace-040 / Root 开区 | 用户指令「/vision 走流程激活 vp-040，没有问题的话，交 /govern 开设工作区」。VP-039 `closed` 前置满足；VRev-104 self `pass`（0 required）；架构 freshness `6197e802` → `b0a6789b` PASS；`I-040-001` 登记默认候选但保持 collecting；VP-040 `planned → active` v0.2.0；workspace-040 delivery 与 Root `GOAL-001-timestamptz-persistence-contract` `active · 0/3` 已由 `/govern` scaffold。未改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-090 | 2026-09-20 | editorial | VP-040 R1 用户方案裁决投影 | 用户 P-004 选择：PostgreSQL `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`；全部绝对时刻列进入分母，ID/duration/step/version/计数/金额/flag 排除；SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PG 产品搬运器；sentinel 0 → NULL。VP-040 修订为 v0.2.1；Charter 目的/边界/非目标与 `vision_id@version` 不变；R1 逐列证据由 `[workspace-040] GOAL-002-r1-contract-and-denominator-freeze` 承接。 |
 | VR-091 | 2026-09-20 | editorial | VP-040 公共时间 wire 合同裁决投影 | 用户 P-004 追加选择：公共 API 时间输出统一为 6 位微秒 RFC3339 UTC `Z`；影响 formatter、入站 parser、protocol fixtures、Web/Go 回归与 VP-020 R3 矩阵；不改 Charter 目的/边界/非目标或 `vision_id@version`，由 GOAL-002 C2/C4 与 R3 承接。 |
+| VR-092 | 2026-09-20 | editorial | VP-040 C3 Backup SPI/Service 裁决投影 | 用户 P-004 选择在本 VP 建立统一 Backup SPI/Service：SQLite/PG native provider、统一 metadata/verification/restore-to-new-db、事务 rollback 优先；不含调度、权限、远程存储、保留策略、KMS/TLS/UI。VP-040 修订为 v0.2.2；Charter 与 `vision_id@version` 不变。 |

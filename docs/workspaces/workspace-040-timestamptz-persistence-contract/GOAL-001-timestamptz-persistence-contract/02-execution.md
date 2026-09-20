@@ -20,6 +20,8 @@ version: 0.1.0
 | E-004 | 2026-09-20 | 公共时间输出合同用户裁决 | recorded | `02-execution/E-004-public-wire-decision-recorded.md` |
 | E-005 | 2026-09-20 | R2 migration 归属用户裁决 | recorded | `02-execution/E-005-r2-migration-ownership-decision.md` |
 | E-006 | 2026-09-20 | wire 输入兼容用户裁决 | recorded | `02-execution/E-006-wire-input-compat-decision.md` |
+| E-007 | 2026-09-20 | Backup SPI/Service 用户裁决 | recorded | `02-execution/E-007-backup-spi-user-decision.md` |
+| E-008 | 2026-09-20 | Backup/RecoveryPoint Port 公共边界裁决 | recorded | `02-execution/E-008-backup-port-surface-user-decision.md` |
 
 ## 事实边界
 

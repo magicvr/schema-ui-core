@@ -7,7 +7,7 @@ vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-040-timestamptz-persistence-contract
 created: 2026-09-19
 updated: 2026-09-20
-version: 0.2.1
+version: 0.2.2
 parent: null
 ---
 
@@ -17,7 +17,7 @@ parent: null
 
 | 项 | 值 |
 |-----|-----|
-| status | **`active`**（2026-09-20 · v0.2.1 · 1 个 delivery 区 · `workspace-040-timestamptz-persistence-contract`） |
+| status | **`active`**（2026-09-20 · v0.2.2 · 1 个 delivery 区 · `workspace-040-timestamptz-persistence-contract`） |
 | 组合位置 | **架构分支 · C1**（`RES-T03-tz` / `RT-T03`）；承接 VP-035 标为「现在修」、因当时红线禁止改 schema 而只登记的时间列合同 |
 | 计划阶段 Vision Review | [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md) self `pass`（0 required；本 VP 为同审查的停放意图） |
 | 激活门禁 | **已满足（2026-09-20）**：① [VP-039](VP-039-version-maintenance-diagnostics.md) 已 `closed`；② `I-040-001` 已由用户 P-004 选择 R1 方向（PG `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`，逐列证据仍待冻结）；③ 架构类 freshness `6197e802` → `b0a6789b` PASS；④ 激活就绪 self Review [VRev-104](../reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`；⑤ slug/Root 已由 `/govern` scaffold。**本文件仍不是实现完成或关门证据。** |
@@ -34,7 +34,7 @@ parent: null
 
 ## R1 用户裁决（2026-09-20 · P-004）
 
-R1 子目标 `[workspace-040] GOAL-002-r1-contract-and-denominator-freeze` 已承接用户方案选择：PostgreSQL 字面 `timestamptz(6)`；SQLite 固定 6 位 UTC RFC3339 `TEXT`；全部绝对时刻列纳入分母，ID/duration/step/version/计数/金额/flag 排除；SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PostgreSQL 产品级搬运器；语义 sentinel `0` 转为 `NULL`；公共 API 时间输出统一为 6 位微秒 RFC3339 UTC `Z`，入站兼容合法 RFC3339 变体后规范化。上述是 R1 方向裁决，不替代逐列 inventory、转换失败策略与 self/independent 审计。
+R1 子目标 `[workspace-040] GOAL-002-r1-contract-and-denominator-freeze` 已承接用户方案选择：PostgreSQL 字面 `timestamptz(6)`；SQLite 固定 6 位 UTC RFC3339 `TEXT`；全部绝对时刻列纳入分母，ID/duration/step/version/计数/金额/flag 排除；SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PostgreSQL 产品级搬运器；语义 sentinel `0` 转为 `NULL`；公共 API 时间输出统一为 6 位微秒 RFC3339 UTC `Z`，入站兼容合法 RFC3339 变体后规范化；C3 建立统一 Backup SPI/Service，由 SQLite/PG native provider 提供 metadata、verification 与 restore-to-new-db，不做调度/权限/远程存储/保留策略/UI。上述是 R1 方向裁决，不替代逐列 inventory、转换失败策略与 self/independent 审计。
 
 ## 意图
 
@@ -116,6 +116,7 @@ R1 合同与分母冻结：方言物理类型、列清单、零值、备份 resi
 | 2026-09-19 | 初创 `planned` v0.1.0 · 0 区 · 停放。用户确认：C1 另立本 VP，不并入 VP-039，不塞 VP-010；激活硬门禁 = VP-039 波次之后（或书面改序）。计划阶段 self = [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md)。 |
 | 2026-09-20 | 用户指令走流程激活：`I-040-005` verified；激活 self = [VRev-104](../reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`；VP-040 `planned → active` v0.2.0，lead `workspace-040-timestamptz-persistence-contract` 交 `/govern` 开区。随后用户 P-004 裁决 R1 方向：PG `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`；全部绝对时刻列纳入分母；双方言各自原地转换；sentinel 0 → NULL；不提供 SQLite→PG 产品搬运器。VP-040 修订为 v0.2.1，逐列证据由 GOAL-002 承接。 |
 | 2026-09-20 | 用户 P-004 追加公共 wire 裁决：所有公共时间输出统一为 6 位微秒 RFC3339 UTC `Z`；需同步 formatter、parser、fixtures 与 VP-020 回归。VP-040 当前版本保持 v0.2.1，D-003/E-004 落在 workspace-040。 |
+| 2026-09-20 | 用户 P-004 裁决 C3 建立统一 Backup SPI/Service：SQLite/PG native provider + metadata/verification/restore-to-new-db；事务 rollback 优先；不含调度、权限、远程存储、保留策略、KMS/TLS/UI。VP-040 修订为 v0.2.2，D-006/E-007 落在 workspace-040。 |
 
 ## 声明
 

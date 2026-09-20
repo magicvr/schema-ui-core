@@ -29,5 +29,7 @@ version: 0.1.0
 | D-003 | 2026-09-20 | R1 公共时间输出合同裁决 | accepted | `01-decision/D-003-r1-public-wire-contract-user-decision.md` |
 | D-004 | 2026-09-20 | R2 migration 归属与 catalog 形态裁决 | accepted | `01-decision/D-004-r2-migration-ownership-user-decision.md` |
 | D-005 | 2026-09-20 | 公共 wire 输入兼容裁决 | accepted | `01-decision/D-005-r1-wire-input-compat.md` |
+| D-006 | 2026-09-20 | C3 统一 Backup SPI/Service 裁决 | accepted | `01-decision/D-006-r1-backup-spi-user-decision.md` |
+| D-007 | 2026-09-20 | 最小 Backup/RecoveryPoint Port 公共边界裁决 | accepted | `01-decision/D-007-backup-port-surface-user-decision.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

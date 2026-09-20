@@ -26,5 +26,8 @@ version: 0.1.0
 | D-001 | 2026-09-20 | R1 合同冻结（承接 Root 用户裁决） | accepted | `01-decision/D-001-r1-contract-freeze.md` |
 | D-002 | 2026-09-20 | R2 migration 归属承接 | accepted | `01-decision/D-002-r2-migration-ownership.md` |
 | D-003 | 2026-09-20 | C2 wire 输入兼容承接 | accepted | `01-decision/D-003-wire-input-compat.md` |
+| D-004 | 2026-09-20 | C3 Backup SPI/Service 合同承接 | accepted | `01-decision/D-004-backup-spi-contract.md` |
+| D-005 | 2026-09-20 | C2/C3 guardrails 草案 | proposed | `01-decision/D-005-c2-c3-guardrails-proposed.md` |
+| D-006 | 2026-09-20 | 最小 Backup/RecoveryPoint Port 承接 | accepted | `01-decision/D-006-backup-port-surface.md` |
 
 > 用户裁决原文与范围记录在 Root `D-002-r1-contract-freeze-user-decisions.md`；本子目标承接并将其转为可验证 C1～C4 交付物。
