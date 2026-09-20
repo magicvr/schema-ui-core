@@ -15,6 +15,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporalcontract"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -191,6 +192,14 @@ type matrixFacts struct {
 	userCreated string
 	userLocked  string
 	jobCreated  string
+	// sentinelNonNull counts the two singleton D0 sentinel columns that are NOT
+	// NULL; the seeded state is NULL, so the restored copy must still report 0
+	// (D-001 §4 item 4; audit A-002 F-I-002 asked for the literal probes).
+	sentinelNonNull int64
+	// denominatorTables is how many of the frozen VP-040 denominator tables exist
+	// (audit A-002 F-I-003: the four sample checks alone cannot see an unsampled
+	// table going missing).
+	denominatorTables int64
 }
 
 // matrixBuildSource applies the real VP-040 migration chain to a fresh database
@@ -227,6 +236,15 @@ func matrixBuildSource(t *testing.T, sourceDSN string) matrixFacts {
 			VALUES ('mx-j1','matrix','queued','{}',0,0,0,3,NULL,0,NULL,NULL,NULL,NULL,'a','c',
 			        TIMESTAMPTZ '`+matrixJobCreated+`', TIMESTAMPTZ '`+matrixJobCreated+`', NULL, NULL)`); err != nil {
 			return fmt.Errorf("seed mx-j1: %w", err)
+		}
+		// The two singleton D0 sentinel rows are seeded in their "uninitialized"
+		// state (NULL updated_at from the legacy 0 sentinel), so D-001 §4 item 4 is
+		// exercised literally instead of being substituted (audit A-002 F-I-002).
+		if _, err := tx.Exec(ctx, `INSERT INTO mail_config (id) VALUES (1)`); err != nil {
+			return fmt.Errorf("seed mail_config: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO telegram_config (id) VALUES (1)`); err != nil {
+			return fmt.Errorf("seed telegram_config: %w", err)
 		}
 		return nil
 	}); err != nil {
@@ -268,6 +286,19 @@ func matrixReadFacts(t *testing.T, db *sql.DB, withLedger bool) matrixFacts {
 	if err := db.QueryRow(`SELECT ` + canonicalExpr("created_at") + ` FROM jobs WHERE id = 'mx-j1'`).
 		Scan(&facts.jobCreated); err != nil {
 		t.Fatalf("read jobs.created_at: %v", err)
+	}
+	if err := db.QueryRow(`SELECT (SELECT count(*) FROM mail_config WHERE updated_at IS NOT NULL)
+		+ (SELECT count(*) FROM telegram_config WHERE updated_at IS NOT NULL)`).
+		Scan(&facts.sentinelNonNull); err != nil {
+		t.Fatalf("read sentinel state: %v", err)
+	}
+	names := make([]string, 0, len(temporalcontract.Tables()))
+	for _, table := range temporalcontract.Tables() {
+		names = append(names, "'"+table+"'")
+	}
+	if err := db.QueryRow(`SELECT count(*) FROM information_schema.tables WHERE table_name IN (` +
+		strings.Join(names, ",") + `)`).Scan(&facts.denominatorTables); err != nil {
+		t.Fatalf("read denominator table count: %v", err)
 	}
 	return facts
 }
@@ -321,6 +352,16 @@ func matrixVerifyShape(t *testing.T, dsn string, want matrixFacts) []string {
 	} else if nulls != 1 {
 		problems = append(problems, "users.locked_until lost its NULL for mx-u1 (legacy sentinel revived)")
 	}
+	// D-001 §4 item 4 literally: the two singleton D0 columns must still be NULL.
+	if got.sentinelNonNull != want.sentinelNonNull {
+		problems = append(problems, fmt.Sprintf("sentinel columns hold %d non-NULL value(s), want %d (legacy 0 revived)",
+			got.sentinelNonNull, want.sentinelNonNull))
+	}
+	// Audit A-002 F-I-003: no denominator table may be missing from the copy.
+	if got.denominatorTables != want.denominatorTables {
+		problems = append(problems, fmt.Sprintf("%d of %d VP-040 denominator tables exist, want %d",
+			got.denominatorTables, len(temporalcontract.Tables()), want.denominatorTables))
+	}
 	return problems
 }
 
@@ -363,6 +404,12 @@ func matrixRestore(t *testing.T, client matrixNode, workDir, archive, targetDSN 
 }
 
 // matrixClassify applies the frozen three-class criterion (D-001 §3).
+//
+// The setup-failure branch is deliberately narrow (audit A-002 F-I-001): a bare
+// "does not exist" also matches object-, extension-, role- and function-level
+// errors (this schema issues CREATE EXTENSION citext), and those must not be
+// filed as "the harness was not set up". Only an explicit target-database or
+// connection-setup phrasing is exempted; everything else fails closed.
 func matrixClassify(code int, out string) string {
 	if code == 0 {
 		return "supported"
@@ -376,10 +423,60 @@ func matrixClassify(code int, out string) string {
 	if strings.Contains(out, `unrecognized configuration parameter "transaction_timeout"`) {
 		return "unsupported-serverguc"
 	}
-	if strings.Contains(out, "does not exist") {
+	if isTargetSetupFailure(out) {
 		return "setup-failure"
 	}
 	return "unexpected-failure"
+}
+
+// isTargetSetupFailure reports whether the failure is our own harness failing to
+// prepare the target database (the only setup step the driver performs outside
+// pg_restore). Connection refusals, timeouts and authentication failures are NOT
+// setup failures: they are unexpected and must fail the run loudly.
+func isTargetSetupFailure(out string) bool {
+	lower := strings.ToLower(out)
+	return strings.Contains(lower, "fatal") &&
+		strings.Contains(lower, "database") &&
+		strings.Contains(lower, "does not exist")
+}
+
+// TestMatrixClassifyOracle locks the classification against the oracle inputs the
+// independent audit used (A-002 F-I-001): network, disk, permission and
+// authentication failures, plus object/extension/role "does not exist" errors,
+// must all fail closed rather than being filed as a known unsupported
+// combination or as a harness setup problem.
+func TestMatrixClassifyOracle(t *testing.T) {
+	cases := []struct {
+		name string
+		out  string
+		want string
+	}{
+		{"dump server mismatch", "pg_dump: error: aborting because of server version mismatch", "unsupported-toolgate"},
+		{"archive format", "pg_restore: error: unsupported version (1.16) in file header", "unsupported-toolgate"},
+		{"server guc", `pg_restore: error: could not execute query: ERROR:  unrecognized configuration parameter "transaction_timeout"`, "unsupported-serverguc"},
+		{"connection refused", "pg_restore: error: connection to server at \"s15\" (172.20.0.3), port 5432 failed: Connection refused", "unexpected-failure"},
+		{"timeout", "pg_restore: error: connection to server failed: timeout expired", "unexpected-failure"},
+		{"disk full", "pg_restore: error: could not write to output file: No space left on device", "unexpected-failure"},
+		{"permission", "pg_restore: error: could not open output file: Permission denied", "unexpected-failure"},
+		{"auth", "pg_restore: error: connection failed: password authentication failed for user \"postgres\"", "unexpected-failure"},
+		{"warnings with failure", "pg_restore: warning: errors ignored on restore: 3", "unexpected-failure"},
+		{"extension missing", `pg_restore: error: could not execute query: ERROR:  extension "citext" does not exist`, "unexpected-failure"},
+		{"role missing", `pg_restore: error: could not execute query: ERROR:  role "app" does not exist`, "unexpected-failure"},
+		{"relation missing", `pg_restore: error: could not execute query: ERROR:  relation "users" does not exist`, "unexpected-failure"},
+		{"target database missing", `pg_restore: error: connection to server at "s15" port 5432 failed: FATAL:  database "mx_r_15_15_15" does not exist`, "setup-failure"},
+		{"partial version substring only", "unsupported version", "unexpected-failure"},
+		{"header substring only", "in file header", "unexpected-failure"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := matrixClassify(1, tc.out); got != tc.want {
+				t.Fatalf("matrixClassify(%q) = %q, want %q", tc.out, got, tc.want)
+			}
+		})
+	}
+	if got := matrixClassify(0, "pg_restore: warning: something odd"); got != "supported" {
+		t.Fatalf("exit 0 must classify as supported (shape checks decide), got %q", got)
+	}
 }
 
 type matrixDumpCell struct {

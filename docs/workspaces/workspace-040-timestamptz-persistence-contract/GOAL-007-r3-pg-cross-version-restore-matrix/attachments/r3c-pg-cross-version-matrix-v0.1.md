@@ -168,3 +168,28 @@ VP040_PG_MATRIX=1 VP040_PG_MATRIX_OUT=<out.md> \
 
 - 驱动退出码 0；`--- PASS: TestPGCrossVersionRestoreMatrix (105.30s)`。
 - 源库建立日志（驱动 `t.Logf`）：三个 server 均报 `migrations at head 87`，播种的规范形分别读回 `.900000Z` / `.123456Z` / `.914000Z`。
+
+## 修正后复跑（响应 A-002 F-I-001～F-I-003，2026-09-21）
+
+在按 D-003 字面化 sentinel 探针、增加 44 张分母表存在性检查、收窄 matrixClassify（并新增 oracle 测试）之后，**重新完整运行**门控矩阵：
+
+- 结果与本节上方表格**一致**：dump 9 格（6 supported）/ restore 54 格（18 supported 且形状校验全通过 / 24 toolgate / 12 serverguc / **0 unexpected**）。
+- 三个源库仍分别报 migrations at head 87, 87 ledger rows，规范形样本逐字节一致。
+- --- PASS: TestPGCrossVersionRestoreMatrix (105.07s)。
+
+实测版本（复跑，与首次运行相同）：
+
+| server | image | server version | client tools |
+|---|---|---|---|
+| 15 | `postgres:15-alpine` | 15.19 | 15.19 / 15.19 |
+| 16 | `postgres:16` | 16.15 (Debian 16.15-1.pgdg13+2) | 16.15 (Debian 16.15-1.pgdg13+2) / 16.15 (Debian 16.15-1.pgdg13+2) |
+| 17 | `postgres:17-alpine` | 17.11 | 17.11 / 17.11 |
+
+复跑摘要：
+
+- dump cells measured: 9 (supported 6)
+- restore cells measured: 54
+- restore supported (shape-verified): 18
+- restore unsupported-toolgate: 24
+- restore unsupported-serverguc: 12
+- shape checks executed: 18

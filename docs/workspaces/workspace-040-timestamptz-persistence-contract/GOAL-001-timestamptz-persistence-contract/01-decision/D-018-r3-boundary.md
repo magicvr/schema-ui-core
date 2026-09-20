@@ -43,12 +43,12 @@ version: 0.1.0
 
 ## 4. R3 完成判据（检查点，用于 progress 派生）
 
-| 检查点 | 判据 |
-|--------|------|
-| **R3-A** | shared fixed-6 formatter 落码并替换 inventory 的 Go 面；输入端兼容矩阵（0/3/6/9 位 + `+00:00` + 拒绝无时区）有可执行测试；Go/Web fixture 同步 |
-| **R3-B** | 单位族矩阵（秒/毫秒/可空/sentinel 各至少一个 endpoint）+ VP-020 会话时区展示 round-trip 通过；`I-040-004` 关闭 |
-| **R3-C** | PG 15/16/17 跨版本 `pg_restore` 矩阵逐组合记录（supported/unsupported 均落盘）；判据 4 的升级后恢复 bounded cross-check 完成；`I-041-004` 关闭或书面 residual |
-| **R3-D** | 退出矩阵（六条判据）落盘；self + independent 关门审计通过、开放 required = 0；**用户确认关门** |
+| 检查点 | 判据 | 状态（2026-09-21 修订） |
+|--------|------|--------------------------|
+| **R3-A** | shared fixed-6 formatter 落码并替换 inventory 的 Go 面；输入端兼容矩阵（0/3/6/9 位 + `+00:00` + 拒绝无时区）有可执行测试；Go/Web fixture 同步 | **completed**（`GOAL-006`；`I-041-008` 经用户 `D-019` 裁决 verified；`A-002` 曾判 `fail`，修复后 `A-004` 复审 pass） |
+| **R3-B** | 单位族矩阵（秒/毫秒/可空/sentinel 各至少一个 endpoint）+ VP-020 会话时区展示 round-trip 通过；`I-040-004` 关闭 | **completed**（`GOAL-006`；`I-040-004` verified） |
+| **R3-C** | PG 15/16/17 跨版本 `pg_restore` 矩阵逐组合记录（supported/unsupported 均落盘）；判据 4 的升级后恢复 bounded cross-check 完成；`I-041-004` 关闭或书面 residual | **completed**（`GOAL-007` `done · 3/3`；9 dump + 54 restore 格逐格落盘，18 supported 形状校验全通过；`I-041-004` verified；证据见该目标 `attachments/r3c-pg-cross-version-matrix-v0.1.md`） |
+| **R3-D** | 退出矩阵（六条判据）落盘；self + independent 关门审计通过、开放 required = 0；**用户确认关门** | **pending**（`GOAL-008-r3-exit-matrix-and-root-closeout` 待立项；slug 已经用户预确认，见 `D-019` §2） |
 
 > `progress` 由 R3-A～D 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
@@ -57,9 +57,10 @@ version: 0.1.0
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 状态 |
 |----|------|-----------------|----------|--------------|------|
 | I-040-004 | required | VP-020 展示/输入与 UTC 存储的回归矩阵如何覆盖会话时区 | R3-B | R3-B 前 | **verified（2026-09-20）**：Go 侧 wire/瞬时 round-trip + Web 侧会话时区展示 round-trip 双载体矩阵，证据 `GOAL-006/02-execution/E-004` |
-| I-041-004 | non-blocking（继承） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | R3-C | R3 前 | **open**（R3-C 收集并逐组合记录） |
+| I-041-004 | non-blocking（继承） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | R3-C | R3 前 | **verified（2026-09-21）**：`GOAL-007` 逐组合实测 9 dump + 54 restore 格（18 supported 形状校验全通过；规则更正见其 `D-002`；`A-002` 独立复跑一致），证据 `GOAL-007/attachments/r3c-pg-cross-version-matrix-v0.1.md` |
 | I-041-007 | required（本目标新增） | VP-020 矩阵的**载体与验收口径** | R3-B | R3-B 前 | **verified（用户 2026-09-20 P-004 裁决）**：Go 单测锁 wire 形状与 parser 兼容；Web 用**组件/单测**锁会话时区展示 round-trip；**不**引入浏览器 e2e 依赖 |
 | I-041-008 | required（本目标新增） | 公共 wire 输出的**破坏性**：现网/前端是否已有依赖 3 位小数的契约或 fixture；若需兼容期，范围与时长 | R3-A | R3-A 前 | **verified（用户 2026-09-20 P-004 裁决，见 `D-019`）**：仓内无破坏性依赖、不需兼容期；`D-003`/`VR-091` 输出格式不变 |
+| I-041-009 | required（R3-C 新增） | 「supported / unsupported」判定口径与组合边界 | R3-C | R3-C 检查点 A | **verified（2026-09-21）**：`GOAL-007` `D-001` §2–§3 先于矩阵本体冻结（`D-002` 仅更正外推句）；证据 `GOAL-007/attachments/r3c-pg-tool-compatibility-probe-v0.1.md` |
 
 - **到期 open required 阻断对应门禁**；本表新增编号段 `I-041-NNN`（Root 级）继续使用。
 
@@ -85,3 +86,4 @@ version: 0.1.0
 ## 修订
 
 - **2026-09-20（`D-019`）**：`I-041-008` 经用户 P-004 裁决为 **verified（无破坏性、不需兼容期）**；`I-040-004` 由 `GOAL-006` 检查点 B 的证据关闭为 **verified**；R3-C/R3-D 的编号与 slug 已由用户预确认（`D-019` §2）。§5 表格状态已同步，§6 增加预确认说明。
+- **2026-09-21**：**R3-A/B 已关门**（`GOAL-006` `done · 3/3`，independent `A-002` `fail` → 修复 → `A-004` 复审 `pass`/开放 required = 0）；**R3-C 已立项并关门**（`GOAL-007` `done · 3/3`：`I-041-009` 与 `I-041-004` 均 verified，独立审计 `A-002` `conditional`/开放 required = 0 并自行复跑矩阵）；**R3-D（`GOAL-008-r3-exit-matrix-and-root-closeout`）待立项**（含用户确认关门，判据 6）。§4 检查点表与 §5 信息表的 R3-C 行已同步。

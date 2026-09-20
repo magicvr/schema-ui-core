@@ -23,6 +23,7 @@ version: 0.1.0
 |------|------|------|--------|------|
 | D-001 | 2026-09-21 | R3-C 矩阵定义与 supported/unsupported 判定口径（检查点 A；关闭 `I-041-009`） | accepted | `01-decision/D-001-r3c-matrix-definition-and-criterion.md` |
 | D-002 | 2026-09-21 | 矩阵实测对 `D-001` §3 预期规则的外推更正（含 16→15 反例；关闭 `I-041-004`） | accepted | `01-decision/D-002-r3c-measured-rule-correction.md` |
+| D-003 | 2026-09-21 | 响应 `A-002` 三条 recommended：sentinel 探针字面化、44 张分母表存在性检查、`matrixClassify` 收窄 + oracle 测试 | accepted | `01-decision/D-003-r3c-a002-recommended-closures.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。
 

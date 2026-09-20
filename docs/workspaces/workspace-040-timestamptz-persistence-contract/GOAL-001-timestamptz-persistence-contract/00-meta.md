@@ -53,7 +53,7 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 |---------|------|------|
 | R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **completed**（GOAL-002 `done · 4/4`；关门向 independent = A-046，开放 required = 0；用户 2026-09-20 书面确认） |
 | R2 | 双方言迁移 + Store 编解码 | **completed**（M1–M4 全绿：M1/M2 = `GOAL-003` `done · 4/4`、M3 = `GOAL-004` `done · 3/3`、M4 = `GOAL-005` `done · 3/3`；独立关门审计 `A-004` **pass / open required = 0**） |
-| R3 | 读写/时区回归、备份有界核对、证据与关门 | **active**（边界与门禁已冻结：Root `D-018`；**R3-A/B = `GOAL-006` `done · 3/3`**（2026-09-21 静默关门；independent `A-002` `fail`/3 required → 修复 → `A-004` 定向复审 `pass`/开放 required = 0）；**R3-C = `GOAL-007-r3-pg-cross-version-restore-matrix` `active · 0/3`**（2026-09-21 按用户预确认 slug 立项，范围 = `D-018` §2 第 4 项；`I-041-004` 归其收口）；**R3-D = `GOAL-008-r3-exit-matrix-and-root-closeout` 待立项**（含用户确认关门，判据 6） |
+| R3 | 读写/时区回归、备份有界核对、证据与关门 | **active**（边界与门禁已冻结：Root `D-018`；**R3-A/B = `GOAL-006` `done · 3/3`**（2026-09-21 静默关门；independent `A-002` `fail`/3 required → 修复 → `A-004` 定向复审 `pass`/开放 required = 0）；**R3-C = `GOAL-007-r3-pg-cross-version-restore-matrix` `done · 3/3`**（2026-09-21 静默关门；9 dump + 54 restore 格逐格落盘，18 supported 形状校验全通过；independent `A-002` `conditional`/开放 required = 0 并**自行复跑矩阵**；`I-041-004`/`I-041-009` 均 verified）；**仅剩 R3-D = `GOAL-008-r3-exit-matrix-and-root-closeout` 待立项**（含用户确认关门，判据 6） |
 
 `progress: 2/3` = 2/3 个检查点完成（**R1、R2 completed**；R3 pending）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 

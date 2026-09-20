@@ -1,12 +1,12 @@
 ---
 id: GOAL-007-r3-pg-cross-version-restore-matrix
 title: R3 · PostgreSQL 15/16/17 pg_restore 跨版本矩阵与升级后恢复有界核对（R3-C）
-status: active
+status: done
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-21
 updated: 2026-09-21
-version: 0.3.0
-progress: 2/3
+version: 0.4.0
+progress: 3/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -54,15 +54,15 @@ serves_summary: 承接 Root R3 的 R3-C：在固定版本的 PostgreSQL 15/16/17
 |--------|------|------|
 | **A** | 组合定义与驱动落盘（容器版本、client 版本、驱动命令、可复现入口）；每组合的预期判定口径（supported/unsupported 的定义）明确 | **completed**（`D-001` §1–§3、§5 冻结矩阵两轴 9+27 格、三类判定与驱动机制；前置实测 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md`；`I-041-009` → verified） |
 | **B** | 全部组合实测并逐条记录（含 unsupported 的原因与退出码）；升级后恢复有界核对完成；`I-041-004` 关闭或书面 residual | **completed**（E-003：真实迁移链上 dump 9 格 / restore 54 格逐格落盘；18 个 supported 格形状校验全通过；`unexpected-failure` = 0；附带证明迁移链在 PG 16.15/17.11 至 v87 成立；`I-041-004` → verified） |
-| **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | pending |
+| **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | **completed**（`A-001` self → `A-002` independent **conditional / 开放 required = 0**（含独立复跑矩阵与分类/形状反例）→ `A-003` 响应：4 条 recommended 全部 fixed（`D-003` + 台账对齐），修正后复跑一致） |
 
-`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 3/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 |
 |----|------|----------|----------|------|------|
-| I-041-004 | non-blocking（继承，`D-018` §5） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | B | **open**（本目标 B 关闭或 residual） | `D-018` §5；`D-017` §3 约束② |
+| I-041-004 | non-blocking（继承，`D-018` §5） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | B | **verified（2026-09-21）** | `attachments/r3c-pg-cross-version-matrix-v0.1.md`（9 dump + 54 restore 逐格；18 supported 形状校验全通过；修正后复跑一致）；`D-002` §3 |
 | I-041-009 | required（本目标新增） | 「supported / unsupported」的判定口径与组合边界（是否需用户裁决某些组合不作为支持承诺） | A | **verified（2026-09-21）** | `01-decision/D-001-r3c-matrix-definition-and-criterion.md` §2–§3；前置实测附件 |
 
 ## 已知环境事实（立项时）
@@ -79,3 +79,5 @@ serves_summary: 承接 Root R3 的 R3-C：在固定版本的 PostgreSQL 15/16/17
 ## 关门条件
 
 **A～C 全部完成**、`03-audit` 的 self 与 independent 意见落盘、required 合法闭合后才可静默关门；关门**不**等于 Root 关门（Root 关门仍须 R3-D 与用户确认）。
+
+**关门记录（2026-09-21）**：A～C 均 `completed`；`A-001`（self，conditional）/ `A-002`（independent，**conditional / 开放 required = 0**，含独立复跑矩阵）/ `A-003`（响应 + 关门记录）全部落盘；4 条 recommended 全部 `fixed`（`D-003` + 台账同步）。按既有用户裁决**静默关门**：`status: done`、`progress: 3/3`。移交 R3-D（`GOAL-008-r3-exit-matrix-and-root-closeout`）；产品级「支持哪些组合」的书面承诺按 A-002 建议留作 R3-D 的 P-004。

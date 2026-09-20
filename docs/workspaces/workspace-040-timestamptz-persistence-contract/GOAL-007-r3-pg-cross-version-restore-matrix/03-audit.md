@@ -19,6 +19,8 @@ version: 0.1.0
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
 | A-001 | self | 2026-09-21 | GOAL-007 检查点 A/B（矩阵定义、实测记录、口径更正、`I-041-004` 收口） | conditional | 12 项成果可核对；开放 required = 0；`F-S-001`/`F-S-002` 已 fixed（后者为 `D-001` §3 外推规则的实测更正 → `D-002`）；`F-S-003`～`F-S-006` 提交 independent 复核；`N-001`～`N-005` 已核对为非问题 | `03-audit/A-001-self-r3c-matrix.md` |
+| A-002 | independent（grok build · grok-4.6 · high） | 2026-09-21 | 全量独立审计：检查点 A/B（口径/组合/实测/规则更正/`I-041-004`），含驱动分类与形状校验反例、矩阵独立复跑 | **conditional**（开放 required = **0**） | 13 项成果独立核实（**已自行复跑矩阵**：`PASS 104.81s`，9/54、18/24/12、0 unexpected 与附件一致）；4 条 recommended：`F-I-001`（`does not exist` 标签过宽）、`F-I-002`（`D-001` §4.4 探针被替换未记录）、`F-I-003`（抽样校验测不到未抽样对象缺失）、`F-I-004`（台账未与检查点 B 对齐）。同意检查点 A/B 技术判据与 `I-041-004` verified；无 P-004 待裁项（产品级支持矩阵归 R3-D） | `03-audit/A-002-independent-r3c-checkpoints.md` |
+| A-003 | self（编排器响应 / 关门记录） | 2026-09-21 | 响应 A-002 全部 findings + 检查点 C 关门 | **pass** | 4 条 recommended 全部 **fixed**（`D-003`：sentinel 探针字面化、44 张分母表存在性检查、`matrixClassify` 收窄 + 15 例常驻 oracle；`F-I-004` 台账对齐）；修正后门控矩阵**复跑一致**（`PASS 105.07s`，18/24/12，0 unexpected）；开放 required = 0 → 按用户裁决**静默关闭 `GOAL-007`**（`done · 3/3`）。Root 仍 `active · 2/3`；R3-D 待立项，产品级支持矩阵承诺留作 R3-D 的 P-004 | `03-audit/A-003-response-to-a002-and-checkpoint-c-closure.md` |
 
 ## 待复审事项（编排器登记，供独立审计取证）
 
