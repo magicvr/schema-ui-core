@@ -14,14 +14,15 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 / 决策 |
 |----|------|----------|----------|------|-------------|
-| I-041-004 | non-blocking（继承） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | B | open | `D-018` §5；关闭或 residual 见本表更新 |
-| I-041-009 | required（本目标新增） | 「supported / unsupported」判定口径与组合边界 | A | **verified（2026-09-21）** | `D-001` §2–§3（先于矩阵本体冻结）；前置实测 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md` |
+| I-041-004 | non-blocking（继承） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | B | **verified（2026-09-21）** | `attachments/r3c-pg-cross-version-matrix-v0.1.md`（9 dump 格 + 54 restore 格逐格落盘，18 格形状校验通过）；`D-002` §3 |
+| I-041-009 | required（本目标新增） | 「supported / unsupported」判定口径与组合边界 | A | **verified（2026-09-21）** | `D-001` §2–§3（先于矩阵本体冻结）；前置实测 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md`；外推句由 `D-002` 更正 |
 
 ## 决策索引
 
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|--------|------|
 | D-001 | 2026-09-21 | R3-C 矩阵定义与 supported/unsupported 判定口径（检查点 A；关闭 `I-041-009`） | accepted | `01-decision/D-001-r3c-matrix-definition-and-criterion.md` |
+| D-002 | 2026-09-21 | 矩阵实测对 `D-001` §3 预期规则的外推更正（含 16→15 反例；关闭 `I-041-004`） | accepted | `01-decision/D-002-r3c-measured-rule-correction.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。
 

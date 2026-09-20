@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-21
 updated: 2026-09-21
-version: 0.2.0
-progress: 1/3
+version: 0.3.0
+progress: 2/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -53,10 +53,10 @@ serves_summary: 承接 Root R3 的 R3-C：在固定版本的 PostgreSQL 15/16/17
 | 检查点 | 判据 | 状态 |
 |--------|------|------|
 | **A** | 组合定义与驱动落盘（容器版本、client 版本、驱动命令、可复现入口）；每组合的预期判定口径（supported/unsupported 的定义）明确 | **completed**（`D-001` §1–§3、§5 冻结矩阵两轴 9+27 格、三类判定与驱动机制；前置实测 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md`；`I-041-009` → verified） |
-| **B** | 全部组合实测并逐条记录（含 unsupported 的原因与退出码）；升级后恢复有界核对完成；`I-041-004` 关闭或书面 residual | pending |
+| **B** | 全部组合实测并逐条记录（含 unsupported 的原因与退出码）；升级后恢复有界核对完成；`I-041-004` 关闭或书面 residual | **completed**（E-003：真实迁移链上 dump 9 格 / restore 54 格逐格落盘；18 个 supported 格形状校验全通过；`unexpected-failure` = 0；附带证明迁移链在 PG 16.15/17.11 至 v87 成立；`I-041-004` → verified） |
 | **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | pending |
 
-`progress: 1/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 

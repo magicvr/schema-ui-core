@@ -16,17 +16,16 @@ version: 0.2.0
 |------|------|------|--------|------|
 | E-001 | 2026-09-21 | R3-C 立项（用户预确认 slug；范围取自 `D-018` §2 第 4 项） | recorded | `02-execution/E-001-goal-created.md` |
 | E-002 | 2026-09-21 | 检查点 A：工具兼容行为前置实测 + 矩阵定义与判定口径冻结（`D-001`，关闭 `I-041-009`） | recorded | 见下方事实边界与 `01-decision/D-001` |
+| E-003 | 2026-09-21 | 检查点 B：真实迁移链的 9+54 格矩阵实测、形状校验、规则更正（`D-002`）与 `I-041-004` 收口 | recorded | `02-execution/E-003-r3c-matrix-measured.md` |
 
 ## 事实边界
 
 > 本目标承接 **R3-C**：PG 15/16/17 跨版本 `pg_dump`/`pg_restore` 组合矩阵（逐组合 supported/unsupported 落盘）+ 判据 4「升级后恢复」有界核对，并据此关闭或 residual 化 `I-041-004`。
 >
-> **检查点 A 已完成（2026-09-21）**：
-> - 实测环境版本（非沿用文档）：容器 server/client **15.19 / 16.15 / 17.11**；常驻 server **15.4**；归档格式版本 **1.14 / 1.15 / 1.16**。
-> - 探测得到两条工具规则：`pg_dump` 要求 client major ≥ server major；`pg_restore` 要求 dumper major ≤ client major ≤ 目标 server major，并识别出两个独立失败模式（归档格式门、server 端 `transaction_timeout` GUC 门）。
-> - 判定口径与组合边界已先于矩阵本体冻结（`D-001` §2–§3）；证据 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md`。
-> - `I-041-009`（required）→ **verified**。
+> **检查点 A 已完成（2026-09-21）**：实测版本（15.19 / 16.15 / 17.11；常驻 15.4）；两条工具规则与两个失败模式；判定口径与组合边界先于矩阵本体冻结（`D-001`）；`I-041-009` → verified。证据 `attachments/r3c-pg-tool-compatibility-probe-v0.1.md`。
 >
-> **尚未实施（检查点 B/C）**：真实 VP-040 迁移链在 16/17 上的应用、真实 schema 的 9 格 dump 与 27 格 restore 逐格记录、升级后恢复的形状校验（§4 四项）、`I-041-004` 收口、self + independent 审计。
+> **检查点 B 已完成（2026-09-21）**：驱动 `internal/backup/pg_cross_version_matrix_test.go`（`VP040_PG_MATRIX=1` 门控，默认跳过）在真实 VP-040 迁移链上测出 **dump 9 格**（6 supported）与 **restore 54 格**（18 supported 且形状校验全通过 / 24 toolgate / 12 serverguc / 0 unexpected）；附带证明迁移链在 **PG 16.15 与 17.11** 上至 v87 可完整应用。`D-001` §3 的外推规则经反例更正为 `client ≥ server`、`client ≥ dumper_client`、`client == 17 ⇒ target == 17`（`D-002`）。`I-041-004` → **verified**。证据 `attachments/r3c-pg-cross-version-matrix-v0.1.md`。
 >
-> `progress: 1/3`。R3-A/B 已在 `GOAL-006`（`done · 3/3`）完成并关门，本目标不得重开其范围。
+> **尚未实施（检查点 C）**：self 与 grok independent 审计、required 合法闭合、静默关门。
+>
+> `progress: 2/3`。R3-A/B 已在 `GOAL-006`（`done · 3/3`）完成并关门，本目标不得重开其范围。
