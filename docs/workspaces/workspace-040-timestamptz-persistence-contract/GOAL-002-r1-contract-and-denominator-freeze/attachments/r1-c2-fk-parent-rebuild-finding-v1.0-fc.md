@@ -64,6 +64,25 @@ ALTER TABLE users RENAME TO users_old;
 
 **关键点**：子表必须从 **TEMP 快照**回填，不能把子表 rename 成 `<child>_old` 当数据源——父表 rename 会把 `<child>_old` 的 FK 也改写，随后父表 `DROP` 会把你要拷的数据一起级联删掉。
 
+### F-5.1 · 双父表联接表的修复路径（针对 §2.3 三张联接表的实测）
+
+以 `user_roles`（同时 `REFERENCES users(id) ON DELETE CASCADE` 与 `REFERENCES roles(id) ON DELETE RESTRICT`）实测：
+
+```text
+ALTER TABLE users RENAME TO users_old;   → user_roles 的 DDL 变为
+ALTER TABLE roles RENAME TO roles_old;      REFERENCES "users_old"(id) ... REFERENCES "roles_old"(id)
+```
+
+即**两张父表都被改写**。按 F-5 模式修复后：
+
+| 检查项 | 结果 |
+|--------|------|
+| 重建后 `user_roles` 的存储 DDL | `REFERENCES users(id)` + `REFERENCES roles(id)`——**正确解析回同名新表** |
+| `PRAGMA foreign_key_check` | 0 行 |
+| 行数 | 保留（1/1） |
+
+**要点**：修复不依赖任何 pragma，也不依赖 `sqlite_master.sql` 的回放（存留文本已含 `_old`，直接回放会把错误固化）；必须用**合同里显式书写的 canonical 子表 DDL** 重建。这便是「子表 DDL 必须进 R1 冻结包」的直接原因。
+
 ## 2. 受影响的 FK 父表（workspace-040 范围内）
 
 ### 2.1 `users` 的完整被引用清单（**实测观察**，非推断）
