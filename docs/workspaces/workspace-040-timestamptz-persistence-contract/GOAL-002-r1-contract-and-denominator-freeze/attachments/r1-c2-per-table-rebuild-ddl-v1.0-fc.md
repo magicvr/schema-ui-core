@@ -238,11 +238,32 @@ ALTER TABLE dict_entries ADD COLUMN badge_style TEXT NOT NULL DEFAULT 'default'
 CREATE TEMP TABLE dict_entries_bak AS SELECT * FROM dict_entries;
 DROP TABLE dict_entries;
 ALTER TABLE dict_types RENAME TO dict_types_old;
-CREATE TABLE dict_types ( …new：created_at/updated_at → TEXT NOT NULL… );
+CREATE TABLE dict_types (
+  id         TEXT PRIMARY KEY,
+  key        TEXT NOT NULL UNIQUE,
+  name       TEXT NOT NULL,
+  enabled    INTEGER NOT NULL DEFAULT 1,
+  description TEXT,
+  sort       INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 INSERT INTO dict_types (id, key, name, enabled, description, sort, created_at, updated_at)
 SELECT id, key, name, enabled, description, sort, <秒表达式(created_at)>, <秒表达式(updated_at)> FROM dict_types_old;
 DROP TABLE dict_types_old;
-CREATE TABLE dict_entries ( …new：created_at/updated_at → TEXT NOT NULL；badge_style 保留… );
+CREATE TABLE dict_entries (
+  id          TEXT PRIMARY KEY,
+  dict_key    TEXT NOT NULL REFERENCES dict_types(key) ON DELETE CASCADE,
+  entry_key   TEXT NOT NULL,
+  label       TEXT NOT NULL,
+  enabled     INTEGER NOT NULL DEFAULT 1,
+  sort        INTEGER NOT NULL DEFAULT 0,
+  remark      TEXT,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL,
+  badge_style TEXT NOT NULL DEFAULT 'default',
+  UNIQUE (dict_key, entry_key)
+);
 INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, created_at, updated_at, badge_style)
 SELECT id, dict_key, entry_key, label, enabled, sort, remark,
        <秒表达式(created_at)>, <秒表达式(updated_at)>, badge_style
@@ -250,6 +271,8 @@ FROM dict_entries_bak;
 DROP TABLE dict_entries_bak;
 CREATE INDEX idx_dict_entries_dict_key ON dict_entries(dict_key, sort);
 ```
+
+> **`dict_entries` 的 new `CREATE TABLE` 为可粘贴全文**（响应 A-034 A5.3 / A-036 F-I-002.1 第 1 项）：10 列，`badge_style` 为**末列**（v39 ALTER 追加，live cid 序），`UNIQUE (dict_key, entry_key)` 与 FK 子句逐字保留；仅 `created_at`/`updated_at` 改 `TEXT NOT NULL`。
 
 ### 2.6 `data_scope_policies` / `user_data_scopes`（v78；**两表均无 FK 子表** → 裸四步）
 

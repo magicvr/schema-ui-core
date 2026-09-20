@@ -25,6 +25,8 @@ version: 0.1.0
    - **§2 子节编号重排**为 `2.1`–`2.12` 连续（修正本轮自身引入的编号重复）；v73–v87 **15 个 descriptor 全部有载体**。
    - **新增 `r1-c2-per-table-pg-ddl-v1.0-fc.md`**：`D-019` §6 要求的 PG 显式 DDL（两条 PG 表达式 + 四种语句骨架 + 逐 descriptor 目标列 + 「PG 侧不需要 F-5」的论证 + 非 DDL 联动项清单）。
 3. **F-I-024 的实测结论（须如实记录）**：live cid 序为 `…, 12 operation_log_retention_days, 13 operation_log_expiration_action, 14 default_currency`，即 **retention/expiration 在 default_currency 之前**，与「按文件行号推断」的结论**一致**；但 `sqlite_master` 的**存储文本**顺序里 `default_currency` 位于末尾——**文本顺序 ≠ cid 顺序**。故 A-034 担心的错序在本实现中**未发生**，该风险本身真实存在，已改为以 cid 实测序为唯一权威。
+
+> **2026-09-20 更正（A-036 §B 指出）**：上句「文本顺序 ≠ cid 顺序」**不准确**。A-036 独立复现证明 live cid 序与 `sqlite_master.sql` 折入文本序**同序**（均 `default_currency` 末列）；真正 ≠ cid 的是 **Go 源文件行号序**（v62 `:207` 在 v46 `:222` 之前）。附件按 cid 写出，**F-I-024 关闭要求仍满足**；本更正不影响结论。
 4. **观测手段**：临时在 `apps/api/internal/store/` 放置观测测试，用 `OpenSeeded` 跑完整迁移后 dump `PRAGMA table_info` 与 `sqlite_master`；**观测后已删除**，`apps/` 无残留变更。
 
 ## 证据

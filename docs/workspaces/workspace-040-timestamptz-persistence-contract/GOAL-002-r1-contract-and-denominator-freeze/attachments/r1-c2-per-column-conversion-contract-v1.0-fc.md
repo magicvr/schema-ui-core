@@ -129,8 +129,8 @@ ALTER TABLE "<table>" ALTER COLUMN "<col>" TYPE timestamptz(6)
 | 69 | 85 | `admin.wallet` | `wallet_ledger_entries.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)`；序 `(created_at,id)` | `T-69-RT`,`T-69-SORT` |
 | 70 | 85 | `admin.wallet` | `wallet_reconciliation_runs.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-70-RT`,`T-70-SORT` |
 | 71 | 85 | `admin.wallet` | `subjects.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-71-RT`,`T-71-SORT` |
-| 72 | 85 | `admin.wallet` | `vouchers.expires_at` | sec N（legacy ≤0 视为缺失） | `timestamptz(6) NULL` | E3（`= 0` 与 `< 0` 双分支） | `TEXT NULL` | R:NULL→无过期；W:负值 fail closed | `T-72-ZL`,`T-72-NEG`,`T-72-NULL` |
-| 73 | 85 | `admin.wallet` | `vouchers.redeemed_at` | sec N（legacy ≤0 视为缺失） | `timestamptz(6) NULL` | E3（`= 0` 与 `< 0` 双分支） | `TEXT NULL` | R:NULL→未兑换；W:负值 fail closed | `T-73-ZL`,`T-73-NEG`,`T-73-NULL` |
+| 72 | 85 | `admin.wallet` | `vouchers.expires_at` | sec N（legacy ≤0 视为缺失） | `timestamptz(6) NULL` | E3（`= 0` 单分支；**`< 0` 不进 USING**，只走 `m0` 预检 fail closed） | `TEXT NULL` | R:NULL→无过期；W:负值 fail closed | `T-72-ZL`,`T-72-NEG`,`T-72-NULL` |
+| 73 | 85 | `admin.wallet` | `vouchers.redeemed_at` | sec N（legacy ≤0 视为缺失） | `timestamptz(6) NULL` | E3（`= 0` 单分支；**`< 0` 不进 USING**，只走 `m0` 预检 fail closed） | `TEXT NULL` | R:NULL→未兑换；W:负值 fail closed | `T-73-ZL`,`T-73-NEG`,`T-73-NULL` |
 | 74 | 85 | `admin.wallet` | `vouchers.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-74-RT`,`T-74-SORT` |
 | 75 | 85 | `admin.wallet` | `vouchers.updated_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-75-RT`,`T-75-SORT` |
 | 76 | 85 | `admin.wallet` | `voucher_batches.created_at` | sec NN | `timestamptz(6) NOT NULL` | E1 | `TEXT NOT NULL` | R:`FromUnix`；W:`Truncate(µs)` | `T-76-RT`,`T-76-SORT` |

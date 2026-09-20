@@ -63,6 +63,8 @@ version: 0.1.0
 - 因此 A-034 所担心的错序（把 `default_currency` 放到 retention 之前）在本实现中**并未发生**；但该风险是**真实存在**的——`sqlite_master` 文本顺序确实会误导，故本节改为以 **cid 实测序**为唯一权威并写明理由。
 - 按 `D-019` 的列序权威规则（live `PRAGMA table_info`）执行；本次实测已满足该规则，无需再做 P-004。
 
+> **2026-09-20 更正（A-036 §B 指出，本响应照录不改写）**：上文「`sqlite_master` 的存储文本**顺序**里 `default_currency` 位于末尾——文本顺序 ≠ cid 顺序」这一表述**不准确**。A-036 独立复现结论为：live cid 序与 `sqlite_master.sql` 折入文本序**是同一顺序**（都把 `default_currency` 放末列），二者**不矛盾**；真正与 cid 序不同、会误导的是 **Go 模块源文件的行号序**（`settings/migration.go` 的 v62 `:207` 出现在 v46 `:222` **之前**，按行号拼会把 `default_currency` 排到 cid 12）。附件实际按 cid 写出，故 **F-I-024 的关闭要求仍满足**；本条更正只涉及本响应的论证表述，不改变结论。
+
 ### 2.3 附带补强
 
 - 新增 `r1-c2-per-table-pg-ddl-v1.0-fc.md`（`D-019` §6 要求的 **PG 显式 DDL**）：给出 §0 的两条 PG 表达式与四种语句骨架（NN / D0 / voucher / 可空），逐 descriptor 列出目标列与语句形态，并声明 **PG 侧不需要 F-5**（`ALTER COLUMN TYPE` 不重命名表，子表 FK 不受影响）。

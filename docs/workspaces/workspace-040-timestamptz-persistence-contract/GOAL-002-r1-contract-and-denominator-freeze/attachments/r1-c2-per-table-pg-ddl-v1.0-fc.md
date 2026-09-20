@@ -174,7 +174,29 @@ ALTER TABLE "operation_log" ALTER COLUMN "created_at" SET NOT NULL;
 - **禁止** `pgRebuild`（`operationlog/migration/migration.go:296-301`）——它把 `pgTimeDDL` 的派生结果送进 rename 重建，在 SQLite 字面改 `TEXT` 后派生静默失效。
 - 索引不变：`idx_operation_log_created_at`、`idx_operation_log_archive_created_at` 在 PG 侧随列类型自动适配，**无需重建**。
 
-## 4. v76 `core.jobs` / v77 `core.data-dictionary` / v79 captcha / v82 recycle / v84 settings（秒族）
+## 4. v76 `core.jobs` / v77 `core.data-dictionary` / **v78 `admin.data-permission`** / v79 captcha / v82 recycle / v84 settings
+
+### 4.1 v78 `admin.data-permission`（**秒族 NN ×2**，响应 A-036 **F-I-026**）
+
+```sql
+-- data_scope_policies.updated_at（NN，秒族）
+ALTER TABLE "data_scope_policies" ALTER COLUMN "updated_at" DROP NOT NULL;
+ALTER TABLE "data_scope_policies" ALTER COLUMN "updated_at" TYPE timestamptz(6)
+  USING date_trunc('microseconds', to_timestamp("updated_at"::double precision));
+ALTER TABLE "data_scope_policies" ALTER COLUMN "updated_at" SET NOT NULL;
+
+-- user_data_scopes.updated_at（NN，秒族）
+ALTER TABLE "user_data_scopes" ALTER COLUMN "updated_at" DROP NOT NULL;
+ALTER TABLE "user_data_scopes" ALTER COLUMN "updated_at" TYPE timestamptz(6)
+  USING date_trunc('microseconds', to_timestamp("updated_at"::double precision));
+ALTER TABLE "user_data_scopes" ALTER COLUMN "updated_at" SET NOT NULL;
+```
+
+- 对应 ledger v78（`#50` = `data_scope_policies.updated_at`、`#51` = `user_data_scopes.updated_at`），均 `S-NN`。
+- **不**属于 F-5：PG 侧本无 F-5 需求（§0.3）；这两表在 SQLite 侧亦无 FK 子表（SQLite 附件 §2.6 实测 REFERENCES count = 0）。
+- PG 侧该 descriptor **无需**重建表、无需处理 FK；两表在 PG 下无显式索引（仅 PK）。
+
+### 4.2 其余秒族 NN 列（骨架同 §0.2）
 
 ```sql
 -- jobs（毫秒族！lease_expires_at / created_at / updated_at / finished_at / expires_at）
@@ -190,7 +212,7 @@ ALTER TABLE "operation_log" ALTER COLUMN "created_at" SET NOT NULL;
 -- 全部按 §0.2 骨架逐列执行
 ```
 
-> v77/v82/v83/v86/v87 的**部分唯一索引与部分 CHECK 在 PG 侧不因列类型变化而改变定义**，无需重建；SQLite 侧因表重建才需逐字重建。
+> v77/v78/v82/v83/v86/v87 的**部分唯一索引与部分 CHECK 在 PG 侧不因列类型变化而改变定义**，无需重建；SQLite 侧因表重建才需逐字重建。
 
 ## 5. v80 `mfa` / v81 `notifications` / v83 `scheduled-tasks` / v85 `wallet` / v86 `telegram` / v87 `digital-offer`（秒族）
 
