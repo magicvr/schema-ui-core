@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.0
+version: 0.1.1
 ---
 
 # 决策记录 · GOAL-002
@@ -14,10 +14,10 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 假设 | 影响门禁 | 状态 | 证据 / 决策 |
 |----|------|-----------------|----------|------|-------------|
-| I-040-001 | required | PG `timestamptz(6)` / SQLite fixed-6 RFC3339 TEXT 的精度、编解码、排序与 NULL 规则 | C2/R2 | collecting | Root D-002；待 C1/C2 |
-| I-040-002 | required | 全部绝对时刻列与排除列分母 | C1/C2/R2 | collecting | Root D-002；待 inventory |
-| I-040-003 | required | SQLite/PG 原地转换、失败恢复、备份依赖 | C3/R2/R3 | collecting | Root D-002；待设计 |
-| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | open | Root I-040-004；后续阶段 |
+| I-040-001 | required | PG `timestamptz(6)` / SQLite fixed-6 RFC3339 TEXT 的精度、编解码、排序与 NULL 规则 | C2/R2 | **collecting（显著收窄）** | 90 列逐列合同、谓词 exact SQL、逐表 SQLite/PG DDL 均已落盘；**负值政策按列分档、PG 毫秒式经 15/16/17 实测更正**；剩余见 `03-audit.md` A-044（F-I-002 未闭） |
+| I-040-002 | required | 全部绝对时刻列与排除列分母 | C1/C2/R2 | **collecting（分母已冻结口径）** | inventory v0.3：**90 列 / 44 张表**（「倒数第二段 = 表名」机械去重，A-044 独立复算一致）；排除列清单已在 inventory 列明 |
+| I-040-003 | required | SQLite/PG 原地转换、失败恢复、备份依赖 | C3/R2/R3 | **collecting（C3 边界已落盘）** | `r1-c3-backup-recovery-boundary-v1.0-fc.md`（三类产物区分、双 token、调用点、harness、错误分类）经 A-042 判 F-I-004 closed；PG 跨版本兼容矩阵仍待 R3 |
+| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | open | Root I-040-004；R1 仅登记接口，R3 执行 |
 
 ## 决策索引
 
@@ -34,6 +34,13 @@ version: 0.1.0
 | D-009 | 2026-09-20 | Backup Port 最小方法承接 | accepted | `01-decision/D-009-backup-port-methods.md` |
 | D-010 | 2026-09-20 | schema_migrations owner 承接 | accepted | `01-decision/D-010-schema-ledger-owner.md` |
 | D-011 | 2026-09-20 | voucher / monotonic time policies 承接 | accepted | `01-decision/D-011-voucher-monotonic-policies.md` |
-| D-012 | 2026-09-20 | v73 allocation / negative truncation 承接 | accepted | `01-decision/D-012-v73-allocation-negative-truncation.md` |
+| D-012 | 2026-09-20 | v73 allocation / negative truncation 承接 | accepted（**毫秒式已于 2026-09-20 更正**） | `01-decision/D-012-v73-allocation-negative-truncation.md` |
+| D-017 | 2026-09-20 | v73+ checksum 约定（用户 P-004 选 A：单 checksum / SQLite DDL 切片） | accepted | `01-decision/D-017-v73-checksum-convention.md` |
+| D-018 | 2026-09-20 | R2 行拷贝机制与扫描器兼容窗口（选项 C + 无过渡期） | accepted | `01-decision/D-018-r2-row-copy-and-compat-window.md` |
+| D-019 | 2026-09-20 | FK 父表重建模式与子表处置（F-5 子女先行 + 两次重建） | accepted | `01-decision/D-019-fk-parent-rebuild-mode.md` |
+| D-020 | 2026-09-20 | F-I-002 可执行测试的载体与重定向（一次性验证库） | accepted | `01-decision/D-020-fi002-executable-test-scope.md` |
+| D-021 | 2026-09-20 | F-I-005 关门口径（拆分）与 PG 临时容器验证授权 | accepted（**F-I-005 闭合待用户 residual 裁决，见 A-044**） | `01-decision/D-021-fi005-gate-and-pg-verification.md` |
 
+> **编号说明**：`D-013`～`D-016` 在本 child 目标内**不存在**（历史未使用）；child 编号的连续性由 A-028/A-029 的 E-ID/D-ID 卫生要求维护为「已用编号单调不复用、允许空洞」。引用 Root 决策时一律写 **Root D-0NN**（见各文件的编号限定块）。
+>
 > 用户裁决原文与范围记录在 Root `D-002-r1-contract-freeze-user-decisions.md`；本子目标承接并将其转为可验证 C1～C4 交付物。

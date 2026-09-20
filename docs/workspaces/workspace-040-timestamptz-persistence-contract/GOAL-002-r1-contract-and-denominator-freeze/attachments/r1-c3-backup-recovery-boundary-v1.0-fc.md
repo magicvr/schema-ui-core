@@ -145,7 +145,9 @@ harness 必须完成的断言（两侧同构）：
 2. SQLite：`PRAGMA integrity_check` = `ok`、`PRAGMA foreign_key_check` 无行；PG：`information_schema` 时间列 = `timestamp with time zone` 且 `datetime_precision = 6`；
 3. 全部 **90 个时间列**在场且类型正确（分母取 `r1-time-column-inventory-v0.3.md`）；
 4. 样本 round-trip（**仅对 B**）：秒、毫秒、sentinel `0`、可空缺失、fixed-6 词法序各至少一例。
-   > **更正（响应 A-040 §D 末段）**：「负值非法」**不属于 B 的正向 round-trip**——转换是 fail-closed，B 内不应再有负值。负值断言应落在 `TestLegacyArtifactMustFail`（A/C）或转换预检（`m0`）上。
+   > **更正（响应 A-040 §D 末段；A-044 指出此处仍有残留，本轮改毕）**：「负值非法」**不属于 B 的正向 round-trip**。但原因**不是**「转换是 fail-closed」——**负值只对 voucher 两列是错误**（**Root** `D-012`）；其余全部时间列的负 epoch 是**合法 instant**（**Root** `D-015`），会被**正常转换**进入 B。因此：
+   > - 负值断言落在两处：`TestLegacyArtifactMustFail`（A/C 的旧合同形状）与转换预检 `m0`（**仅 voucher `#72`/`#73` 的 `bucket_negative` 触发回滚**）；
+   > - **B 的正向 round-trip 不含负值样本**，理由是「B 的样本集按业务意义选取（历元后时刻）」，**不是**「B 内不可能有负值」——后者为假。
 5. catalog/checksum 与源一致；retired `records` 表**不存在**；
 6. 失败时产出**可核对的错误分类**（见 §5.1），**不得**返回成功产物。
 

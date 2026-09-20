@@ -51,8 +51,9 @@ version: 0.1.0
 | E-035 | 2026-09-20 | A-040 响应：C3 七项收口与 F-I-025/F-I-027 卫生 | recorded | `02-execution/E-035-a040-c3-closure.md` |
 | E-036 | 2026-09-20 | A-042 响应：负值政策按列分档与表数更正为 44 | recorded | `02-execution/E-036-a042-negative-policy-scoping.md` |
 | E-037 | 2026-09-20 | PG 侧首次经验验证：发现并修正毫秒族 +8µs 精度缺陷（含 D-021） | recorded | `02-execution/E-037-pg-verification-ms-precision-defect.md` |
+| E-038 | 2026-09-20 | A-044 响应：三处残留修正与索引/目标树卫生 | recorded | `02-execution/E-038-a044-fixes-and-index-hygiene.md` |
 
-> 索引行序自本版起为 **E-001 → E-037 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
+> 索引行序自本版起为 **E-001 → E-038 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
 >
 > **Git checkpoint**：本轮（E-025/E-026）落盘后提交 `2d0734a1` — `govern(workspace-040): C2 freeze candidate batch 1 (90-column contract, predicate SQL, descriptor ledger)`。只暂存显式 owned paths（15 个文件，全部位于 workspace-040 与 Root `D-015`），未使用 `git add -A`；`apps/**` 无变更。commit hash 不作为审计或验收证据，仅用于可追溯。
 
