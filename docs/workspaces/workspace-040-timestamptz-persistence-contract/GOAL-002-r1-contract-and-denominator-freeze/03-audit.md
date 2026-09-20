@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.16
+version: 0.1.17
 ---
 
 # 审计 · GOAL-002
@@ -14,11 +14,11 @@ version: 0.1.16
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 Root D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（当时 `02-execution.md` 为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006；A-027 确认 A-026 的 Root D-014/D-015 与 child D-012 可收窄 F-I-005（未发布 allocation baseline）与 F-I-002（负瞬间 Go Truncate 解释），仍不可闭合五条 required；A-029 确认 A-028 未关 F-I-002～006：已接受 allocation 列号不相交，但 owner spec v74「ledger/reconcile」仍在；E-017 双文件已改为唯一 E-024（F-I-017 closed）；SQLite runbook 已区分 rollback snapshot 与 RecoveryPoint，PG restore 仍绑预转换 `<artifact>`；D-015「integer interval」与秒列 `to_timestamp(double)` 仍未收口；F-I-018 保持 open（冻结包仍无限定 D-012）；新增 F-I-019（E-024 插在 E-016 与 E-017 之间）；草案/baseline 不是实施证据；A-030 接受 E-025/E-026 后 **F-I-003 closed**（90 列 mapping）、**F-I-018/F-I-019 closed**、F-I-002 的 D-015 字面子项 `fixed`、F-I-005 的 v74 同文子项 `fixed`；A-031 self 响应 A-030 未闭合任何 required；A-032 independent 确认 E-028 FK 父表重建阻塞成立，新增 **F-I-021 / F-I-022**，F-I-002 仍不能闭合；**仍 open required = 6**（F-I-002/004/005/006/021/022）；freeze-candidate 不是实施证据 |
+| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 Root D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（当时 `02-execution.md` 为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006；A-027 确认 A-026 的 Root D-014/D-015 与 child D-012 可收窄 F-I-005（未发布 allocation baseline）与 F-I-002（负瞬间 Go Truncate 解释），仍不可闭合五条 required；A-029 确认 A-028 未关 F-I-002～006：已接受 allocation 列号不相交，但 owner spec v74「ledger/reconcile」仍在；E-017 双文件已改为唯一 E-024（F-I-017 closed）；SQLite runbook 已区分 rollback snapshot 与 RecoveryPoint，PG restore 仍绑预转换 `<artifact>`；D-015「integer interval」与秒列 `to_timestamp(double)` 仍未收口；F-I-018 保持 open（冻结包仍无限定 D-012）；新增 F-I-019（E-024 插在 E-016 与 E-017 之间）；草案/baseline 不是实施证据；A-030 接受 E-025/E-026 后 **F-I-003 closed**（90 列 mapping）、**F-I-018/F-I-019 closed**、F-I-002 的 D-015 字面子项 `fixed`、F-I-005 的 v74 同文子项 `fixed`；A-031 self 响应 A-030 未闭合任何 required；A-032 independent 确认 E-028 FK 父表重建阻塞成立，新增 **F-I-021 / F-I-022**，F-I-002 仍不能闭合；A-033 self 响应 A-032 未闭合任何 required（P-004 已落盘 `D-019`）；A-034 independent 接受 **F-I-021 / F-I-022 closed**，F-I-002.1 仍不能闭合（v78 缺席 + `site_settings` live CREATE 未写），新增 **F-I-023 / F-I-024**；**仍 open required = 6**（F-I-002/004/005/006/023/024）；freeze-candidate 不是实施证据 |
 | I-040-004 | open | R3 回归矩阵；R1 接口仍未登记（A-002/A-004/A-006/A-010/A-012/A-014 F-I-009） |
 | 资料引用 | 无 | 工作区 `shared_materials_catalog: none` |
 
-> **2026-09-20 本轮（A-032）后的口径**：A-032 为最新 independent 意见，`open required = 6`（F-I-002 / F-I-004 / F-I-005 / F-I-006 / **F-I-021** / **F-I-022**）。E-028 的 FK 父表重建阻塞（F-1～F-4）经 sqlite 3.51.2 独立复现成立；F-5 TEMP 子女先行单事务可行但**未定案**；mechanism §1「DROP 后引用回到同名新表」为假。A-030 的 F-I-003 / F-I-018 / F-I-019 closed 维持。**F-I-002 仍不能闭合**（逐表 DDL 未落盘 + FK 处置未冻结）。**C2/C3 未冻结；R2 未放行。** freeze-candidate / open-finding 不是实施证据。
+> **2026-09-20 本轮（A-034）后的口径**：A-034 为最新 independent 意见，`open required = 6`（F-I-002 / F-I-004 / F-I-005 / F-I-006 / **F-I-023** / **F-I-024**）。E-030 / commit `726f62c1` 的逐表 DDL 附件使 **F-I-021 / F-I-022 closed**（F-5 + 12 子表完整、v73 五处写入路径完整）；F-I-002.1 **仍不能闭合**（v78 两表缺席；`site_settings` 15 列 new CREATE 未写且 ALTER 引用序 ≠ live）。A-030 的 F-I-003 / F-I-018 / F-I-019 closed 维持。**C2/C3 未冻结；R2 未放行。** freeze-candidate 不是实施证据。
 
 ## 意见台账索引
 
@@ -57,6 +57,8 @@ version: 0.1.16
 | A-031 | 2026-09-20 | self | response to A-030 / lock-predicate direction, two-source closure, disposition counts, jobs indexes, E3 alignment | conditional | 4 | `03-audit/A-031-r1-self-response-to-a030.md` |
 | A-032 | 2026-09-20 | independent | E-028 / commit 2547ef25 FK 父表重建阻塞（F-1～F-8）对照 A-030 | conditional | 6 | `03-audit/A-032-r1-independent-e028-fk-parent-rebuild-blocker.md` |
 | A-033 | 2026-09-20 | self | response to A-032 / mechanism corrections, F-I-021 pending P-004, F-I-022 intake | conditional | 6 | `03-audit/A-033-r1-self-response-to-a032.md` |
+| A-034 | 2026-09-20 | independent | E-030 / commit 726f62c1 逐表 exact rebuild DDL 对照 A-032 F-I-002.1/021/022 | conditional | 6 | `03-audit/A-034-r1-independent-e030-per-table-rebuild-ddl.md` |
+| A-035 | 2026-09-20 | self | response to A-034 / v78 与 site_settings DDL 补齐、PG 显式 DDL 起草 | conditional | 6 | `03-audit/A-035-r1-self-response-to-a034.md` |
 
 ## 结论状态
 
@@ -65,3 +67,7 @@ version: 0.1.16
 **A-031（self 响应 A-030）备注**：A-030 判定 **F-I-003 / F-I-018 / F-I-019 closed**，D-015 字面与 owner-spec v74 两个子项 `fixed`，**开放 required 5 → 4**（F-I-002、F-I-004、F-I-005、F-I-006），并新增 recommended **F-I-020**。A-030 同时查出编排器在 exact SQL 表中引入的一处**实质缺陷**——`#5 users.locked_until` 的 new SQL 方向写反（会把锁语义翻转，把过期锁当已锁定）；A-031 已按 `users_repository.go:496-503` 对位基线改正，并一并修正：readwrite spec 标 `superseded`（两源收口）、§5 `none` vs ORDER BY 归属（`#22/#31/#33/#60/#67/#74/#79` 上移，`#62` 下移，新计数 5+3+2+15+21+44=90）、jobs 四索引 exact `CREATE INDEX` 补入、`#6` callsite 改为 `accounts.go:194-201` 并列入写 0、`#34` E3 与毫秒族（含 `date_trunc`）同一、`#72/#73` 负值单路径（只走 `m0` 预检 fail closed，USING 只处理 `=0→NULL` 与正值）、悬空 C3 引用显式标注未落盘、无限定 D-011 改为 **Root** D-011、删除陈旧「D-015 待落盘」句。**C2/C3 仍未冻结，R2 仍未放行**（当时 4 条 required 未闭合）。F-I-005 的双方言 checksum 约定按 P-004 待用户裁决（A-031 §4 列出 A/B 选项并倾向沿用 v1–v72 单 checksum）。
 
 **A-032（independent · E-028 FK 父表重建阻塞）备注**：对照 A-030 基线（当时 open required = 4）。本审用 sqlite 3.51.2 独立复现 **F-1～F-4 成立**：parent rename **永久**改写子表 `REFERENCES`；`legacy_alter_table=ON` 不能阻止；现行 `applyMigration` 单事务内 `foreign_keys=OFF` 为 no-op（文件库 pool=4，不是全局 `MaxOpenConns(1)`）；朴素重建会 CASCADE 删子行或 `DROP` FK fail。F-5 TEMP 子女先行单事务可行；子表不能 rename 成 `_old` 当数据源。跨 descriptor 子表（`user_roles`/`role_permissions`/`role_menu_items` 无时间列但不在 v74 12 表清单；`notifications` v81；`user_mfa`/`mfa_proofs` v80）必须在重建父表时被 F-5，不必合并 descriptor。F-6 三列跨模块 ALTER 属实；F-7 `pgTimeColRe` 静默失效属实；F-8 无中途读属实但 restore 写入路径不只 `identity.go:58/:65`。转换表达式抽测通过。mechanism §1「DROP 后引用回到同名新表」为假。新增 required **F-I-021**（FK 处置与子表清单未冻结）与 **F-I-022**（v73 ledger 写入路径）。F-I-002 仍不能闭合。A-031 的 F-I-006 修正本轮未复审。**开放 required = 6**（F-I-002 / F-I-004 / F-I-005 / F-I-006 / F-I-021 / F-I-022）。**C2/C3 仍未冻结，R2 仍未放行。** 响应由 `/govern` 处理；FK 重建模式须 P-004（本审建议 F-5）。
+
+**A-033（self 响应 A-032）备注**：接受 A-032 核心判定；mechanism §1 错误句与 `D-018` 理由句已改写；用户 P-004 已落盘 child `D-019`（F-5 + 两次重建）。**本条不闭合任何 required**。
+
+**A-034（independent · E-030 逐表 exact rebuild DDL）备注**：对照 A-032 基线（open required = 6）。commit `726f62c1` 仅文档、`apps/` 未改。本机 sqlite 3.51.2 独立复现 §1.2 v74 F-5：`foreign_key_check=0`、行数 2/1/1/1/1 无丢行、D0 0→NULL、C 组仍 INTEGER、子表 `REFERENCES` 无 `_old`、v81 二次重建后 `integrity_check=ok`。**12 张子表完整，无第 13 张。** 接受 **F-I-021 closed**（P-004 五要求均满足）与 **F-I-022 closed**（5 处生产写入完整准确，无第六处；v1 `schemaMigrationsDDL` 禁改、restore 字面不进 `r2BaselineDDL` 哈希）。`MigrationChecksum` 只哈希 `stmts`+`transform_id`，§7 append-only 成立。**F-I-002.1 仍不能闭合**：v78 `data_scope_policies`/`user_data_scopes` 整段缺席（新 **F-I-023**）；`site_settings` 15 列 new CREATE 未写，§2.11 ALTER 引用序把 v62 `default_currency` 放在 v46 retention 之前，本机按该序 apply 与 live cid 不一致（新 **F-I-024**）。`<秒/毫秒表达式>` 占位可接受；`operation_log.event` 与 wallet 既有重建表允许源码行号例外。`mail_outbox`/`telegram_config`/`users` 列序与 live 一致；wallet 现行无 `REFERENCES wallet_*`，无需 F-5。A-031 的 F-I-006 修正本轮未复审。**开放 required = 6**（F-I-002 / F-I-004 / F-I-005 / F-I-006 / **F-I-023** / **F-I-024**）。**C2/C3 仍未冻结，R2 仍未放行。** 响应由 `/govern` 处理。

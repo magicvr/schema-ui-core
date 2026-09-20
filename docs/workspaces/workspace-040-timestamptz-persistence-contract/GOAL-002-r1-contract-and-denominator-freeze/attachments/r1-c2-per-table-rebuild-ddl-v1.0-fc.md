@@ -251,7 +251,77 @@ DROP TABLE dict_entries_bak;
 CREATE INDEX idx_dict_entries_dict_key ON dict_entries(dict_key, sort);
 ```
 
-### 2.6 `captcha_challenges` / `captcha_config`（v79；均无 FK）
+### 2.6 `data_scope_policies` / `user_data_scopes`（v78；**两表均无 FK 子表** → 裸四步）
+
+> 响应 A-034 **F-I-023**（v78 整段此前缺席）。以下 legacy/新 DDL 均为 **live `sqlite_master` 实测逐字**（非推断）。
+
+```sql
+-- legacy（datadictionary 之外的 datapermission 模块；live sqlite_master 实测）
+CREATE TABLE data_scope_policies (
+  resource      TEXT PRIMARY KEY,
+  owner_column  TEXT NOT NULL,
+  default_scope TEXT NOT NULL CHECK (default_scope IN ('all','self')),
+  enabled       INTEGER NOT NULL DEFAULT 1,
+  updated_at    INTEGER NOT NULL
+)
+CREATE TABLE user_data_scopes (
+  user_id    TEXT NOT NULL,
+  resource   TEXT NOT NULL,
+  scope_type TEXT NOT NULL CHECK (scope_type IN ('all','self')),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, resource)
+)
+-- new（仅 updated_at → TEXT NOT NULL；CHECK / PK / DEFAULT 逐字保留）
+CREATE TABLE data_scope_policies (
+  resource      TEXT PRIMARY KEY,
+  owner_column  TEXT NOT NULL,
+  default_scope TEXT NOT NULL CHECK (default_scope IN ('all','self')),
+  enabled       INTEGER NOT NULL DEFAULT 1,
+  updated_at    TEXT NOT NULL
+)
+CREATE TABLE user_data_scopes (
+  user_id    TEXT NOT NULL,
+  resource   TEXT NOT NULL,
+  scope_type TEXT NOT NULL CHECK (scope_type IN ('all','self')),
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, resource)
+)
+```
+
+```sql
+-- data_scope_policies（裸四步；无显式索引，仅 PK 自动索引）
+ALTER TABLE data_scope_policies RENAME TO data_scope_policies_old;
+CREATE TABLE data_scope_policies (
+  resource      TEXT PRIMARY KEY,
+  owner_column  TEXT NOT NULL,
+  default_scope TEXT NOT NULL CHECK (default_scope IN ('all','self')),
+  enabled       INTEGER NOT NULL DEFAULT 1,
+  updated_at    TEXT NOT NULL
+);
+INSERT INTO data_scope_policies (resource, owner_column, default_scope, enabled, updated_at)
+SELECT resource, owner_column, default_scope, enabled, <秒表达式(updated_at)>
+FROM data_scope_policies_old;
+DROP TABLE data_scope_policies_old;
+
+-- user_data_scopes（裸四步；无显式索引，仅 PK 自动索引）
+ALTER TABLE user_data_scopes RENAME TO user_data_scopes_old;
+CREATE TABLE user_data_scopes (
+  user_id    TEXT NOT NULL,
+  resource   TEXT NOT NULL,
+  scope_type TEXT NOT NULL CHECK (scope_type IN ('all','self')),
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, resource)
+);
+INSERT INTO user_data_scopes (user_id, resource, scope_type, updated_at)
+SELECT user_id, resource, scope_type, <秒表达式(updated_at)>
+FROM user_data_scopes_old;
+DROP TABLE user_data_scopes_old;
+-- 两表均无显式 CREATE INDEX 语句（PK 自动索引由 PRIMARY KEY 子句自动重建）
+```
+
+> 子表盘点（实测）：**无任何表**的存留 DDL 含 `REFERENCES data_scope_policies` 或 `REFERENCES user_data_scopes`（count = 0）→ 裸四步安全。
+
+### 2.7 `captcha_challenges` / `captcha_config`（v79；均无 FK）
 
 ```sql
 -- legacy（logincaptcha/migration.go:19-24 / :25-30）
@@ -272,12 +342,12 @@ CREATE TABLE captcha_config (
 -- 两表均裸四步；时间列 → TEXT；captcha_config.id 保持 INTEGER PRIMARY KEY CHECK (id = 1)；均无索引
 ```
 
-### 2.7 `user_mfa` / `mfa_proofs`（v80；裸四步）
+### 2.8 `user_mfa` / `mfa_proofs`（v80；裸四步）
 
 - legacy：`mfa/migration.go:21-29` / `:30-36`（**FK 子句逐字保留**；`last_used_step` 非时间列）。
 - new：`created_at`/`updated_at` / `expires_at`/`created_at` → `TEXT NOT NULL`；均无索引。
 
-### 2.8 `notifications`（v81；裸四步）
+### 2.9 `notifications`（v81；裸四步）
 
 ```sql
 -- legacy 有效形状（notifications/migration.go:16-24 + v37 ALTERs :53-54）
@@ -305,7 +375,7 @@ DROP TABLE notifications_old;
 CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC);
 ```
 
-### 2.9 `recycle_items`（v82；无 FK）
+### 2.10 `recycle_items`（v82；无 FK）
 
 ```sql
 -- legacy（recyclebin/migration.go:20-29）；索引 :30-31
@@ -326,7 +396,7 @@ CREATE INDEX idx_recycle_items_deleted_at ON recycle_items(deleted_at DESC)
 -- 裸四步；deleted_at → TEXT NOT NULL；restored_at → TEXT 可空（NULL 包裹）；索引最后逐字重建
 ```
 
-### 2.10 `scheduled_tasks` + `task_runs`（v83；父 + 子，F-5）
+### 2.11 `scheduled_tasks` + `task_runs`（v83；父 + 子，F-5）
 
 ```sql
 -- legacy（scheduledtasks/migration.go:18-28 / :29-37；索引 :38）
@@ -366,10 +436,64 @@ DROP TABLE task_runs_bak;
 CREATE INDEX idx_task_runs_task_started ON task_runs(task_id, started_at DESC);
 ```
 
-### 2.11 `site_settings`（v84；无 FK；15 列）
+### 2.12 `site_settings`（v84；无 FK；15 列）
 
-- legacy 有效形状见 `settings/migration.go:26-31` + ALTERs `:86-91 / :121-122 / :207 / :222-223`；new 仅 `updated_at` → `TEXT NOT NULL`；索引 `idx_site_settings_updated_at`（`:189`，`IF NOT EXISTS`）最后建。
-- **Go seeder 联动**：`settings/migration.go:69-72`（SQLite）与 `:52-55`（PG）以 Unix 秒插入 `updated_at`，**必须与 v84 同批**改为目标格式（`D-018` 无过渡期）。
+> 响应 A-034 **F-I-024**：本节列序改为 **live `PRAGMA table_info` 实测**（cid 0–14），并**明确声明实测结论与按文件行号推断一致**——`operation_log_retention_days`(12) / `operation_log_expiration_action`(13) 在 `default_currency`(14) **之前**。给出完整 15 列 `CREATE TABLE` 正文（此前只有差异说明）。实测 `sqlite_master` 的存储文本显示 ALTER 追加段内 `default_currency` 位于末尾，故 live cid 序 = 基座 4 列 + 追加 11 列的**追加顺序**。
+
+```sql
+-- legacy（live 实测，15 列，cid 0-14）
+CREATE TABLE site_settings (
+  id                              TEXT PRIMARY KEY CHECK (id = 'default'),
+  site_title                      TEXT NOT NULL,
+  logo_url                        TEXT NOT NULL DEFAULT '',
+  updated_at                      INTEGER NOT NULL,
+  logo_url_light                  TEXT NOT NULL DEFAULT '',
+  logo_url_dark                   TEXT NOT NULL DEFAULT '',
+  favicon_url                     TEXT NOT NULL DEFAULT '',
+  default_locale                  TEXT NOT NULL DEFAULT '',
+  site_timezone                   TEXT NOT NULL DEFAULT '',
+  default_theme                   TEXT NOT NULL DEFAULT '',
+  copyright_text                  TEXT NOT NULL DEFAULT '',
+  icp_number                      TEXT NOT NULL DEFAULT '',
+  operation_log_retention_days    INTEGER NOT NULL DEFAULT 90,
+  operation_log_expiration_action TEXT NOT NULL DEFAULT 'archive',
+  default_currency                TEXT NOT NULL DEFAULT ''
+)
+-- new（仅 updated_at → TEXT NOT NULL；其余列、DEFAULT、CHECK 逐字保留）
+CREATE TABLE site_settings (
+  id                              TEXT PRIMARY KEY CHECK (id = 'default'),
+  site_title                      TEXT NOT NULL,
+  logo_url                        TEXT NOT NULL DEFAULT '',
+  updated_at                      TEXT NOT NULL,
+  logo_url_light                  TEXT NOT NULL DEFAULT '',
+  logo_url_dark                   TEXT NOT NULL DEFAULT '',
+  favicon_url                     TEXT NOT NULL DEFAULT '',
+  default_locale                  TEXT NOT NULL DEFAULT '',
+  site_timezone                   TEXT NOT NULL DEFAULT '',
+  default_theme                   TEXT NOT NULL DEFAULT '',
+  copyright_text                  TEXT NOT NULL DEFAULT '',
+  icp_number                      TEXT NOT NULL DEFAULT '',
+  operation_log_retention_days    INTEGER NOT NULL DEFAULT 90,
+  operation_log_expiration_action TEXT NOT NULL DEFAULT 'archive',
+  default_currency                TEXT NOT NULL DEFAULT ''
+)
+```
+
+```sql
+ALTER TABLE site_settings RENAME TO site_settings_old;
+CREATE TABLE site_settings ( …new，见上，15 列… );
+INSERT INTO site_settings (id, site_title, logo_url, updated_at, logo_url_light, logo_url_dark, favicon_url,
+                           default_locale, site_timezone, default_theme, copyright_text, icp_number,
+                           operation_log_retention_days, operation_log_expiration_action, default_currency)
+SELECT id, site_title, logo_url, <秒表达式(updated_at)>, logo_url_light, logo_url_dark, favicon_url,
+       default_locale, site_timezone, default_theme, copyright_text, icp_number,
+       operation_log_retention_days, operation_log_expiration_action, default_currency
+FROM site_settings_old;
+DROP TABLE site_settings_old;
+CREATE INDEX IF NOT EXISTS idx_site_settings_updated_at ON site_settings (updated_at);
+```
+
+> **Go seeder 联动**：`settings/migration/migration.go:69-72`（SQLite）与 `:52-55`（PG）以 Unix 秒插入 `updated_at`，**必须与 v84 同批**改为目标格式（`D-018` 无过渡期）。
 
 ## 3. `authsession`（v74）逐表 DDL 正文
 
@@ -587,7 +711,7 @@ DROP TABLE mfa_proofs_bak;
 - legacy `:287-301`；索引 `idx_vouchers_batch`、`idx_vouchers_status`（`:302-303`）。
 - new：`expires_at`/`redeemed_at` → `TEXT`（**voucher 包裹** `IS NULL OR = 0`），`created_at`/`updated_at` → `TEXT NOT NULL`。
 
-### 5.5 `telegram_config`（**D0**）
+### 5.5 `telegram_config`（v86；**D0**）
 
 ```sql
 -- legacy 有效形状（telegram/migration.go:11-16 + v67 ALTERs :29-30）
@@ -604,7 +728,7 @@ CREATE TABLE telegram_config (
 -- new：updated_at → TEXT（可空、无默认）；copy 用 CASE WHEN updated_at = 0 THEN NULL ELSE <秒表达式> END；无索引
 ```
 
-### 5.6 `telegram_sessions` / `telegram_inbound_messages` / `telegram_outbound_messages`
+### 5.6 `telegram_sessions` / `telegram_inbound_messages` / `telegram_outbound_messages`（v86）
 
 - legacy 有效形状 `:34-44` / `:47-61` / `:100-112`；均裸四步，时间列 → `TEXT NOT NULL`。
 - 索引（最后建）：`idx_telegram_sessions_activity`、`idx_telegram_inbound_messages_chat_received`、`idx_telegram_outbound_messages_chat_created`、**部分唯一** `idx_telegram_outbound_messages_pending_root … WHERE status = 'pending'`。

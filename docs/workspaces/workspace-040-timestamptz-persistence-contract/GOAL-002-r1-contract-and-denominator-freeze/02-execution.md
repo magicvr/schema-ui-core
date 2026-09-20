@@ -44,8 +44,9 @@ version: 0.1.0
 | E-028 | 2026-09-20 | 逐表 rebuild DDL 前置调查：发现 FK 父表重建阻塞 | recorded | `02-execution/E-028-fk-parent-rebuild-blocker.md` |
 | E-029 | 2026-09-20 | A-032 响应与 FK 重建模式定案（P-004 裁决 F-5） | recorded | `02-execution/E-029-fk-rebuild-mode-decided.md` |
 | E-030 | 2026-09-20 | 逐表 exact rebuild DDL 正文落盘（含 v74 F-5 编排整链实测） | recorded | `02-execution/E-030-per-table-rebuild-ddl-drafted.md` |
+| E-031 | 2026-09-20 | A-034 响应：补 v78 与 site_settings DDL，起草 PG 显式 DDL | recorded | `02-execution/E-031-v78-and-site-settings-ddl-added.md` |
 
-> 索引行序自本版起为 **E-001 → E-030 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
+> 索引行序自本版起为 **E-001 → E-031 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
 >
 > **Git checkpoint**：本轮（E-025/E-026）落盘后提交 `2d0734a1` — `govern(workspace-040): C2 freeze candidate batch 1 (90-column contract, predicate SQL, descriptor ledger)`。只暂存显式 owned paths（15 个文件，全部位于 workspace-040 与 Root `D-015`），未使用 `git add -A`；`apps/**` 无变更。commit hash 不作为审计或验收证据，仅用于可追溯。
 
