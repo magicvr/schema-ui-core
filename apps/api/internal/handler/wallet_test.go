@@ -4,7 +4,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -471,8 +470,10 @@ func TestWalletLifecycleAndAdjustFlow(t *testing.T) {
 	if rr.Code != http.StatusNotFound || !bodyHasCode(rr, "JOB_NOT_FOUND") {
 		t.Fatalf("missing job = %d %s", rr.Code, rr.Body.String())
 	}
-	if err := env.st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`UPDATE jobs SET expires_at=? WHERE id=?`, time.Now().Add(-time.Minute).UnixMilli(), jobID)
+	// workspace-040 R2: bind the instant through kernel.Tx so the store adapter
+	// writes the canonical fixed-6 form (the raw WithTx seam bypasses it).
+	if err := env.st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), `UPDATE jobs SET expires_at=? WHERE id=?`, time.Now().Add(-time.Minute).UTC(), jobID)
 		return err
 	}); err != nil {
 		t.Fatal(err)

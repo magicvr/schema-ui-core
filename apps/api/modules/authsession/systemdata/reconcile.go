@@ -44,7 +44,7 @@ func Reconcile(ctx context.Context, runner TxRunner, permissions []kernel.Permis
 		return err
 	}
 	return runner.Run(ctx, func(tx kernel.Tx) error {
-		now := time.Now().UTC().Unix()
+		now := time.Now().UTC().Truncate(time.Microsecond)
 		if err := ensureSystemRoles(tx, now); err != nil {
 			return err
 		}
@@ -168,7 +168,7 @@ func checkLedger(tx kernel.Tx, entry reconcileEntry) error {
 	return nil
 }
 
-func writeLedger(tx kernel.Tx, entry reconcileEntry, now int64) error {
+func writeLedger(tx kernel.Tx, entry reconcileEntry, now time.Time) error {
 	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO system_data_reconcile (module_id, kind, contribution_key, version, checksum, applied_at)
 		 VALUES (?, ?, ?, ?, ?, ?)
@@ -186,7 +186,7 @@ func ensurePermission(tx kernel.Tx, id string, p kernel.PermissionContribution) 
 	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO permissions (id, key, description, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?)
-		 ON CONFLICT(id) DO NOTHING`, id, p.Permission, description, time.Now().UTC().Unix(), time.Now().UTC().Unix(),
+		 ON CONFLICT(id) DO NOTHING`, id, p.Permission, description, time.Now().UTC().Truncate(time.Microsecond), time.Now().UTC().Truncate(time.Microsecond),
 	); err != nil {
 		return fmt.Errorf("ensure permission %s: %w", p.Permission, err)
 	}
@@ -204,7 +204,7 @@ func ensureNavigation(tx kernel.Tx, id string, n kernel.NavigationContribution) 
 	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO menu_items (id, page_ref, feature_key, sort_order, enabled, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, 1, ?, ?)
-		 ON CONFLICT(id) DO NOTHING`, id, n.PageID, n.NodeID, n.Order, time.Now().UTC().Unix(), time.Now().UTC().Unix(),
+		 ON CONFLICT(id) DO NOTHING`, id, n.PageID, n.NodeID, n.Order, time.Now().UTC().Truncate(time.Microsecond), time.Now().UTC().Truncate(time.Microsecond),
 	); err != nil {
 		return fmt.Errorf("ensure navigation %s: %w", n.NodeID, err)
 	}

@@ -8,6 +8,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -118,9 +119,13 @@ func (s *Store) applyMigration(migration kernel.MigrationContribution) error {
 			return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 		}
 	}
-	if _, err := tx.Exec(
-		`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
-		migration.Version, migration.Name, migration.Checksum, time.Now().UTC().Unix(),
+	write, err := sqliteLedgerWrite(context.Background(), sqlTx{tx: tx}, time.Now().UTC())
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if _, err := tx.Exec(write.statement,
+		migration.Version, migration.Name, migration.Checksum, write.value,
 	); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("record migration %d (%s): %w", migration.Version, migration.Name, err)

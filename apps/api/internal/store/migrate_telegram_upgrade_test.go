@@ -1,8 +1,12 @@
 package store
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 func TestMigrateV66TelegramRowPreservesExistingConfigOnV67(t *testing.T) {
@@ -31,15 +35,20 @@ func TestMigrateV66TelegramRowPreservesExistingConfigOnV67(t *testing.T) {
 	defer upgraded.Close()
 
 	var tokenCiphertext, secretCiphertext, mode, origin string
-	var updatedAt int64
-	if err := upgraded.db.QueryRow(`SELECT bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at FROM telegram_config WHERE id = 1`).Scan(
-		&tokenCiphertext, &secretCiphertext, &mode, &origin, &updatedAt,
-	); err != nil {
+	var updatedAt time.Time
+	if err := upgraded.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(),
+			`SELECT bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at FROM telegram_config WHERE id = 1`,
+		).Scan(&tokenCiphertext, &secretCiphertext, &mode, &origin, &updatedAt)
+	}); err != nil {
 		t.Fatalf("read upgraded telegram row: %v", err)
 	}
+	// workspace-040 v86 converted telegram_config.updated_at to the canonical
+	// fixed-6 UTC text; the legacy 123-second value must survive as the same
+	// instant.
 	if tokenCiphertext != "legacy-token-ciphertext" || secretCiphertext != "legacy-secret-ciphertext" ||
-		mode != "polling" || origin != "" || updatedAt != 123 {
-		t.Fatalf("upgraded telegram row = token %q secret %q mode %q origin %q updated_at %d", tokenCiphertext, secretCiphertext, mode, origin, updatedAt)
+		mode != "polling" || origin != "" || !updatedAt.Equal(time.Unix(123, 0).UTC()) {
+		t.Fatalf("upgraded telegram row = token %q secret %q mode %q origin %q updated_at %s", tokenCiphertext, secretCiphertext, mode, origin, updatedAt)
 	}
 	applied, err := upgraded.appliedMigrations()
 	if err != nil {

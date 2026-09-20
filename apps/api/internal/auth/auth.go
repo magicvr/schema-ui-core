@@ -39,6 +39,16 @@ var (
 	ErrTokenRevoked       = errors.New("auth: token revoked")
 )
 
+// userLocked reports whether the account carries a live lock.
+//
+// workspace-040 R2 (D-001 §2 #5): users.locked_until is nullable and NULL means
+// "not locked" — the legacy 0 second sentinel is gone, so the test must be a
+// presence check plus an instant comparison rather than an integer comparison
+// against the epoch.
+func userLocked(u *authsession.User, now time.Time) bool {
+	return u != nil && u.LockedUntil.Valid && u.LockedUntil.Time.After(now.UTC())
+}
+
 // MFARequiredError is returned by Login when the account's second factor must
 // be completed before tokens are issued (S-10 · GOAL-017 D-002 §3). It carries
 // the verified user id so the login handler can begin a second-factor proof.
@@ -208,7 +218,7 @@ func (a *Authenticator) Login(username, password string, now time.Time, clientIP
 	if err != nil {
 		return "", "", account.User{}, err
 	}
-	if u.LockedUntil > now.Unix() || pairLocked {
+	if userLocked(u, now) || pairLocked {
 		// W11 F-007 (D2 residual): burn the same bcrypt time as a wrong
 		// password before surfacing the terminal state, so the locked-account
 		// fast path cannot be used to enumerate existing usernames by timing.
@@ -240,7 +250,7 @@ func (a *Authenticator) Login(username, password string, now time.Time, clientIP
 		}
 		return "", "", account.User{}, ErrInvalidCredentials
 	}
-	if u.FailedLoginCount != 0 || u.LockedUntil != 0 {
+	if u.FailedLoginCount != 0 || u.LockedUntil.Valid {
 		if err := a.repository.ResetLoginFailures(u.ID, now); err != nil {
 			return "", "", account.User{}, err
 		}
@@ -282,7 +292,7 @@ func (a *Authenticator) IssueTokensFor(userID string, now time.Time) (accessToke
 	if err != nil {
 		return "", "", account.User{}, err
 	}
-	if u.LockedUntil > now.Unix() {
+	if userLocked(u, now) {
 		return "", "", account.User{}, ErrAccountLocked
 	}
 	if !u.Enabled {
@@ -325,7 +335,7 @@ func (a *Authenticator) Refresh(rawRefresh string, now time.Time) (accessToken, 
 	// best-effort, so Refresh must not mint a new pair from a leftover live
 	// refresh token. Same 401 envelope as an invalid token (no extra lock or
 	// disable oracle on this path).
-	if u.LockedUntil > now.Unix() || !u.Enabled {
+	if userLocked(u, now) || !u.Enabled {
 		return "", "", account.User{}, ErrInvalidToken
 	}
 	return a.issue(u, now)

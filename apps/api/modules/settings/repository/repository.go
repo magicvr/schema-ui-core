@@ -215,7 +215,7 @@ func (r *Repository) writeSiteSettings(
 				settingsmigration.DefaultSiteTitle,
 				settingsmigration.DefaultOperationLogRetentionDays,
 				settingsmigration.DefaultOperationLogExpirationAction,
-				now.Unix(),
+				now,
 			}
 		} else {
 			stmt = `INSERT INTO site_settings (
@@ -239,7 +239,7 @@ func (r *Repository) writeSiteSettings(
 			   operation_log_expiration_action = CASE WHEN ? = 1 THEN excluded.operation_log_expiration_action ELSE site_settings.operation_log_expiration_action END,
 			   updated_at = excluded.updated_at`
 			args = []any{
-				title, logo, logoLight, logoDark, favicon, locale, timezone, currency, theme, copyright, icp, days, action, now.Unix(),
+				title, logo, logoLight, logoDark, favicon, locale, timezone, currency, theme, copyright, icp, days, action, now,
 				titleSet, logoSet, logoLightSet, logoDarkSet, faviconSet, localeSet, timezoneSet, currencySet, themeSet, copyrightSet, icpSet, daysSet, actionSet,
 			}
 		}
@@ -330,7 +330,6 @@ func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 
 func getSiteSettings(tx kernel.Tx) (*SiteSettings, error) {
 	var settings SiteSettings
-	var updatedAt int64
 	err := tx.QueryRow(context.Background(),
 		`SELECT id, site_title, logo_url, logo_url_light, logo_url_dark, favicon_url,
 		        default_locale, site_timezone, default_currency, default_theme, copyright_text, icp_number,
@@ -341,7 +340,7 @@ func getSiteSettings(tx kernel.Tx) (*SiteSettings, error) {
 		&settings.LogoURLDark, &settings.FaviconURL, &settings.DefaultLocale,
 		&settings.SiteTimezone, &settings.DefaultCurrency, &settings.DefaultTheme, &settings.CopyrightText,
 		&settings.ICPNumber, &settings.OperationLogRetentionDays, &settings.OperationLogExpirationAction,
-		&updatedAt,
+		&settings.UpdatedAt,
 	)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return &SiteSettings{
@@ -359,7 +358,6 @@ func getSiteSettings(tx kernel.Tx) (*SiteSettings, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query singleton: %w", err)
 	}
-	settings.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	return &settings, nil
 }
 

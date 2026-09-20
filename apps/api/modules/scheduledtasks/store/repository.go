@@ -6,6 +6,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -121,12 +122,9 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var t Task
-			var created, updated int64
-			if err := rows.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &created, &updated); err != nil {
+			if err := rows.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &t.CreatedAt, &t.UpdatedAt); err != nil {
 				return fmt.Errorf("scan task: %w", err)
 			}
-			t.CreatedAt = time.Unix(created, 0)
-			t.UpdatedAt = time.Unix(updated, 0)
 			tasks = append(tasks, t)
 		}
 		return rows.Err()
@@ -138,19 +136,16 @@ func (r *Repository) ListTasks(filter ListFilter) ([]Task, int, error) {
 func (r *Repository) GetTask(id string) (*Task, error) {
 	var t Task
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var created, updated int64
 		row := tx.QueryRow(context.Background(),
 			`SELECT id, key, cron, name, enabled, COALESCE(description, ''), handler, created_at, updated_at
 			 FROM scheduled_tasks WHERE id = ?`, id,
 		)
-		if err := row.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &created, &updated); err != nil {
+		if err := row.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("get task: %w", err)
 		}
-		t.CreatedAt = time.Unix(created, 0)
-		t.UpdatedAt = time.Unix(updated, 0)
 		return nil
 	})
 	if err != nil {
@@ -173,7 +168,7 @@ func (r *Repository) CreateTaskTx(ctx context.Context, tx kernel.Tx, t Task) err
 	_, err := tx.Exec(ctx,
 		`INSERT INTO scheduled_tasks (id, key, cron, name, enabled, description, handler, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, t.Key, t.Cron, t.Name, boolInt(t.Enabled), t.Description, t.Handler, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
+		t.ID, t.Key, t.Cron, t.Name, boolInt(t.Enabled), t.Description, t.Handler, t.CreatedAt, t.UpdatedAt,
 	)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") {
@@ -189,7 +184,7 @@ func (r *Repository) UpdateTask(id, cron, name string, enabled bool, description
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE scheduled_tasks SET cron = ?, name = ?, enabled = ?, description = ?, handler = ?, updated_at = ? WHERE id = ?`,
-			cron, name, boolInt(enabled), description, handler, now.Unix(), id,
+			cron, name, boolInt(enabled), description, handler, now, id,
 		)
 		if err != nil {
 			return fmt.Errorf("update task: %w", err)
@@ -243,12 +238,9 @@ func (r *Repository) EnabledTasks() ([]Task, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var t Task
-			var created, updated int64
-			if err := rows.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &created, &updated); err != nil {
+			if err := rows.Scan(&t.ID, &t.Key, &t.Cron, &t.Name, &t.Enabled, &t.Description, &t.Handler, &t.CreatedAt, &t.UpdatedAt); err != nil {
 				return fmt.Errorf("scan enabled task: %w", err)
 			}
-			t.CreatedAt = time.Unix(created, 0)
-			t.UpdatedAt = time.Unix(updated, 0)
 			tasks = append(tasks, t)
 		}
 		return rows.Err()
@@ -259,14 +251,14 @@ func (r *Repository) EnabledTasks() ([]Task, error) {
 // RecordRun inserts one run row.
 func (r *Repository) RecordRun(run TaskRun) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		finished := int64(0)
+		finished := sql.NullTime{}
 		if run.FinishedAt != nil {
-			finished = run.FinishedAt.Unix()
+			finished = sql.NullTime{Time: *run.FinishedAt, Valid: true}
 		}
 		_, err := tx.Exec(context.Background(),
 			`INSERT INTO task_runs (id, task_id, status, started_at, finished_at, detail, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			run.ID, run.TaskID, run.Status, run.StartedAt.Unix(), finished, run.Detail, run.CreatedAt.Unix(),
+			run.ID, run.TaskID, run.Status, run.StartedAt, finished, run.Detail, run.CreatedAt,
 		)
 		if err != nil {
 			// Include the run id: UNIQUE task_runs.id failures previously hid
@@ -286,7 +278,7 @@ func (r *Repository) ListTaskRuns(taskID string, filter ListFilter) ([]TaskRun, 
 			return fmt.Errorf("count task runs: %w", err)
 		}
 		rows, err := tx.Query(context.Background(),
-			`SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at
+			`SELECT id, task_id, status, started_at, finished_at, COALESCE(detail, ''), created_at
 			 FROM task_runs WHERE task_id = ? ORDER BY started_at DESC LIMIT ? OFFSET ?`,
 			taskID, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total),
 		)
@@ -296,16 +288,14 @@ func (r *Repository) ListTaskRuns(taskID string, filter ListFilter) ([]TaskRun, 
 		defer rows.Close()
 		for rows.Next() {
 			var rn TaskRun
-			var started, finished, created int64
-			if err := rows.Scan(&rn.ID, &rn.TaskID, &rn.Status, &started, &finished, &rn.Detail, &created); err != nil {
+			var finished sql.NullTime
+			if err := rows.Scan(&rn.ID, &rn.TaskID, &rn.Status, &rn.StartedAt, &finished, &rn.Detail, &rn.CreatedAt); err != nil {
 				return fmt.Errorf("scan task run: %w", err)
 			}
-			rn.StartedAt = time.Unix(started, 0)
-			if finished > 0 {
-				f := time.Unix(finished, 0)
+			if finished.Valid {
+				f := finished.Time
 				rn.FinishedAt = &f
 			}
-			rn.CreatedAt = time.Unix(created, 0)
 			runs = append(runs, rn)
 		}
 		return rows.Err()
@@ -340,7 +330,7 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 			return fmt.Errorf("count all runs: %w", err)
 		}
 		rows, err := tx.Query(context.Background(),
-			`SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at
+			`SELECT id, task_id, status, started_at, finished_at, COALESCE(detail, ''), created_at
 			 FROM task_runs`+where+` ORDER BY started_at DESC LIMIT ? OFFSET ?`,
 			append(args, filter.PageSize, pagination.Offset(filter.Page, filter.PageSize, total))...,
 		)
@@ -350,16 +340,14 @@ func (r *Repository) ListAllRuns(filter ListFilter) ([]TaskRun, int, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var rn TaskRun
-			var started, finished, created int64
-			if err := rows.Scan(&rn.ID, &rn.TaskID, &rn.Status, &started, &finished, &rn.Detail, &created); err != nil {
+			var finished sql.NullTime
+			if err := rows.Scan(&rn.ID, &rn.TaskID, &rn.Status, &rn.StartedAt, &finished, &rn.Detail, &rn.CreatedAt); err != nil {
 				return fmt.Errorf("scan task run: %w", err)
 			}
-			rn.StartedAt = time.Unix(started, 0)
-			if finished > 0 {
-				f := time.Unix(finished, 0)
+			if finished.Valid {
+				f := finished.Time
 				rn.FinishedAt = &f
 			}
-			rn.CreatedAt = time.Unix(created, 0)
 			runs = append(runs, rn)
 		}
 		return rows.Err()

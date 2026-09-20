@@ -6,6 +6,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -160,7 +161,7 @@ func (r *Repository) InsertOfferInTx(tx kernel.Tx, o Offer) error {
 		o.ID, o.Name, o.Description, o.PriceAmount, o.Currency, o.EntitlementForm,
 		nullableInt(o.EntitlementForm == FormDuration, o.DurationSeconds),
 		nullableInt(o.EntitlementForm == FormCount, o.CountPerPurchase),
-		o.Status, o.Version, o.CreatedAt.Unix(), o.UpdatedAt.Unix(),
+		o.Status, o.Version, o.CreatedAt, o.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert digital offer: %w", err)
@@ -190,13 +191,13 @@ func (r *Repository) GetOfferInTx(tx kernel.Tx, id string) (*Offer, error) {
 }
 
 func scanOffer(tx kernel.Tx, id string, offer *Offer) error {
-	var price, created, updated int64
+	var price int64
 	var duration, count any
 	err := tx.QueryRow(context.Background(),
 		`SELECT id, name, description, price_amount, currency, entitlement_form, duration_seconds, count_per_purchase, status, version, created_at, updated_at
 		 FROM digital_offers WHERE id = ?`, id,
 	).Scan(&offer.ID, &offer.Name, &offer.Description, &price, &offer.Currency,
-		&offer.EntitlementForm, &duration, &count, &offer.Status, &offer.Version, &created, &updated)
+		&offer.EntitlementForm, &duration, &count, &offer.Status, &offer.Version, &offer.CreatedAt, &offer.UpdatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -210,8 +211,6 @@ func scanOffer(tx kernel.Tx, id string, offer *Offer) error {
 	if v, ok := count.(int64); ok {
 		offer.CountPerPurchase = v
 	}
-	offer.CreatedAt = time.Unix(created, 0)
-	offer.UpdatedAt = time.Unix(updated, 0)
 	return nil
 }
 
@@ -272,13 +271,11 @@ type offerRows interface {
 }
 
 func scanOfferRow(rows offerRows, o *Offer) error {
-	var price, created, updated int64
-	if err := rows.Scan(&o.ID, &o.Name, &o.Description, &price, &o.Currency, &o.EntitlementForm, &o.DurationSeconds, &o.CountPerPurchase, &o.Status, &o.Version, &created, &updated); err != nil {
+	var price int64
+	if err := rows.Scan(&o.ID, &o.Name, &o.Description, &price, &o.Currency, &o.EntitlementForm, &o.DurationSeconds, &o.CountPerPurchase, &o.Status, &o.Version, &o.CreatedAt, &o.UpdatedAt); err != nil {
 		return fmt.Errorf("scan digital offer: %w", err)
 	}
 	o.PriceAmount = price
-	o.CreatedAt = time.Unix(created, 0)
-	o.UpdatedAt = time.Unix(updated, 0)
 	return nil
 }
 
@@ -311,7 +308,7 @@ func (r *Repository) ListOnSale() ([]Offer, error) {
 // part of the UPDATE set by construction.
 func (r *Repository) UpdateOfferInTx(tx kernel.Tx, id string, name, description *string, price *int64, status *string, expectedVersion int64, now time.Time) (*Offer, error) {
 	sets := []string{"updated_at = ?", "version = version + 1"}
-	args := []any{now.Unix()}
+	args := []any{now}
 	if name != nil {
 		sets = append(sets, "name = ?")
 		args = append(args, *name)
@@ -352,12 +349,12 @@ func (r *Repository) UpdateOfferInTx(tx kernel.Tx, id string, name, description 
 // attempt step 1). ErrPurchaseNotFound = no prior purchase for the pair.
 func (r *Repository) GetPurchaseByRequestInTx(tx kernel.Tx, subjectID, requestID string) (*Purchase, error) {
 	var p Purchase
-	var amount, created int64
+	var amount int64
 	err := tx.QueryRow(context.Background(),
 		`SELECT id, subject_id, offer_id, offer_name, amount, currency, freeze_entry_id, deduct_entry_id, request_id, status, created_at
 		 FROM digital_purchases WHERE subject_id = ? AND request_id = ?`, subjectID, requestID,
 	).Scan(&p.ID, &p.SubjectID, &p.OfferID, &p.OfferName, &amount, &p.Currency,
-		&p.FreezeEntryID, &p.DeductEntryID, &p.RequestID, &p.Status, &created)
+		&p.FreezeEntryID, &p.DeductEntryID, &p.RequestID, &p.Status, &p.CreatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrPurchaseNotFound
 	}
@@ -365,7 +362,6 @@ func (r *Repository) GetPurchaseByRequestInTx(tx kernel.Tx, subjectID, requestID
 		return nil, fmt.Errorf("query digital purchase by request: %w", err)
 	}
 	p.Amount = amount
-	p.CreatedAt = time.Unix(created, 0)
 	return &p, nil
 }
 
@@ -379,7 +375,7 @@ func (r *Repository) InsertPurchaseInTx(tx kernel.Tx, p Purchase) error {
 		`INSERT INTO digital_purchases (id, subject_id, offer_id, offer_name, amount, currency, freeze_entry_id, deduct_entry_id, request_id, status, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		p.ID, p.SubjectID, p.OfferID, p.OfferName, p.Amount, p.Currency,
-		p.FreezeEntryID, p.DeductEntryID, p.RequestID, p.Status, p.CreatedAt.Unix(),
+		p.FreezeEntryID, p.DeductEntryID, p.RequestID, p.Status, p.CreatedAt,
 	)
 	if isUniqueViolation(err) {
 		return errPurchaseUniqueRace
@@ -424,12 +420,11 @@ func (r *Repository) ListPurchases(filter PurchaseFilter) ([]Purchase, int, erro
 		defer rows.Close()
 		for rows.Next() {
 			var p Purchase
-			var amount, created int64
-			if err := rows.Scan(&p.ID, &p.SubjectID, &p.OfferID, &p.OfferName, &amount, &p.Currency, &p.FreezeEntryID, &p.DeductEntryID, &p.RequestID, &p.Status, &created); err != nil {
+			var amount int64
+			if err := rows.Scan(&p.ID, &p.SubjectID, &p.OfferID, &p.OfferName, &amount, &p.Currency, &p.FreezeEntryID, &p.DeductEntryID, &p.RequestID, &p.Status, &p.CreatedAt); err != nil {
 				return fmt.Errorf("scan digital purchase: %w", err)
 			}
 			p.Amount = amount
-			p.CreatedAt = time.Unix(created, 0)
 			purchases = append(purchases, p)
 		}
 		return rows.Err()
@@ -440,9 +435,11 @@ func (r *Repository) ListPurchases(filter PurchaseFilter) ([]Purchase, int, erro
 // InsertEntitlementInTx appends one entitlement row inside the caller-owned
 // transaction (form mirrors the offer at purchase time, D-002 §3).
 func (r *Repository) InsertEntitlementInTx(tx kernel.Tx, e Entitlement) error {
-	var expires any
+	// digital_entitlements.expires_at is plain nullable (contract #88): the
+	// form CHECK mutex is unchanged, NULL stays NULL.
+	var expires sql.NullTime
 	if e.ExpiresAt != nil {
-		expires = e.ExpiresAt.Unix()
+		expires = sql.NullTime{Time: *e.ExpiresAt, Valid: true}
 	}
 	var remaining any
 	if e.RemainingCount != nil {
@@ -451,7 +448,7 @@ func (r *Repository) InsertEntitlementInTx(tx kernel.Tx, e Entitlement) error {
 	_, err := tx.Exec(context.Background(),
 		`INSERT INTO digital_entitlements (id, subject_id, offer_id, purchase_id, form, expires_at, remaining_count, status, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		e.ID, e.SubjectID, e.OfferID, e.PurchaseID, e.Form, expires, remaining, e.Status, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
+		e.ID, e.SubjectID, e.OfferID, e.PurchaseID, e.Form, expires, remaining, e.Status, e.CreatedAt, e.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert digital entitlement: %w", err)
@@ -486,12 +483,12 @@ func (r *Repository) ListEntitlementsBySubjectOfferInTx(tx kernel.Tx, subjectID,
 	var out []Entitlement
 	for rows.Next() {
 		var e Entitlement
-		var created, updated int64
-		var expires, remaining any
-		if err := rows.Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &created, &updated); err != nil {
+		var expires sql.NullTime
+		var remaining sql.NullInt64
+		if err := rows.Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan digital entitlement: %w", err)
 		}
-		decodeEntitlementTimes(&e, expires, remaining, created, updated)
+		decodeEntitlementTimes(&e, expires, remaining)
 		out = append(out, e)
 	}
 	return out, rows.Err()
@@ -508,32 +505,35 @@ func (r *Repository) GetEntitlementInTx(tx kernel.Tx, id string) (*Entitlement, 
 }
 
 func scanEntitlement(tx kernel.Tx, id string, e *Entitlement) error {
-	var created, updated int64
-	var expires, remaining any
+	var expires sql.NullTime
+	var remaining sql.NullInt64
 	err := tx.QueryRow(context.Background(),
 		`SELECT id, subject_id, offer_id, purchase_id, form, expires_at, remaining_count, status, created_at, updated_at
 		 FROM digital_entitlements WHERE id = ?`, id,
-	).Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &created, &updated)
+	).Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &e.CreatedAt, &e.UpdatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return ErrEntitlementNotFound
 	}
 	if err != nil {
 		return fmt.Errorf("query digital entitlement: %w", err)
 	}
-	decodeEntitlementTimes(e, expires, remaining, created, updated)
+	decodeEntitlementTimes(e, expires, remaining)
 	return nil
 }
 
-func decodeEntitlementTimes(e *Entitlement, expires, remaining any, created, updated int64) {
-	if v, ok := expires.(int64); ok {
-		t := time.Unix(v, 0)
+// decodeEntitlementTimes maps the plain nullable expires_at (#88) and the
+// count column onto the domain pointers. NULL stays nil for both.
+func decodeEntitlementTimes(e *Entitlement, expires sql.NullTime, remaining sql.NullInt64) {
+	if expires.Valid {
+		t := expires.Time.UTC()
 		e.ExpiresAt = &t
 	}
-	if v, ok := remaining.(int64); ok {
-		e.RemainingCount = &v
+	if remaining.Valid {
+		count := remaining.Int64
+		e.RemainingCount = &count
 	}
-	e.CreatedAt = time.Unix(created, 0)
-	e.UpdatedAt = time.Unix(updated, 0)
+	e.CreatedAt = e.CreatedAt.UTC()
+	e.UpdatedAt = e.UpdatedAt.UTC()
 }
 
 // ListEntitlements returns the admin entitlement page.
@@ -578,12 +578,12 @@ func (r *Repository) ListEntitlements(filter EntitlementFilter) ([]Entitlement, 
 		defer rows.Close()
 		for rows.Next() {
 			var e Entitlement
-			var created, updated int64
-			var expires, remaining any
-			if err := rows.Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &created, &updated); err != nil {
+			var expires sql.NullTime
+			var remaining sql.NullInt64
+			if err := rows.Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &e.CreatedAt, &e.UpdatedAt); err != nil {
 				return fmt.Errorf("scan digital entitlement: %w", err)
 			}
-			decodeEntitlementTimes(&e, expires, remaining, created, updated)
+			decodeEntitlementTimes(&e, expires, remaining)
 			entitlements = append(entitlements, e)
 		}
 		return rows.Err()
@@ -595,19 +595,19 @@ func (r *Repository) ListEntitlements(filter EntitlementFilter) ([]Entitlement, 
 // (D-002 §4.4 replay path: the read-back result carries its entitlement).
 func (r *Repository) GetEntitlementByPurchaseInTx(tx kernel.Tx, purchaseID string) (*Entitlement, error) {
 	var e Entitlement
-	var created, updated int64
-	var expires, remaining any
+	var expires sql.NullTime
+	var remaining sql.NullInt64
 	err := tx.QueryRow(context.Background(),
 		`SELECT id, subject_id, offer_id, purchase_id, form, expires_at, remaining_count, status, created_at, updated_at
 		 FROM digital_entitlements WHERE purchase_id = ?`, purchaseID,
-	).Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &created, &updated)
+	).Scan(&e.ID, &e.SubjectID, &e.OfferID, &e.PurchaseID, &e.Form, &expires, &remaining, &e.Status, &e.CreatedAt, &e.UpdatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrEntitlementNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("query digital entitlement by purchase: %w", err)
 	}
-	decodeEntitlementTimes(&e, expires, remaining, created, updated)
+	decodeEntitlementTimes(&e, expires, remaining)
 	return &e, nil
 }
 
@@ -617,7 +617,7 @@ func (r *Repository) GetEntitlementByPurchaseInTx(tx kernel.Tx, purchaseID strin
 func (r *Repository) VoidEntitlementInTx(tx kernel.Tx, id string, now time.Time) (alreadyVoided bool, err error) {
 	res, err := tx.Exec(context.Background(),
 		`UPDATE digital_entitlements SET status = ?, updated_at = ? WHERE id = ? AND status = ?`,
-		EntitlementVoided, now.Unix(), id, EntitlementActive)
+		EntitlementVoided, now, id, EntitlementActive)
 	if err != nil {
 		return false, fmt.Errorf("void digital entitlement: %w", err)
 	}
@@ -673,7 +673,7 @@ func (r *Repository) DecrementEntitlementInTx(tx kernel.Tx, id, subjectID, offer
 	res, err := tx.Exec(context.Background(),
 		`UPDATE digital_entitlements SET remaining_count = remaining_count - ?, updated_at = ?
 		 WHERE id = ? AND subject_id = ? AND offer_id = ? AND form = ? AND status = ? AND remaining_count >= ?`,
-		take, now.Unix(), id, subjectID, offerID, FormCount, EntitlementActive, take)
+		take, now, id, subjectID, offerID, FormCount, EntitlementActive, take)
 	if err != nil {
 		return false, fmt.Errorf("consume digital entitlement: %w", err)
 	}

@@ -8,6 +8,7 @@ package authsession
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -33,18 +34,14 @@ func (r *Repository) ListRefreshTokensForUser(userID string) ([]RefreshToken, er
 		defer rows.Close()
 		for rows.Next() {
 			var token RefreshToken
-			var expiresAt int64
-			var revokedAt *int64
-			var createdAt int64
-			if err := rows.Scan(&token.ID, &token.UserID, &token.TokenHash, &expiresAt, &revokedAt, &createdAt); err != nil {
+			var revokedAt sql.NullTime
+			if err := rows.Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &revokedAt, &token.CreatedAt); err != nil {
 				return fmt.Errorf("scan refresh token: %w", err)
 			}
-			token.ExpiresAt = time.Unix(expiresAt, 0).UTC()
-			if revokedAt != nil {
-				value := time.Unix(*revokedAt, 0).UTC()
+			if revokedAt.Valid {
+				value := revokedAt.Time
 				token.RevokedAt = &value
 			}
-			token.CreatedAt = time.Unix(createdAt, 0).UTC()
 			tokens = append(tokens, token)
 		}
 		return rows.Err()
@@ -62,7 +59,7 @@ func (r *Repository) RevokeRefreshTokenIfOwned(id, userID string, now time.Time)
 	return r.withTx("revoke owned refresh token", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
-			now.Unix(), id, userID)
+			now, id, userID)
 		if err != nil {
 			return fmt.Errorf("revoke owned refresh token: %w", err)
 		}
@@ -96,7 +93,7 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 	err := r.withTx("set user enabled", func(tx kernel.Tx) error {
 		var current User
 		var rolesJSON string
-		var createdAt, updatedAt int64
+		var createdAt, updatedAt time.Time
 		var mustChangePassword int
 		err := tx.QueryRow(context.Background(),
 			`SELECT id, username, name, roles, password_hash, token_version, failed_login_count, locked_until, enabled, avatar_url, must_change_password, created_at, updated_at FROM users WHERE id = ?`, id,
@@ -134,14 +131,14 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 		if !enabled && current.Enabled {
 			nextTokenVersion = current.TokenVersion + 1
 			if _, err := tx.Exec(context.Background(),
-				`UPDATE refresh_tokens SET revoked_at = COALESCE(revoked_at, ?) WHERE user_id = ?`, now.Unix(), id,
+				`UPDATE refresh_tokens SET revoked_at = COALESCE(revoked_at, ?) WHERE user_id = ?`, now, id,
 			); err != nil {
 				return fmt.Errorf("revoke refresh tokens on disable: %w", err)
 			}
 		}
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET enabled = ?, token_version = ?, updated_at = ? WHERE id = ?`,
-			boolInt(enabled), nextTokenVersion, now.Unix(), id,
+			boolInt(enabled), nextTokenVersion, now, id,
 		); err != nil {
 			return fmt.Errorf("update user enabled: %w", err)
 		}
@@ -178,8 +175,8 @@ func (r *Repository) SetUserEnabled(id string, enabled bool, actorID string, now
 func (r *Repository) UnlockUser(id string, now time.Time) (*User, error) {
 	err := r.withTx("unlock user", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
-			`UPDATE users SET locked_until = 0, failed_login_count = 0, last_login_failure_at = 0, updated_at = ? WHERE id = ?`,
-			now.Unix(), id)
+			`UPDATE users SET locked_until = NULL, failed_login_count = 0, last_login_failure_at = NULL, updated_at = ? WHERE id = ?`,
+			now, id)
 		if err != nil {
 			return fmt.Errorf("unlock user: %w", err)
 		}

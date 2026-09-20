@@ -74,7 +74,7 @@ func (r *Repository) SetNotificationsEnabled(userID string, enabled bool, now ti
 		}
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET notifications_enabled = ?, updated_at = ? WHERE id = ?`,
-			value, now.Unix(), userID,
+			value, now, userID,
 		); err != nil {
 			return fmt.Errorf("update notifications_enabled: %w", err)
 		}
@@ -90,7 +90,7 @@ func (r *Repository) CreateNotification(n Notification, now time.Time) error {
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO notifications (id, user_id, event, title, body, title_key, body_key, read_at, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
-			n.ID, n.UserID, n.Event, n.Title, n.Body, n.TitleKey, n.BodyKey, now.Unix(),
+			n.ID, n.UserID, n.Event, n.Title, n.Body, n.TitleKey, n.BodyKey, now,
 		); err != nil {
 			return fmt.Errorf("insert notification: %w", err)
 		}
@@ -189,7 +189,7 @@ func (r *Repository) MarkNotificationRead(id, userID string, now time.Time) erro
 	return r.withTx("mark notification read", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE notifications SET read_at = COALESCE(read_at, ?) WHERE id = ? AND user_id = ?`,
-			now.Unix(), id, userID,
+			now, id, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("mark notification read: %w", err)
@@ -218,7 +218,7 @@ func (r *Repository) MarkAllNotificationsRead(userID string, now time.Time) (int
 	err := r.withTx("mark all notifications read", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL`,
-			now.Unix(), userID,
+			now, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("mark all notifications read: %w", err)
@@ -252,9 +252,8 @@ func (r *Repository) UnreadNotificationCount(userID string) (int, error) {
 func scanNotification(row interface{ Scan(...any) error }) (*Notification, error) {
 	var n Notification
 	var titleKey, bodyKey sql.NullString
-	var readAt *int64
-	var createdAt int64
-	err := row.Scan(&n.ID, &n.UserID, &n.Event, &n.Title, &n.Body, &titleKey, &bodyKey, &readAt, &createdAt)
+	var readAt sql.NullTime
+	err := row.Scan(&n.ID, &n.UserID, &n.Event, &n.Title, &n.Body, &titleKey, &bodyKey, &readAt, &n.CreatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -267,10 +266,9 @@ func scanNotification(row interface{ Scan(...any) error }) (*Notification, error
 	if bodyKey.Valid {
 		n.BodyKey = &bodyKey.String
 	}
-	if readAt != nil {
-		value := time.Unix(*readAt, 0).UTC()
+	if readAt.Valid {
+		value := readAt.Time
 		n.ReadAt = &value
 	}
-	n.CreatedAt = time.Unix(createdAt, 0).UTC()
 	return &n, nil
 }

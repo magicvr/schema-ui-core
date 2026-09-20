@@ -121,8 +121,8 @@ func TestMigrateFreshDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applied: %v", err)
 	}
-	if len(applied) != 72 || applied[67].version != 68 || applied[67].name != "telegram_ingress" || applied[68].version != 69 || applied[68].name != "telegram_outbound" || applied[69].version != 70 || applied[69].name != "digital_offers" || applied[70].version != 71 || applied[70].name != "operation_log_digitaloffer_events" || applied[71].version != 72 || applied[71].name != "jobs_management_indexes" {
-		t.Fatalf("applied = %+v, want v72 jobs_management_indexes tail", applied)
+	if len(applied) != 87 || applied[67].version != 68 || applied[67].name != "telegram_ingress" || applied[68].version != 69 || applied[68].name != "telegram_outbound" || applied[69].version != 70 || applied[69].name != "digital_offers" || applied[70].version != 71 || applied[70].name != "operation_log_digitaloffer_events" || applied[82].version != 83 || applied[82].name != "vp040_temporal_scheduled_tasks" || applied[83].version != 84 || applied[83].name != "vp040_temporal_settings" || applied[84].version != 85 || applied[84].name != "vp040_temporal_wallet" || applied[85].version != 86 || applied[85].name != "vp040_temporal_telegram" || applied[86].version != 87 || applied[86].name != "vp040_temporal_digital_offer" {
+		t.Fatalf("applied = %+v, want v87 vp040_temporal_digital_offer tail", applied)
 	}
 	applied = applied[:66]
 	if len(applied) != 66 || applied[0].version != 1 || applied[1].version != 2 || applied[2].version != 3 || applied[3].version != 4 || applied[4].version != 5 || applied[5].version != 6 || applied[6].version != 7 || applied[7].version != 8 || applied[8].version != 9 || applied[9].version != 10 || applied[10].version != 11 || applied[11].version != 12 || applied[12].version != 13 || applied[13].version != 14 || applied[14].version != 15 || applied[15].version != 16 || applied[16].version != 17 || applied[17].version != 18 || applied[18].version != 19 || applied[19].version != 20 || applied[20].version != 21 || applied[21].version != 22 || applied[22].version != 23 || applied[23].version != 24 || applied[24].version != 25 || applied[25].version != 26 || applied[26].version != 27 || applied[27].version != 28 || applied[28].version != 29 || applied[29].version != 30 || applied[30].version != 31 || applied[31].version != 32 || applied[32].version != 33 || applied[33].version != 34 || applied[34].version != 35 || applied[35].version != 36 || applied[36].version != 37 || applied[36].name != "notifications_message_keys" || applied[37].version != 38 || applied[37].name != "must_change_password" || applied[38].version != 39 || applied[38].name != "dict_entry_badge_style" || applied[39].version != 40 || applied[39].name != "site_footer" || applied[40].version != 41 || applied[40].name != "operation_log_correlation" || applied[41].version != 42 || applied[41].name != "async_jobs" || applied[42].version != 43 || applied[42].name != "operation_log_wallet_jobs" || applied[43].version != 44 || applied[43].name != "service_credentials" || applied[44].version != 45 || applied[44].name != "operation_log_service_credentials" || applied[45].version != 46 || applied[45].name != "site_operation_log_retention" || applied[46].version != 47 || applied[46].name != "operation_log_archive" || applied[47].version != 48 || applied[47].name != "operation_log_session" || applied[48].version != 49 || applied[48].name != "seed_admin_must_change_password" || applied[49].version != 50 || applied[49].name != "wallet_ledger_order_repair" || applied[50].version != 51 || applied[50].name != "mail_outbox" || applied[51].version != 52 || applied[51].name != "mail_config" || applied[52].version != 53 || applied[52].name != "operation_log_mail_events" || applied[53].version != 54 || applied[53].name != "account_email_identity" || applied[54].version != 55 || applied[54].name != "email_verification_challenges" || applied[55].version != 56 || applied[55].name != "password_recovery_challenges" || applied[56].version != 57 || applied[56].name != "password_policy" || applied[57].version != 58 || applied[57].name != "user_password_history" || applied[58].version != 59 || applied[58].name != "user_invites" || applied[59].version != 60 || applied[59].name != "mail_outbox_channels" || applied[60].version != 61 || applied[60].name != "login_failures" || applied[61].version != 62 || applied[61].name != "site_default_currency" || applied[62].version != 63 || applied[62].name != "site_settings_updated_at_index" || applied[63].version != 64 || applied[63].name != "wallet_voucher_and_subject" || applied[64].version != 65 || applied[64].name != "wallet_voucher_batches" || applied[65].version != 66 || applied[65].name != "telegram_config" {
@@ -197,8 +197,8 @@ func TestMigrateFreshDB(t *testing.T) {
 		t.Fatalf("password_hash = %q after reopen, want hash (seed must be no-op)", u2.PasswordHash)
 	}
 	applied2, _ := st2.appliedMigrations()
-	if len(applied2) != 72 || applied2[67].version != 68 || applied2[67].name != "telegram_ingress" || applied2[68].version != 69 || applied2[68].name != "telegram_outbound" || applied2[69].version != 70 || applied2[69].name != "digital_offers" || applied2[70].version != 71 || applied2[70].name != "operation_log_digitaloffer_events" || applied2[71].version != 72 || applied2[71].name != "jobs_management_indexes" {
-		t.Fatalf("migrations after reopen = %+v, want v72 jobs_management_indexes tail", applied2)
+	if len(applied2) != 87 || applied2[67].version != 68 || applied2[67].name != "telegram_ingress" || applied2[68].version != 69 || applied2[68].name != "telegram_outbound" || applied2[69].version != 70 || applied2[69].name != "digital_offers" || applied2[70].version != 71 || applied2[70].name != "operation_log_digitaloffer_events" || applied2[82].version != 83 || applied2[82].name != "vp040_temporal_scheduled_tasks" || applied2[83].version != 84 || applied2[83].name != "vp040_temporal_settings" || applied2[84].version != 85 || applied2[84].name != "vp040_temporal_wallet" || applied2[85].version != 86 || applied2[85].name != "vp040_temporal_telegram" || applied2[86].version != 87 || applied2[86].name != "vp040_temporal_digital_offer" {
+		t.Fatalf("migrations after reopen = %+v, want v87 vp040_temporal_digital_offer tail", applied2)
 	}
 	applied2 = applied2[:66]
 	if len(applied2) != 66 {
@@ -761,6 +761,25 @@ func TestCompiledMigrationCatalogOwnership(t *testing.T) {
 		// index. The 0042 async_jobs row above stays byte-identical — a new
 		// contribution is the only legal way to add DDL to an applied table.
 		{"core.jobs", "jobs_management_indexes", "d946e1dbba9311586db8ea29a63d337f38ca7e5927974eae2b64f0f53787cb67"},
+		// workspace-040 R2 (GOAL-003 M2): v73–v87 timestamp conversion
+		// descriptors. Checksums are the real MigrationChecksum values of the
+		// canonical SQLite statement slices (D-017: m0 preflight → m1–m3
+		// rebuild → m4 verification; PG variants are not hashed).
+		{"core.persistence", "vp040_temporal_core_persistence", "c2d2218e327b6ae859b897ed55ed01793822a6a6fdf52dc9deeb96c565920683"},
+		{"core.auth-session", "vp040_temporal_authsession", "3ce1174a07300011f182baf93005f8fd2ce4b584f4b02d3f6cbcbc3e0106905c"},
+		{"core.operationlog", "vp040_temporal_operationlog", "075d9f69a48c718872f1a3ed148b8b9c6e0da7e2d7fbf46edd9f9d026d4b1581"},
+		{"core.jobs", "vp040_temporal_jobs", "6b3649579cc6aedc713fab8c7f9f6dafbec548317f7395082d9e5ddb730aca56"},
+		{"admin.data-dictionary", "vp040_temporal_dictionary", "ae55a63a4366667f05410a76d15308504cf805540163e85e139b5737c44f3e73"},
+		{"admin.data-permission", "vp040_temporal_data_permission", "db2565e2da3ea3c5fe879bed5a9914a0cff3c0d0d3e59dafd9b68ba5b37055aa"},
+		{"admin.login-captcha", "vp040_temporal_captcha", "493d66f70e904249d36bc593d070d0ebef0394a7b855d45a824e60a797599449"},
+		{"admin.mfa", "vp040_temporal_mfa", "6537215f79af2ed02e4bbe2218733f8134f7af477b84fb50cc5b931c583762f8"},
+		{"admin.notifications", "vp040_temporal_notifications", "a7565dc641f3c3291ff25cbefa52199ca06a8f94f7a978efac5b907615442b37"},
+		{"admin.recycle-bin", "vp040_temporal_recycle", "0132f6a873dd427b42c3a668bc88badc9b50a6c6729601e7cd1c5d5e4a1568fe"},
+		{"admin.scheduled-tasks", "vp040_temporal_scheduled_tasks", "e5df9a9e46bb6d8c259d8e134cb95bd1b7d043f9b108387800b23ee5c0ad6487"},
+		{"admin.settings", "vp040_temporal_settings", "bb3041a3d3fbeb5b3d706209f53cc578dc0e5d15016502919aac040b6bec2112"},
+		{"admin.wallet", "vp040_temporal_wallet", "e1b5140669cfe3a7360787578a50d5a978c63f0b3b6ca0e1a1338ba5f33a8b60"},
+		{"channel.telegram", "vp040_temporal_telegram", "80d5ad96381abd85cccf5022530e277b62c3333eb39aad5b5999754904a80973"},
+		{"biz.digital-offer", "vp040_temporal_digital_offer", "31cef809f68578758bb2bf6544a158eaafaea191335b3a9e334933f4e4f56cc2"},
 	}
 	if len(catalog) != len(want) {
 		t.Fatalf("catalog len = %d, want %d", len(catalog), len(want))

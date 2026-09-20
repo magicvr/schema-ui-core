@@ -45,8 +45,8 @@ func TestRecordLoginFailureThresholdAndReset(t *testing.T) {
 		if u.FailedLoginCount != i {
 			t.Fatalf("count after failure %d = %d, want %d (lost update?)", i, u.FailedLoginCount, i)
 		}
-		if u.LockedUntil != 0 {
-			t.Fatalf("locked_until set before threshold: %d", u.LockedUntil)
+		if u.LockedUntil.Valid {
+			t.Fatalf("locked_until set before threshold: %v", u.LockedUntil.Time)
 		}
 	}
 
@@ -61,8 +61,11 @@ func TestRecordLoginFailureThresholdAndReset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u.LockedUntil == 0 || u.FailedLoginCount != 0 {
-		t.Fatalf("after lock: locked_until=%d count=%d, want set/0", u.LockedUntil, u.FailedLoginCount)
+	// D-001 §2 #5: the lock window is stored as a real instant (NULL = never
+	// locked), so the assertion compares instants instead of an epoch integer.
+	wantLockedUntil := lockUntil.Truncate(time.Microsecond)
+	if !u.LockedUntil.Valid || !u.LockedUntil.Time.Equal(wantLockedUntil) || u.FailedLoginCount != 0 {
+		t.Fatalf("after lock: locked_until=%v count=%d, want %v/0", u.LockedUntil, u.FailedLoginCount, wantLockedUntil)
 	}
 
 	// The counter restarts from zero after a lock opens.

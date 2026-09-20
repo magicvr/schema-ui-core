@@ -37,7 +37,7 @@ func Bootstrap(ctx context.Context, runner TxRunner, username, passwordHash stri
 		return errors.New("authsession bootstrap: username is required")
 	}
 	return runner.Run(ctx, func(tx kernel.Tx) error {
-		now := time.Now().UTC().Unix()
+		now := time.Now().UTC().Truncate(time.Microsecond)
 		if err := ensureSystemRoles(tx, now); err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func Bootstrap(ctx context.Context, runner TxRunner, username, passwordHash stri
 	})
 }
 
-func ensureSystemRoles(tx kernel.Tx, now int64) error {
+func ensureSystemRoles(tx kernel.Tx, now time.Time) error {
 	for _, key := range []string{"admin", "editor", "viewer"} {
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO roles (id, key, name, system, created_at, updated_at)

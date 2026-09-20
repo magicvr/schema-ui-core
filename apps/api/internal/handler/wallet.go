@@ -759,12 +759,14 @@ const (
 )
 
 // parseVoucherExpiry normalizes an expiresAt payload to Unix seconds:
-//   - absent / "" / <=0 seconds → nil (no expiry, historical semantics)
+//   - absent / "" / 0 seconds → nil (no expiry, historical "absent" semantics)
 //   - numeric Unix seconds (JSON int, exponent form, or quoted digits)
 //   - a "YYYY-MM-DD" UTC date (E-009): converted to 23:59:59 UTC of that day,
 //     so the whole chosen day stays redeemable
 //
-// Out-of-window values and malformed input return ok=false (fail-closed).
+// Negative values are rejected (workspace-040 R2 / Root D-012: corruption, not
+// absence). Out-of-window values and malformed input return ok=false
+// (fail-closed).
 func parseVoucherExpiry(raw json.RawMessage) (*int64, bool) {
 	if len(raw) == 0 {
 		return nil, true
@@ -799,8 +801,13 @@ func parseVoucherExpiry(raw json.RawMessage) (*int64, bool) {
 		}
 		sec = int64(f)
 	}
-	if sec <= 0 {
-		return nil, true // historical "absent" semantics
+	if sec < 0 {
+		// workspace-040 R2 / Root D-012: a negative epoch is data corruption for
+		// a voucher instant, never an "absent" marker; the write fails closed.
+		return nil, false
+	}
+	if sec == 0 {
+		return nil, true // legacy "absent" spelling
 	}
 	if sec < voucherExpiryMinUnix || sec > voucherExpiryMaxUnix {
 		return nil, false

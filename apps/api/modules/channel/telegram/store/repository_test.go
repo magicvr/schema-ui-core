@@ -67,7 +67,7 @@ func TestRepositoryRecordInboundSQLiteIdempotency(t *testing.T) {
 
 	var messageCount, sessionCount int
 	var direction, kind, text, title, username string
-	var lastMessageAt int64
+	var lastMessageAt time.Time
 	err = st.Run(context.Background(), func(tx kernel.Tx) error {
 		if err := tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM telegram_inbound_messages`).Scan(&messageCount); err != nil {
 			return err
@@ -89,8 +89,8 @@ func TestRepositoryRecordInboundSQLiteIdempotency(t *testing.T) {
 	if direction != "inbound" || kind != "text" || text != first.Text {
 		t.Fatalf("persisted message = direction %q kind %q text %q", direction, kind, text)
 	}
-	if title != first.ChatTitle || username != first.ChatUsername || lastMessageAt != firstAt.Unix() {
-		t.Fatalf("duplicate changed session = title %q username %q last_message_at %d", title, username, lastMessageAt)
+	if title != first.ChatTitle || username != first.ChatUsername || !lastMessageAt.Equal(firstAt) {
+		t.Fatalf("duplicate changed session = title %q username %q last_message_at %s", title, username, lastMessageAt)
 	}
 }
 

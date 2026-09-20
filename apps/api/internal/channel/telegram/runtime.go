@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/url"
 	"strings"
@@ -163,7 +164,7 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret, seedMode, seedWe
 			if err1 != nil || err2 != nil {
 				return fmt.Errorf("telegram: encrypt seed secrets: %v / %v", err1, err2)
 			}
-			now := time.Now().Unix()
+			now := time.Now().UTC()
 			if _, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at) VALUES (1, ?, ?, ?, ?, ?)`,
 				tokenEnc, secretEnc, seedMode, seedWebhookPublicBaseURL, now); err != nil {
 				return fmt.Errorf("telegram: seed config: %w", err)
@@ -172,7 +173,9 @@ func (r *RuntimeManager) initPersistence(seedToken, seedSecret, seedMode, seedWe
 		}
 
 		var dbTokenEnc, dbSecretEnc, dbMode, dbWebhookPublicBaseURL string
-		var updatedAt int64
+		// telegram_config.updated_at is nullable after v87: NULL is the
+		// "uninitialized" marker that replaced the legacy INTEGER 0 sentinel.
+		var updatedAt sql.NullTime
 		row2 := tx.QueryRow(ctx, `SELECT bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at FROM telegram_config WHERE id = 1`)
 		if err := row2.Scan(&dbTokenEnc, &dbSecretEnc, &dbMode, &dbWebhookPublicBaseURL, &updatedAt); err != nil {
 			return fmt.Errorf("telegram: read persisted config: %w", err)
@@ -392,7 +395,7 @@ func (r *RuntimeManager) updateSettingsLocked(ctx context.Context, token, secret
 			return fmt.Errorf("telegram: encrypt secret: %w", err)
 		}
 
-		now := time.Now().Unix()
+		now := time.Now().UTC()
 		err = r.runner.Run(ctx, func(tx kernel.Tx) error {
 			_, err := tx.Exec(ctx, `INSERT INTO telegram_config (id, bot_token_enc, webhook_secret_enc, mode, webhook_public_base_url, updated_at)
 				VALUES (1, ?, ?, ?, ?, ?)

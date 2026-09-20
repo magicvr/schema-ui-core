@@ -54,8 +54,8 @@ INSERT INTO service_credentials
   (id, name, token_prefix, token_hash, scopes, expires_at, created_by, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			credential.ID, credential.Name, credential.TokenPrefix, credential.TokenHash,
-			string(scopesJSON), credential.ExpiresAt.Unix(), credential.CreatedBy,
-			credential.CreatedAt.Unix(), credential.UpdatedAt.Unix()); err != nil {
+			string(scopesJSON), credential.ExpiresAt, credential.CreatedBy,
+			credential.CreatedAt, credential.UpdatedAt); err != nil {
 			// W9 F-011: the unique-violation predicate is dialect-agnostic, and
 			// the name constraint is identified by both dialects' names (sqlite
 			// auto-index "service_credentials.name"; postgres UNIQUE DDL name
@@ -162,7 +162,7 @@ FROM service_credentials WHERE id = ?`, id))
 		if credential.RevokedAt != nil {
 			return nil
 		}
-		if _, err := tx.Exec(context.Background(), `UPDATE service_credentials SET revoked_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
+		if _, err := tx.Exec(context.Background(), `UPDATE service_credentials SET revoked_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now, now, id); err != nil {
 			return fmt.Errorf("revoke service credential: %w", err)
 		}
 		revokedAt := now.UTC()
@@ -182,7 +182,7 @@ FROM service_credentials WHERE id = ?`, id))
 // MarkServiceCredentialUsed is best effort metadata bookkeeping for requests.
 func (r *Repository) MarkServiceCredentialUsed(id string, now time.Time) error {
 	return r.withTx("mark service credential used", func(tx kernel.Tx) error {
-		_, err := tx.Exec(context.Background(), `UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id)
+		_, err := tx.Exec(context.Background(), `UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now, now, id)
 		return err
 	})
 }
@@ -195,7 +195,7 @@ func (r *Repository) MarkServiceCredentialUsedWithAudit(id string, now time.Time
 		return errors.New("authsession: service credential use audit is required")
 	}
 	return r.withTx("mark service credential used with audit", func(tx kernel.Tx) error {
-		if _, err := tx.Exec(context.Background(), `UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), now.Unix(), id); err != nil {
+		if _, err := tx.Exec(context.Background(), `UPDATE service_credentials SET last_used_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`, now, now, id); err != nil {
 			return err
 		}
 		if err := audit(tx); err != nil {
@@ -226,25 +226,21 @@ func sortedScopes(scopes []string) []string {
 func scanServiceCredential(row interface{ Scan(...any) error }) (*ServiceCredential, error) {
 	var credential ServiceCredential
 	var scopesJSON string
-	var expiresAt, createdAt, updatedAt int64
-	var revokedAt, lastUsedAt sql.NullInt64
+	var revokedAt, lastUsedAt sql.NullTime
 	if err := row.Scan(&credential.ID, &credential.Name, &credential.TokenPrefix, &credential.TokenHash,
-		&scopesJSON, &expiresAt, &revokedAt, &lastUsedAt, &credential.CreatedBy, &createdAt, &updatedAt); err != nil {
+		&scopesJSON, &credential.ExpiresAt, &revokedAt, &lastUsedAt, &credential.CreatedBy, &credential.CreatedAt, &credential.UpdatedAt); err != nil {
 		return nil, err
 	}
 	if err := json.Unmarshal([]byte(scopesJSON), &credential.Scopes); err != nil {
 		return nil, fmt.Errorf("decode service credential scopes: %w", err)
 	}
 	credential.Scopes = sortedScopes(credential.Scopes)
-	credential.ExpiresAt = time.Unix(expiresAt, 0).UTC()
-	credential.CreatedAt = time.Unix(createdAt, 0).UTC()
-	credential.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	if revokedAt.Valid {
-		value := time.Unix(revokedAt.Int64, 0).UTC()
+		value := revokedAt.Time
 		credential.RevokedAt = &value
 	}
 	if lastUsedAt.Valid {
-		value := time.Unix(lastUsedAt.Int64, 0).UTC()
+		value := lastUsedAt.Time
 		credential.LastUsedAt = &value
 	}
 	return &credential, nil

@@ -121,6 +121,7 @@ var lockedHeadExtraTables = map[int][]string{
 	70: {"digital_offers", "digital_purchases", "digital_entitlements"}, // workspace-031 R2 (VP-031): digital-offer domain tables
 	71: {}, // workspace-031 post-closure: operation_log event CHECK expansion for bizoffer.* events (no new objects)
 	72: {}, // workspace-038 R2 (GOAL-003 D-001 §1): CREATE INDEX on jobs only (no new objects)
+	87: {}, // workspace-040 R2 (GOAL-003 M2): v73–v87 rebuild existing tables onto TEXT/timestamptz(6); no new objects
 }
 
 func TestCompleteFingerprintTracksCatalogHead(t *testing.T) {

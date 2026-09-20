@@ -116,12 +116,9 @@ func (r *Repository) ListTypes(filter ListFilter) ([]DictType, int, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var t DictType
-			var created, updated int64
-			if err := rows.Scan(&t.ID, &t.Key, &t.Name, &t.Enabled, &t.Description, &t.Sort, &created, &updated); err != nil {
+			if err := rows.Scan(&t.ID, &t.Key, &t.Name, &t.Enabled, &t.Description, &t.Sort, &t.CreatedAt, &t.UpdatedAt); err != nil {
 				return fmt.Errorf("scan dict type: %w", err)
 			}
-			t.CreatedAt = time.Unix(created, 0)
-			t.UpdatedAt = time.Unix(updated, 0)
 			types = append(types, t)
 		}
 		return rows.Err()
@@ -137,15 +134,12 @@ func (r *Repository) GetType(id string) (*DictType, error) {
 			`SELECT id, key, name, enabled, COALESCE(description, ''), sort, created_at, updated_at
 			 FROM dict_types WHERE id = ?`, id,
 		)
-		var created, updated int64
-		if err := row.Scan(&t.ID, &t.Key, &t.Name, &t.Enabled, &t.Description, &t.Sort, &created, &updated); err != nil {
+		if err := row.Scan(&t.ID, &t.Key, &t.Name, &t.Enabled, &t.Description, &t.Sort, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("get dict type: %w", err)
 		}
-		t.CreatedAt = time.Unix(created, 0)
-		t.UpdatedAt = time.Unix(updated, 0)
 		return nil
 	})
 	if err != nil {
@@ -168,7 +162,7 @@ func (r *Repository) CreateTypeTx(ctx context.Context, tx kernel.Tx, t DictType)
 	_, err := tx.Exec(ctx,
 		`INSERT INTO dict_types (id, key, name, enabled, description, sort, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, t.Key, t.Name, boolInt(t.Enabled), t.Description, t.Sort, t.CreatedAt.Unix(), t.UpdatedAt.Unix(),
+		t.ID, t.Key, t.Name, boolInt(t.Enabled), t.Description, t.Sort, t.CreatedAt, t.UpdatedAt,
 	)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") {
@@ -184,7 +178,7 @@ func (r *Repository) UpdateType(id string, name string, enabled bool, descriptio
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE dict_types SET name = ?, enabled = ?, description = ?, sort = ?, updated_at = ? WHERE id = ?`,
-			name, boolInt(enabled), description, sort, now.Unix(), id,
+			name, boolInt(enabled), description, sort, now, id,
 		)
 		if err != nil {
 			return fmt.Errorf("update dict type: %w", err)
@@ -299,12 +293,9 @@ func (r *Repository) ListEntries(filter ListFilter) ([]DictEntry, int, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var e DictEntry
-			var created, updated int64
-			if err := rows.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &created, &updated); err != nil {
+			if err := rows.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &e.CreatedAt, &e.UpdatedAt); err != nil {
 				return fmt.Errorf("scan dict entry: %w", err)
 			}
-			e.CreatedAt = time.Unix(created, 0)
-			e.UpdatedAt = time.Unix(updated, 0)
 			entries = append(entries, e)
 		}
 		return rows.Err()
@@ -320,15 +311,12 @@ func (r *Repository) GetEntry(id string) (*DictEntry, error) {
 			`SELECT de.id, de.dict_key, dt.name, de.entry_key, de.label, de.enabled, de.sort, COALESCE(de.remark, ''), COALESCE(de.badge_style, 'default'), de.created_at, de.updated_at
 			 FROM dict_entries de LEFT JOIN dict_types dt ON dt.key = de.dict_key WHERE de.id = ?`, id,
 		)
-		var created, updated int64
-		if err := row.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &created, &updated); err != nil {
+		if err := row.Scan(&e.ID, &e.DictKey, &e.DictTypeName, &e.EntryKey, &e.Label, &e.Enabled, &e.Sort, &e.Remark, &e.BadgeStyle, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("get dict entry: %w", err)
 		}
-		e.CreatedAt = time.Unix(created, 0)
-		e.UpdatedAt = time.Unix(updated, 0)
 		return nil
 	})
 	if err != nil {
@@ -363,7 +351,7 @@ func (r *Repository) CreateEntryTx(ctx context.Context, tx kernel.Tx, e DictEntr
 	_, err := tx.Exec(ctx,
 		`INSERT INTO dict_entries (id, dict_key, entry_key, label, enabled, sort, remark, badge_style, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, badgeStyle, e.CreatedAt.Unix(), e.UpdatedAt.Unix(),
+		e.ID, e.DictKey, e.EntryKey, e.Label, boolInt(e.Enabled), e.Sort, e.Remark, badgeStyle, e.CreatedAt, e.UpdatedAt,
 	)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") {
@@ -390,7 +378,7 @@ func (r *Repository) UpdateEntry(id string, dictKey string, label string, enable
 		}
 		res, err := tx.Exec(context.Background(),
 			`UPDATE dict_entries SET dict_key = ?, label = ?, enabled = ?, sort = ?, remark = ?, badge_style = ?, updated_at = ? WHERE id = ?`,
-			dictKey, label, boolInt(enabled), sort, remark, badgeStyle, now.Unix(), id,
+			dictKey, label, boolInt(enabled), sort, remark, badgeStyle, now, id,
 		)
 		if err != nil {
 			if strings.Contains(strings.ToLower(err.Error()), "unique") {

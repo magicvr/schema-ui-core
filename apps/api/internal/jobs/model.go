@@ -98,8 +98,8 @@ func scanJob(row rowScanner) (*Job, error) {
 	var payload string
 	var cancelRequested int
 	var leaseOwner, result, errorCode, errorMessage sql.NullString
-	var leaseExpiresAt, finishedAt, expiresAt sql.NullInt64
-	var createdAt, updatedAt int64
+	var leaseExpiresAt, finishedAt, expiresAt sql.NullTime
+	var createdAt, updatedAt time.Time
 	if err := row.Scan(
 		&job.ID, &job.Kind, &status, &payload, &job.Progress, &cancelRequested,
 		&job.Attempt, &job.MaxAttempts, &leaseOwner, &job.LeaseVersion, &leaseExpiresAt,
@@ -118,8 +118,8 @@ func scanJob(row rowScanner) (*Job, error) {
 	job.Result = nullableJSON(result)
 	job.ErrorCode = errorCode.String
 	job.ErrorMessage = errorMessage.String
-	job.CreatedAt = fromMillis(createdAt)
-	job.UpdatedAt = fromMillis(updatedAt)
+	job.CreatedAt = createdAt.UTC()
+	job.UpdatedAt = updatedAt.UTC()
 	job.LeaseExpiresAt = nullableTime(leaseExpiresAt)
 	job.FinishedAt = nullableTime(finishedAt)
 	job.ResultExpiresAt = nullableTime(expiresAt)
@@ -133,14 +133,10 @@ func nullableJSON(value sql.NullString) json.RawMessage {
 	return json.RawMessage(value.String)
 }
 
-func nullableTime(value sql.NullInt64) *time.Time {
+func nullableTime(value sql.NullTime) *time.Time {
 	if !value.Valid {
 		return nil
 	}
-	t := fromMillis(value.Int64)
+	t := value.Time.UTC()
 	return &t
 }
-
-func toMillis(value time.Time) int64 { return value.UTC().UnixMilli() }
-
-func fromMillis(value int64) time.Time { return time.UnixMilli(value).UTC() }

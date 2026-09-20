@@ -76,7 +76,7 @@ func TestPostgresTelegramIngressRepositoryIdempotency(t *testing.T) {
 
 	var messageCount, concurrentCount, sessionCount int
 	var title, username string
-	var lastMessageAt int64
+	var lastMessageAt time.Time
 	err = st.Run(ctx, func(tx kernel.Tx) error {
 		if err := tx.QueryRow(ctx, `SELECT COUNT(*) FROM telegram_inbound_messages WHERE bot_id = ? AND update_id = ?`, first.BotID, first.UpdateID).Scan(&messageCount); err != nil {
 			return err
@@ -95,8 +95,8 @@ func TestPostgresTelegramIngressRepositoryIdempotency(t *testing.T) {
 	if messageCount != 1 || concurrentCount != 1 || sessionCount != 1 {
 		t.Fatalf("postgres counts first=%d concurrent=%d sessions=%d, want 1/1/1", messageCount, concurrentCount, sessionCount)
 	}
-	if title != first.ChatTitle || username != first.ChatUsername || lastMessageAt != firstAt.Add(2*time.Hour).Unix() {
-		t.Fatalf("postgres duplicate changed session = title %q username %q last_message_at %d", title, username, lastMessageAt)
+	if title != first.ChatTitle || username != first.ChatUsername || !lastMessageAt.Equal(firstAt.Add(2*time.Hour)) {
+		t.Fatalf("postgres duplicate changed session = title %q username %q last_message_at %s", title, username, lastMessageAt)
 	}
 }
 

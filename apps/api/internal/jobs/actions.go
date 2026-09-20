@@ -35,10 +35,10 @@ func (r *Repository) RequestCancelAny(ctx context.Context, id string, now time.T
 		case StatusQueued:
 			_, err = tx.Exec(ctx, `UPDATE jobs SET status='cancelled', cancel_requested=0,
 updated_at=?, finished_at=? WHERE id=? AND status='queued'`,
-				toMillis(now), toMillis(now), id)
+				now, now, id)
 		case StatusRunning:
 			_, err = tx.Exec(ctx, `UPDATE jobs SET cancel_requested=1, updated_at=?
-WHERE id=? AND status='running'`, toMillis(now), id)
+WHERE id=? AND status='running'`, now, id)
 		default:
 			return ErrNotCancellable
 		}
@@ -66,7 +66,7 @@ func (r *Repository) RetryAny(ctx context.Context, id string, now time.Time) (*J
 cancel_requested=0, lease_owner=NULL, lease_expires_at=NULL, result=NULL,
 error_code=NULL, error_message=NULL, updated_at=?, finished_at=NULL, expires_at=NULL
 WHERE id=? AND status='failed' AND attempt < max_attempts`,
-			toMillis(now), id)
+			now, id)
 		if err != nil {
 			return fmt.Errorf("retry job: %w", err)
 		}

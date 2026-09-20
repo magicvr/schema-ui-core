@@ -135,6 +135,10 @@ func migrate0040(tx kernel.Tx) error {
 // Descriptors returns the admin.settings migration descriptors (R6 C6.2).
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
+		// workspace-040 R2 (GOAL-003 M2): v73–v87 timestamp conversions.
+		// The kernel orders the compiled catalog by Version; source order
+		// is not significant.
+		VP040TemporalDescriptor(),
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "site_settings"},
 			Version:              7,

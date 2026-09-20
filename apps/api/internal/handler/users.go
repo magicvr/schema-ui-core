@@ -105,7 +105,7 @@ type usersEntity struct {
 // pending→warning, unbound→"") so the list column carries binding semantics
 // without a renderer value-mapping capability.
 func userToMap(u authsession.User) map[string]any {
-	locked := u.LockedUntil > time.Now().UTC().Unix()
+	locked := u.LockedUntil.Valid && u.LockedUntil.Time.After(time.Now().UTC())
 	emailStatusStyle := ""
 	switch {
 	case u.EmailStatus == nil:

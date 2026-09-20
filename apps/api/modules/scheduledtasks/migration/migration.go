@@ -67,6 +67,10 @@ var tasksPGDDL = []string{
 // Descriptors returns the immutable 0021 tasks history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
+		// workspace-040 R2 (GOAL-003 M2): v73–v87 timestamp conversions.
+		// The kernel orders the compiled catalog by Version; source order
+		// is not significant.
+		VP040TemporalDescriptor(),
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "scheduled_tasks"},
 			Version:              21,

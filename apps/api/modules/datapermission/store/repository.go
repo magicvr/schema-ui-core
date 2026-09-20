@@ -73,13 +73,11 @@ func (r *Repository) ListPolicies() ([]Policy, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var p Policy
-			var updated int64
 			var enabled int
-			if err := rows.Scan(&p.Resource, &p.OwnerColumn, &p.DefaultScope, &enabled, &updated); err != nil {
+			if err := rows.Scan(&p.Resource, &p.OwnerColumn, &p.DefaultScope, &enabled, &p.UpdatedAt); err != nil {
 				return fmt.Errorf("scan scope policy: %w", err)
 			}
 			p.Enabled = enabled != 0
-			p.UpdatedAt = time.Unix(updated, 0)
 			policies = append(policies, p)
 		}
 		return rows.Err()
@@ -91,12 +89,11 @@ func (r *Repository) ListPolicies() ([]Policy, error) {
 func (r *Repository) GetPolicy(resource string) (*Policy, error) {
 	var p Policy
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var updated int64
 		var enabled int
 		err := tx.QueryRow(context.Background(),
 			`SELECT resource, owner_column, default_scope, enabled, updated_at FROM data_scope_policies WHERE resource = ?`,
 			resource,
-		).Scan(&p.Resource, &p.OwnerColumn, &p.DefaultScope, &enabled, &updated)
+		).Scan(&p.Resource, &p.OwnerColumn, &p.DefaultScope, &enabled, &p.UpdatedAt)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
@@ -104,7 +101,6 @@ func (r *Repository) GetPolicy(resource string) (*Policy, error) {
 			return fmt.Errorf("get scope policy: %w", err)
 		}
 		p.Enabled = enabled != 0
-		p.UpdatedAt = time.Unix(updated, 0)
 		return nil
 	})
 	if err != nil {
@@ -132,7 +128,7 @@ func (r *Repository) UpsertPolicy(resource, ownerColumn, defaultScope string, en
 			   default_scope = excluded.default_scope,
 			   enabled = excluded.enabled,
 			   updated_at = excluded.updated_at`,
-			resource, ownerColumn, defaultScope, enabledInt, now.Unix(),
+			resource, ownerColumn, defaultScope, enabledInt, now,
 		)
 		if err != nil {
 			return fmt.Errorf("upsert scope policy: %w", err)
@@ -155,11 +151,9 @@ func (r *Repository) ListAssignments(userID string) ([]Assignment, error) {
 		defer rows.Close()
 		for rows.Next() {
 			var a Assignment
-			var updated int64
-			if err := rows.Scan(&a.UserID, &a.Resource, &a.ScopeType, &updated); err != nil {
+			if err := rows.Scan(&a.UserID, &a.Resource, &a.ScopeType, &a.UpdatedAt); err != nil {
 				return fmt.Errorf("scan scope assignment: %w", err)
 			}
-			a.UpdatedAt = time.Unix(updated, 0)
 			assignments = append(assignments, a)
 		}
 		return rows.Err()
@@ -171,18 +165,16 @@ func (r *Repository) ListAssignments(userID string) ([]Assignment, error) {
 func (r *Repository) GetAssignment(userID, resource string) (*Assignment, error) {
 	var a Assignment
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
-		var updated int64
 		err := tx.QueryRow(context.Background(),
 			`SELECT user_id, resource, scope_type, updated_at FROM user_data_scopes WHERE user_id = ? AND resource = ?`,
 			userID, resource,
-		).Scan(&a.UserID, &a.Resource, &a.ScopeType, &updated)
+		).Scan(&a.UserID, &a.Resource, &a.ScopeType, &a.UpdatedAt)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
 			return fmt.Errorf("get scope assignment: %w", err)
 		}
-		a.UpdatedAt = time.Unix(updated, 0)
 		return nil
 	})
 	if err != nil {
@@ -207,7 +199,7 @@ func (r *Repository) UpsertAssignments(userID string, scopes map[string]string, 
 				 ON CONFLICT(user_id, resource) DO UPDATE SET
 				   scope_type = excluded.scope_type,
 				   updated_at = excluded.updated_at`,
-				userID, resource, scopeType, now.Unix(),
+				userID, resource, scopeType, now,
 			); err != nil {
 				return fmt.Errorf("upsert scope assignment: %w", err)
 			}

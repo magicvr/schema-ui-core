@@ -37,10 +37,10 @@ var ErrChallengeNotFound = errors.New("captcha challenge not found")
 func (r *Repository) CreateChallenge(id, answerHash string, expiresAt, now time.Time) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		// Best-effort lazy purge of expired rows (D-002 `1).
-		_, _ = tx.Exec(context.Background(), `DELETE FROM captcha_challenges WHERE expires_at <= ?`, now.Unix())
+		_, _ = tx.Exec(context.Background(), `DELETE FROM captcha_challenges WHERE expires_at <= ?`, now)
 		_, err := tx.Exec(context.Background(),
 			`INSERT INTO captcha_challenges (id, answer_hash, expires_at, created_at) VALUES (?, ?, ?, ?)`,
-			id, answerHash, expiresAt.Unix(), now.Unix(),
+			id, answerHash, expiresAt, now,
 		)
 		if err != nil {
 			return fmt.Errorf("insert captcha challenge: %w", err)
@@ -67,7 +67,7 @@ func (r *Repository) ConsumeChallenge(id, answerHash string, now time.Time) (boo
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`DELETE FROM captcha_challenges WHERE id = ? AND expires_at > ? AND answer_hash = ?`,
-			id, now.Unix(), answerHash,
+			id, now, answerHash,
 		)
 		if err != nil {
 			return fmt.Errorf("consume captcha challenge: %w", err)
@@ -118,7 +118,7 @@ func (r *Repository) SetEnabled(enabled bool, now time.Time) error {
 		_, err := tx.Exec(context.Background(),
 			`INSERT INTO captcha_config (id, enabled, created_at, updated_at) VALUES (1, ?, ?, ?)
 			 ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at`,
-			boolInt(enabled), now.Unix(), now.Unix(),
+			boolInt(enabled), now, now,
 		)
 		if err != nil {
 			return fmt.Errorf("set captcha config: %w", err)

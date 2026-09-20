@@ -64,7 +64,7 @@ version: 0.1.0
 |----|------|-----------------|----------|--------------|------|
 | I-041-001 | required | **Go codec 的公共 API 形态**：函数签名、错误分类、是否导出 `Truncate` 与 sentinel helper——须与 `D-018` 的 Go 对拍验收一致 | M1/M3 | M1 前 | **collecting**（在 `GOAL-003` 内定稿并落盘；未经用户裁决的技术细节由审计复审） |
 | I-041-002 | required | **公共 wire formatter 的改造落点与是否属 R2** | M3 | M3 前 | **verified（用户裁决 2026-09-20）**：**归 R3**，R2 不动 handler |
-| I-041-003 | required | **Backup provider 的 PG 侧可执行验证环境**：本机无 `psql`/`pg_dump`/`pg_restore`、无常驻 PG；`D-021` 只授权**临时**容器。R2 的 PG 回归是否需要常驻 PG 或 CI 方案 | M3/M4 | M3 前 | **open**（`GOAL-003` 之后、M3 前的子目标须先行关闭；可能触发 P-004） |
+| I-041-003 | required | **Backup provider 的 PG 侧可执行验证环境**：本机无 `psql`/`pg_dump`/`pg_restore`、无常驻 PG；`D-021` 只授权**临时**容器。R2 的 PG 回归是否需要常驻 PG 或 CI 方案 | M3/M4 | M3 前 | **verified（用户裁决 2026-09-20，见 `D-017` §3）**：常驻 PostgreSQL 15.4（192.168.31.213:5432）已由 PG 集成测试实际执行；M3 的破坏性 migration/round-trip 只能作用于一次性/专用测试 database；Docker 隔离与版本矩阵另作 CI/release reproducibility，不作为本项关闭条件；M4 `pg_dump`/`pg_restore` 可用固定版本 Docker 临时容器 |
 | I-041-004 | non-blocking | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | R3 | R3 前 | deferred（`I-040-003` 已登记的 R3 侧 residual） |
 
 - **到期 open required 阻断对应门禁**；`deferred` 保留级别并须在 R3 前复核。

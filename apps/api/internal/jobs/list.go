@@ -68,11 +68,11 @@ func jobsWhere(filter ListFilter) (string, []any) {
 	}
 	if !filter.From.IsZero() {
 		clauses = append(clauses, "created_at >= ?")
-		args = append(args, toMillis(filter.From.UTC()))
+		args = append(args, filter.From.UTC())
 	}
 	if !filter.To.IsZero() {
 		clauses = append(clauses, "created_at <= ?")
-		args = append(args, toMillis(filter.To.UTC()))
+		args = append(args, filter.To.UTC())
 	}
 	if len(clauses) == 0 {
 		return "", args

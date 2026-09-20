@@ -102,7 +102,7 @@ func (r *Repository) CreateUserManagement(user User) (*User, error) {
 			`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			user.ID, user.Username, user.Name, string(rolesJSON), user.PasswordHash,
-			boolInt(user.MustChangePassword), user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
+			boolInt(user.MustChangePassword), user.CreatedAt, user.UpdatedAt,
 		); err != nil {
 			return fmt.Errorf("insert user: %w", err)
 		}
@@ -126,7 +126,7 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 	err := r.withTx("update managed user", func(tx kernel.Tx) error {
 		var current User
 		var rolesJSON string
-		var createdAt, updatedAt int64
+		var createdAt, updatedAt time.Time
 		var mustChangePassword int
 		// workspace-018 R3 (I-006): email identity read-back for the managed
 		// prefill path — NULL-safe via *string.
@@ -144,8 +144,8 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 			return fmt.Errorf("unmarshal roles: %w", err)
 		}
 		current.MustChangePassword = mustChangePassword != 0
-		current.CreatedAt = time.Unix(createdAt, 0).UTC()
-		current.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+		current.CreatedAt = createdAt
+		current.UpdatedAt = updatedAt
 
 		newRoles := current.Roles
 		if patch.Roles != nil {
@@ -229,9 +229,13 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		if err != nil {
 			return fmt.Errorf("marshal roles: %w", err)
 		}
-		nextUpdatedAt := now.Unix()
-		if nextUpdatedAt <= current.UpdatedAt.Unix() {
-			nextUpdatedAt = current.UpdatedAt.Unix() + 1
+		// Root D-013: updated_at is monotonic per row. Microsecond precision is
+		// the storage granularity, so the floor is now.Truncate(µs) and the
+		// fallback advances the previous value by exactly one microsecond —
+		// never the (now identical) wall-clock second.
+		nextUpdatedAt := now.UTC().Truncate(time.Microsecond)
+		if !nextUpdatedAt.After(current.UpdatedAt) {
+			nextUpdatedAt = current.UpdatedAt.Add(time.Microsecond)
 		}
 		// W4 P0-3: a password change bumps the user's token_version so every
 		// already-issued access token (which carries the older version) is
@@ -256,7 +260,7 @@ func (r *Repository) UpdateUser(id string, patch UserPatch, actorID string, now 
 		}
 		if patch.PasswordHash != nil {
 			if _, err := tx.Exec(context.Background(),
-				`UPDATE refresh_tokens SET revoked_at = COALESCE(revoked_at, ?) WHERE user_id = ?`, now.Unix(), id,
+				`UPDATE refresh_tokens SET revoked_at = COALESCE(revoked_at, ?) WHERE user_id = ?`, now, id,
 			); err != nil {
 				return fmt.Errorf("revoke refresh tokens after password change: %w", err)
 			}
@@ -451,7 +455,7 @@ func countAdminUsersExcluding(tx kernel.Tx, id string) (int, error) {
 func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
-	var createdAt, updatedAt int64
+	var createdAt, updatedAt time.Time
 	// mfaEnabled is an EXISTS() projection: postgres yields a native bool
 	// while sqlite yields 0/1 — *bool accepts both via driver.Bool (R6 fix:
 	// an int destination broke every users list on the postgres dialect).
@@ -472,8 +476,8 @@ func scanUserListRow(row interface{ Scan(...any) error }) (*User, error) {
 	}
 	user.MustChangePassword = mustChangePassword != 0
 	user.MFAEnabled = mfaEnabled
-	user.CreatedAt = time.Unix(createdAt, 0).UTC()
-	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+	user.CreatedAt = createdAt
+	user.UpdatedAt = updatedAt
 	return &user, nil
 }
 
@@ -494,12 +498,16 @@ func usersWhere(query string, enabled, locked *bool) (string, []any) {
 		args = append(args, boolInt(*enabled))
 	}
 	if locked != nil {
+		// D-001 §2 #5: the legacy 0 sentinel became NULL. Locked = a present
+		// window that has not closed yet; unlocked = no window at all, or one
+		// that already closed. The unlocked arm is parenthesized because the
+		// clauses above are AND-joined with ` AND `.
 		if *locked {
-			clauses = append(clauses, `u.locked_until > ?`)
+			clauses = append(clauses, `u.locked_until IS NOT NULL AND u.locked_until > ?`)
 		} else {
-			clauses = append(clauses, `u.locked_until <= ?`)
+			clauses = append(clauses, `(u.locked_until IS NULL OR u.locked_until <= ?)`)
 		}
-		args = append(args, time.Now().UTC().Unix())
+		args = append(args, time.Now().UTC())
 	}
 	if len(clauses) == 0 {
 		return "", nil

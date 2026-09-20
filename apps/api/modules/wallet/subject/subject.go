@@ -86,7 +86,7 @@ func (s *Store) GetOrCreateSubject(ctx context.Context, issuer, externalID strin
 	insertErr := s.runner.Run(ctx, func(tx kernel.Tx) error {
 		_, err := tx.Exec(ctx,
 			`INSERT INTO subjects (id, issuer, external_id, created_at) VALUES (?, ?, ?, ?)`,
-			id, issuer, externalID, now.Unix(),
+			id, issuer, externalID, now,
 		)
 		return err
 	})
@@ -118,19 +118,18 @@ func (s *Store) GetSubject(ctx context.Context, id string) (*Subject, error) {
 		return nil, ErrNotFound
 	}
 	var sub Subject
-	var created int64
 	err := s.runner.Run(ctx, func(tx kernel.Tx) error {
 		row := tx.QueryRow(ctx,
 			`SELECT id, issuer, external_id, created_at FROM subjects WHERE id = ?`,
 			id,
 		)
-		if err := row.Scan(&sub.ID, &sub.Issuer, &sub.ExternalID, &created); err != nil {
+		if err := row.Scan(&sub.ID, &sub.Issuer, &sub.ExternalID, &sub.CreatedAt); err != nil {
 			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("query subject: %w", err)
 		}
-		sub.CreatedAt = time.Unix(created, 0)
+		sub.CreatedAt = sub.CreatedAt.UTC()
 		return nil
 	})
 	if err != nil {
@@ -175,19 +174,18 @@ func (s *Store) GetSubjectByExternalID(ctx context.Context, issuer, externalID s
 		return nil, ErrNotFound
 	}
 	var sub Subject
-	var created int64
 	err := s.runner.Run(ctx, func(tx kernel.Tx) error {
 		row := tx.QueryRow(ctx,
 			`SELECT id, issuer, external_id, created_at FROM subjects WHERE issuer = ? AND external_id = ?`,
 			issuer, externalID,
 		)
-		if err := row.Scan(&sub.ID, &sub.Issuer, &sub.ExternalID, &created); err != nil {
+		if err := row.Scan(&sub.ID, &sub.Issuer, &sub.ExternalID, &sub.CreatedAt); err != nil {
 			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("query subject by external id: %w", err)
 		}
-		sub.CreatedAt = time.Unix(created, 0)
+		sub.CreatedAt = sub.CreatedAt.UTC()
 		return nil
 	})
 	if err != nil {

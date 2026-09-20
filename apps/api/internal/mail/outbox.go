@@ -98,7 +98,7 @@ func publishOutboundRecord(store kernel.Store, retentionCap int, now time.Time, 
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO mail_outbox (id, to_addr, subject, body, channel, delivery_status, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			id, msg.To, msg.Subject, msg.TextBody, channel, status, now.UnixMilli(),
+			id, msg.To, msg.Subject, msg.TextBody, channel, status, now,
 		); err != nil {
 			return err
 		}
@@ -230,11 +230,11 @@ func (s *OutboxSink) List(ctx context.Context, query OutboxListQuery) ([]OutboxR
 		defer rows.Close()
 		for rows.Next() {
 			var rec OutboxRecord
-			var ms int64
-			if err := rows.Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &rec.Channel, &rec.DeliveryStatus, &ms); err != nil {
+			var createdAt time.Time
+			if err := rows.Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &rec.Channel, &rec.DeliveryStatus, &createdAt); err != nil {
 				return fmt.Errorf("scan outbox row: %w", err)
 			}
-			rec.CreatedAt = time.UnixMilli(ms).UTC()
+			rec.CreatedAt = createdAt.UTC()
 			records = append(records, rec)
 		}
 		return rows.Err()
@@ -260,11 +260,11 @@ func (s *OutboxSink) Count(ctx context.Context) (int64, error) {
 // Get returns one full record (including the body) by id.
 func (s *OutboxSink) Get(ctx context.Context, id string) (OutboxRecord, error) {
 	var rec OutboxRecord
-	var ms int64
+	var createdAt time.Time
 	err := s.store.Run(ctx, func(tx kernel.Tx) error {
 		switch err := tx.QueryRow(context.Background(),
 			`SELECT id, to_addr, subject, body, channel, delivery_status, created_at FROM mail_outbox WHERE id = ?`, id,
-		).Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &rec.Channel, &rec.DeliveryStatus, &ms); {
+		).Scan(&rec.ID, &rec.To, &rec.Subject, &rec.Body, &rec.Channel, &rec.DeliveryStatus, &createdAt); {
 		case errors.Is(err, kernel.ErrNoRows):
 			return ErrOutboxRecordNotFound
 		default:
@@ -277,6 +277,6 @@ func (s *OutboxSink) Get(ctx context.Context, id string) (OutboxRecord, error) {
 		}
 		return OutboxRecord{}, fmt.Errorf("mail: get outbox record: %w", err)
 	}
-	rec.CreatedAt = time.UnixMilli(ms).UTC()
+	rec.CreatedAt = createdAt.UTC()
 	return rec, nil
 }

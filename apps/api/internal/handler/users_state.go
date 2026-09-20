@@ -108,7 +108,7 @@ func (h *userStateHandler) unlock() http.Handler {
 		// already-unlocked account is a no-op).
 		wasLocked := false
 		if before, err := h.repository.GetUser(id); err == nil {
-			wasLocked = before.LockedUntil > h.now().UTC().Unix() || before.FailedLoginCount > 0
+			wasLocked = (before.LockedUntil.Valid && before.LockedUntil.Time.After(h.now().UTC())) || before.FailedLoginCount > 0
 		}
 		u, err := h.repository.UnlockUser(id, h.now().UTC())
 		if err != nil {

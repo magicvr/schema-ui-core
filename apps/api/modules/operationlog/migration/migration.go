@@ -170,7 +170,7 @@ var operationLogWalletDDL = []string{
 }
 
 func migrateOperationLogWallet(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogWalletDDL, "wallet-events-expanded")
+	return rebuildOperationLog(tx, operationLogWalletDDL, "wallet-events-expanded", sqliteTableExistenceQuery)
 }
 
 // operationLogAvatarEventsDDL (0036 · W13 T-05 GOAL-014): adds the
@@ -204,11 +204,11 @@ var operationLogWalletDeductDDL = []string{
 }
 
 func migrateOperationLogWalletDeduct(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogWalletDeductDDL, "wallet-deduct-events-expanded")
+	return rebuildOperationLog(tx, operationLogWalletDeductDDL, "wallet-deduct-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogAvatarEvents(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogAvatarEventsDDL, "avatar-events-expanded")
+	return rebuildOperationLog(tx, operationLogAvatarEventsDDL, "avatar-events-expanded", sqliteTableExistenceQuery)
 }
 
 // operationLogRecycleDDL (0026 · S-12 GOAL-012 D-002 §5): adds the two
@@ -297,7 +297,7 @@ func pgExecDDL(ddl []string) func(kernel.Tx) error {
 // (rename → create → copy → drop → index) with postgres-flavored DDL.
 func pgRebuild(ddl []string, label string) func(kernel.Tx) error {
 	return func(tx kernel.Tx) error {
-		return rebuildOperationLog(tx, ddl, label)
+		return rebuildOperationLog(tx, ddl, label, postgresTableExistenceQuery)
 	}
 }
 
@@ -306,13 +306,17 @@ func pgRebuild(ddl []string, label string) func(kernel.Tx) error {
 // (its FK depends on operation_log, which the rebuild rename breaks).
 func pgRebuildWithCorrelation(ddl []string, label string) func(kernel.Tx) error {
 	return func(tx kernel.Tx) error {
-		return rebuildOperationLogWithCorrelation(tx, ddl, label)
+		return rebuildOperationLogWithCorrelation(tx, ddl, label, postgresTableExistenceQuery)
 	}
 }
 
 // Descriptors returns the immutable 0004, 0005 and 0008 operation-log history.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
+		// workspace-040 R2 (GOAL-003 M2): v73–v87 timestamp conversions.
+		// The kernel orders the compiled catalog by Version; source order
+		// is not significant.
+		VP040TemporalDescriptor(),
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "operation_log"},
 			Version:              4,
@@ -581,39 +585,39 @@ func migrateOperationLog(tx kernel.Tx) error {
 }
 
 func migrateOperationLogExpand(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogExpandDDL, "expanded")
+	return rebuildOperationLog(tx, operationLogExpandDDL, "expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogSettings(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogSettingsDDL, "settings-expanded")
+	return rebuildOperationLog(tx, operationLogSettingsDDL, "settings-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogAccountEvents(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogAccountEventsDDL, "account-events-expanded")
+	return rebuildOperationLog(tx, operationLogAccountEventsDDL, "account-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogDataTransfer(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogDataTransferDDL, "data-transfer-expanded")
+	return rebuildOperationLog(tx, operationLogDataTransferDDL, "data-transfer-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogFileEvents(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogFileEventsDDL, "file-events-expanded")
+	return rebuildOperationLog(tx, operationLogFileEventsDDL, "file-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogDictionary(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogDictionaryDDL, "dictionary-events-expanded")
+	return rebuildOperationLog(tx, operationLogDictionaryDDL, "dictionary-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogTasks(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogTasksDDL, "tasks-events-expanded")
+	return rebuildOperationLog(tx, operationLogTasksDDL, "tasks-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogCaptcha(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogCaptchaDDL, "captcha-events-expanded")
+	return rebuildOperationLog(tx, operationLogCaptchaDDL, "captcha-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogRecycle(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogRecycleDDL, "recycle-events-expanded")
+	return rebuildOperationLog(tx, operationLogRecycleDDL, "recycle-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogCorrelation(tx kernel.Tx) error {
@@ -626,11 +630,11 @@ func migrateOperationLogCorrelation(tx kernel.Tx) error {
 }
 
 func migrateOperationLogWalletJobs(tx kernel.Tx) error {
-	return rebuildOperationLogWithCorrelation(tx, operationLogWalletJobsDDL, "wallet-job-events-expanded")
+	return rebuildOperationLogWithCorrelation(tx, operationLogWalletJobsDDL, "wallet-job-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogServiceCredentials(tx kernel.Tx) error {
-	return rebuildOperationLogWithCorrelation(tx, operationLogServiceCredentialsDDL, "service-credential-events-expanded")
+	return rebuildOperationLogWithCorrelation(tx, operationLogServiceCredentialsDDL, "service-credential-events-expanded", sqliteTableExistenceQuery)
 }
 
 // rebuildOperationLogWithCorrelation is the shared dialect-neutral dance used
@@ -638,7 +642,7 @@ func migrateOperationLogServiceCredentials(tx kernel.Tx) error {
 // FK depends on operation_log, which the rebuild rename breaks), drop it,
 // rebuild operation_log, recreate it, restore the rows. Works on sqlite and
 // postgres (dialect difference lives in the DDL slice).
-func rebuildOperationLogWithCorrelation(tx kernel.Tx, ddl []string, label string) error {
+func rebuildOperationLogWithCorrelation(tx kernel.Tx, ddl []string, label, existenceQuery string) error {
 	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
 SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
 		return fmt.Errorf("backup operation log correlations: %w", err)
@@ -646,7 +650,7 @@ SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil
 	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
 		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
 	}
-	if err := rebuildOperationLog(tx, ddl, label); err != nil {
+	if err := rebuildOperationLog(tx, ddl, label, existenceQuery); err != nil {
 		return err
 	}
 	for _, statement := range operationLogCorrelationDDL {
@@ -665,24 +669,24 @@ SELECT operation_id, correlation_id FROM operation_log_correlation_backup`); err
 }
 
 func migrateOperationLogDataPermission(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogDataPermissionDDL, "data-permission-events-expanded")
+	return rebuildOperationLog(tx, operationLogDataPermissionDDL, "data-permission-events-expanded", sqliteTableExistenceQuery)
 }
 
 func migrateOperationLogMFA(tx kernel.Tx) error {
-	return rebuildOperationLog(tx, operationLogMFADDL, "mfa-events-expanded")
+	return rebuildOperationLog(tx, operationLogMFADDL, "mfa-events-expanded", sqliteTableExistenceQuery)
 }
 
 // MailEventsDDL exposes the 0053 DDL for checksum tooling and tests.
 func MailEventsDDL() []string { return operationLogMailEventsDDL }
 
 func migrateOperationLogMailEvents(tx kernel.Tx) error {
-	return rebuildOperationLogWithSessions(tx, operationLogMailEventsDDL, "mail-events-expanded")
+	return rebuildOperationLogWithSessions(tx, operationLogMailEventsDDL, "mail-events-expanded", sqliteTableExistenceQuery)
 }
 
 // MailEventsPGApply returns the postgres-flavored 0053 apply.
 func MailEventsPGApply() func(kernel.Tx) error {
 	return func(tx kernel.Tx) error {
-		return rebuildOperationLogWithSessions(tx, pgTimeDDL(operationLogMailEventsDDL), "mail-events-expanded")
+		return rebuildOperationLogWithSessions(tx, pgTimeDDL(operationLogMailEventsDDL), "mail-events-expanded", postgresTableExistenceQuery)
 	}
 }
 
@@ -690,13 +694,13 @@ func MailEventsPGApply() func(kernel.Tx) error {
 // the operation_log event CHECK with the biz.digital-offer audit events. Same
 // side-table-preserving dance as 0053.
 func migrateOperationLogDigitalOffer(tx kernel.Tx) error {
-	return rebuildOperationLogWithSessions(tx, operationLogDigitalOfferDDL, "digitaloffer-events-expanded")
+	return rebuildOperationLogWithSessions(tx, operationLogDigitalOfferDDL, "digitaloffer-events-expanded", sqliteTableExistenceQuery)
 }
 
 // DigitalOfferEventsPGApply returns the postgres-flavored 0071 apply.
 func DigitalOfferEventsPGApply() func(kernel.Tx) error {
 	return func(tx kernel.Tx) error {
-		return rebuildOperationLogWithSessions(tx, operationLogDigitalOfferPGDDL, "digitaloffer-events-expanded")
+		return rebuildOperationLogWithSessions(tx, operationLogDigitalOfferPGDDL, "digitaloffer-events-expanded", postgresTableExistenceQuery)
 	}
 }
 
@@ -706,7 +710,7 @@ func DigitalOfferEventsPGApply() func(kernel.Tx) error {
 // would rewrite onto operation_log_old (leaving dangling references after the
 // drop), so each is backed up, dropped before the rename, recreated after,
 // and refilled.
-func rebuildOperationLogWithSessions(tx kernel.Tx, ddl []string, label string) error {
+func rebuildOperationLogWithSessions(tx kernel.Tx, ddl []string, label, existenceQuery string) error {
 	if _, err := tx.Exec(context.Background(), `CREATE TEMP TABLE operation_log_correlation_backup AS
 SELECT operation_id, correlation_id FROM operation_log_correlation`); err != nil {
 		return fmt.Errorf("backup operation log correlations: %w", err)
@@ -721,7 +725,7 @@ SELECT operation_id, session_id FROM operation_log_session`); err != nil {
 	if _, err := tx.Exec(context.Background(), `DROP TABLE operation_log_correlation`); err != nil {
 		return fmt.Errorf("drop operation log correlations before rebuild: %w", err)
 	}
-	if err := rebuildOperationLog(tx, ddl, label); err != nil {
+	if err := rebuildOperationLog(tx, ddl, label, existenceQuery); err != nil {
 		return err
 	}
 	for _, statement := range operationLogCorrelationDDL {
@@ -753,7 +757,35 @@ SELECT operation_id, session_id FROM operation_log_session_backup`); err != nil 
 	return nil
 }
 
-func rebuildOperationLog(tx kernel.Tx, ddl []string, label string) error {
+// sqliteTableExistenceQuery / postgresTableExistenceQuery probe the dialect
+// catalog for a table by name. The kernel rebinds the '?' placeholder per
+// dialect (kernel.Tx contract), so the probe stays a SQL literal here.
+const (
+	sqliteTableExistenceQuery   = `SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?`
+	postgresTableExistenceQuery = `SELECT COUNT(*) FROM pg_catalog.pg_class WHERE relname = ?`
+)
+
+// sideTablesAbsent is the fail-closed guard of D-019 §5 change 1: renaming
+// operation_log rewrites the surviving FK child's REFERENCES onto
+// operation_log_old (measured, A-032), so the rebuild must refuse to start
+// while either side table is still present instead of corrupting it.
+func sideTablesAbsent(tx kernel.Tx, existenceQuery string, tables ...string) error {
+	for _, table := range tables {
+		var count int
+		if err := tx.QueryRow(context.Background(), existenceQuery, table).Scan(&count); err != nil {
+			return fmt.Errorf("probe side table %s: %w", table, err)
+		}
+		if count != 0 {
+			return fmt.Errorf("refuse operation_log rebuild: FK side table %s still exists", table)
+		}
+	}
+	return nil
+}
+
+func rebuildOperationLog(tx kernel.Tx, ddl []string, label, existenceQuery string) error {
+	if err := sideTablesAbsent(tx, existenceQuery, "operation_log_correlation", "operation_log_session"); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(context.Background(), `ALTER TABLE operation_log RENAME TO operation_log_old`); err != nil {
 		return fmt.Errorf("rename operation_log: %w", err)
 	}

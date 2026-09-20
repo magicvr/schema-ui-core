@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.2.0
-progress: 1/4
+version: 0.3.0
+progress: 3/4
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -54,11 +54,11 @@ serves_summary: 承接 Root R2 的 M1/M2：落码共享时间 codec 与 15 个 c
 | 检查点 | 判据 | 状态 |
 |--------|------|------|
 | **A** | 共享 codec 落码 + 单测全绿（含 `D-018` 的 Go 对拍用例） | **completed**（E-002：`apps/api/internal/temporal`，11 个单测全绿，`go vet`/`go build` 通过，依赖边界实测 `errors fmt time`） |
-| **B** | 15 个 descriptor 的 SQLite `Apply` 落码，v73+ 目录断言通过，**v1–v72 逐条不变** | pending |
-| **C** | PG `ApplyPostgres` 显式 DDL 落码（毫秒族整数拆分式），PG 侧类型断言就位 | pending |
+| **B** | 15 个 descriptor 的 SQLite `Apply` 落码，v73+ 目录断言通过，**v1–v72 逐条不变** | **completed**（E-003：15 个 descriptor 落码于 `modules/*/migration/vp040_temporal.go`（由 v72 live `sqlite_master` 机械导出）；`migrate_test.go` 目录表追加 v73–v87 真实 checksum；`TestMigrateFreshDB`/`TestCompiledMigrationCatalogOwnership`/`TestCompleteFingerprintTracksCatalogHead` 通过；v1–v72 行逐条不变） |
+| **C** | PG `ApplyPostgres` 显式 DDL 落码（毫秒族整数拆分式），PG 侧类型断言就位 | **completed**（E-003：显式 `ALTER … TYPE timestamptz(6) USING …` 逐列 DDL；`TestFullCatalogPostgresBootstrapIntegration` 在真实 PostgreSQL 15.4 上 **ok**；`postgres_test.go` 时间列断言改 `timestamp with time zone` + `datetime_precision = 6`，金额列保持 `bigint`） |
 | **D** | canonical SQL 与**真实 `MigrationChecksum` 落盘**，并按 `D-021` **发起 independent 复审**（residual 复审触发） | pending |
 
-`progress: 1/4` 由 A～D 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 3/4` 由 A～D 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 

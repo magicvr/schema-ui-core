@@ -19,7 +19,8 @@ type RetentionPolicy struct {
 }
 
 // ApplyRetention expires rows older than `days` using archive or delete.
-// created_at is unix milliseconds.
+// created_at/archived_at are canonical fixed-6 UTC timestamps bound as
+// time.Time (the store adapter normalizes the dialect form).
 func (r *Repository) ApplyRetention(now time.Time, days int, action string) (int, error) {
 	if days < settingsmigration.MinOperationLogRetentionDays || days > settingsmigration.MaxOperationLogRetentionDays {
 		return 0, fmt.Errorf("operationlog: invalid retention days %d", days)
@@ -28,8 +29,8 @@ func (r *Repository) ApplyRetention(now time.Time, days int, action string) (int
 	if action != settingsmigration.ExpirationActionArchive && action != settingsmigration.ExpirationActionDelete {
 		return 0, fmt.Errorf("operationlog: invalid expiration action %q", action)
 	}
-	cutoff := now.UTC().AddDate(0, 0, -days).UnixMilli()
-	archivedAt := now.UTC().UnixMilli()
+	cutoff := now.UTC().AddDate(0, 0, -days)
+	archivedAt := now.UTC()
 	var affected int64
 	err := r.withTx("apply operation log retention", func(tx kernel.Tx) error {
 		if action == settingsmigration.ExpirationActionArchive {

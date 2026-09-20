@@ -269,8 +269,8 @@ func TestRedeemCurrencyMismatchFailClosed(t *testing.T) {
 	_ = dbStore.Run(ctx, func(tx kernel.Tx) error {
 		_, err := tx.Exec(ctx,
 			`INSERT INTO vouchers (id, batch_id, code_hash, code_prefix, amount, currency, status, created_at, updated_at)
-			 VALUES ('v-usd', 'b-usd', ?, ?, 1000, 'USD', 'unused', 1000, 1000)`,
-			hash, prefix,
+			 VALUES ('v-usd', 'b-usd', ?, ?, 1000, 'USD', 'unused', ?, ?)`,
+			hash, prefix, now(), now(),
 		)
 		return err
 	})
@@ -391,7 +391,8 @@ func TestNoPlaintextInDatabase(t *testing.T) {
 	// Direct raw SQL scan across all columns in vouchers table
 	for _, g := range batch {
 		var id, batchID, codeHash, codePrefix, currency, status string
-		var amount, cr, up int64
+		var amount int64
+		var cr, up time.Time
 		var exp, redAt any
 		var redBy any
 
@@ -600,6 +601,66 @@ func TestConcurrentRedeemForUserFailClosed(t *testing.T) {
 	}
 	if entryCount != 1 {
 		t.Fatalf("ledger entry count = %d, want 1", entryCount)
+	}
+}
+
+// Root D-012 (workspace-040 R2): a negative instant in vouchers.expires_at is
+// data corruption — not the legacy `0` absence sentinel. The write path must
+// fail closed, and a corrupted row that already exists must be read as
+// *present* and evaluated as an instant, never silently dropped as absent.
+func TestNegativeExpiresAtFailsClosedAndIsNotAbsence(t *testing.T) {
+	ctx := context.Background()
+	dbStore, err := testsupport.OpenStore(":memory:", "admin", "hash", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dbStore.Close()
+	subStore := subject.NewStore(dbStore)
+	wRepo := walletstore.NewRepository(dbStore)
+	svc := voucher.NewService(dbStore, wRepo, subStore)
+
+	// Write path: a negative expiresAt never reaches the table.
+	neg := time.Date(1960, 1, 1, 0, 0, 0, 0, time.UTC)
+	if _, err := svc.GenerateBatch(ctx, "b-neg", 1, 100, "CNY", &neg, now()); !errors.Is(err, voucher.ErrInvalidInput) {
+		t.Fatalf("negative expires_at write err = %v, want fail-closed ErrInvalidInput", err)
+	}
+	if items, total, err := svc.ListVouchers(ctx, "b-neg", "", 1, 100); err != nil || total != 0 || len(items) != 0 {
+		t.Fatalf("failed write left rows: total %d len %d err %v", total, len(items), err)
+	}
+
+	// Read path: seed a pre-epoch (negative) expires_at directly and prove the
+	// value is surfaced as present and compared as an instant.
+	sub, _, err := subStore.GetOrCreateSubject(ctx, "tg", "u-neg", now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, prefix, hash, err := voucher.GenerateCode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := dbStore.Run(ctx, func(tx kernel.Tx) error {
+		_, err := tx.Exec(ctx,
+			`INSERT INTO vouchers (id, batch_id, code_hash, code_prefix, amount, currency, status, expires_at, created_at, updated_at)
+			 VALUES ('v-neg', 'b-neg-db', ?, ?, 100, 'CNY', 'unused', ?, ?, ?)`,
+			hash, prefix, &neg, now(), now(),
+		)
+		return err
+	}); err != nil {
+		t.Fatalf("seed negative expires_at: %v", err)
+	}
+
+	got, err := svc.GetVoucher(ctx, "v-neg")
+	if err != nil {
+		t.Fatalf("get voucher: %v", err)
+	}
+	if got.ExpiresAt == nil {
+		t.Fatal("negative expires_at was treated as absence; Valid alone means present")
+	}
+	if !got.ExpiresAt.Equal(neg) {
+		t.Fatalf("expires_at = %v, want %v", *got.ExpiresAt, neg)
+	}
+	if _, err := svc.Redeem(ctx, sub.ID, code, now()); !errors.Is(err, voucher.ErrVoucherExpired) {
+		t.Fatalf("redeem pre-epoch expires_at err = %v, want ErrVoucherExpired", err)
 	}
 }
 

@@ -111,6 +111,38 @@ func queryInt(t *testing.T, st *store.Store, query string, args ...any) int {
 	return value
 }
 
+// timeMarker is a canonical fixed-6 UTC instant used where the pre-R2 tests
+// used the epoch integers 123 / 1: workspace-040 R2 stores every *_at column as
+// canonical TEXT (SQLite) / timestamptz(6) (PostgreSQL), so a sentinel value a
+// later assertion compares against must be a real instant, not an integer.
+var timeMarker = time.Date(2026, 9, 20, 12, 40, 48, 814963000, time.UTC)
+
+// execDomain runs one statement through the dialect-neutral kernel transaction,
+// so time.Time arguments are normalized by the store adapter (the same path
+// production writes take) instead of being handed to the driver raw.
+func execDomain(t *testing.T, st *store.Store, query string, args ...any) {
+	t.Helper()
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), query, args...)
+		return err
+	}); err != nil {
+		t.Fatalf("exec %q: %v", query, err)
+	}
+}
+
+// queryTime reads one time column through the kernel transaction, which is what
+// converts the stored canonical text back into a time.Time instant.
+func queryTime(t *testing.T, st *store.Store, query string, args ...any) time.Time {
+	t.Helper()
+	var value time.Time
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), query, args...).Scan(&value)
+	}); err != nil {
+		t.Fatalf("query %q: %v", query, err)
+	}
+	return value
+}
+
 func TestBootstrapAndReconcileAreSeparateAndIdempotent(t *testing.T) {
 	st := openTestStore(t)
 	repository := authsession.NewRepository(st)
@@ -133,11 +165,11 @@ func TestBootstrapAndReconcileAreSeparateAndIdempotent(t *testing.T) {
 	if got := queryInt(t, st, `SELECT COUNT(*) FROM roles WHERE system = 1`); got != 3 {
 		t.Fatalf("system roles = %d, want 3", got)
 	}
-	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		if _, err := tx.Exec(`UPDATE system_data_reconcile SET applied_at = 123 WHERE module_id = 'admin.users' AND kind = 'authorization' AND contribution_key = 'users.read'`); err != nil {
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(), `UPDATE system_data_reconcile SET applied_at = ? WHERE module_id = 'admin.users' AND kind = 'authorization' AND contribution_key = 'users.read'`, timeMarker); err != nil {
 			return err
 		}
-		_, err := tx.Exec(`UPDATE roles SET updated_at = 123 WHERE id = 'role-admin'`)
+		_, err := tx.Exec(context.Background(), `UPDATE roles SET updated_at = ? WHERE id = 'role-admin'`, timeMarker)
 		return err
 	}); err != nil {
 		t.Fatal(err)
@@ -145,11 +177,11 @@ func TestBootstrapAndReconcileAreSeparateAndIdempotent(t *testing.T) {
 	if err := Reconcile(context.Background(), st, permissions, navigation); err != nil {
 		t.Fatalf("second reconcile: %v", err)
 	}
-	if got := queryInt(t, st, `SELECT applied_at FROM system_data_reconcile WHERE module_id = 'admin.users' AND kind = 'authorization' AND contribution_key = 'users.read'`); got != 123 {
-		t.Fatalf("unchanged reconcile rewrote ledger applied_at = %d, want 123", got)
+	if got := queryTime(t, st, `SELECT applied_at FROM system_data_reconcile WHERE module_id = 'admin.users' AND kind = 'authorization' AND contribution_key = 'users.read'`); !got.Equal(timeMarker) {
+		t.Fatalf("unchanged reconcile rewrote ledger applied_at = %s, want %s", got, timeMarker)
 	}
-	if got := queryInt(t, st, `SELECT updated_at FROM roles WHERE id = 'role-admin'`); got != 123 {
-		t.Fatalf("unchanged reconcile rewrote system role updated_at = %d, want 123", got)
+	if got := queryTime(t, st, `SELECT updated_at FROM roles WHERE id = 'role-admin'`); !got.Equal(timeMarker) {
+		t.Fatalf("unchanged reconcile rewrote system role updated_at = %s, want %s", got, timeMarker)
 	}
 	if got := queryInt(t, st, `SELECT COUNT(*) FROM role_permissions`); got != 5 {
 		t.Fatalf("role permission grants = %d, want 5", got)
@@ -178,19 +210,18 @@ func TestReconcilePreservesUserFieldsAndDisabledProfileData(t *testing.T) {
 	if err := Reconcile(context.Background(), st, permissions, navigation); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		statements := []string{
-			`UPDATE roles SET name = 'Operations Admin', updated_at = 123 WHERE id = 'role-admin'`,
-			`UPDATE permissions SET description = 'operator description' WHERE id = 'perm-users-read'`,
-			`UPDATE menu_items SET sort_order = 99, enabled = 0 WHERE id = 'menu-users'`,
-			`INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('perm-custom','custom.read','custom',1,1)`,
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		if _, err := tx.Exec(context.Background(), `UPDATE roles SET name = 'Operations Admin', updated_at = ? WHERE id = 'role-admin'`, timeMarker); err != nil {
+			return err
 		}
-		for _, statement := range statements {
-			if _, err := tx.Exec(statement); err != nil {
-				return err
-			}
+		if _, err := tx.Exec(context.Background(), `UPDATE permissions SET description = 'operator description' WHERE id = 'perm-users-read'`); err != nil {
+			return err
 		}
-		return nil
+		if _, err := tx.Exec(context.Background(), `UPDATE menu_items SET sort_order = 99, enabled = 0 WHERE id = 'menu-users'`); err != nil {
+			return err
+		}
+		_, err := tx.Exec(context.Background(), `INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('perm-custom','custom.read','custom',?,?)`, timeMarker, timeMarker)
+		return err
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -202,8 +233,8 @@ func TestReconcilePreservesUserFieldsAndDisabledProfileData(t *testing.T) {
 	}
 	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
 		var roleName, description string
-		var system, roleUpdatedAt, order, enabled int
-		if err := tx.QueryRow(`SELECT name, system, updated_at FROM roles WHERE id = 'role-admin'`).Scan(&roleName, &system, &roleUpdatedAt); err != nil {
+		var system, order, enabled int
+		if err := tx.QueryRow(`SELECT name, system FROM roles WHERE id = 'role-admin'`).Scan(&roleName, &system); err != nil {
 			return err
 		}
 		if err := tx.QueryRow(`SELECT description FROM permissions WHERE id = 'perm-users-read'`).Scan(&description); err != nil {
@@ -212,12 +243,15 @@ func TestReconcilePreservesUserFieldsAndDisabledProfileData(t *testing.T) {
 		if err := tx.QueryRow(`SELECT sort_order, enabled FROM menu_items WHERE id = 'menu-users'`).Scan(&order, &enabled); err != nil {
 			return err
 		}
-		if roleName != "Operations Admin" || system != 1 || roleUpdatedAt != 123 || description != "operator description" || order != 99 || enabled != 0 {
+		if roleName != "Operations Admin" || system != 1 || description != "operator description" || order != 99 || enabled != 0 {
 			return errors.New("reconcile overwrote operator-owned fields")
 		}
 		return nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+	if got := queryTime(t, st, `SELECT updated_at FROM roles WHERE id = 'role-admin'`); !got.Equal(timeMarker) {
+		t.Fatalf("reconcile rewrote system role updated_at = %s, want %s", got, timeMarker)
 	}
 	for _, key := range []string{"settings.read", "custom.read"} {
 		if got := queryInt(t, st, `SELECT COUNT(*) FROM permissions WHERE key = ?`, key); got != 1 {
@@ -281,12 +315,7 @@ func TestReconcileIdentityConflictRollsBackLedger(t *testing.T) {
 	if err := Bootstrap(context.Background(), st, "admin", "hash"); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('custom-id','users.read','custom',1,1)`)
-		return err
-	}); err != nil {
-		t.Fatal(err)
-	}
+	execDomain(t, st, `INSERT INTO permissions (id, key, description, created_at, updated_at) VALUES ('custom-id','users.read','custom',?,?)`, timeMarker, timeMarker)
 	permissions, _ := sampleSystemData()
 	if err := Reconcile(context.Background(), st, permissions[:1], nil); err == nil {
 		t.Fatal("identity conflict must fail closed")

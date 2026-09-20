@@ -173,7 +173,7 @@ func (r *Repository) RecordOperationTx(tx kernel.Tx, operation Operation) error 
 		`INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, detail, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		operation.ID, operation.Event, operation.ActorID, operation.ActorName,
-		recordID, detail, operation.CreatedAt.UnixMilli(),
+		recordID, detail, operation.CreatedAt,
 	); err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ func (r *Repository) withTx(operation string, fn func(kernel.Tx) error) error {
 func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	var operation Operation
 	var recordID, detail, correlationID, sessionID sql.NullString
-	var createdAt int64
+	var createdAt time.Time
 	err := row.Scan(
 		&operation.ID, &operation.Event, &operation.ActorID, &operation.ActorName,
 		&recordID, &detail, &correlationID, &sessionID, &createdAt,
@@ -309,7 +309,7 @@ func scanOperation(row interface{ Scan(...any) error }) (Operation, error) {
 	if sessionID.Valid {
 		operation.SessionID = sessionID.String
 	}
-	operation.CreatedAt = time.UnixMilli(createdAt).UTC()
+	operation.CreatedAt = createdAt.UTC()
 	return operation, nil
 }
 
@@ -330,11 +330,11 @@ func operationsWhere(filter OperationFilter) (string, []any) {
 	}
 	if filter.From != nil {
 		conditions = append(conditions, `created_at >= ?`)
-		args = append(args, filter.From.UTC().UnixMilli())
+		args = append(args, filter.From.UTC())
 	}
 	if filter.To != nil {
 		conditions = append(conditions, `created_at <= ?`)
-		args = append(args, filter.To.UTC().UnixMilli())
+		args = append(args, filter.To.UTC())
 	}
 	if len(conditions) == 0 {
 		return "", nil

@@ -4,6 +4,7 @@ package authsession
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
@@ -49,9 +50,11 @@ type User struct {
 	// FailedLoginCount counts consecutive failed password attempts (GOAL-004
 	// S4-6 account lock); reset on successful login.
 	FailedLoginCount int
-	// LockedUntil is the unix-second lock window end (0 = not locked). Locks
-	// expire automatically once now passes the window.
-	LockedUntil int64
+	// LockedUntil is the lock window end (workspace-040 R2 · D-001 §2 #5).
+	// NULL = not locked; a present instant is the window end. Locks expire
+	// automatically once now passes the window. Consumers test
+	// `LockedUntil.Valid && LockedUntil.Time.After(now)`.
+	LockedUntil sql.NullTime
 	// AvatarURL is the self-service avatar asset URL (W13 T-05 · migration
 	// 0035, account module): "" = no avatar. Values are committed by the
 	// account profile PATCH and validated against the avatar store.

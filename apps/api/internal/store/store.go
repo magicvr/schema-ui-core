@@ -12,9 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	_ "modernc.org/sqlite"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -190,19 +192,65 @@ func (s *Store) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
 }
 
 // sqlTx adapts *sql.Tx to kernel.Tx. SQLite keeps the '?' placeholder, so no
-// rebinding is applied here.
+// rebinding is applied here. Domain time arguments are normalized to the
+// canonical stored form (workspace-040 R2 / Root D-008): a bound time.Time
+// would otherwise be stored in the driver's own 36-character layout.
 type sqlTx struct{ tx *sql.Tx }
 
 func (t sqlTx) Exec(ctx context.Context, query string, args ...any) (kernel.Result, error) {
-	return t.tx.ExecContext(ctx, query, args...)
+	return t.tx.ExecContext(ctx, query, bindSQLiteArgs(args)...)
 }
 
 func (t sqlTx) Query(ctx context.Context, query string, args ...any) (kernel.Rows, error) {
-	return t.tx.QueryContext(ctx, query, args...)
+	rows, err := t.tx.QueryContext(ctx, query, bindSQLiteArgs(args)...)
+	if err != nil {
+		return nil, err
+	}
+	return scanRows{rows: rows}, nil
 }
 
 func (t sqlTx) QueryRow(ctx context.Context, query string, args ...any) kernel.Row {
-	return t.tx.QueryRowContext(ctx, query, args...)
+	return scanRow{row: t.tx.QueryRowContext(ctx, query, bindSQLiteArgs(args)...)}
+}
+
+// bindSQLiteArgs maps dialect-neutral domain time values onto the canonical
+// SQLite storage form, so repositories can bind time.Time / sql.NullTime the
+// same way on both dialects without branching on the dialect themselves.
+func bindSQLiteArgs(args []any) []any {
+	if len(args) == 0 {
+		return args
+	}
+	out := make([]any, len(args))
+	for i, arg := range args {
+		out[i] = bindSQLiteArg(arg)
+	}
+	return out
+}
+
+func bindSQLiteArg(arg any) any {
+	switch v := arg.(type) {
+	case time.Time:
+		return temporal.NewValue(v).String()
+	case *time.Time:
+		if v == nil {
+			return nil
+		}
+		return temporal.NewValue(*v).String()
+	case sql.NullTime:
+		if !v.Valid {
+			return nil
+		}
+		return temporal.NewValue(v.Time).String()
+	case temporal.Value:
+		return v.String()
+	case temporal.NullValue:
+		if !v.Valid() {
+			return nil
+		}
+		return v.String()
+	default:
+		return arg
+	}
 }
 
 // MarkSystemDataReady records successful post-finalize reconciliation.

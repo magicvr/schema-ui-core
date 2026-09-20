@@ -137,7 +137,7 @@ ON CONFLICT (bot_id, update_id) DO NOTHING`,
 			nullableString(msg.Text),
 			nullableString(msg.CallbackData),
 			nullableString(msg.SenderUsername),
-			msg.ReceivedAt.Unix(),
+			msg.ReceivedAt.UTC(),
 		)
 		if err != nil {
 			return fmt.Errorf("insert telegram inbound receipt: %w", err)
@@ -173,9 +173,9 @@ ON CONFLICT (bot_id, chat_id) DO UPDATE SET
 			msg.ChatType,
 			msg.ChatTitle,
 			msg.ChatUsername,
-			msg.ReceivedAt.Unix(),
-			msg.ReceivedAt.Unix(),
-			msg.ReceivedAt.Unix(),
+			msg.ReceivedAt.UTC(),
+			msg.ReceivedAt.UTC(),
+			msg.ReceivedAt.UTC(),
 		); err != nil {
 			return fmt.Errorf("upsert telegram session: %w", err)
 		}
@@ -264,13 +264,13 @@ LIMIT ? OFFSET ?`, botID, pageSize, offset)
 		defer rows.Close()
 		for rows.Next() {
 			var session Session
-			var lastMessageAt, createdAt, updatedAt int64
+			var lastMessageAt, createdAt, updatedAt time.Time
 			if err := rows.Scan(&session.BotID, &session.ChatID, &session.ChatType, &session.Title, &session.Username, &lastMessageAt, &createdAt, &updatedAt); err != nil {
 				return fmt.Errorf("scan telegram session: %w", err)
 			}
-			session.LastMessageAt = time.Unix(lastMessageAt, 0).UTC()
-			session.CreatedAt = time.Unix(createdAt, 0).UTC()
-			session.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+			session.LastMessageAt = lastMessageAt.UTC()
+			session.CreatedAt = createdAt.UTC()
+			session.UpdatedAt = updatedAt.UTC()
 			sessions = append(sessions, session)
 		}
 		return rows.Err()
@@ -374,13 +374,13 @@ LIMIT ? OFFSET ?`
 		defer rows.Close()
 		for rows.Next() {
 			var entry TimelineEntry
-			var occurredAt int64
+			var occurredAt time.Time
 			var updateID, messageID, userID sql.NullInt64
 			var senderUsername, requestID, retryOf sql.NullString
 			if err := rows.Scan(&entry.BotID, &entry.ChatID, &entry.Direction, &entry.Status, &occurredAt, new(string), &updateID, &messageID, &userID, &senderUsername, &requestID, &retryOf, &entry.Text); err != nil {
 				return fmt.Errorf("scan telegram timeline: %w", err)
 			}
-			entry.OccurredAt = time.Unix(occurredAt, 0).UTC()
+			entry.OccurredAt = occurredAt.UTC()
 			if updateID.Valid {
 				entry.UpdateID = updateID.Int64
 			}
@@ -549,11 +549,11 @@ func (r *Repository) markStatus(ctx context.Context, botID int64, requestID, sta
 		if status == "sent" {
 			result, err = tx.Exec(ctx, `UPDATE telegram_outbound_messages
 SET status = 'sent', error_message = NULL, updated_at = ?
-WHERE bot_id = ? AND request_id = ? AND status = 'pending'`, time.Now().UTC().Unix(), botID, requestID)
+WHERE bot_id = ? AND request_id = ? AND status = 'pending'`, time.Now().UTC(), botID, requestID)
 		} else {
 			result, err = tx.Exec(ctx, `UPDATE telegram_outbound_messages
 SET status = 'failed', error_message = ?, updated_at = ?
-WHERE bot_id = ? AND request_id = ? AND status = 'pending'`, reason, time.Now().UTC().Unix(), botID, requestID)
+WHERE bot_id = ? AND request_id = ? AND status = 'pending'`, reason, time.Now().UTC(), botID, requestID)
 		}
 		if err != nil {
 			return fmt.Errorf("update telegram outbound status: %w", err)
@@ -610,7 +610,7 @@ func createPendingTx(ctx context.Context, tx kernel.Tx, botID, chatID int64, req
 	result, err := tx.Exec(ctx, `INSERT INTO telegram_outbound_messages (
   bot_id, request_id, retry_root, retry_of, chat_id, text, status, error_message, created_at, updated_at
 ) VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, ?, ?)
-ON CONFLICT DO NOTHING`, botID, requestID, retryRoot, nullableString(retryOf), chatID, text, now.Unix(), now.Unix())
+ON CONFLICT DO NOTHING`, botID, requestID, retryRoot, nullableString(retryOf), chatID, text, now, now)
 	if err != nil {
 		return OutboundMessage{}, false, fmt.Errorf("insert telegram outbound pending: %w", err)
 	}
@@ -706,7 +706,7 @@ FROM telegram_outbound_messages WHERE bot_id = ? AND chat_id = ? AND request_id 
 func scanOutbound(row kernel.Row) (OutboundMessage, error) {
 	var message OutboundMessage
 	var retryOf, errorMessage sql.NullString
-	var createdAt, updatedAt int64
+	var createdAt, updatedAt time.Time
 	if err := row.Scan(&message.BotID, &message.RequestID, &message.RetryRoot, &retryOf, &message.ChatID, &message.Text, &message.Status, &errorMessage, &createdAt, &updatedAt); err != nil {
 		if errors.Is(err, kernel.ErrNoRows) {
 			return OutboundMessage{}, ErrRequestNotFound
@@ -719,8 +719,8 @@ func scanOutbound(row kernel.Row) (OutboundMessage, error) {
 	if errorMessage.Valid {
 		message.ErrorMessage = errorMessage.String
 	}
-	message.CreatedAt = time.Unix(createdAt, 0).UTC()
-	message.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+	message.CreatedAt = createdAt.UTC()
+	message.UpdatedAt = updatedAt.UTC()
 	return message, nil
 }
 

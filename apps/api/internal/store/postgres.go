@@ -11,6 +11,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib" // registers driver name "pgx"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -162,9 +163,12 @@ func (p *postgres) applyMigrationPG(ctx context.Context, migration kernel.Migrat
 				return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 			}
 		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
-			migration.Version, migration.Name, migration.Checksum, time.Now().UTC().Unix(),
+		write, err := postgresLedgerWrite(ctx, tx, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, write.statement,
+			migration.Version, migration.Name, migration.Checksum, write.value,
 		); err != nil {
 			return fmt.Errorf("record migration %d (%s): %w", migration.Version, migration.Name, err)
 		}
@@ -271,19 +275,56 @@ func (p *postgres) SystemDataReady() error {
 	return nil
 }
 
-// pgTx adapts *sql.Tx to kernel.Tx with postgres placeholder rebinding.
+// pgTx adapts *sql.Tx to kernel.Tx with postgres placeholder rebinding. Domain
+// time arguments are normalized to the types the postgres timestamptz(6) codec
+// accepts, so repositories bind time.Time / sql.NullTime identically on both
+// dialects (workspace-040 R2).
 type pgTx struct{ tx *sql.Tx }
 
 func (t pgTx) Exec(ctx context.Context, query string, args ...any) (kernel.Result, error) {
-	return t.tx.ExecContext(ctx, rebindPostgres(query), args...)
+	return t.tx.ExecContext(ctx, rebindPostgres(query), bindPostgresArgs(args)...)
 }
 
 func (t pgTx) Query(ctx context.Context, query string, args ...any) (kernel.Rows, error) {
-	return t.tx.QueryContext(ctx, rebindPostgres(query), args...)
+	rows, err := t.tx.QueryContext(ctx, rebindPostgres(query), bindPostgresArgs(args)...)
+	if err != nil {
+		return nil, err
+	}
+	return scanRows{rows: rows}, nil
 }
 
 func (t pgTx) QueryRow(ctx context.Context, query string, args ...any) kernel.Row {
-	return t.tx.QueryRowContext(ctx, rebindPostgres(query), args...)
+	return scanRow{row: t.tx.QueryRowContext(ctx, rebindPostgres(query), bindPostgresArgs(args)...)}
+}
+
+func bindPostgresArgs(args []any) []any {
+	if len(args) == 0 {
+		return args
+	}
+	out := make([]any, len(args))
+	for i, arg := range args {
+		out[i] = bindPostgresArg(arg)
+	}
+	return out
+}
+
+func bindPostgresArg(arg any) any {
+	switch v := arg.(type) {
+	case sql.NullTime:
+		if !v.Valid {
+			return nil
+		}
+		return v.Time
+	case temporal.Value:
+		return v.Time()
+	case temporal.NullValue:
+		if !v.Valid() {
+			return nil
+		}
+		return v.Time()
+	default:
+		return arg
+	}
 }
 
 // postgresWasFresh reports whether the database has zero user base tables in
