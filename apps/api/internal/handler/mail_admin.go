@@ -58,6 +58,37 @@ func mailPermWrite(next http.Handler) http.Handler {
 	})
 }
 
+// mailConfigResponse is the HTTP projection of mail.PublicView.
+//
+// workspace-040 R3-A: updated_at is re-emitted through the shared fixed-6
+// formatter, because encoding/json prints a time.Time with variable-width
+// fractional digits ("...T12:57:15Z" / "...T12:57:15.9Z") and that breaks the
+// frozen public wire contract (Root D-003).
+//
+// The embedded PublicView keeps every other field — including any field added
+// later — forwarded verbatim, so this projection cannot drift from the model.
+// Its own UpdatedAt is shadowed by the shallower field below (encoding/json
+// selects the least-nested candidate), which is the only field rewritten.
+//
+// The R2 ruling is preserved: the model keeps *time.Time and NULL stays JSON
+// null instead of a fabricated instant (GOAL-004 A-003 F-I-002 user-overruled).
+type mailConfigResponse struct {
+	mail.PublicView
+	UpdatedAt *string `json:"updated_at"`
+}
+
+func mailConfigWire(view *mail.PublicView) mailConfigResponse {
+	out := mailConfigResponse{}
+	if view != nil {
+		out.PublicView = *view
+		if view.UpdatedAt != nil {
+			wire := FormatWireTime(*view.UpdatedAt)
+			out.UpdatedAt = &wire
+		}
+	}
+	return out
+}
+
 func mailConfigGet(svc MailAdminService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		view, err := svc.PublicView()
@@ -65,7 +96,7 @@ func mailConfigGet(svc MailAdminService) http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load mail configuration")
 			return
 		}
-		writeJSON(w, http.StatusOK, view)
+		writeJSON(w, http.StatusOK, mailConfigWire(view))
 	})
 }
 

@@ -17,7 +17,7 @@ version: 0.1.0
 | I-040-001 | required | SQLite 与 PG 的合同平等物理类型、精度、UTC 表示、NULL/零值、编解码 | R1/R2 | R1 | 对照 VP-013 与现有时间列；形成 R1 冻结决策 | collecting | R1 冻结前复核 | 用户 D-002：PG `timestamptz(6)`；SQLite fixed-6 UTC RFC3339 TEXT；sentinel 0 → NULL；待逐列证据 |
 | I-040-002 | required | 首波时间列分母与非时间 INTEGER 排除清单 | R1/R2 | R1 | 全仓扫描并冻结列清单 | collecting | R1 冻结前复核 | 用户 D-002：全部绝对时刻列纳入，ID/duration/step/version/计数/金额/flag 排除 |
 | I-040-003 | required | 存量升级与备份 residual | R1/R3 | R1 | 对照 dump/restore 路径并取得必要书面裁决 | collecting | R1 冻结前复核 | 用户 D-002：SQLite/PG 各自原地转换；不提供 SQLite→PG 产品搬运器 |
-| I-040-004 | required | VP-020 展示/输入与 UTC 存储回归矩阵 | R3 | R1 | 复用 VP-020 验收用例，补存储形状对照 | open | — | 待 R3 |
+| I-040-004 | required | VP-020 展示/输入与 UTC 存储回归矩阵 | R3 | R1 | 复用 VP-020 验收用例，补存储形状对照 | verified | — | `D-018` 修订（2026-09-20）：`GOAL-006/02-execution/E-004` 双载体矩阵（Go wire/瞬时 round-trip + Web 会话时区展示 round-trip） |
 | I-040-005 | required | 激活前置与工作区绑定 | 激活 | 激活前 | `/vision` self Review + `/govern` scaffold | verified | — | VRev-104；workspace/Root 已建立 |
 
 ## 决策索引
@@ -42,5 +42,6 @@ version: 0.1.0
 | D-016 | 2026-09-20 | **R2 阶段边界与信息门禁**（范围 / 非目标 / M1–M4 检查点 / I-041-001～004） | accepted | `01-decision/D-016-r2-boundary.md` |
 | D-017 | 2026-09-20 | **M2/M3 交付次序与 PG 验证环境裁决**（用户方案 1；M3 slug；`I-041-003` 关闭 + 测试库约束） | accepted | `01-decision/D-017-m3-staging-and-pg-verification-environment.md` |
 | D-018 | 2026-09-20 | **R3 阶段边界与信息门禁**（范围/A-D 检查点/`I-040-004`+`I-041-004`+`I-041-007`/`I-041-008`） | accepted | `01-decision/D-018-r3-boundary.md` |
+| D-019 | 2026-09-20 | **`I-041-008` 收口裁决（无破坏性/不需兼容期 → verified）与 R3-C/D slug 预确认** | accepted | `01-decision/D-019-r3a-i041-008-ruling-and-r3cd-slugs.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

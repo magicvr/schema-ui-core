@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.0
-progress: 0/3
+version: 0.2.0
+progress: 2/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -53,19 +53,19 @@ serves_summary: 承接 Root R3 的 R3-A/B：落码共享 fixed-6 UTC wire format
 
 | 检查点 | 判据 | 状态 |
 |--------|------|------|
-| **A** | shared fixed-6 formatter 落码并替换 inventory 的 Go 面；输入兼容矩阵（0/3/6/9 位、`+00:00`、拒绝无时区）有可执行测试；Go/Web fixture 同步；`I-041-008` 判定 | pending |
-| **B** | 单位族矩阵（秒/毫秒/可空/sentinel 各至少一个 endpoint）通过；VP-020 会话时区展示 round-trip 通过（Go + Web 组件/单测）；`I-040-004` 关闭 | pending |
+| **A** | shared fixed-6 formatter 落码并替换 inventory 的 Go 面；输入兼容矩阵（0/3/6/9 位、`+00:00`、拒绝无时区）有可执行测试；Go/Web fixture 同步；`I-041-008` 判定 | **completed**（E-002/E-003；`I-041-008` verified 见 Root `D-019`） |
+| **B** | 单位族矩阵（秒/毫秒/可空/sentinel 各至少一个 endpoint）通过；VP-020 会话时区展示 round-trip 通过（Go + Web 组件/单测）；`I-040-004` 关闭 | **completed**（E-004；4 端点矩阵 + Go/Web round-trip） |
 | **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | pending |
 
-`progress: 0/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 |
 |----|------|----------|----------|------|------|
-| I-040-004 | required（继承） | VP-020 展示/输入与 UTC 存储的回归矩阵 | B | open（本目标 B 关闭） | `D-018` §5；载体裁决 `I-041-007` |
+| I-040-004 | required（继承） | VP-020 展示/输入与 UTC 存储的回归矩阵 | B | **verified（本目标 B）** | `D-018` §5（已修订）；`02-execution/E-004` |
 | I-041-007 | required（继承） | VP-020 矩阵的载体与验收口径 | B | **verified（用户 2026-09-20）** | `D-018` §5 |
-| I-041-008 | required（本目标新增） | wire 输出的破坏性：前端/现网是否依赖 3 位小数；是否需兼容期 | A | **collecting** | `D-018` §5；inventory §Web consumer |
+| I-041-008 | required（本目标新增） | wire 输出的破坏性：前端/现网是否依赖 3 位小数；是否需兼容期 | A | **verified（用户 2026-09-20 P-004）** | Root `D-019` §1；`D-018` §5（已修订）；inventory §Web consumer |
 
 ## 父目标
 

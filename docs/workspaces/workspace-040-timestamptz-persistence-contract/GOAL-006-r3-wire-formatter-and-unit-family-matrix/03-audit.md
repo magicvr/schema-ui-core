@@ -29,3 +29,9 @@ version: 0.1.0
 | 3 | 单位族矩阵是否真的覆盖「秒/毫秒/可空/sentinel」四族各至少一个 endpoint | 测试证据 | 避免用同一族多次充数 |
 | 4 | VP-020 会话时区展示 round-trip 是否证明「展示随会话时区、存储恒 UTC」 | Web 组件/单测 + Go 侧 | 载体按 `I-041-007` |
 | 5 | 是否误把非 DB 文本纳入固定 6 位输出（`D-009` 例外） | `D-009` + fixture 对照 | 例外范围 |
+| 6 | **E-003 的三处漏网字段修复是否完整、是否引入语义/形状变化** | `handler/health.go`、`handler/mail_outbox.go`、`handler/mail_admin.go` | 重点：`mailConfigResponse` 内嵌 + 同名字段 shadowing 的实际 JSON 行为；outbox 列表/详情 body 形状是否与修复前**逐键**一致；`mail.PublicView` 的 `*time.Time` + JSON null 是否仍满足 `GOAL-004/A-003` 的 `user-overruled` 裁决 |
+| 7 | **「时间到达 wire 的路径」闭集扫描是否真的完备** | `E-003` §2 完整性论证 | 是否存在第三类路径（如 `any`/`json.RawMessage` 间接承载、模块层自行 `writeJSON`、`MarshalJSON` 自定义类型）未被两类扫描覆盖 |
+| 8 | 单位族「族身份」是否可独立核对（分母 unit）而非仅凭测试命名 | `w040_r3b_unit_family_matrix_test.go` `requireDenominatorColumn` | 反例优先：能否构造出「实际不属于该族却被记为已覆盖」的情形 |
+| 9 | Web 52 处 `.NNNZ` 与 pinned upstream JSON 不改写的判定是否站得住 | `E-003` §1、`D-019` §1 证据表 | 关键反证：是否有测试把「3 位小数**输出**」当作断言而非输入 |
+| 10 | VP-020 round-trip 的精度声明（展示层秒粒度 vs 存储微秒）是否诚实且足以关闭 `I-040-004` | `w040_r3b_timezone_roundtrip_test.go`、`i18n/utc-roundtrip.test.tsx` | 是否存在「展示丢精度即等于存证不足」的反驳 |
+| 11 | 基线是否仍然全绿且无回归 | `go test -count=1 ./...`（64/64）、`vitest run`（124 文件/1504 用例） | 审计可自行复跑；不采信本文叙述 |

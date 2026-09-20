@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { validateReturnIntent } from "@/host/failure";
 import {
   applyReturnIntentNavigation,
   buildQueryString,
@@ -144,5 +145,59 @@ describe("host return-intent lifecycle (ADR-0036 D6)", () => {
     } finally {
       window.history.replaceState = original;
     }
+  });
+});
+
+// workspace-040 R3-A fixture sync (inventory §Web consumer): the API wire value
+// became the canonical fixed-6 shape, so this validator must accept it while
+// staying compatible with the legacy 3-digit shape and the zoneless rejection.
+describe("host return-intent wire-shape compatibility (workspace-040 R3-A)", () => {
+  const base = { path: "/users", query: {}, nonce: "n1" };
+  const NOW_FIXED6 = "2026-08-13T10:00:00.000000Z";
+  const options = { nowIso: NOW_FIXED6 };
+
+  it("accepts the canonical fixed-6 expiresAt", () => {
+    const result = validateReturnIntent(
+      { ...base, expiresAt: "2026-08-13T10:10:00.123456Z" },
+      options,
+    );
+    expect(result.valid).toBe(true);
+    expect(result.reason).toBeNull();
+  });
+
+  it("keeps accepting the legacy 3-digit expiresAt it replaced", () => {
+    const result = validateReturnIntent(
+      { ...base, expiresAt: "2026-08-13T10:10:00.123Z" },
+      options,
+    );
+    expect(result.valid).toBe(true);
+    expect(result.reason).toBeNull();
+  });
+
+  it("keeps accepting a whole-second UTC expiresAt", () => {
+    const result = validateReturnIntent(
+      { ...base, expiresAt: "2026-08-13T10:10:00Z" },
+      options,
+    );
+    expect(result.valid).toBe(true);
+    expect(result.reason).toBeNull();
+  });
+
+  it("rejects a zoneless (ambiguous local) expiresAt", () => {
+    const result = validateReturnIntent(
+      { ...base, expiresAt: "2026-08-13T10:10:00" },
+      options,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain("expiresAt");
+  });
+
+  it("still expires a fixed-6 instant that is in the past", () => {
+    const result = validateReturnIntent(
+      { ...base, expiresAt: "2026-08-13T09:59:59.999999Z" },
+      options,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain("expired");
   });
 });

@@ -12,11 +12,27 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/pkg/version"
 )
 
+// healthResponse is the liveness/readiness body. Timestamp is a STRING built by
+// the shared fixed-6 wire formatter (workspace-040 R3-A), not a time.Time:
+// encoding/json would print a time.Time with variable-width fractional digits
+// ("...T12:57:15Z", "...T12:57:15.9Z"), which violates the frozen public wire
+// contract D-003.
 type healthResponse struct {
-	Status    string    `json:"status"`
-	Timestamp time.Time `json:"timestamp"`
-	Version   string    `json:"version,omitempty"`
-	Commit    string    `json:"commit,omitempty"`
+	Status    string `json:"status"`
+	Timestamp string `json:"timestamp"`
+	Version   string `json:"version,omitempty"`
+	Commit    string `json:"commit,omitempty"`
+}
+
+// healthBody builds the probe body; every path stamps the same canonical instant
+// format so liveness and readiness cannot drift.
+func healthBody(status string) healthResponse {
+	return healthResponse{
+		Status:    status,
+		Timestamp: FormatWireTime(time.Now().UTC()),
+		Version:   version.Version,
+		Commit:    version.Commit,
+	}
 }
 
 // Register mounts core routes and the selected module contributions. The
@@ -67,12 +83,7 @@ func RegisterWithMFAProbes(mux routeRegistrar, a *auth.Authenticator, st kernel.
 // touches the database (A-002 F-002-006 separates liveness from readiness).
 func healthz() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, healthResponse{
-			Status:    "ok",
-			Timestamp: time.Now().UTC(),
-			Version:   version.Version,
-			Commit:    version.Commit,
-		})
+		writeJSON(w, http.StatusOK, healthBody("ok"))
 	})
 }
 
@@ -87,21 +98,11 @@ func readyz(st kernel.Store, ready func() bool, extra ...func(context.Context) e
 		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 		defer cancel()
 		if err := st.Ping(ctx); err != nil {
-			writeJSON(w, http.StatusServiceUnavailable, healthResponse{
-				Status:    "unavailable",
-				Timestamp: time.Now().UTC(),
-				Version:   version.Version,
-				Commit:    version.Commit,
-			})
+			writeJSON(w, http.StatusServiceUnavailable, healthBody("unavailable"))
 			return
 		}
 		if ready != nil && !ready() {
-			writeJSON(w, http.StatusServiceUnavailable, healthResponse{
-				Status:    "not-ready",
-				Timestamp: time.Now().UTC(),
-				Version:   version.Version,
-				Commit:    version.Commit,
-			})
+			writeJSON(w, http.StatusServiceUnavailable, healthBody("not-ready"))
 			return
 		}
 		// VP-014 GOAL-003: explicit object-backend probes share the readyz
@@ -111,21 +112,11 @@ func readyz(st kernel.Store, ready func() bool, extra ...func(context.Context) e
 				continue
 			}
 			if err := probe(ctx); err != nil {
-				writeJSON(w, http.StatusServiceUnavailable, healthResponse{
-					Status:    "unavailable",
-					Timestamp: time.Now().UTC(),
-					Version:   version.Version,
-					Commit:    version.Commit,
-				})
+				writeJSON(w, http.StatusServiceUnavailable, healthBody("unavailable"))
 				return
 			}
 		}
-		writeJSON(w, http.StatusOK, healthResponse{
-			Status:    "ok",
-			Timestamp: time.Now().UTC(),
-			Version:   version.Version,
-			Commit:    version.Commit,
-		})
+		writeJSON(w, http.StatusOK, healthBody("ok"))
 	})
 }
 

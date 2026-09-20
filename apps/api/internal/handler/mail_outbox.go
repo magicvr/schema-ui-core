@@ -76,7 +76,7 @@ func outboxList(reader OutboxReader) http.Handler {
 		if items == nil {
 			items = []mail.OutboxRecord{}
 		}
-		writeJSON(w, http.StatusOK, resourceList{Items: toMapItems(items), Total: total, Page: query.Page, PageSize: query.PageSize})
+		writeJSON(w, http.StatusOK, resourceList{Items: outboxWireRecords(items), Total: total, Page: query.Page, PageSize: query.PageSize})
 	})
 }
 
@@ -93,26 +93,44 @@ func outboxDetail(reader OutboxReader) http.Handler {
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not load outbound record")
 			return
 		}
-		writeJSON(w, http.StatusOK, rec)
+		writeJSON(w, http.StatusOK, outboxWireRecord(rec, false))
 	})
 }
 
-// toMapItems adapts typed records into the generic envelope items. Since W26
-// (GOAL-038 D-001 §2.1) items carry the full record — channel, delivery
-// status and body ride the list so the declarative recordView drawer can
-// render detail from the selected row (bounded by retention + page size).
-func toMapItems(items []mail.OutboxRecord) []map[string]any {
+// outboxWireRecord is the single HTTP projection of one outbox record; both the
+// list item and the detail body go through it so the two surfaces cannot drift.
+//
+// workspace-040 R3-A: created_at is emitted by the shared fixed-6 formatter.
+// Writing mail.OutboxRecord (or its time.Time) straight to the wire would let
+// encoding/json print a variable-width RFC3339 value — "...T12:00:00Z" or
+// "...T12:00:00.9Z" — which violates the frozen output contract (Root D-003).
+//
+// keepEmptyBody mirrors each caller's frozen JSON shape: the list always carries
+// the body (W26 · GOAL-038 D-001 §2.1 "full record rides the list"), while the
+// detail keeps the struct tag's `omitempty` behaviour.
+func outboxWireRecord(rec mail.OutboxRecord, keepEmptyBody bool) map[string]any {
+	row := map[string]any{
+		"id":              rec.ID,
+		"to":              rec.To,
+		"subject":         rec.Subject,
+		"channel":         rec.Channel,
+		"delivery_status": rec.DeliveryStatus,
+		"created_at":      FormatWireTime(rec.CreatedAt),
+	}
+	if rec.Body != "" || keepEmptyBody {
+		row["body"] = rec.Body
+	}
+	return row
+}
+
+// outboxWireRecords adapts typed records into the generic list envelope items.
+// Since W26 (GOAL-038 D-001 §2.1) items carry the full record — channel,
+// delivery status and body ride the list so the declarative recordView drawer
+// can render detail from the selected row (bounded by retention + page size).
+func outboxWireRecords(items []mail.OutboxRecord) []map[string]any {
 	out := make([]map[string]any, 0, len(items))
 	for _, rec := range items {
-		out = append(out, map[string]any{
-			"id":             rec.ID,
-			"to":             rec.To,
-			"subject":        rec.Subject,
-			"body":           rec.Body,
-			"channel":        rec.Channel,
-			"delivery_status": rec.DeliveryStatus,
-			"created_at":     rec.CreatedAt,
-		})
+		out = append(out, outboxWireRecord(rec, true))
 	}
 	return out
 }
