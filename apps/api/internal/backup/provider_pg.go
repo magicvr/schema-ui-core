@@ -107,6 +107,13 @@ func (p PgProvider) ClientVersion(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
+// CreateRollbackArtifact implements store.RollbackArtifactCreator: it writes the
+// pre-conversion (class A) rollback artifact through the same pg_dump path. The
+// separate name keeps the artifact CLASS explicit at the call site (C3 §2).
+func (p PgProvider) CreateRollbackArtifact(ctx context.Context, sourceID, artifactRef string) error {
+	return p.Create(ctx, sourceID, artifactRef)
+}
+
 // Create dumps sourceDSN to artifactPath with pg_dump -F c.
 func (p PgProvider) Create(ctx context.Context, sourceDSN, artifactPath string) error {
 	if strings.TrimSpace(p.WorkDir) == "" {

@@ -7,14 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporalcontract"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
-// TemporalColumns returns a copy of the frozen 90-column denominator.
-func TemporalColumns() []temporalColumn {
-	out := make([]temporalColumn, len(temporalColumns))
-	copy(out, temporalColumns)
-	return out
+// TemporalColumns returns the frozen 90-column denominator.
+func TemporalColumns() []temporalcontract.Column {
+	return temporalcontract.Columns()
 }
 
 // sqliteTargetVerification is the measured shape of one restored SQLite target.
@@ -72,7 +71,7 @@ func measureSQLiteTarget(ctx context.Context, path string) (sqliteTargetVerifica
 
 	// Per-table declared types, one query per distinct table (44 tables).
 	declared := map[string]map[string]string{}
-	for _, column := range temporalColumns {
+	for _, column := range temporalcontract.Columns() {
 		if _, ok := declared[column.Table]; ok {
 			continue
 		}
@@ -98,7 +97,7 @@ func measureSQLiteTarget(ctx context.Context, path string) (sqliteTargetVerifica
 		info.Close()
 		declared[column.Table] = types
 	}
-	for _, column := range temporalColumns {
+	for _, column := range temporalcontract.Columns() {
 		types, ok := declared[column.Table]
 		if !ok {
 			out.Missing = append(out.Missing, column.Table+"."+column.Column)
@@ -137,10 +136,10 @@ func measureSQLiteTarget(ctx context.Context, path string) (sqliteTargetVerifica
 // checks is the classification order of C3 §5.1: an incomplete column set is
 // reported as such, otherwise a non-converted shape is a contract mismatch.
 func verifyConvertedShape(m sqliteTargetVerification, wantChecksumSet string, wantCatalogVersion int) error {
-	if len(m.Missing) > 0 || m.MeasuredColumns != len(temporalColumns) {
+	if len(m.Missing) > 0 || m.MeasuredColumns != temporalcontract.Count {
 		return &Error{Kind: KindTemporalColumnSetIncomplete, Op: "verify sqlite target",
 			Err: fmt.Errorf("%d/%d contract columns measured (missing %v)",
-				m.MeasuredColumns, len(temporalColumns), m.Missing)}
+				m.MeasuredColumns, temporalcontract.Count, m.Missing)}
 	}
 	if len(m.WrongShape) > 0 {
 		return &Error{Kind: KindTimeContractMismatch, Op: "verify sqlite target",
@@ -207,7 +206,7 @@ func verifySQLiteSamples(ctx context.Context, path string) error {
 	// every canonical text value in the converted set and require it to parse to
 	// itself through the codec.
 	total, canonical := 0, 0
-	for _, column := range temporalColumns {
+	for _, column := range temporalcontract.Columns() {
 		query := fmt.Sprintf(`SELECT %s FROM %s WHERE %s IS NOT NULL LIMIT 200`,
 			column.Column, column.Table, column.Column)
 		rows, err := db.QueryContext(ctx, query)
@@ -267,7 +266,7 @@ func measurePostgresTarget(ctx context.Context, db *sql.DB) (postgresTargetVerif
 	if err := db.QueryRowContext(ctx, `SHOW server_version`).Scan(&out.ServerVersion); err != nil {
 		return out, classify(KindArtifactUnreadable, "server_version", err)
 	}
-	for _, column := range temporalColumns {
+	for _, column := range temporalcontract.Columns() {
 		var dataType sql.NullString
 		var precision sql.NullInt64
 		err := db.QueryRowContext(ctx, `
@@ -294,10 +293,10 @@ func measurePostgresTarget(ctx context.Context, db *sql.DB) (postgresTargetVerif
 
 // verifyPostgresShape reduces the PG measurement to the C3 verdict.
 func verifyPostgresShape(m postgresTargetVerification, wantChecksumSet string, wantCatalogVersion int, db *sql.DB, ctx context.Context) error {
-	if len(m.Missing) > 0 || m.MeasuredColumns != len(temporalColumns) {
+	if len(m.Missing) > 0 || m.MeasuredColumns != temporalcontract.Count {
 		return &Error{Kind: KindTemporalColumnSetIncomplete, Op: "verify postgres target",
 			Err: fmt.Errorf("%d/%d contract columns measured (missing %v)",
-				m.MeasuredColumns, len(temporalColumns), m.Missing)}
+				m.MeasuredColumns, temporalcontract.Count, m.Missing)}
 	}
 	if len(m.WrongShape) > 0 {
 		return &Error{Kind: KindTimeContractMismatch, Op: "verify postgres target",

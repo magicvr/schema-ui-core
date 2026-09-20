@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.0
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-005-r2-backup-port-and-closeout（R2 M4）

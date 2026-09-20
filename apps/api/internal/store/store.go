@@ -79,6 +79,12 @@ type Store struct {
 	path            string
 	fresh           bool
 	systemDataReady atomic.Bool
+	// recoveryPoints / rollbackArtifacts are the C3 §4.2 anchors (optional).
+	recoveryPoints    kernel.RecoveryPointPort
+	rollbackArtifacts RollbackArtifactCreator
+	// recoveryNote records a non-fatal recovery-point failure (never blocks
+	// startup, C3 §4.3 item 3) for diagnostics.
+	recoveryNote string
 }
 
 // OpenWithCatalog opens the SQLite DB (default pool settings) and applies the
@@ -120,7 +126,13 @@ func open(opts OpenOptions, catalog []kernel.MigrationContribution) (*Store, err
 		_ = db.Close()
 		return nil, err
 	}
-	st := &Store{db: db, path: path, fresh: fresh}
+	st := &Store{
+		db:                db,
+		path:              path,
+		fresh:             fresh,
+		recoveryPoints:    opts.RecoveryPoints,
+		rollbackArtifacts: opts.RollbackArtifacts,
+	}
 	if err := st.migrate(catalog); err != nil {
 		_ = db.Close()
 		return nil, err

@@ -1,13 +1,13 @@
-package backup
+package temporalcontract
 
-// temporalColumns is the frozen workspace-040 denominator: the 90 absolute-instant
+// Columns is the frozen workspace-040 denominator: the 90 absolute-instant
 // columns across 44 tables from
 // GOAL-002/attachments/r1-time-column-inventory-v0.3.md (accepted as the A-006
 // denominator). It is the C3 restore/verify target set: a converted artifact must
 // carry every one of these columns in the target physical shape.
 //
 // Generated mechanically from that attachment; do not hand-edit.
-var temporalColumns = []temporalColumn{
+var columns = []Column{
 	{Table: "schema_migrations", Column: "applied_at", Unit: "sec"},
 	{Table: "system_data_reconcile", Column: "applied_at", Unit: "sec"},
 	{Table: "users", Column: "created_at", Unit: "sec"},
@@ -100,9 +100,35 @@ var temporalColumns = []temporalColumn{
 	{Table: "digital_entitlements", Column: "updated_at", Unit: "sec"},
 }
 
-// temporalColumn is one entry of the frozen denominator.
-type temporalColumn struct {
+// Column is one entry of the frozen denominator.
+type Column struct {
 	Table  string
 	Column string
 	Unit   string // sec | ms (legacy unit the conversion read)
+}
+
+// Columns returns a copy of the frozen denominator.
+func Columns() []Column {
+	out := make([]Column, len(columns))
+	copy(out, columns)
+	return out
+}
+
+// Count is the frozen denominator size (90). Gate checks compare against it
+// instead of re-deriving it.
+const Count = 90
+
+// Tables returns the distinct table names of the denominator in first-seen
+// order.
+func Tables() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, column := range columns {
+		if seen[column.Table] {
+			continue
+		}
+		seen[column.Table] = true
+		out = append(out, column.Table)
+	}
+	return out
 }

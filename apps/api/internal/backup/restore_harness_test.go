@@ -9,6 +9,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporalcontract"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	compiledmodules "github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
 )
@@ -129,9 +130,9 @@ func TestSQLiteRestoreToNewDB(t *testing.T) {
 	if measure.ForeignKeyViolations != 0 {
 		t.Fatalf("restored target has %d FK violations", measure.ForeignKeyViolations)
 	}
-	if len(measure.Missing) != 0 || measure.MeasuredColumns != len(temporalColumns) {
+	if len(measure.Missing) != 0 || measure.MeasuredColumns != temporalcontract.Count {
 		t.Fatalf("restored target measured %d/%d columns, missing %v",
-			measure.MeasuredColumns, len(temporalColumns), measure.Missing)
+			measure.MeasuredColumns, temporalcontract.Count, measure.Missing)
 	}
 	if len(measure.WrongShape) != 0 {
 		t.Fatalf("restored target has non-converted columns: %v", measure.WrongShape)

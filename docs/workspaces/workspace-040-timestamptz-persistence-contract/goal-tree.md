@@ -4,7 +4,7 @@ status: active
 created: 2026-09-20
 updated: 2026-09-20
 parent: null
-version: 0.4.1
+version: 0.5.0
 workspace_id: workspace-040-timestamptz-persistence-contract
 ---
 
@@ -22,7 +22,7 @@ GOAL-001-timestamptz-persistence-contract [active] (1/3) · 纲领容器
 ├── GOAL-002-r1-contract-and-denominator-freeze [done] (4/4) · R1 合同与分母冻结
 ├── GOAL-003-r2-codec-and-descriptor-m1-m2 [done] (4/4) · R2 M1/M2 codec 与 descriptor
 ├── GOAL-004-r2-repository-and-predicate-rewrites [done] (3/3) · R2 M3 仓储与谓词改造
-└── GOAL-005-r2-backup-port-and-closeout [active] (1/3) · R2 M4 Backup Port 与阶段关门
+└── GOAL-005-r2-backup-port-and-closeout [active] (2/3) · R2 M4 Backup Port 与阶段关门
 ```
 
 ## 纲领路线图
@@ -43,7 +43,7 @@ R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
 | GOAL-002-r1-contract-and-denominator-freeze | R1 · 时间合同与分母冻结 | GOAL-001-timestamptz-persistence-contract | **done** | 4/4 | 2026-09-20 |
 | GOAL-003-r2-codec-and-descriptor-m1-m2 | R2 · 共享 codec 与 15 个 conversion descriptor（M1/M2） | GOAL-001-timestamptz-persistence-contract | **done** | 4/4 | 2026-09-20 |
 | GOAL-004-r2-repository-and-predicate-rewrites | R2 · 仓储读写与谓词改造（M3） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
-| GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **active** | 1/3 | 2026-09-20 |
+| GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **active** | 2/3 | 2026-09-20 |
 
 ## 说明
 

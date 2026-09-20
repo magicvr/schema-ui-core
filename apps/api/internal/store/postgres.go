@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -22,6 +24,14 @@ type postgres struct {
 	db              *sql.DB
 	fresh           bool
 	systemDataReady atomic.Bool
+	// dsn / database identify the store for recovery-point metadata.
+	dsn      string
+	database string
+	// recoveryPoints / rollbackArtifacts are the C3 §4.2 anchors (optional).
+	recoveryPoints    kernel.RecoveryPointPort
+	rollbackArtifacts RollbackArtifactCreator
+	artifactDir       string
+	recoveryNote      string
 }
 
 // openPostgres opens a postgres connection: DSN connect, Ping, WasFresh, and —
@@ -53,7 +63,20 @@ func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.Migrat
 		_ = db.Close()
 		return nil, fmt.Errorf("postgres WasFresh: %w", err)
 	}
-	st := &postgres{db: db, fresh: fresh}
+	dsnDB, dbErr := url.Parse(opts.DSN)
+	database := ""
+	if dbErr == nil {
+		database = strings.TrimPrefix(dsnDB.Path, "/")
+	}
+	st := &postgres{
+		db:                db,
+		fresh:             fresh,
+		dsn:               opts.DSN,
+		database:          database,
+		recoveryPoints:    opts.RecoveryPoints,
+		rollbackArtifacts: opts.RollbackArtifacts,
+		artifactDir:       opts.ArtifactDir,
+	}
 	if len(catalog) > 0 {
 		if err := st.migrate(catalog); err != nil {
 			_ = db.Close()
@@ -93,6 +116,22 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 	case actionRefuse:
 		return fmt.Errorf("store: %s", plan.Reason)
 	case actionNoop:
+		return p.verifyIntegrityPG(ctx)
+	case actionVerifyRecoveryPoint:
+		// C3 §4.3 (postgres anchor): catalog at head without a class-B recovery
+		// point is an explicit action, re-created at most once per startup.
+		if err := p.verifyIntegrityPG(ctx); err != nil {
+			return err
+		}
+		state, err := p.probeRecoveryState(ctx)
+		if err != nil {
+			return err
+		}
+		if !state.Converted {
+			return fmt.Errorf("store: recovery point missing and the schema is not converted (%s)", state.Detail)
+		}
+		p.recoveryNote = fmt.Sprintf("recovery point missing at catalog head (%s); attempting one re-create", state.Detail)
+		p.createRecoveryPoint(ctx, normalized)
 		return nil
 	case actionApplyPending:
 		if err := validateApplied(id.Applied, normalized); err != nil {
@@ -119,12 +158,81 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 }
 
 func (p *postgres) applyPendingPG(ctx context.Context, catalog []kernel.MigrationContribution, applied []appliedMigration) error {
-	for _, migration := range pendingMigrations(applied, catalog) {
+	pending := pendingMigrations(applied, catalog)
+	// C3 §4.2 call point 1 (postgres anchor): class-A rollback artifact before
+	// the batch. A failure stops the batch, exactly like the sqlite anchor.
+	if len(pending) > 0 && !p.fresh {
+		if err := p.snapshotBeforeBatchPG(ctx); err != nil {
+			return err
+		}
+	}
+	for _, migration := range pending {
+		// C3 §4.2 call point 2 (postgres anchor): the per-migration class-C
+		// artifact. A fresh database has nothing to recover, so it is skipped.
+		if !p.fresh {
+			if err := p.snapshotBeforePendingPG(ctx, migration.Version); err != nil {
+				return err
+			}
+		}
 		if err := p.applyMigrationPG(ctx, migration); err != nil {
 			return err
 		}
 	}
+	// The postgres runner had no integrity check at all (C3 §4.2 gap): the
+	// converted-shape probe is its symmetric entry.
+	if err := p.verifyIntegrityPG(ctx); err != nil {
+		return err
+	}
+	// C3 §4.2 call point 3: class-B recovery point after a committed batch.
+	if len(pending) > 0 {
+		p.createRecoveryPoint(ctx, catalog)
+	}
 	return nil
+}
+
+// verifyIntegrityPG is the postgres counterpart of the sqlite runner's
+// verifyIntegrity: when the catalog head is reached the live schema must carry
+// the converted temporal contract.
+func (p *postgres) verifyIntegrityPG(ctx context.Context) error {
+	converted, detail, err := postgresConvertedShape(ctx, p.db)
+	if err != nil {
+		return fmt.Errorf("store: postgres shape check: %w", err)
+	}
+	if !converted {
+		// A partially migrated database is a legitimate intermediate state during
+		// a batch, but reaching this point means the ledger is at head.
+		var head int
+		if err := p.db.QueryRowContext(ctx,
+			`SELECT COALESCE(MAX(version), 0) FROM schema_migrations`).Scan(&head); err != nil {
+			return fmt.Errorf("store: postgres ledger head: %w", err)
+		}
+		if head >= 87 {
+			return fmt.Errorf("store: postgres ledger is at v%d but the temporal contract is not converted (%s)", head, detail)
+		}
+	}
+	return nil
+}
+
+// snapshotBeforeBatchPG writes the pre-batch class-A rollback artifact through
+// the injected creator (pg_dump lives in internal/backup; the store keeps no
+// provider dependency).
+func (p *postgres) snapshotBeforeBatchPG(ctx context.Context) error {
+	if p.rollbackArtifacts == nil || strings.TrimSpace(p.dsn) == "" || strings.TrimSpace(p.artifactDir) == "" {
+		p.recoveryNote = "postgres rollback anchors disabled (no artifact creator or directory configured)"
+		return nil
+	}
+	target := filepath.Join(p.artifactDir, fmt.Sprintf("%s.batch-rollback-%s.dump",
+		p.database, time.Now().UTC().Format("20060102T150405.000Z")))
+	return p.rollbackArtifacts.CreateRollbackArtifact(ctx, p.dsn, target)
+}
+
+// snapshotBeforePendingPG writes the per-migration class-C artifact.
+func (p *postgres) snapshotBeforePendingPG(ctx context.Context, version int) error {
+	if p.rollbackArtifacts == nil || strings.TrimSpace(p.dsn) == "" || strings.TrimSpace(p.artifactDir) == "" {
+		return nil
+	}
+	target := filepath.Join(p.artifactDir, fmt.Sprintf("%s.pre-v%04d.dump", p.database, version))
+	return p.rollbackArtifacts.CreateRollbackArtifact(ctx, p.dsn, target)
 }
 
 func (p *postgres) currentSchemaTables(ctx context.Context) ([]string, error) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporalcontract"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -130,7 +131,7 @@ func (s *Service) CreateRecoveryPoint(ctx context.Context, req kernel.RecoveryPo
 			return point, err
 		}
 		summary.SchemaVerified = measure.IntegrityOK && measure.ForeignKeyViolations == 0
-		summary.TypeContractVerified = measure.ConvertedColumns == len(temporalColumns)
+		summary.TypeContractVerified = measure.ConvertedColumns == temporalcontract.Count
 		summary.ChecksumVerified = measure.LedgerSet == sourceSet && measure.BatchVersion == sourceHead
 		if err := verifySQLiteSamples(ctx, target); err != nil {
 			return point, err
@@ -173,8 +174,8 @@ func (s *Service) CreateRecoveryPoint(ctx context.Context, req kernel.RecoveryPo
 		if err != nil {
 			return point, classify(KindArtifactUnreadable, "read restored ledger", err)
 		}
-		summary.SchemaVerified = measure.MeasuredColumns == len(temporalColumns)
-		summary.TypeContractVerified = measure.ConvertedColumns == len(temporalColumns)
+		summary.SchemaVerified = measure.MeasuredColumns == temporalcontract.Count
+		summary.TypeContractVerified = measure.ConvertedColumns == temporalcontract.Count
 		summary.ChecksumVerified = set == sourceSet && head == sourceHead
 		// Sample verification for postgres reuses the converted-shape facts: the
 		// restored database is read natively (timestamptz) so there is no

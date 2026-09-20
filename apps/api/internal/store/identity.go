@@ -37,6 +37,9 @@ type dbIdentity struct {
 	Tables    []string
 	Applied   []appliedMigration
 	OursUsers bool
+	// RecoveryPointMissing reports that the catalog is at head while no verified
+	// class-B recovery point is recorded (C3 §4.3).
+	RecoveryPointMissing bool
 }
 
 type startupAction string
@@ -49,6 +52,9 @@ const (
 	actionAdoptThenPending startupAction = "adopt-then-pending"
 	actionRestoreLedger    startupAction = "restore-ledger"
 	actionApplyPending     startupAction = "apply-pending"
+	// actionVerifyRecoveryPoint is the C3 §4.3 action for "converted catalog at
+	// head, but no verified class-B recovery point recorded".
+	actionVerifyRecoveryPoint startupAction = "verify-recovery-point"
 )
 
 type startupPlan struct {
@@ -216,6 +222,14 @@ func planStartup(id dbIdentity, catalog []kernel.MigrationContribution) (startup
 	case identityOursLedger:
 		pending := pendingMigrations(id.Applied, catalog)
 		if len(pending) == 0 {
+			// C3 §4.3: "catalog at head but no class-B recovery point" must be an
+			// explicit action, never a silent noop.
+			if id.RecoveryPointMissing {
+				return startupPlan{
+					Action: actionVerifyRecoveryPoint,
+					Reason: "schema_migrations matches catalog but no verified recovery point is recorded",
+				}, nil
+			}
 			return startupPlan{Action: actionNoop, Reason: "schema_migrations matches catalog: no migrate"}, nil
 		}
 		return startupPlan{Action: actionApplyPending, Reason: fmt.Sprintf("schema_migrations prefix ok: apply %d pending", len(pending))}, nil
@@ -420,7 +434,15 @@ func (s *Store) probeIdentity() (dbIdentity, error) {
 	if err != nil {
 		return dbIdentity{}, err
 	}
-	return classifyIdentity(tables, applied, ours), nil
+	id := classifyIdentity(tables, applied, ours)
+	if s.recoveryPoints != nil {
+		state, stateErr := s.probeRecoveryState(context.Background())
+		if stateErr != nil {
+			return dbIdentity{}, stateErr
+		}
+		id.RecoveryPointMissing = !state.HasPoint
+	}
+	return id, nil
 }
 
 func (s *Store) listUserTables() ([]string, error) {
@@ -469,7 +491,15 @@ func (p *postgres) probeIdentity(ctx context.Context) (dbIdentity, error) {
 	if err != nil {
 		return dbIdentity{}, err
 	}
-	return classifyIdentity(tables, applied, ours), nil
+	id := classifyIdentity(tables, applied, ours)
+	if p.recoveryPoints != nil {
+		state, stateErr := p.probeRecoveryState(ctx)
+		if stateErr != nil {
+			return dbIdentity{}, stateErr
+		}
+		id.RecoveryPointMissing = !state.HasPoint
+	}
+	return id, nil
 }
 
 func (p *postgres) restoreLedger(ctx context.Context, catalog []kernel.MigrationContribution) error {
