@@ -32,8 +32,10 @@ version: 0.1.0
 | 6 | **测试改写**：`migrate_test.go` / `postgres_test.go` 的 v73+ 追加断言；**金额列断言拆分**（`wallet_accounts.balance_total` / `wallet_ledger_entries.amount_delta` 保持 `bigint`）；leftover 21 名补入 | `apps/api/internal/store/` |
 | 7 | **边界测试重定向**：`apps/api/internal/w040contracttest/` 的用例改指真实迁移（`D-020`） | 既有测试包 |
 | 8 | **`rebuildOperationLog` fail-closed 断言**（`D-019` §5 改动 1–3） | `apps/api/modules/operationlog/migration/` |
-| 9 | **Backup Port 类型表面与 provider**（`D-019` §6 / C3 边界 §4.1）：`kernel.RecoveryPointPort` + `apps/api/internal/backup/`（含 `<recovery-artifact>` 校验、错误分类、restore harness） | 新建 |
+| 9 | **Backup Port 类型表面与 provider**（`D-019` §6 / C3 边界 §4.1）：`kernel.RecoveryPointPort` + `apps/api/internal/backup/`（含 `<recovery-artifact>` 校验、错误分类、restore harness）——**归属 M4 前**（用户 2026-09-20 裁决：**归 R2**，与 `D-021` residual 复审触发同批） | 新建 |
 | 10 | **未发布 baseline 的发布前调整**：`D-014` 允许发布前有记录地拆分/调整 v73–v87 | — |
+
+> **范围修正（用户 2026-09-20 裁决，响应 I-041-002）**：**公共 wire formatter 的实施（`apps/api/internal/handler/rfc3339.go` 由 milli 改固定 6 位）归 R3**，**不属 R2**。R2 只做 Store/持久化层（codec + 迁移 + 仓储），**不改 handler 的响应编码**。故上方第 1–8、10 项即 R2 的全部范围；第 9 项按 M4 前完成。
 
 ## 3. R2 **非目标**（out of scope，不得借 R2 实施）
 
@@ -60,9 +62,9 @@ version: 0.1.0
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 状态 |
 |----|------|-----------------|----------|--------------|------|
-| I-041-001 | required | **Go codec 的公共 API 形态**：函数签名、错误分类、是否导出 `Truncate` 与 sentinel helper——须与 `D-018` 的 Go 对拍验收一致 | M1/M3 | M1 前 | **open** |
-| I-041-002 | required | **公共 wire formatter 的改造落点与是否属 R2**：`apps/api/internal/handler/rfc3339.go` 现为 milli；C2 已冻结 6 位合同，但「改 formatter 代码」归 R2 还是 R3 未定 | M3 | M3 前 | **open** |
-| I-041-003 | required | **Backup provider 的 PG 侧可执行验证环境**：本机无 `psql`/`pg_dump`/`pg_restore`、无常驻 PG；`D-021` 只授权**临时**容器。R2 的 PG 回归是否需要常驻 PG 或 CI 方案 | M3/M4 | M3 前 | **open** |
+| I-041-001 | required | **Go codec 的公共 API 形态**：函数签名、错误分类、是否导出 `Truncate` 与 sentinel helper——须与 `D-018` 的 Go 对拍验收一致 | M1/M3 | M1 前 | **collecting**（在 `GOAL-003` 内定稿并落盘；未经用户裁决的技术细节由审计复审） |
+| I-041-002 | required | **公共 wire formatter 的改造落点与是否属 R2** | M3 | M3 前 | **verified（用户裁决 2026-09-20）**：**归 R3**，R2 不动 handler |
+| I-041-003 | required | **Backup provider 的 PG 侧可执行验证环境**：本机无 `psql`/`pg_dump`/`pg_restore`、无常驻 PG；`D-021` 只授权**临时**容器。R2 的 PG 回归是否需要常驻 PG 或 CI 方案 | M3/M4 | M3 前 | **open**（`GOAL-003` 之后、M3 前的子目标须先行关闭；可能触发 P-004） |
 | I-041-004 | non-blocking | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | R3 | R3 前 | deferred（`I-040-003` 已登记的 R3 侧 residual） |
 
 - **到期 open required 阻断对应门禁**；`deferred` 保留级别并须在 R3 前复核。
