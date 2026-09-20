@@ -177,10 +177,12 @@ func (s *Service) CreateRecoveryPoint(ctx context.Context, req kernel.RecoveryPo
 		summary.SchemaVerified = measure.MeasuredColumns == temporalcontract.Count
 		summary.TypeContractVerified = measure.ConvertedColumns == temporalcontract.Count
 		summary.ChecksumVerified = set == sourceSet && head == sourceHead
-		// Sample verification for postgres reuses the converted-shape facts: the
-		// restored database is read natively (timestamptz) so there is no
-		// canonical-text spelling to re-parse.
-		summary.SampleVerified = summary.TypeContractVerified
+		// C3 §5 item 4 samples on postgres: sentinel columns must be NULL and the
+		// populated columns must read back at microsecond precision.
+		if err := verifyPostgresSamples(ctx, db); err != nil {
+			return point, err
+		}
+		summary.SampleVerified = true
 		if !summary.Passed() {
 			return kernel.RecoveryPoint{}, &Error{Kind: KindTimeContractMismatch, Op: "summary",
 				Err: fmt.Errorf("verification summary incomplete: %+v", summary)}

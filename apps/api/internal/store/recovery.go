@@ -240,6 +240,26 @@ func maxCatalogVersion(catalog []kernel.MigrationContribution) int {
 	return head
 }
 
+// conversionCompletionVersion returns the catalog version at which the workspace-040
+// temporal contract must hold in full, or 0 when this catalog cannot reach that
+// state.
+//
+// The gate is tied to the frozen descriptor ledger rather than to a hardcoded
+// number (GOAL-005 A-002 F-I-005): the last conversion descriptor converts the
+// final tables, so its presence in the catalog means "once it has been applied,
+// every one of the 90 columns must be converted". A deliberately truncated
+// catalog (for example v1..v86, or the pre-conversion v1..v72 used by the
+// rollback tests) never requires the full shape, which is what makes a partial
+// history a legitimate state instead of a contract violation.
+func conversionCompletionVersion(catalog []kernel.MigrationContribution) int {
+	for _, migration := range catalog {
+		if migration.Name == "vp040_temporal_digital_offer" {
+			return migration.Version
+		}
+	}
+	return 0
+}
+
 // createRecoveryPoint creates the class-B recovery point and records the marker.
 // Creating B must never block startup (C3 §4.3 item 3): a failure is recorded in
 // recoveryNote and surfaced through RecoveryPointState/RecoveryNote.
@@ -312,7 +332,11 @@ func (s *Store) probeRecoveryState(ctx context.Context) (recoveryState, error) {
 		state.Detail = "in-memory store"
 		return state, nil
 	}
-	if _, err := os.Stat(sqliteMarkerPath(s.path)); err == nil {
+	// A marker only counts when it parses: a corrupt/partial file is "no verified
+	// point", not a satisfied gate (GOAL-005 A-002 F-I-004).
+	if _, has, err := readRecoveryMarker(sqliteMarkerPath(s.path)); err != nil {
+		state.Detail = fmt.Sprintf("recovery marker is unreadable: %v", err)
+	} else if has {
 		state.HasPoint = true
 	}
 	converted, detail, err := sqliteConvertedShape(s.db)

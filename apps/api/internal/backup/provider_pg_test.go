@@ -180,6 +180,51 @@ func TestPGLegacyArtifactMustFail(t *testing.T) {
 	}
 }
 
+// TestPGMidBatchArtifactMustFail is the C3 §2 class-C reverse assertion on
+// postgres: a dump taken while the batch is in flight (mixed shape) must be
+// rejected with a contract classification, exactly like the sqlite class-C case
+// (GOAL-005 A-002 F-I-006).
+func TestPGMidBatchArtifactMustFail(t *testing.T) {
+	adminDSN := requirePgBackupEnv(t)
+	ctx := context.Background()
+	catalog := migrationCatalog(t)
+
+	midDSN := pgScratch(t, adminDSN, "vp040bkp_mid")
+	st, err := store.Open(ctx, store.OpenOptions{
+		Dialect: kernel.DialectPostgres, DSN: midDSN, ConnectTimeout: 20 * time.Second,
+	}, catalog[:v73Head])
+	if err != nil {
+		t.Fatalf("bootstrap mid-batch source: %v", err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatalf("close mid-batch source: %v", err)
+	}
+
+	workDir := t.TempDir()
+	provider := PgProvider{AdminDSN: adminDSN, ClientImage: pgClientImage(), WorkDir: workDir}
+	service := NewService(workDir)
+	service.RegisterProvider(provider)
+
+	_, err = service.CreateRecoveryPoint(ctx, kernel.RecoveryPointRequest{
+		Dialect:         kernel.DialectPostgres,
+		SourceID:        midDSN,
+		CatalogVersion:  len(catalog),
+		TimeContract:    kernel.TimeContractVP040Timestamptz,
+		DestinationHint: filepath.Join(workDir, "midbatch.dump"),
+	})
+	if err == nil {
+		t.Fatal("a mid-batch postgres source must not yield a recovery point")
+	}
+	switch kind := KindOf(err); kind {
+	case KindTimeContractMismatch, KindTemporalColumnSetIncomplete:
+		t.Logf("mid-batch postgres artifact rejected as expected: %s", kind)
+	case KindArtifactNotFound, KindArtifactUnreadable, KindToolFailure:
+		t.Fatalf("mid-batch postgres artifact rejected with the wrong classification %q: %v", kind, err)
+	default:
+		t.Fatalf("mid-batch postgres classification = %q, want a contract classification: %v", kind, err)
+	}
+}
+
 // TestPgProviderCommandConstruction pins the tool invocation without needing a
 // server: the dump and restore commands must carry the C3 flags.
 func TestPgProviderCommandConstruction(t *testing.T) {

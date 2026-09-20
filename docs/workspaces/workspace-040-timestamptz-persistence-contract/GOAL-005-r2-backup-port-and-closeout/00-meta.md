@@ -61,7 +61,7 @@ serves_summary: 承接 Root R2 的 M4：落码 D-016 第 9 项（kernel.Recovery
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 |
 |----|------|----------|----------|------|------|
 | I-041-004 | non-blocking（继承） | PG 15/16/17 跨版本 `pg_restore` 兼容矩阵 | R3 前 | deferred（R3 侧 residual；Root `D-017` §3 约束②） | `I-040-003` 登记的 R3 residual |
-| I-041-006 | required（本目标新增） | 部分升级语义：descriptor 各自事务下 v85 类失败会留下 v73–v84 已提交；M4 是否需要批级快照/整批回滚，还是接受为 C3 恢复边界内 | B | **open（须用户 P-004）** | `GOAL-004/03-audit/A-002-independent-m3-implementation.md` 待复审 7；`migrate.go` `applyPending` |
+| I-041-006 | required（本目标新增） | 部分升级语义：descriptor 各自事务下 v85 类失败会留下 v73–v84 已提交 | B | **verified（用户 2026-09-20 P-004：接受现有语义——可续跑 + A/C 回滚，不做批级原子化）** | `01-decision/D-001-partial-upgrade-and-c3-anchor-scope.md` |
 
 ## 父目标
 

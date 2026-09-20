@@ -16,6 +16,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/backup"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/cache"
 	telegraminternal "github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
@@ -216,6 +217,7 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 	if cfg.DBDialect != "" {
 		dialect = kernel.Dialect(cfg.DBDialect)
 	}
+	recoveryPoints, rollbackArtifacts, recoveryArtifactDir := recoveryWiring(dialect, cfg)
 	st, err := store.Open(context.Background(), store.OpenOptions{
 		Dialect:          dialect,
 		Path:             cfg.DBPath,
@@ -223,6 +225,13 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 		PoolMaxOpenConns: cfg.DBPoolMaxOpen,
 		PoolMaxIdleConns: cfg.DBPoolMaxIdle,
 		ConnMaxLifetime:  cfg.DBConnLifetime,
+		// workspace-040 R2 M4 / C3 §4.2: the composition root owns provider
+		// selection and the artifact directory, so the production startup path
+		// actually takes the class-A/class-B anchors instead of silently
+		// skipping them (GOAL-005 A-002 F-I-002).
+		RecoveryPoints:    recoveryPoints,
+		RollbackArtifacts: rollbackArtifacts,
+		ArtifactDir:       recoveryArtifactDir,
 	}, catalog)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
@@ -243,6 +252,71 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 	return st, nil
 }
 
+// recoveryWiring builds the C3 §4.2 anchors for the configured dialect: the
+// recovery-point port, the class-A/class-C artifact creator and the directory
+// both use. Returning nil values disables the anchors, and the store records
+// that fact instead of pretending a recovery point exists.
+func recoveryWiring(dialect kernel.Dialect, cfg *config.Config) (kernel.RecoveryPointPort, store.RollbackArtifactCreator, string) {
+	artifactDir := recoveryArtifactsDir(cfg)
+	if artifactDir == "" {
+		return nil, nil, ""
+	}
+	service := backup.NewService(artifactDir)
+	if dialect == kernel.DialectPostgres {
+		if strings.TrimSpace(cfg.DBDSN) == "" {
+			return nil, nil, ""
+		}
+		provider := backup.PgProvider{
+			AdminDSN:    cfg.DBDSN,
+			ClientImage: backup.DefaultPgClientImage,
+			WorkDir:     artifactDir,
+		}
+		service.RegisterProvider(provider)
+		return service, provider, artifactDir
+	}
+	// SQLite needs no rollback creator: the runner writes its own VACUUM INTO
+	// artifacts next to the database file.
+	return service, nil, artifactDir
+}
+
+// recoveryArtifactsDir is where recovery/rollback artifacts live. It sits beside
+// the configured database file (sqlite) or under the user cache directory keyed
+// by the DSN host/database (postgres).
+func recoveryArtifactsDir(cfg *config.Config) string {
+	if strings.TrimSpace(cfg.DBPath) != "" {
+		return filepath.Join(filepath.Dir(cfg.DBPath), "recovery")
+	}
+	if strings.TrimSpace(cfg.DBDSN) == "" {
+		return ""
+	}
+	key := sanitizeArtifactKey(cfg.DBDSN)
+	if key == "" {
+		return ""
+	}
+	base, err := os.UserCacheDir()
+	if err != nil || base == "" {
+		base = os.TempDir()
+	}
+	return filepath.Join(base, "schema-ui-core", "recovery", key)
+}
+
+// sanitizeArtifactKey turns a DSN into a filesystem-safe directory name.
+func sanitizeArtifactKey(dsn string) string {
+	var b strings.Builder
+	for _, r := range dsn {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if len(out) > 80 {
+		out = out[:80]
+	}
+	return out
+}
 func newAuthSessionRepository(st kernel.Store) *authsession.Repository {
 	return authsession.NewRepository(st)
 }

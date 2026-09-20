@@ -40,12 +40,18 @@ func (PgProvider) Dialect() string { return "postgres" }
 
 const pgMountPoint = "/vp040-backup"
 
+// DefaultPgClientImage is the container image that provides pg_dump/pg_restore
+// when the host has no client binaries (Root D-017 §3 constraint ③). Its major
+// version must match the server major version, since the C3 boundary records the
+// combination instead of assuming cross-major compatibility.
+const DefaultPgClientImage = "postgres:15-alpine"
+
 // timeNow is injectable for tests that need deterministic database names.
 var timeNow = func() time.Time { return time.Now() }
 
 func (p PgProvider) image() string {
 	if strings.TrimSpace(p.ClientImage) == "" {
-		return "postgres:15-alpine"
+		return DefaultPgClientImage
 	}
 	return p.ClientImage
 }

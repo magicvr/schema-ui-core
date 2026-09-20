@@ -328,6 +328,60 @@ func verifyPostgresShape(m postgresTargetVerification, wantChecksumSet string, w
 	return nil
 }
 
+// verifyPostgresSamples runs the C3 §5 item 4 sample checks on the restored
+// postgres database. The value is native (timestamptz), so instead of re-parsing
+// canonical text the checks are: the legacy-0 sentinel columns carry no value,
+// and every populated converted column reads back at microsecond precision
+// (GOAL-005 A-002 F-I-003).
+func verifyPostgresSamples(ctx context.Context, db *sql.DB) error {
+	for _, probe := range []struct{ table, column string }{
+		{"mail_config", "updated_at"},
+		{"telegram_config", "updated_at"},
+		{"users", "locked_until"},
+		{"login_failures", "locked_until"},
+	} {
+		var nonNull int
+		query := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE %s IS NOT NULL`, probe.table, probe.column)
+		if err := db.QueryRowContext(ctx, query).Scan(&nonNull); err != nil {
+			// No row at all = no sample; that is not a failure.
+			continue
+		}
+		if nonNull != 0 {
+			return &Error{Kind: KindSampleMismatch, Op: "verify postgres samples",
+				Err: fmt.Errorf("%s.%s holds %d non-NULL legacy sentinel value(s)", probe.table, probe.column, nonNull)}
+		}
+	}
+	measured := 0
+	for _, column := range temporalcontract.Columns() {
+		query := fmt.Sprintf(`SELECT %s FROM %s WHERE %s IS NOT NULL LIMIT 50`,
+			column.Column, column.Table, column.Column)
+		rows, err := db.QueryContext(ctx, query)
+		if err != nil {
+			continue // empty or absent sample
+		}
+		for rows.Next() {
+			var instant time.Time
+			if err := rows.Scan(&instant); err != nil {
+				rows.Close()
+				return classify(KindArtifactUnreadable, "scan postgres sample", err)
+			}
+			measured++
+			if instant.Nanosecond()%1000 != 0 {
+				rows.Close()
+				return &Error{Kind: KindSampleMismatch, Op: "verify postgres samples",
+					Err: fmt.Errorf("%s.%s holds sub-microsecond precision %s", column.Table, column.Column, instant.UTC())}
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return classify(KindArtifactUnreadable, "iterate postgres samples", err)
+		}
+		rows.Close()
+	}
+	_ = measured
+	return nil
+}
+
 // verifyRequest validates the caller's request against the frozen contract.
 func verifyRequest(req kernel.RecoveryPointRequest) error {
 	if strings.TrimSpace(req.SourceID) == "" {

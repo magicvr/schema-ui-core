@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.3.0
+version: 0.4.0
 ---
 
 # 审计台账 · GOAL-005-r2-backup-port-and-closeout（R2 M4）
@@ -18,16 +18,17 @@ version: 0.3.0
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-041-006 | 已裁决（D-001 accepted）；`00-meta` 仍写 open | A-002 F-I-007 |
-| I-041-004 | deferred（R3 前，non-blocking） | 不阻断 R2；本轮实测 15.4+15.19 |
+| I-041-006 | **verified**（`D-001` accepted，用户 2026-09-20） | A-002 F-I-007 指出 `00-meta` 未同步，已修正 |
+| I-041-004 | deferred（R3 前，non-blocking） | 不阻断 R2；本轮实测 server 15.4 + 容器客户端 15.19（同主版本） |
 | 共享资料引用 | none | `workspace.md` `shared_materials_catalog: none` |
 
 ## 意见索引
 
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
-| A-001 | self | 2026-09-20 | R2 关门自审（M4 检查点 C）：判据 M1–M4 逐项 + C3 §4.2/§4.3 + 偏差 8 项 | conditional | independent 关门审计未运行；自审列出 8 项交复审判定 | `03-audit/A-001-self-r2-closeout.md` |
-| A-002 | independent | 2026-09-20 | R2 关门（M1–M4 + C3 §4.2/§4.3/§3.1/§5.1 + 分母 + 未声明回归） | conditional | M1–M3 与 D-021 residual 可核对；开放 required = 3（PG C 重试碰撞、composition 未注入、PG 样本别名） | `03-audit/A-002-independent-r2-closeout.md` |
+| A-001 | self | 2026-09-20 | R2 关门自审：判据 M1–M4 逐项 + C3 §4.2/§4.3 + 偏差 8 项 | conditional | 交 independent 复审判定 | `03-audit/A-001-self-r2-closeout.md` |
+| A-002 | independent | 2026-09-20 | R2 关门审计（grok-build grok-4.6 · high）：M1–M4 + C3 §3.1/§4.2/§4.3/§5/§5.1/§6 + 分母一致性 + 未声明回归 | **conditional** | M1–M3 与 `D-021` residual 可核对；开放 required = 3（PG 类 C 命名、composition 未注入、PG 样本别名）；另有 recommended F-I-004～F-I-007 | `03-audit/A-002-independent-r2-closeout.md` |
+| A-003 | self（编排器响应） | 2026-09-20 | 响应 A-002 全部意见 | **pass** | 3 required 全部 `fixed`；F-I-004/005/006 fixed；F-I-007（元数据同步）fixed；待 independent 复审确认 | `03-audit/A-003-response-to-closeout-audit.md` |
 
 ## R2 关门审计范围
 
@@ -38,17 +39,31 @@ version: 0.3.0
 
 - **source**：independent
 - **auditor**：grok-build (grok-4.6 · reasoning high)
-- **类型** / **scope**：close-out · Root `D-016` §4 M1–M4 + C3 调用点/机械身份/错误分类/分母
-- **verdict**：conditional
+- **verdict**：conditional（open required = 3）
 - **完整意见**：[`03-audit/A-002-independent-r2-closeout.md`](A-002-independent-r2-closeout.md)
 
 ### 结论摘要
 
-- M1–M3 与 `D-021` residual 三项 **可视为已满足**（A-048 `fixed`；GOAL-003/004 required 已闭合）。
-- Port 表面、SQLite harness、PG 快乐路径、§5.1 A 类反向断言 **本轮真实 PG 复跑绿**。
-- 开放 required = **3**：F-I-001 PG 类 C 文件名挡住可续跑；F-I-002 默认 composition 把无 B 做成 `actionNoop`；F-I-003 PG `SampleVerified` 是类型检查别名。
-- **门禁状态**：M4 检查点 C 未完成 → R2 未放行。本意见不改 `status` / `progress`。
+- M1–M3 与 `D-021` residual 三项 **可视为已满足**（`GOAL-002/03-audit/A-048` `fixed`；`GOAL-003`/`GOAL-004` required 已闭合）。
+- Port 表面、SQLite harness、PG 快乐路径、§5.1 的 A 类反向断言 **真实 PG 复跑绿**；90 列分母与 inventory v0.3 **逐行一致**（90 行 / 44 表）。
+- 开放 required = **3**：F-I-001（PG 类 C 固定文件名挡住「可续跑」）、F-I-002（默认 composition 不注入 Port，§4.3 在生产入口是空操作）、F-I-003（PG `SampleVerified` 是类型检查别名）。
+- recommended：F-I-004（marker 只看存在不解析）、F-I-005（`verifyIntegrityPG` 写死 87）、F-I-006（PG 缺类 C 反向断言）、F-I-007（`00-meta` 未同步 `I-041-006`）。
+
+## A-003 · self（编排器响应）· 2026-09-20
+
+- **verdict**：**pass**（A-002 的 3 条 required 与 4 条 recommended 全部处置）
+- **完整响应**：[`03-audit/A-003-response-to-closeout-audit.md`](A-003-response-to-closeout-audit.md)
+
+| finding | 处置 |
+|---------|------|
+| `F-I-001`（required，PG 类 C 命名） | **fixed**：`<db>.pre-v%04d-<ts(ms)>-<hex4>.dump`；真实 PG 升级链（A=1/C=1/B=1）与 composition 全绿 |
+| `F-I-002`（required，composition 未注入） | **fixed**：`composition.recoveryWiring` 按方言构造 `backup.Service` + `PgProvider`，并传 `ArtifactDir`（sqlite：DB 同级 `recovery/`；PG：用户缓存目录按 DSN 派生） |
+| `F-I-003`（required，PG 样本） | **fixed**：新增 `verifyPostgresSamples`（sentinel 列全 NULL + 抽样微秒精度），service 的 PG 分支调用它 |
+| `F-I-004`（recommended） | **fixed**：`probeRecoveryState` 解析 marker；不可解析 = 未满足并把原因写入 `Detail` |
+| `F-I-005`（recommended） | **fixed（数据驱动）**：`conversionCompletionVersion(catalog)` 以冻结台账最后一个转换描述符为门禁版本，裁短历史（v1–v72 / v1–v86）不触发全量要求 |
+| `F-I-006`（recommended） | **fixed**：`TestPGMidBatchArtifactMustFail`（真实 PG 混合形状 → `TimeContractMismatch`） |
+| `F-I-007`（recommended） | **fixed**：`00-meta` 的 `I-041-006` 同步为 verified（本文件信息就绪表同步） |
 
 ## 关门审计状态（2026-09-20）
 
-self A-001 与 independent A-002 均已落盘，均为 `conditional`。响应归 `/govern`。在 A-002 三条 required 合法闭合之前，不得将 GOAL-005 标 `done`，不得将 Root R2 标完成。
+`self` A-001（`conditional`）→ `independent` A-002（`conditional`，required = 3）→ 编排器 A-003（**pass**，全部固定并附证据）。**检查点 C 的成立仍需 independent 复审确认**（已发起第二次独立审计）；在此之前 GOAL-005 不得标 `done`，Root R2 不得标完成，Root `progress` 保持 1/3。

@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
@@ -116,11 +118,11 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 	case actionRefuse:
 		return fmt.Errorf("store: %s", plan.Reason)
 	case actionNoop:
-		return p.verifyIntegrityPG(ctx)
+		return p.verifyIntegrityPG(ctx, conversionCompletionVersion(normalized))
 	case actionVerifyRecoveryPoint:
 		// C3 §4.3 (postgres anchor): catalog at head without a class-B recovery
 		// point is an explicit action, re-created at most once per startup.
-		if err := p.verifyIntegrityPG(ctx); err != nil {
+		if err := p.verifyIntegrityPG(ctx, conversionCompletionVersion(normalized)); err != nil {
 			return err
 		}
 		state, err := p.probeRecoveryState(ctx)
@@ -180,7 +182,7 @@ func (p *postgres) applyPendingPG(ctx context.Context, catalog []kernel.Migratio
 	}
 	// The postgres runner had no integrity check at all (C3 §4.2 gap): the
 	// converted-shape probe is its symmetric entry.
-	if err := p.verifyIntegrityPG(ctx); err != nil {
+	if err := p.verifyIntegrityPG(ctx, conversionCompletionVersion(catalog)); err != nil {
 		return err
 	}
 	// C3 §4.2 call point 3: class-B recovery point after a committed batch.
@@ -193,22 +195,29 @@ func (p *postgres) applyPendingPG(ctx context.Context, catalog []kernel.Migratio
 // verifyIntegrityPG is the postgres counterpart of the sqlite runner's
 // verifyIntegrity: when the catalog head is reached the live schema must carry
 // the converted temporal contract.
-func (p *postgres) verifyIntegrityPG(ctx context.Context) error {
+// verifyIntegrityPG is the postgres counterpart of the sqlite runner's
+// verifyIntegrity. needConverted is the catalog version at which the temporal
+// contract must hold (the catalog head), so the check is derived from the
+// catalog instead of a hardcoded version (GOAL-005 A-002 F-I-005).
+func (p *postgres) verifyIntegrityPG(ctx context.Context, needConverted int) error {
 	converted, detail, err := postgresConvertedShape(ctx, p.db)
 	if err != nil {
 		return fmt.Errorf("store: postgres shape check: %w", err)
 	}
-	if !converted {
-		// A partially migrated database is a legitimate intermediate state during
-		// a batch, but reaching this point means the ledger is at head.
-		var head int
-		if err := p.db.QueryRowContext(ctx,
-			`SELECT COALESCE(MAX(version), 0) FROM schema_migrations`).Scan(&head); err != nil {
-			return fmt.Errorf("store: postgres ledger head: %w", err)
-		}
-		if head >= 87 {
-			return fmt.Errorf("store: postgres ledger is at v%d but the temporal contract is not converted (%s)", head, detail)
-		}
+	if converted {
+		return nil
+	}
+	var head int
+	if err := p.db.QueryRowContext(ctx,
+		`SELECT COALESCE(MAX(version), 0) FROM schema_migrations`).Scan(&head); err != nil {
+		return fmt.Errorf("store: postgres ledger head: %w", err)
+	}
+	// A partially migrated database is a legitimate intermediate state while a
+	// batch is in flight (D-001: resumable), but a ledger at the catalog head
+	// that is not converted is a contract violation.
+	if needConverted > 0 && head >= needConverted {
+		return fmt.Errorf("store: postgres ledger is at v%d (head %d) but the temporal contract is not converted (%s)",
+			head, needConverted, detail)
 	}
 	return nil
 }
@@ -216,6 +225,15 @@ func (p *postgres) verifyIntegrityPG(ctx context.Context) error {
 // snapshotBeforeBatchPG writes the pre-batch class-A rollback artifact through
 // the injected creator (pg_dump lives in internal/backup; the store keeps no
 // provider dependency).
+// randomSuffix returns 4 hex characters for artifact-name uniqueness.
+func randomSuffix() string {
+	buf := make([]byte, 2)
+	if _, err := rand.Read(buf); err != nil {
+		return "0000"
+	}
+	return hex.EncodeToString(buf)
+}
+
 func (p *postgres) snapshotBeforeBatchPG(ctx context.Context) error {
 	if p.rollbackArtifacts == nil || strings.TrimSpace(p.dsn) == "" || strings.TrimSpace(p.artifactDir) == "" {
 		p.recoveryNote = "postgres rollback anchors disabled (no artifact creator or directory configured)"
@@ -231,7 +249,11 @@ func (p *postgres) snapshotBeforePendingPG(ctx context.Context, version int) err
 	if p.rollbackArtifacts == nil || strings.TrimSpace(p.dsn) == "" || strings.TrimSpace(p.artifactDir) == "" {
 		return nil
 	}
-	target := filepath.Join(p.artifactDir, fmt.Sprintf("%s.pre-v%04d.dump", p.database, version))
+	// The name carries a timestamp AND a random suffix: PgProvider.Create refuses
+	// to overwrite an existing artifact, so a fixed per-version name would make a
+	// retry after a failed batch fail the whole open (GOAL-005 A-002 F-I-001).
+	target := filepath.Join(p.artifactDir, fmt.Sprintf("%s.pre-v%04d-%s-%s.dump",
+		p.database, version, time.Now().UTC().Format("20060102T150405.000"), randomSuffix()))
 	return p.rollbackArtifacts.CreateRollbackArtifact(ctx, p.dsn, target)
 }
 
