@@ -50,15 +50,20 @@ version: 0.1.0
 - **边界**：与 v73 同批改「DDL 字面 + 三处 INSERT 格式」；**不**改 v1 checksum（`identity.go` 的 restore 字面不在 `0001:r2-baseline` 的 `r2BaselineDDL` 哈希输入内）；authsession `schemaMigrationsDDL`（`migration.go:18-23`）属 **v1，禁止改**。
 - **column 序权威**（A-032 建议已采纳）：主权威 = v72 已 apply 库的 `PRAGMA table_info(users)`（测试夹具 / `OpenWithCatalog`，**不用生产库**）；交叉核对 = 全局版本序；**禁止**按模块文件分组拼列序。
 
-## 3. 待用户 P-004 裁决（本响应不静默选定）
+## 3. 已由用户 P-004 裁决（不再是开放项）
 
 **F-I-021 的 FK 重建模式**（A-032 明确「须用户书面处置，本审不代选，仅给建议」）：
 
-| 选项 | 内容 | A-032 判断 |
-|------|------|-----------|
-| **A. F-5 子女先行 + TEMP 快照**（A-032 建议） | 与已生产的 `rebuildOperationLogWithSessions` 同构；FK 全程 ON；不改 store runner；失败整事务回滚。代价：必须冻结**完整子表清单**，跨 descriptor 子表按 **live** DDL 原样重建 | **推荐** |
-| **B. runner 级官方 12 步** | 引擎层可行且可避免 drop 跨 descriptor 子表；但须把 `applyMigration` 改为 `Conn` 钉住、迁移窗口全局关 FK、与 `assertForeignKeysOn` 对账 | 平台变更，超出本目标冻结面 |
-| **C. 父表 + 全部子表并进同一 descriptor** | `dict_types`/`scheduled_tasks` 已如此 | 把 `notifications`/`user_mfa` 并进 v74 会**抢走** v81/v80 的时间列转换、破坏已接受 allocation → **不推荐** |
+- **用户 2026-09-20 裁决 = 选项 A（F-5 子女先行 + TEMP 快照）**；并同时裁决**跨 descriptor 子表 = 选项 A（两次重建：v74 先修 FK，v80/v81 再转类型）**。
+- **落盘**：child `01-decision/D-019-fk-parent-rebuild-mode.md`（`status: accepted`）。其中含：
+  - §1 F-5 十步序列（单事务）与裸四步的适用前提；
+  - §2 **每张父表的完整子表清单**（10 张引用 `users` 的表逐张列出，含三张无时间列联接表）与 live DDL 权威；
+  - §3 跨 descriptor 子表两次重建的切法（明确**不**把 v80/v81 的时间列转换并进 v74）；
+  - §4 v73 的 DDL 字面 + 四处 `applied_at` 写入路径目标形态（F-I-022 关闭要求）；
+  - §5 `rebuildOperationLog` 最小安全改动（rename 前 fail-closed 断言）+ append-only 边界论证；
+  - §6 PG 显式 DDL 属 R1 冻结交付。
+- **未选**：runner 级官方 12 步 / 并进同一 descriptor / 拆独立子目标（理由均已记入 `D-019`「未选方案」）。
+- **边界**：该裁决满足 **F-I-021 关闭要求第 1/3/4 项**；第 2 项（完整子表清单 + live DDL 权威）以 `D-019` §2/§3 为载体，**接受与否由 independent 复审判定**；第 5 项见 §5。**F-I-021 本条不自行闭合。**
 
 ## 4. 仍开放（不得放行）
 

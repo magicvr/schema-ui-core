@@ -42,8 +42,9 @@ version: 0.1.0
 | E-026 | 2026-09-20 | D-015 秒/毫秒族措辞收口与 D-012/D-013 编号限定（裁决 B） | recorded | `02-execution/E-026-d015-seconds-family-and-d012-scoping.md` |
 | E-027 | 2026-09-20 | A-030 独立审计响应与缺陷修正（含 `#5` 锁谓词方向改正） | recorded | `02-execution/E-027-a030-response-and-defect-fixes.md` |
 | E-028 | 2026-09-20 | 逐表 rebuild DDL 前置调查：发现 FK 父表重建阻塞 | recorded | `02-execution/E-028-fk-parent-rebuild-blocker.md` |
+| E-029 | 2026-09-20 | A-032 响应与 FK 重建模式定案（P-004 裁决 F-5） | recorded | `02-execution/E-029-fk-rebuild-mode-decided.md` |
 
-> 索引行序自本版起为 **E-001 → E-028 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
+> 索引行序自本版起为 **E-001 → E-029 严格递增**（A-029/A-030 **F-I-019** 状态维持 closed）。
 >
 > **Git checkpoint**：本轮（E-025/E-026）落盘后提交 `2d0734a1` — `govern(workspace-040): C2 freeze candidate batch 1 (90-column contract, predicate SQL, descriptor ledger)`。只暂存显式 owned paths（15 个文件，全部位于 workspace-040 与 Root `D-015`），未使用 `git add -A`；`apps/**` 无变更。commit hash 不作为审计或验收证据，仅用于可追溯。
 
