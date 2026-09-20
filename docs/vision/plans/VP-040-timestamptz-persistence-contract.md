@@ -2,12 +2,12 @@
 doc_type: vision-plan
 id: VP-040-timestamptz-persistence-contract
 title: DB 时间列 timestamptz 持久化合同
-status: planned
+status: active
 vision_ref: schema-ui-core-admin-foundation@0.4.0
-lead_workspace:
+lead_workspace: workspace-040-timestamptz-persistence-contract
 created: 2026-09-19
-updated: 2026-09-19
-version: 0.1.0
+updated: 2026-09-20
+version: 0.2.0
 parent: null
 ---
 
@@ -17,12 +17,12 @@ parent: null
 
 | 项 | 值 |
 |-----|-----|
-| status | **`planned`**（2026-09-19 · v0.1.0 · 0 区 · **停放至 VP-039 波次之后**） |
+| status | **`active`**（2026-09-20 · v0.2.0 · 1 个 delivery 区 · `workspace-040-timestamptz-persistence-contract`） |
 | 组合位置 | **架构分支 · C1**（`RES-T03-tz` / `RT-T03`）；承接 VP-035 标为「现在修」、因当时红线禁止改 schema 而只登记的时间列合同 |
 | 计划阶段 Vision Review | [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md) self `pass`（0 required；本 VP 为同审查的停放意图） |
-| 激活门禁 | **硬门禁**：不得在 [VP-039](VP-039-version-maintenance-diagnostics.md) 仍为 `planned` 或 `active` 时激活，**除非用户书面改序**。此外须：架构类 freshness、方言物理类型（`I-040-001`）在激活前至少有默认候选、激活就绪 self Review、slug 确认。**本文件不是激活许可。** |
+| 激活门禁 | **已满足（2026-09-20）**：① [VP-039](VP-039-version-maintenance-diagnostics.md) 已 `closed`；② `I-040-001` 已登记 R1 默认候选（尚未最终冻结）；③ 架构类 freshness `6197e802` → `b0a6789b` PASS；④ 激活就绪 self Review [VRev-104](../reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`；⑤ slug/Root 已由 `/govern` scaffold。**本文件仍不是实现完成或关门证据。** |
 | 基础设施边界 | 不消耗 A3 多实例、Redis、MQ、搜索引擎 trigger；不引入 ORM / 第三库；不重开 VP-013 方言决策 |
-| 与 VP-039 | **正交、串行**。用户 2026-09-19 裁决：先 VP-039，本 VP 本波之后再激活；禁止把 schema 迁移并进维护提示 VP |
+| 与 VP-039 | **正交、串行**。VP-039 波次已于 2026-09-19 `closed`；本 VP 已于 2026-09-20 激活；禁止把 schema 迁移并进维护提示 VP |
 
 ## 用户已裁决（2026-09-19 · P-004）
 
@@ -34,7 +34,7 @@ parent: null
 
 ## 意图
 
-Admin 时区 / 数字 / 货币**展示与输入**已由 VP-020 交付，但持久化层时间列仍普遍为 SQLite 兼容的 `INTEGER` epoch。VP-035 R2/R3 核对：`apps/api` 内 `timestamptz` 命中 0；`RT-T03` 保持 `registered`。这不是符合性漏做（从未写入已交付分母），而是架构分支未立项的持久化合同。
+Admin 时区 / 数字 / 货币**展示与输入**已由 VP-020 交付，但持久化层时间列仍普遍为 SQLite 兼容的 `INTEGER` epoch。VP-035 R2/R3 核对：`apps/api` 内 `timestamptz` 命中 0；`RT-T03` 已由本 VP 承接并进入 `active`。这不是符合性漏做（从未写入已交付分母），而是架构分支正在实施的持久化合同。
 
 本 VP 冻结并交付 **Store 时间列合同**：生产权威 PostgreSQL 使用 `timestamptz`（或与之合同平等的物理类型）；SQLite 内嵌默认必须合同平等、不得残缺；双方言走同一不可变迁移台账；handler / 模块公共契约继续只打本模块 Repository，禁止把驱动时间类型泄漏进公共面。
 
@@ -73,7 +73,7 @@ Admin 时区 / 数字 / 货币**展示与输入**已由 VP-020 交付，但持�
 5. **范围保持**：未引入 ORM / 第三库 / Redis / MQ / 多实例；未把 Admin 维护提示或业务域混入。
 6. **证据与审计**：退出矩阵与必要独立意见已落盘，开放 required = 0，并经用户确认关门。
 
-## 纲领路线图（实现层由 `/govern` 承接；**激活前不建区**）
+## 纲领路线图（实现层由 `/govern` 承接；工作区已建立，R1/R2/R3 尚未实施）
 
 ```text
 R1 合同与分母冻结：方言物理类型、列清单、零值、备份 residual
@@ -85,17 +85,17 @@ R1 合同与分母冻结：方言物理类型、列清单、零值、备份 resi
 
 | id | 要回答的问题 | 级别 | 影响门禁 | 最晚阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|--------------|------|----------|----------|------------------|------|-------------|-------------|
-| I-040-001 | SQLite 用什么物理类型与 PG `timestamptz` 合同平等？（TEXT RFC3339 / INTEGER epoch+约定 / 其他） | required | 阻断 R1 冻结与 R2 迁移；**建议激活前有默认候选** | R1 | 对照 VP-013 合同平等原则与现有 INTEGER 读写；禁止「PG 改了、SQLite 残缺」 | open | — | 未冻结 |
+| I-040-001 | SQLite 用什么物理类型与 PG `timestamptz` 合同平等？（TEXT RFC3339 / INTEGER epoch+约定 / 其他） | required | 阻断 R1 冻结与 R2 迁移；**激活前默认候选已登记** | R1 | 对照 VP-013 合同平等原则与现有 INTEGER/BIGINT 读写；禁止「PG 改了、SQLite 残缺」 | collecting | R1 冻结前复核 | 激活默认候选：SQLite `INTEGER` / PostgreSQL `BIGINT`，暂按 UTC Unix seconds；非最终冻结，毫秒字段须单独分类 |
 | I-040-002 | 哪些列进首波分母？`created_at`/`updated_at`/`expires_at`/`deleted_at`/`archived_at` 是否全覆盖？金额/flag/version 如何排除？ | required | 阻断 R1/R2 | R1 | 全仓扫描 INTEGER 时间列 vs 非时间 INTEGER | open | — | — |
 | I-040-003 | 存量库升级策略与备份 residual？无产品搬运器是否再次声明？ | required | 阻断 R1 方案与判据 4 | R1 | 对照 VP-013/016 dump 路径；用户书面接受或不接受 residual | open | — | — |
 | I-040-004 | 与 VP-020 展示合同的回归矩阵（会话时区、UTC 存储） | required | 阻断 R3 | R1 | 复用 VP-020 验收用例，补存储形状变更对照 | open | — | — |
-| I-040-005 | 激活前架构类 freshness；且 VP-039 已 `closed` 或用户书面改序 | required | **阻断激活** | 激活前 | `/vision` 核对 VP-039 status + 五域 freshness | open | 用户可书面改序 | 不阻断 `planned` |
+| I-040-005 | 激活前架构类 freshness；且 VP-039 已 `closed` 或用户书面改序 | required | **阻断激活** | 激活前 | `/vision` 核对 VP-039 status + 五域 freshness | verified | — | VRev-104 `pass`：VP-039 `closed`，freshness `6197e802` → `b0a6789b` PASS，slug 已确认并开区 |
 
 ## 工作区绑定
 
 | workspace_id | root_goal | role | joined | notes |
 |--------------|-----------|------|--------|-------|
-| — | — | delivery | — | `planned` · 0 区 · **停放**；VP-039 波次后再交 `/vision` 激活 |
+| workspace-040-timestamptz-persistence-contract | GOAL-001-timestamptz-persistence-contract | delivery | 2026-09-20 | `active` · Root `active · 0/3`；R1/R2/R3 由 `/govern` 按路线图承接 |
 
 ## 关门记录
 
@@ -110,7 +110,8 @@ R1 合同与分母冻结：方言物理类型、列清单、零值、备份 resi
 | date | change |
 |------|--------|
 | 2026-09-19 | 初创 `planned` v0.1.0 · 0 区 · 停放。用户确认：C1 另立本 VP，不并入 VP-039，不塞 VP-010；激活硬门禁 = VP-039 波次之后（或书面改序）。计划阶段 self = [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md)。 |
+| 2026-09-20 | 用户指令走流程激活：`I-040-005` verified；激活默认候选登记为 SQLite `INTEGER` / PostgreSQL `BIGINT` 的 UTC Unix seconds 合同（`I-040-001` 仍 collecting，R1 再冻结）；架构类 freshness `6197e802` → `b0a6789b` PASS；激活 self = [VRev-104](../reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`；VP-040 `planned → active` v0.2.0；lead `workspace-040-timestamptz-persistence-contract` 交 `/govern` 开区。 |
 
 ## 声明
 
-本文件是已确认的 Vision Plan 意图，不是 Goal 五件套、实现事实或 progress 权威。**不得**把 `planned` 当成可实施许可。激活前必须关闭 `I-040-005`。
+本文件是已确认的 Vision Plan 意图，不是 Goal 五件套、实现事实或 progress 权威。激活不等于实现许可之外的 schema/迁移完成；R1/R2/R3 仍由工作区目标与 Goal 审计承接。

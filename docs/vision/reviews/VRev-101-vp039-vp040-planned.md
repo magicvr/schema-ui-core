@@ -101,6 +101,10 @@ SQLite 无原生 `timestamptz`。激活后若把「PG 改 `timestamptz`、SQLite
 
 状态：`open · recommended`。不阻断 `planned`；由 `I-040-001` 承接。**阻断 VP-040 的 R1 冻结**。
 
+### 响应（2026-09-20 · `/vision` · VRev-104 激活事务）
+
+`V-F132` → **fixed（激活前置子要求）**：本轮已登记 R1 默认候选：SQLite `INTEGER` / PostgreSQL `BIGINT`，暂按 UTC Unix seconds 的合同平等语义；证据见 [VRev-104](VRev-104-vp040-timestamptz-persistence-contract-activation.md) 与 `[workspace-040] GOAL-001` D-001。`I-040-001` 仍为 `collecting`，R1 仍须最终冻结物理类型、精度、NULL/零值、编解码与毫秒字段分母；原 finding 与原 verdict 不改写。
+
 ## 激活门禁（后续 `/vision`）
 
 **VP-039（下一拍）**
@@ -122,3 +126,7 @@ SQLite 无原生 `timestamptz`。激活后若把「PG 改 `timestamptz`、SQLite
 - 不改变 Charter 目的/边界/非目标；不改变其它 VP 或 Goal status/progress。
 - open required = 0；`V-F131` 已于激活事务 `fixed`；`V-F132` 仍 recommended（VP-040 R1）。
 - 下一步：若继续推进 VP-039，使用 `/vision` 完成 `I-039-004` + freshness 后激活；VP-040 保持 planned。
+
+## 当前响应投影（2026-09-20）
+
+`V-F132` 已按 VRev-104 **fixed（激活前置子要求）**；VP-040 已满足激活门禁并进入 `active`。该响应不把 `I-040-001` 写成 verified：R1 最终合同仍由 `[workspace-040] GOAL-001-timestamptz-persistence-contract` 的决策与证据承接。

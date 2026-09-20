@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-19
+updated: 2026-09-20
 parent: null
-version: 0.4.62
+version: 0.4.63
 ---
 
 # Charter 修订台账
@@ -103,3 +103,4 @@ version: 0.4.62
 | VR-086 | 2026-09-19 | editorial | VP-039 planned + VP-040 planned（停放） | 用户确认选项 1：下一拍 = 版本/维护/诊断；C1 另立且本波不激活；不塞 VP-010、不合成混分支 VP。新建 **VP-039-version-maintenance-diagnostics** `planned` v0.1.0 · 0 区（承接 VP-012「UI 可后置」；默认候选 = Shell 横幅 + 复用 `admin.system-monitoring`）；新建 **VP-040-timestamptz-persistence-contract** `planned` v0.1.0 · 0 区 · **停放**（激活硬门禁 = VP-039 波次之后或用户书面改序；`I-040-001` SQLite 物理类型未冻结）。计划阶段 self = **VRev-101 `pass`**（0 required；V-F131/V-F132 recommended）。roadmap 已落盘意图行 + `RT-T03` registered→planned + 体验增强清单无剩余未立项项 + 未决项登记同步。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），不激活、不创建工作区、无 strategic、无 re-align。 |
 | VR-087 | 2026-09-19 | editorial | VP-039 激活 + workspace-039 开区 | 用户指令「`/vision` 走流程激活 VP-039，再交 `/govern` 开区」。**`I-039-004` = 接受默认候选**：Shell 持久横幅 + 复用 `admin.system-monitoring`；不新建模块；不改 Profile 默认集 → **不暂挂 VP-008 `go`**。**Admin 类 freshness PASS**（`7e5ce891` → `6197e802`：协议 pin / 依赖锁 / provenance 零变更；迁移与 `admin.jobs` 默认集追加均可追溯至 VP-038 已审结目 + W32–W34）。激活就绪 self = **VRev-102 `pass`**（0 required；`V-F131` → fixed）。slug 按惯例：`workspace-039-version-maintenance-diagnostics` / Root `GOAL-001-version-maintenance-diagnostics`。VP-039 `planned → active` v0.2.0；交 `/govern` scaffold。VP-040 保持 planned 停放。不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
 | VR-088 | 2026-09-19 | editorial | VP-039 / workspace-039 关门投影 | 用户书面确认「确认关闭 VP-039 与 workspace-039 Root」。R1–R4 全部完成；Root `GOAL-001-version-maintenance-diagnostics` `done · 4/4`；GOAL-005 R4 cross self + grok independent `pass`，required=0；VRev-103 self `pass`；VP-039 `active → closed` v0.3.0。既有 fresh-seed harness bounded residual 保持 roadmap 登记；不改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |
+| VR-089 | 2026-09-20 | editorial | VP-040 激活 + workspace-040 / Root 开区 | 用户指令「/vision 走流程激活 vp-040，没有问题的话，交 /govern 开设工作区」。VP-039 `closed` 前置满足；VRev-104 self `pass`（0 required）；架构 freshness `6197e802` → `b0a6789b` PASS；`I-040-001` 登记默认候选但保持 collecting；VP-040 `planned → active` v0.2.0；workspace-040 delivery 与 Root `GOAL-001-timestamptz-persistence-contract` `active · 0/3` 已由 `/govern` scaffold。未改 Charter 目的/边界/非目标或 `vision_id@version`（仍 `@0.4.0`），无 strategic、无 re-align。 |

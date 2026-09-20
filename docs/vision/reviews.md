@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-09-19
+updated: 2026-09-20
 parent: null
-version: 1.8.5
+version: 1.8.6
 ---
 
 # Vision Review 台账
@@ -30,6 +30,7 @@ version: 1.8.5
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
+| — | — | — | **无** | **VRev-104（self · `/vision` · 2026-09-20，`pass`）**：**VP-040 激活就绪**——VP-039 已 `closed`；`I-040-001` 已登记 R1 默认候选但仍 `collecting`；架构 freshness `6197e802` → `b0a6789b` PASS；slug/workspace/Root 已落盘；VP-040 `planned → active` v0.2.0；open required = 0。V-F132 激活前置子要求已 fixed，R1 最终合同仍开放。 |
 | — | — | — | **无** | **VRev-103（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 关门审视**——判据 1–7 verified；workspace-039 Root `done · 4/4`；Goal R1–R4 cross required=0；用户书面确认「确认关闭 VP-039 与 workspace-039 Root」；既有 fresh-seed harness bounded residual 保持登记；open required = 0。VP-039 `active → closed` v0.3.0。 |
 | — | — | — | **无** | **VRev-102（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 激活就绪** —— `I-039-004` 接受默认候选（Shell 横幅 + 复用 `admin.system-monitoring`，不新模块、不改默认集 → 不暂挂 `go`）；Admin 类 freshness `7e5ce891` → `6197e802` PASS；`I-039-004`/`I-039-005` verified；**VP-039 `planned → active` v0.2.0**，lead `workspace-039-version-maintenance-diagnostics`。`V-F131` → fixed。VP-040 保持 planned 停放。 |
 | — | — | — | **无** | **VRev-101（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 / VP-040 计划阶段**——用户选项 1：VP-039 `planned`（体验增强收口，下一拍）+ VP-040 `planned` 停放（C1 timestamptz，激活硬门禁 = VP-039 波次之后）。结构选型成立（两 VP 串行，不塞 VP-010、不合成）。0 required；V-F131（039 承载面/`go`）/ V-F132（040 SQLite 物理类型）recommended 不阻断 planned。**不是激活许可。** |
@@ -57,9 +58,10 @@ version: 1.8.5
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-104 | 2026-09-20 | self | VP-040 DB 时间列 timestamptz 合同 · 激活就绪 / P-005 默认候选 / 架构 freshness / slug | pass | 0 | **VP-040 `planned → active` v0.2.0**；VP-039 `closed` 前置满足；`I-040-001` 默认候选已登记但仍 collecting；freshness `6197e802`→`b0a6789b` PASS；workspace-040 / Root 已 scaffold；V-F132 激活前置子要求 fixed | [VRev-104-vp040-timestamptz-persistence-contract-activation.md](reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) |
 | VRev-103 | 2026-09-19 | self | VP-039 关门审视 · 判据 1–7 / Goal cross 审计 / 回归矩阵 / 用户确认 | pass | 0 | **VP-039 `active → closed` v0.3.0**；Root `GOAL-001-version-maintenance-diagnostics` `done · 4/4`；R1–R4 cross required=0；用户书面确认；bounded harness residual 保持登记 | [VRev-103-vp039-closeout.md](reviews/VRev-103-vp039-closeout.md) |
 | VRev-102 | 2026-09-19 | self | VP-039 激活就绪 · `I-039-004` 默认候选 / Admin 类 freshness / slug | pass | 0 | **VP-039 `planned → active` v0.2.0**，lead `workspace-039-version-maintenance-diagnostics`。默认候选不暂挂 `go`；freshness `7e5ce891`→`6197e802` PASS（区间 = VP-038 已审结目 + W32–W34）；`V-F131` → fixed | [VRev-102-vp039-activation.md](reviews/VRev-102-vp039-activation.md) |
-| VRev-101 | 2026-09-19 | self | VP-039 版本/维护/诊断 planned + VP-040 timestamptz 合同 planned（停放）· Charter 对齐 / 结构选型 / 退出判据 / P-005 / 只读事实 | pass | 0 | 用户选项 1 落盘：VP-039 为下一拍（承接 VP-012 UI 可后置；默认候选不改 Profile 默认集）；VP-040 另立并停放（不并入 039、不塞 VP-010）。只读核对 8 项属实。0 required；V-F131 激活事务内 fixed；V-F132 recommended 仍属 VP-040 R1。**当时不是激活许可** | [VRev-101-vp039-vp040-planned.md](reviews/VRev-101-vp039-vp040-planned.md) |
+| VRev-101 | 2026-09-19 | self | VP-039 版本/维护/诊断 planned + VP-040 timestamptz 合同 planned（停放）· Charter 对齐 / 结构选型 / 退出判据 / P-005 / 只读事实 | pass | 0 | 用户选项 1 落盘：VP-039 为下一拍（承接 VP-012 UI 可后置；默认候选不改 Profile 默认集）；VP-040 另立并停放（不并入 039、不塞 VP-010）。只读核对 8 项属实。原时点 0 required；V-F131 已 fixed；V-F132 的激活前置子要求经 VRev-104 **fixed**，R1 最终合同仍由 I-040-001 承接。 | [VRev-101-vp039-vp040-planned.md](reviews/VRev-101-vp039-vp040-planned.md) |
 | VRev-100 | 2026-09-19 | self | VP-038 关门审视（补做）· 判据 1～7 证据核对 / 组合投影同步 / 台账卫生 | conditional | 0 | **补做 VP-038 关门 Vision Review**（关门时如实登记为「未执行」，用户 2026-09-19 P-004 裁决补做并由其驱动修正）。关门事实成立：判据 1～6 由 `[workspace-038] GOAL-006/02-execution/E-001-r5-exit-matrix.md` 逐条附证据；Root `GOAL-001-batch-operations-and-job-center` `done · 5/5`；R5 cross 两腿 `A-001` self + `A-002`（grok build · grok-4.6 · high）独立 `pass`（开放 required = 0）；用户书面确认留痕；残余（e2e fresh-seed 顺序契约）与 `I-038-006` 延期均在册；Charter `@0.4.0` 对齐、无 re-align 债务。判据 7 的「组合投影同步」**未成立** → `V-F127`（`roadmap.md` 4 处陈旧投影）、`V-F128`（VP 台账关门记录缺失）2 required；`V-F129`（关门 Vision Review 未执行 · 本次补做即闭合动作）、`V-F130`（`[workspace-038] GOAL-003` frontmatter `progress: 3/4` 与 `goal-tree` `done · 4/4` 不一致）recommended，经用户授权最小投影修正后 `fixed`。**报告内响应（2026-09-19）**：`V-F127`/`V-F128` 均 `fixed`（`roadmap.md` 4 处对齐 + VP-038 台账关门记录/修订短史/门禁行补齐，`status` 与 `version` 未改动）→ **响应后开放 required = 0** | [VRev-100-vp038-batch-operations-and-job-center-closeout.md](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) |
 | VRev-099 | 2026-09-19 | self | VP-038 激活就绪 · `I-038-004` 用户 P-004 裁决 / Admin 类 freshness / 激活事务边界 | pass | 0 | **VP-038 `planned → active` v0.2.0**，lead `workspace-038-batch-operations-and-job-center`（Root `GOAL-001-batch-operations-and-job-center`）。`I-038-004` 用户裁决 = 方案 A（新建 `admin.jobs` 进 admin 默认集）；独立核对代码与先例确认属 **Profile 内容扩展**（组合根 `composition.go:171`–`178` 已无条件构造 Job 运行时；`ResolveProfile`/Manifest/pin 零改动）→ **不暂挂 VP-008 `go`**；freshness `0c29c08` → `7e5ce891` 五域 **PASS**（区间变更全部为 VP-037 已审结目）；`I-038-005` verified。`V-F125` → **fixed**；`V-F126` 保持 recommended，由 `I-038-003`（R1 前 required）承接 | [VRev-099-vp038-batch-operations-and-job-center-activation.md](reviews/VRev-099-vp038-batch-operations-and-job-center-activation.md) |
 | VRev-098 | 2026-09-19 | self | VP-038 批量操作与异步结果中心 · 计划阶段意图审视（Charter 对齐 / 结构选型 / 七条判据 / P-005 / 只读事实核对） | pass | 0 | 意图落在成功边界 #3/#5；结构选型 = 新 VP + 新 delivery 工作区（VP-012 把「通用 Job 管理页」写成显式非目标，属未做产品能力而非符合性偏差）；只读核对 8 项主张属实（`core.jobs` 迁移专用、`GetForActor` 仅单一 kind、批量面只有同步 `batch-delete`、导出导入同步、协议侧 `actions.batch.request` 已交付）；七条判据可判定；V-F125（Profile/模块边界激活前须用户裁决）+ V-F126（首波批量操作分母）recommended 不阻断；**不是激活许可** | [VRev-098-vp038-batch-operations-job-center-planned.md](reviews/VRev-098-vp038-batch-operations-job-center-planned.md) |

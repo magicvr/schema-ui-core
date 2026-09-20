@@ -3,9 +3,9 @@ doc_type: vision-workspaces
 title: 工作区贡献图
 status: active
 created: 2026-07-31
-updated: 2026-09-19
+updated: 2026-09-20
 parent: null
-version: 0.66.0
+version: 0.67.0
 ---
 
 # 工作区贡献图
@@ -52,6 +52,7 @@ version: 0.66.0
 
 | workspace-038-batch-operations-and-job-center | docs/workspaces/workspace-038-batch-operations-and-job-center/ | GOAL-001-batch-operations-and-job-center | delivery | VP-038-batch-operations-and-job-center | **done**（2026-09-19 开区并当日结项；Root `GOAL-001-batch-operations-and-job-center` **`done · 5/5`**，R1～R5 全部交付（`GOAL-002`～`GOAL-006` 各 `done · 4/4`）；VP-038 **`closed` v1.0.0**（用户书面确认 2026-09-19）；方向级退出判据 1～7 达成；R5 cross 关门审计 self `A-001` + grok-build independent `A-002` 均 `pass`，响应后开放 required = 0；浏览器回归双 profile 全绿（admin 含 jobs 结果中心端到端用例）；关门后残余 1 条 bounded residual（e2e fresh-seed 顺序契约）登记于 `roadmap.md`「未决项统一登记」；关门 Vision Review 关门时未执行（如实登记），已于同日**补做**为 [VRev-100](reviews/VRev-100-vp038-batch-operations-and-job-center-closeout.md) self `conditional`——`V-F127`/`V-F128` 经该报告响应节 `fixed`（响应后开放 required = 0）；`V-F130` recommended 登记本区 `GOAL-003` 的 `progress` 投影不一致（`3/4` vs `goal-tree` `done · 4/4`），经用户 2026-09-19 授权已做**最小投影修正**（`3/4 → 4/4` + 派生说明/备注同步，`status` 与其余冻结内容未动）） |
 | workspace-039-version-maintenance-diagnostics | docs/workspaces/workspace-039-version-maintenance-diagnostics/ | GOAL-001-version-maintenance-diagnostics | delivery | VP-039-version-maintenance-diagnostics | **done**（2026-09-19 激活→关门；Root `GOAL-001-version-maintenance-diagnostics` **`done · 4/4`**；R1–R4 全部 done；VP-039 **`closed` v0.3.0**；VRev-103 `pass`；Goal cross required=0；用户书面确认；fresh-seed harness bounded residual 继续登记） |
+| workspace-040-timestamptz-persistence-contract | docs/workspaces/workspace-040-timestamptz-persistence-contract/ | GOAL-001-timestamptz-persistence-contract | delivery | VP-040-timestamptz-persistence-contract | **active**（2026-09-20 激活；Root `GOAL-001-timestamptz-persistence-contract` **`active · 0/3`**；R1 默认候选已登记，`I-040-001` collecting；VRev-104 `pass`；不改变 Charter primary） |
 
 ## 说明
 
@@ -101,3 +102,4 @@ version: 0.66.0
 - 目标生命周期与 progress 以工作区内 `goal-tree.md` / 五件套为准；本文件不是第二套状态源。波次 progress 不得推导 Root/`VP` done。
 - **VP-038（2026-09-19 激活 · **`closed` v1.0.0**（2026-09-19 用户书面确认关门） · lead `workspace-038-batch-operations-and-job-center`）**：Admin 功能 · 批量操作与异步结果中心。计划 self = **VRev-098 `pass`**；激活 self = **VRev-099 `pass`**（0 required）。**P-004 裁决 `I-038-004` = 方案 A**：新建 `admin.jobs` 进 admin 默认集（Profile 内容扩展，不改装配语义，**不暂挂 VP-008 `go`**）。Admin 类 freshness **PASS**（`0c29c08` → `7e5ce891`，五域零变更）。交付：`admin.jobs` 管理读面（`jobs.read`）+ `jobs.batch-export` 异步批量导出（双重门禁 + 真实进度）+ 结果中心（六态/详情/下载/重试/取消/自动刷新）。Root `GOAL-001-batch-operations-and-job-center` **`done · 5/5`**（R1～R5 全部完成）。关门依据：判据 1～7 达成 + R5 cross 审计两腿 `pass`（开放 required = 0）+ 浏览器回归双 profile 全绿 + **用户书面确认**。不改变 Charter `primary_workspace`。
 - **VP-039 / workspace-039（2026-09-19 激活开区）**：Admin 功能 · 版本更新、维护提示与诊断报告。计划 self = **VRev-101 `pass`**；激活 self = **VRev-102 `pass`**（0 required）。**P-004 `I-039-004` = 默认候选**：Shell 横幅 + 复用 `admin.system-monitoring`，不新建模块、不改默认集，**不暂挂 `go`**。Admin 类 freshness **PASS**（`7e5ce891` → `6197e802`）。Root `GOAL-001-version-maintenance-diagnostics` 初始 `active · 0/4`。不改变 Charter `primary_workspace`。不激活 VP-040。
+- **VP-040 / workspace-040（2026-09-20 激活开区）**：架构 C1 · DB 时间列 timestamptz 持久化合同。激活 self = **VRev-104 `pass`**（0 required）；VP-039 `closed` 前置满足；架构 freshness **PASS**（`6197e802` → `b0a6789b`）；Root `GOAL-001-timestamptz-persistence-contract` 初始 `active · 0/3`；`I-040-001` 默认候选已登记但仍 collecting，R1 最终合同未冻结；不改变 Charter `primary_workspace`。
