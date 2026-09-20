@@ -326,16 +326,19 @@ func (p *postgres) createRecoveryPoint(ctx context.Context, catalog []kernel.Mig
 }
 
 // probeRecoveryState measures the converted shape and the presence of a marker.
+//
+// A marker that cannot be read or parsed is reported as "no verified point" and
+// the reason is preserved: an unreadable marker must never silently pass the
+// gate, and it must not block startup either (GOAL-005 A-002 F-I-009).
 func (s *Store) probeRecoveryState(ctx context.Context) (recoveryState, error) {
 	var state recoveryState
+	markerNote := ""
 	if s.path == "" || s.path == ":memory:" {
 		state.Detail = "in-memory store"
 		return state, nil
 	}
-	// A marker only counts when it parses: a corrupt/partial file is "no verified
-	// point", not a satisfied gate (GOAL-005 A-002 F-I-004).
 	if _, has, err := readRecoveryMarker(sqliteMarkerPath(s.path)); err != nil {
-		state.Detail = fmt.Sprintf("recovery marker is unreadable: %v", err)
+		markerNote = fmt.Sprintf("recovery marker is unreadable: %v", err)
 	} else if has {
 		state.HasPoint = true
 	}
@@ -344,14 +347,15 @@ func (s *Store) probeRecoveryState(ctx context.Context) (recoveryState, error) {
 		return state, err
 	}
 	state.Converted = converted
-	state.Detail = detail
+	state.Detail = joinDetail(markerNote, detail)
 	return state, nil
 }
 
 func (p *postgres) probeRecoveryState(ctx context.Context) (recoveryState, error) {
 	var state recoveryState
+	markerNote := ""
 	if _, has, err := readPostgresRecoveryMarker(ctx, p.db, p.database); err != nil {
-		return state, err
+		markerNote = fmt.Sprintf("recovery marker is unreadable: %v", err)
 	} else if has {
 		state.HasPoint = true
 	}
@@ -360,8 +364,20 @@ func (p *postgres) probeRecoveryState(ctx context.Context) (recoveryState, error
 		return state, err
 	}
 	state.Converted = converted
-	state.Detail = detail
+	state.Detail = joinDetail(markerNote, detail)
 	return state, nil
+}
+
+// joinDetail keeps both notes instead of letting the shape probe overwrite the
+// marker diagnosis.
+func joinDetail(notes ...string) string {
+	var kept []string
+	for _, note := range notes {
+		if strings.TrimSpace(note) != "" {
+			kept = append(kept, note)
+		}
+	}
+	return strings.Join(kept, "; ")
 }
 
 // snapshotBeforeBatch writes the class-A rollback artifact (C3 §4.2 call point

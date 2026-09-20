@@ -1,12 +1,12 @@
 ---
 id: GOAL-005-r2-backup-port-and-closeout
 title: R2 · Backup Port 与阶段关门（M4）
-status: active
+status: done
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.3.0
-progress: 2/3
+version: 1.0.0
+progress: 3/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -52,9 +52,9 @@ serves_summary: 承接 Root R2 的 M4：落码 D-016 第 9 项（kernel.Recovery
 |--------|------|------|
 | **A** | `kernel.RecoveryPointPort` + `internal/backup` provider 落码（含 `<recovery-artifact>` 校验与错误分类），SQLite 侧 restore harness 有可执行测试 | **completed**（E-002） |
 | **B** | PG 侧可执行路径（Docker 固定版本客户端工具）验证；部分升级/批级快照的用户裁决落盘 | **completed**（E-002 PG 实测通过 + E-003 C3 §4.2 全部接线；`I-041-006` 经用户 2026-09-20 裁决为 accepted） |
-| **C** | R2 关门：self + independent 关门审计落盘、required 闭合、`D-021` residual 收口状态复核 | pending |
+| **C** | R2 关门：self + independent 关门审计落盘、required 闭合、`D-021` residual 收口状态复核 | **completed**（E-004：`A-001` self →`A-002` independent（required=3）→`A-003` 修复响应 →`A-004` 复审判定 **pass / open required = 0**；`D-021` residual 已于 `GOAL-002/03-audit/A-048` 闭合） |
 
-`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 3/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 

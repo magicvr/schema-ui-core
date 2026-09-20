@@ -90,6 +90,39 @@ func TestPGRestoreToNewDB(t *testing.T) {
 	catalog := migrationCatalog(t)
 
 	sourceDSN := pgScratch(t, adminDSN, "vp040bkp_src")
+	// Bootstrap the pre-conversion shape and seed representative legacy rows
+	// (seconds family, milliseconds family and a sentinel 0), so the recovery
+	// point's samples are exercised on real data rather than on an empty schema
+	// (GOAL-005 A-002 F-I-008).
+	legacy, err := store.Open(ctx, store.OpenOptions{
+		Dialect: kernel.DialectPostgres, DSN: sourceDSN, ConnectTimeout: 20 * time.Second,
+	}, catalog[:v72Head])
+	if err != nil {
+		t.Fatalf("bootstrap pre-conversion source: %v", err)
+	}
+	if err := legacy.Run(ctx, func(tx kernel.Tx) error {
+		if _, err := tx.Exec(ctx, `INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at,
+			token_version, failed_login_count, locked_until, enabled, notifications_enabled, avatar_url,
+			must_change_password, email, email_status, last_login_failure_at)
+			VALUES ('u-1','u1','User One','[]','h', 1758320000, 1758320001, 0, 0, 0, 1, 1, '', 0, NULL, NULL, 0)`); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO jobs (id, kind, status, payload, progress, cancel_requested, attempt,
+			max_attempts, lease_owner, lease_version, lease_expires_at, result, error_code, error_message,
+			actor_id, correlation_id, created_at, updated_at, finished_at, expires_at)
+			VALUES ('j-1','probe','queued','{}',0,0,0,3,NULL,0,NULL,NULL,NULL,NULL,'a','c',1758320000123,1758320000123,NULL,NULL)`); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `UPDATE mail_config SET updated_at = 0 WHERE id = 1`)
+		return err
+	}); err != nil {
+		_ = legacy.Close()
+		t.Fatalf("seed legacy rows: %v", err)
+	}
+	if err := legacy.Close(); err != nil {
+		t.Fatalf("close legacy source: %v", err)
+	}
+	// Convert the seeded database to the target contract.
 	st, err := store.Open(ctx, store.OpenOptions{
 		Dialect: kernel.DialectPostgres, DSN: sourceDSN, ConnectTimeout: 20 * time.Second,
 	}, catalog)
@@ -134,6 +167,23 @@ func TestPGRestoreToNewDB(t *testing.T) {
 	if _, err := os.Stat(point.ArtifactRef); err != nil {
 		t.Fatalf("artifact missing: %v", err)
 	}
+
+	// The sample set must not be vacuous: the source was seeded with both a
+	// seconds-family and a milliseconds-family value, so the restored artifact
+	// must carry both (F-I-008).
+	db, err := sql.Open("pgx", sourceDSN)
+	if err != nil {
+		t.Fatalf("open source for coverage: %v", err)
+	}
+	defer db.Close()
+	coverage, err := postgresSampleCoverage(ctx, db)
+	if err != nil {
+		t.Fatalf("sample coverage: %v", err)
+	}
+	if coverage["sec"] == 0 || coverage["ms"] == 0 {
+		t.Fatalf("sample coverage is vacuous: %v", coverage)
+	}
+	t.Logf("sample coverage on the source: %v", coverage)
 }
 
 // TestPGLegacyArtifactMustFail is the reverse assertion for postgres: a dump

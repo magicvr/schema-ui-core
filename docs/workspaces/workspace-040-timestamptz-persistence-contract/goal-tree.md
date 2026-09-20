@@ -4,7 +4,7 @@ status: active
 created: 2026-09-20
 updated: 2026-09-20
 parent: null
-version: 0.5.0
+version: 0.6.0
 workspace_id: workspace-040-timestamptz-persistence-contract
 ---
 
@@ -12,38 +12,38 @@ workspace_id: workspace-040-timestamptz-persistence-contract
 
 > 工作区：`workspace-040-timestamptz-persistence-contract`
 > canonical：`docs/workspaces/workspace-040-timestamptz-persistence-contract/`
-> Root：`GOAL-001-timestamptz-persistence-contract`（**`active · 1/3`**）
+> Root：`GOAL-001-timestamptz-persistence-contract`（**`active · 2/3`**）
 > primary_plan：`VP-040-timestamptz-persistence-contract`（**`active`** v0.2.3）
 
 ## 树
 
 ```text
-GOAL-001-timestamptz-persistence-contract [active] (1/3) · 纲领容器
+GOAL-001-timestamptz-persistence-contract [active] (2/3) · 纲领容器
 ├── GOAL-002-r1-contract-and-denominator-freeze [done] (4/4) · R1 合同与分母冻结
 ├── GOAL-003-r2-codec-and-descriptor-m1-m2 [done] (4/4) · R2 M1/M2 codec 与 descriptor
 ├── GOAL-004-r2-repository-and-predicate-rewrites [done] (3/3) · R2 M3 仓储与谓词改造
-└── GOAL-005-r2-backup-port-and-closeout [active] (2/3) · R2 M4 Backup Port 与阶段关门
+└── GOAL-005-r2-backup-port-and-closeout [done] (3/3) · R2 M4 Backup Port 与阶段关门
 ```
 
 ## 纲领路线图
 
 ```text
 R1 合同与分母冻结 [completed · GOAL-002 · 4/4]
-   → R2 双方言迁移 + Store 编解码 [active · 边界已冻结（Root D-016）· M1/M2 = GOAL-003、M3 = GOAL-004 · M2/M3 按 Root D-017 合并提交]
-      → R3 读写/时区回归、备份核对、证据与关门 [pending]
+   → R2 双方言迁移 + Store 编解码 [completed · M1/M2 = GOAL-003 (4/4)、M3 = GOAL-004 (3/3)、M4 = GOAL-005 (3/3) · 独立关门审计 A-004 pass / open required = 0]
+   → R3 读写/时区回归、备份核对、证据与关门 [pending · 下一步立项]
 ```
 
-> R1 已按用户裁决渐进建立为 `GOAL-002-r1-contract-and-denominator-freeze`（**`done · 4/4`**）；R2/R3 仍不预创建。Root `progress: 1/3` 由 Root `00-meta.md` 的三个显式检查点派生。
+> R1 = `GOAL-002`（`done · 4/4`）；R2 = `GOAL-003`（4/4）+ `GOAL-004`（3/3）+ `GOAL-005`（3/3），M1–M4 全绿并经两轮独立关门审计（`A-004` **pass / open required = 0**）。Root `progress: 2/3` 由 Root `00-meta.md` 的三个显式检查点派生；**R3 为下一步（尚未立项）**。
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
-| GOAL-001-timestamptz-persistence-contract | DB 时间列 timestamptz 持久化合同 | null | **active** | 1/3 | 2026-09-20 |
+| GOAL-001-timestamptz-persistence-contract | DB 时间列 timestamptz 持久化合同 | null | **active** | 2/3 | 2026-09-20 |
 | GOAL-002-r1-contract-and-denominator-freeze | R1 · 时间合同与分母冻结 | GOAL-001-timestamptz-persistence-contract | **done** | 4/4 | 2026-09-20 |
 | GOAL-003-r2-codec-and-descriptor-m1-m2 | R2 · 共享 codec 与 15 个 conversion descriptor（M1/M2） | GOAL-001-timestamptz-persistence-contract | **done** | 4/4 | 2026-09-20 |
 | GOAL-004-r2-repository-and-predicate-rewrites | R2 · 仓储读写与谓词改造（M3） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
-| GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **active** | 2/3 | 2026-09-20 |
+| GOAL-005-r2-backup-port-and-closeout | R2 · Backup Port 与阶段关门（M4） | GOAL-001-timestamptz-persistence-contract | **done** | 3/3 | 2026-09-20 |
 
 ## 说明
 

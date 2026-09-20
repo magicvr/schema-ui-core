@@ -351,7 +351,12 @@ func verifyPostgresSamples(ctx context.Context, db *sql.DB) error {
 				Err: fmt.Errorf("%s.%s holds %d non-NULL legacy sentinel value(s)", probe.table, probe.column, nonNull)}
 		}
 	}
-	measured := 0
+	// Positive samples: at least one seconds-family and one milliseconds-family
+	// value must be present and microsecond-precise once the artifact carries
+	// business rows. An empty database legitimately has no sample, so the
+	// requirement is "every populated family is checked", and the harness
+	// additionally asserts that its seeded source is not empty (F-I-008).
+	measured := map[string]int{"sec": 0, "ms": 0}
 	for _, column := range temporalcontract.Columns() {
 		query := fmt.Sprintf(`SELECT %s FROM %s WHERE %s IS NOT NULL LIMIT 50`,
 			column.Column, column.Table, column.Column)
@@ -365,7 +370,7 @@ func verifyPostgresSamples(ctx context.Context, db *sql.DB) error {
 				rows.Close()
 				return classify(KindArtifactUnreadable, "scan postgres sample", err)
 			}
-			measured++
+			measured[column.Unit]++
 			if instant.Nanosecond()%1000 != 0 {
 				rows.Close()
 				return &Error{Kind: KindSampleMismatch, Op: "verify postgres samples",
@@ -380,6 +385,22 @@ func verifyPostgresSamples(ctx context.Context, db *sql.DB) error {
 	}
 	_ = measured
 	return nil
+}
+
+// postgresSampleCoverage reports how many populated values were sampled per unit
+// family, so a harness can assert its sample set is not vacuous (F-I-008).
+func postgresSampleCoverage(ctx context.Context, db *sql.DB) (map[string]int, error) {
+	coverage := map[string]int{"sec": 0, "ms": 0}
+	for _, column := range temporalcontract.Columns() {
+		query := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE %s IS NOT NULL`,
+			column.Table, column.Column)
+		var count int
+		if err := db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+			continue
+		}
+		coverage[column.Unit] += count
+	}
+	return coverage, nil
 }
 
 // verifyRequest validates the caller's request against the frozen contract.

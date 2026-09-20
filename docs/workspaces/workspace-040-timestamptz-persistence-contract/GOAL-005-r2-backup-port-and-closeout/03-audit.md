@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.4.0
+version: 0.5.0
 ---
 
 # 审计台账 · GOAL-005-r2-backup-port-and-closeout（R2 M4）
@@ -29,6 +29,8 @@ version: 0.4.0
 | A-001 | self | 2026-09-20 | R2 关门自审：判据 M1–M4 逐项 + C3 §4.2/§4.3 + 偏差 8 项 | conditional | 交 independent 复审判定 | `03-audit/A-001-self-r2-closeout.md` |
 | A-002 | independent | 2026-09-20 | R2 关门审计（grok-build grok-4.6 · high）：M1–M4 + C3 §3.1/§4.2/§4.3/§5/§5.1/§6 + 分母一致性 + 未声明回归 | **conditional** | M1–M3 与 `D-021` residual 可核对；开放 required = 3（PG 类 C 命名、composition 未注入、PG 样本别名）；另有 recommended F-I-004～F-I-007 | `03-audit/A-002-independent-r2-closeout.md` |
 | A-003 | self（编排器响应） | 2026-09-20 | 响应 A-002 全部意见 | **pass** | 3 required 全部 `fixed`；F-I-004/005/006 fixed；F-I-007（元数据同步）fixed；待 independent 复审确认 | `03-audit/A-003-response-to-closeout-audit.md` |
+| A-004 | independent | 2026-09-20 | 复审 A-002 三条 required 的闭合（grok-build grok-4.6 · high） | **pass** | **open required = 0**：F-I-001/002/003 均 `fixed`（真实 PG 复跑未 skip）；F-I-007 partial；新增 recommended F-I-008/009/010（不阻断检查点 C） | `03-audit/A-004-independent-a002-required-closure.md` |
+| A-005 | self（编排器响应） | 2026-09-20 | 响应 A-004 + 检查点 C 关门 | **pass** | F-I-007/010 索引同步；F-I-008（PG 样本正向覆盖，实测 ms:2/sec:90）；F-I-009（marker 诊断并列保留 + PG 读失败不阻断）；**检查点 C 完成 → R2 阶段完成** | `03-audit/A-005-response-to-reaudit-and-checkpoint-c-closure.md` |
 
 ## R2 关门审计范围
 
@@ -64,6 +66,23 @@ version: 0.4.0
 | `F-I-006`（recommended） | **fixed**：`TestPGMidBatchArtifactMustFail`（真实 PG 混合形状 → `TimeContractMismatch`） |
 | `F-I-007`（recommended） | **fixed**：`00-meta` 的 `I-041-006` 同步为 verified（本文件信息就绪表同步） |
 
+## A-004 · independent · A-002 required 闭合复审（2026-09-20）
+
+- **source**：independent
+- **auditor**：grok-build (grok-4.6 · reasoning high)
+- **verdict**：**pass**（open required = 0）
+- **完整意见**：[`03-audit/A-004-independent-a002-required-closure.md`](A-004-independent-a002-required-closure.md)
+
+| A-002 finding | 本审判定 |
+|---------------|----------|
+| `F-I-001`（required/high） | **fixed** |
+| `F-I-002`（required/med） | **fixed** |
+| `F-I-003`（required/med） | **fixed** |
+| `F-I-004` / `F-I-005` / `F-I-006` | 主体 **fixed**（F-I-004 Detail/PG 阻断残余 → 新 F-I-009） |
+| `F-I-007` | **partial**（`00-meta` 已同步；`01-decision.md` 索引仍 open → 新 F-I-010） |
+
+本轮新 recommended（不阻断 C）：`F-I-008`（PG 样本未正向锁定「各至少一例」）、`F-I-009`、`F-I-010`。
+
 ## 关门审计状态（2026-09-20）
 
-`self` A-001（`conditional`）→ `independent` A-002（`conditional`，required = 3）→ 编排器 A-003（**pass**，全部固定并附证据）。**检查点 C 的成立仍需 independent 复审确认**（已发起第二次独立审计）；在此之前 GOAL-005 不得标 `done`，Root R2 不得标完成，Root `progress` 保持 1/3。
+`self` A-001（`conditional`）→ `independent` A-002（`conditional`，required = 3）→ 编排器 A-003（**pass**）→ `independent` A-004（**pass**，open required = **0**）。检查点 C 的 independent 门禁在 finding-closure scope 内可成立；**本意见不修改** GOAL-005 `status` / `progress` / Root R2 状态，响应归 `/govern`。

@@ -14,7 +14,7 @@ version: 0.2.0
 
 | ID | 级别 | 所需信息 | 影响门禁 | 状态 | 证据 / 决策 |
 |----|------|----------|----------|------|-------------|
-| I-041-006 | required | 部分升级（descriptor 各自事务）是否需要批级快照 / 整批回滚 | B | open（须用户 P-004） | `GOAL-004/03-audit/A-002-independent-m3-implementation.md` 待复审 7 |
+| I-041-006 | required | 部分升级（descriptor 各自事务）是否需要批级快照 / 整批回滚 | B | **verified（用户 2026-09-20 P-004：接受现有语义——可续跑 + A/C 回滚）** | `01-decision/D-001-partial-upgrade-and-c3-anchor-scope.md` |
 
 ## 决策索引
 
