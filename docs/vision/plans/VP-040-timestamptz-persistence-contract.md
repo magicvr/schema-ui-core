@@ -34,7 +34,7 @@ parent: null
 
 ## R1 用户裁决（2026-09-20 · P-004）
 
-R1 子目标 `[workspace-040] GOAL-002-r1-contract-and-denominator-freeze` 已承接用户方案选择：PostgreSQL 字面 `timestamptz(6)`；SQLite 固定 6 位 UTC RFC3339 `TEXT`；全部绝对时刻列纳入分母，ID/duration/step/version/计数/金额/flag 排除；SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PostgreSQL 产品级搬运器；语义 sentinel `0` 转为 `NULL`。这些是 R1 方向裁决，不替代逐列 inventory、转换失败策略与 self/independent 审计。
+R1 子目标 `[workspace-040] GOAL-002-r1-contract-and-denominator-freeze` 已承接用户方案选择：PostgreSQL 字面 `timestamptz(6)`；SQLite 固定 6 位 UTC RFC3339 `TEXT`；全部绝对时刻列纳入分母，ID/duration/step/version/计数/金额/flag 排除；SQLite 与 PostgreSQL 各自原地转换；不提供 SQLite→PostgreSQL 产品级搬运器；语义 sentinel `0` 转为 `NULL`；公共 API 时间输出统一为 6 位微秒 RFC3339 UTC `Z`，入站兼容合法 RFC3339 变体后规范化。上述是 R1 方向裁决，不替代逐列 inventory、转换失败策略与 self/independent 审计。
 
 ## 意图
 
@@ -115,6 +115,7 @@ R1 合同与分母冻结：方言物理类型、列清单、零值、备份 resi
 |------|--------|
 | 2026-09-19 | 初创 `planned` v0.1.0 · 0 区 · 停放。用户确认：C1 另立本 VP，不并入 VP-039，不塞 VP-010；激活硬门禁 = VP-039 波次之后（或书面改序）。计划阶段 self = [VRev-101](../reviews/VRev-101-vp039-vp040-planned.md)。 |
 | 2026-09-20 | 用户指令走流程激活：`I-040-005` verified；激活 self = [VRev-104](../reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`；VP-040 `planned → active` v0.2.0，lead `workspace-040-timestamptz-persistence-contract` 交 `/govern` 开区。随后用户 P-004 裁决 R1 方向：PG `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`；全部绝对时刻列纳入分母；双方言各自原地转换；sentinel 0 → NULL；不提供 SQLite→PG 产品搬运器。VP-040 修订为 v0.2.1，逐列证据由 GOAL-002 承接。 |
+| 2026-09-20 | 用户 P-004 追加公共 wire 裁决：所有公共时间输出统一为 6 位微秒 RFC3339 UTC `Z`；需同步 formatter、parser、fixtures 与 VP-020 回归。VP-040 当前版本保持 v0.2.1，D-003/E-004 落在 workspace-040。 |
 
 ## 声明
 

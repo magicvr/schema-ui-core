@@ -24,5 +24,7 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|------|------|
 | D-001 | 2026-09-20 | R1 合同冻结（承接 Root 用户裁决） | accepted | `01-decision/D-001-r1-contract-freeze.md` |
+| D-002 | 2026-09-20 | R2 migration 归属承接 | accepted | `01-decision/D-002-r2-migration-ownership.md` |
+| D-003 | 2026-09-20 | C2 wire 输入兼容承接 | accepted | `01-decision/D-003-wire-input-compat.md` |
 
 > 用户裁决原文与范围记录在 Root `D-002-r1-contract-freeze-user-decisions.md`；本子目标承接并将其转为可验证 C1～C4 交付物。

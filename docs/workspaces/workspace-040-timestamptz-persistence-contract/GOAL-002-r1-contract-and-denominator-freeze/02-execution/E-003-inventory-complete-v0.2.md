@@ -16,7 +16,7 @@ version: 0.1.0
 - 当前 live schema 共识别 **90 个绝对时刻列**；另有历史 retired `records.updated_at`，不计 live 分母但保留来源记录。
 - 确认 compiled DDL 时间列当前均为 SQLite `INTEGER` / PostgreSQL `BIGINT`，未发现现存时间列 TEXT。
 - 完成 seconds/milliseconds 分组：jobs、operationlog、mail outbox/config 为 milliseconds；其余主要模块为 seconds；nullable 与 sentinel 列已标记。
-- inventory v0.2 已落盘，C1 inventory 检查点具备进入 self/independent 审计的证据基础。
+- inventory v0.3/v0.3.1 已落盘，C1 inventory 逐列 90 条、历史 retired source、compiled catalog v1–v72 与 v67–v72 无额外时间列均已登记；具备再次 self/independent 复审的证据基础。
 
 ## 证据
 

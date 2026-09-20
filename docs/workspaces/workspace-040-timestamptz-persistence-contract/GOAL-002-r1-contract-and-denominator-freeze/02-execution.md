@@ -17,6 +17,8 @@ version: 0.1.0
 | E-001 | 2026-09-20 | R1 用户方案裁决已落盘 | recorded | `02-execution/E-001-user-decisions-recorded.md` |
 | E-002 | 2026-09-20 | 时间列与单位 inventory v0.1 | recorded | `02-execution/E-002-time-column-inventory-v0.1.md` |
 | E-003 | 2026-09-20 | 完整时间列 inventory v0.2 | recorded | `02-execution/E-003-inventory-complete-v0.2.md` |
+| E-004 | 2026-09-20 | 公共时间输出合同用户裁决 | recorded | `02-execution/E-004-public-wire-decision-recorded.md` |
+| E-005 | 2026-09-20 | compiled catalog v72 口径纠正 | recorded | `02-execution/E-005-catalog-72-correction.md` |
 
 ## 事实边界
 

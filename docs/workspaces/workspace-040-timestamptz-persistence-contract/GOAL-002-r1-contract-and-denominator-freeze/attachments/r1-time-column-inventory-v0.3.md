@@ -6,7 +6,7 @@ status: recorded
 created: 2026-09-20
 updated: 2026-09-20
 parent: GOAL-002-r1-contract-and-denominator-freeze
-version: 0.3.0
+version: 0.3.1
 ---
 
 # R1 时间列与单位 inventory v0.3
@@ -120,6 +120,12 @@ version: 0.3.0
 - Excluded non-time integers: ID prefixes, `duration_seconds`, TOTP `last_used_step`, version, counters, amounts, balances, flags.
 - TEXT/JSON payloads that may contain audit timestamps (`recycle_items.payload`, `operation_log.detail`) are not named time columns and remain outside this VP unless a later scope decision says otherwise.
 
+## Compiled catalog coverage correction (v0.3.1)
+
+- Current compiled catalog baseline is **72 descriptors**, not 66. The `66` assertion in existing tests is a prefix slice used by a historical subcase; the full frozen catalog ends at v72 (`jobs_management_indexes`).
+- This inventory has scanned v1–v72 descriptor identities and checked v67–v72: `telegram_config_connection` adds only `mode`/`webhook_public_base_url`; `telegram_ingress`, `telegram_outbound`, `digital_offers` time columns are already rows #78–#90; `operation_log_digitaloffer_events` and `jobs_management_indexes` add no time columns; `password_policy` adds no time columns.
+- Evidence: `apps/api/internal/store/migrate_test.go` full catalog length assertion and frozen identity table; `apps/api/internal/store/restart_test.go` / `operations_test.go` prefix-slice assertions; current migration descriptors under `apps/api/modules/*/migration`.
+
 ## Current status
 
-This artifact fixes the mechanical count and restores `login_failures.locked_until` and `login_failures.updated_at`. C1 inventory is now independently addable by column; C2/C3 codec, constraints, conversion, backup and predicate design remain open.
+This v0.3.1 artifact fixes the mechanical count, restores `login_failures.locked_until` / `updated_at`, and records the current 72-descriptor catalog baseline plus v67–v72 scan. C1 inventory is ready for independent re-audit; C2/C3 codec, constraints, conversion, backup and predicate design remain open.
