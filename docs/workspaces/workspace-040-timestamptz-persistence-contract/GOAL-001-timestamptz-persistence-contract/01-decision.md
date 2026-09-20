@@ -33,5 +33,7 @@ version: 0.1.0
 | D-007 | 2026-09-20 | 最小 Backup/RecoveryPoint Port 公共边界裁决 | accepted | `01-decision/D-007-backup-port-surface-user-decision.md` |
 | D-008 | 2026-09-20 | C2 精度、D0 与 PG backup provider 裁决 | accepted | `01-decision/D-008-c2-precision-zero-backup-decisions.md` |
 | D-009 | 2026-09-20 | 公共 wire 非 DB 例外范围裁决 | accepted | `01-decision/D-009-wire-nondb-exceptions.md` |
+| D-010 | 2026-09-20 | Backup Port 最小方法裁决 | accepted | `01-decision/D-010-backup-port-methods-user-decision.md` |
+| D-011 | 2026-09-20 | schema_migrations conversion owner 裁决 | accepted | `01-decision/D-011-schema-ledger-owner.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

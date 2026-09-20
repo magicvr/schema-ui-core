@@ -11,7 +11,7 @@ version: 0.1.0
 
 # R1 C2/C3 guardrails v0.1（草案）
 
-> 本附件是基于用户已选方向、A-006 independent findings 与 D-004/D-006 的方案草案，不是已冻结实施合同。C2/C3 需 self + grok independent 复审；关键未决点仍按 P-004 询问。
+> 本附件是基于用户已选方向、A-006/A-012 independent findings 与 D-004/D-009 的方案草案，不是已冻结实施合同。C2/C3 需 self + grok independent 复审；未决内容是逐列实施证据与测试，不再静默引入替代方案。
 
 ## 1. Codec boundary（承接用户选择）
 
@@ -23,7 +23,7 @@ version: 0.1.0
   - sentinel/NULL mapping helpers；
   - precision validation（用户已选：新写入与迁移统一向零截断到微秒；不得按模块选择不同 rounding mode）。
 - Store Tx adapters 负责参数/扫描边界：SQLite 把时间参数规范化为 canonical TEXT；PG 绑定 `time.Time`/`timestamptz(6)`；Repository 不按 dialect 分支。
-- `schema_migrations.applied_at` 仍由 store runner owner 负责，不转移到模块 Repository；其新 conversion owner 在 catalog 追加表中单列。
+- `schema_migrations.applied_at` 仍由 store runner 写入，但 VP-040 conversion descriptor owner 固定为 `core.persistence`（D-011）；不转移到模块 Repository，v73+ catalog 追加表必须单列。
 
 ## 2. Per-column conversion rules
 
@@ -59,8 +59,8 @@ At minimum C2 must enumerate and rewrite:
 
 ## 5. Backup SPI/Service proposal（D-006/D-007，待冻结）
 
-- A **minimal kernel Backup/RecoveryPoint Port** is allowed; the full `BackupService` orchestration and providers remain in `apps/api/internal`.
-- Port must not expose pgx/SQLite driver types. It should express only dialect-neutral artifact/metadata/verification/recovery-point semantics.
+- A **minimal kernel Backup/RecoveryPoint Port** exposes only `CreateRecoveryPoint`; success is postconditioned on minimum verification. The full `BackupService` orchestration, Verify/RestoreTo and providers remain in `apps/api/internal`.
+- Port must not expose pgx/SQLite driver types. Its request/recovery-point types express only dialect-neutral metadata and verified artifact semantics.
 - SQLite provider uses existing snapshot/native SQLite mechanism; PG provider is fixed by user decision to `pg_dump -F c` + `pg_restore` with same-version client guidance and explicit restore verification.
 - Common metadata should include: dialect, source/target identifier, catalog/schema version, checksum set, time-contract version, created-at, artifact identity and verification result.
 - Migration transaction rollback remains the first failure path; backup is higher-level recovery, not an application scheduler/API.

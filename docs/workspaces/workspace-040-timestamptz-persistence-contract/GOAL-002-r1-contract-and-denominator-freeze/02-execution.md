@@ -26,6 +26,10 @@ version: 0.1.0
 | E-010 | 2026-09-20 | Backup/RecoveryPoint Port 公共边界裁决 | recorded | `02-execution/E-010-backup-port-surface-user-decision.md` |
 | E-011 | 2026-09-20 | C2 精度、D0 与 PG backup provider 用户裁决 | recorded | `02-execution/E-011-c2-precision-zero-backup-decisions.md` |
 | E-012 | 2026-09-20 | wire 非 DB 例外范围用户裁决 | recorded | `02-execution/E-012-wire-nondb-exceptions-decision.md` |
+| E-013 | 2026-09-20 | Backup Port 最小方法裁决 | recorded | `02-execution/E-013-backup-port-methods-decision.md` |
+| E-014 | 2026-09-20 | schema_migrations owner 用户裁决 | recorded | `02-execution/E-014-schema-ledger-owner.md` |
+| E-013 | 2026-09-20 | C2 90 列 codec/NULL mapping matrix 草案 | recorded | `02-execution/E-013-c2-column-matrix-draft.md` |
+| E-014 | 2026-09-20 | predicate/index/check 矩阵草案 | recorded | `02-execution/E-014-predicate-index-matrix-draft.md` |
 
 ## 事实边界
 
