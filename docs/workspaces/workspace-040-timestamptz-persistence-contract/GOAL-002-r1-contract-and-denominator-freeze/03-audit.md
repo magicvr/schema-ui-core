@@ -64,6 +64,7 @@ version: 0.1.20
 | A-038 | 2026-09-20 | independent | E-032 / commit d1fdb4cc 对照 A-036 F-I-026 + F-I-002 三项设计剩余 | conditional | 3 | `03-audit/A-038-r1-independent-e032-a036-response-fi026.md` |
 | A-039 | 2026-09-20 | self | response to A-038 / F-I-026 closed intake, C3 boundary first landed, F-I-002 test-scope observation | conditional | 3 | `03-audit/A-039-r1-self-response-to-a038.md` |
 | A-040 | 2026-09-20 | independent | E-033 / commit e2c0dac2 C3 备份回滚边界对照 A-032/A-027/A-029 F-I-004 | conditional | 3 | `03-audit/A-040-r1-independent-e033-c3-boundary-fi004.md` |
+| A-041 | 2026-09-20 | self | response to A-040 / C3 七项收口、PG 对称调用点、错误分类、C→B 机械身份 | conditional | 3 | `03-audit/A-041-r1-self-response-to-a040.md` |
 
 ## 结论状态
 

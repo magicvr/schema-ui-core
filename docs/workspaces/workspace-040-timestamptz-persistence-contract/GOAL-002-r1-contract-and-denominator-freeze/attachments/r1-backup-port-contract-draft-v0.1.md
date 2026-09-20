@@ -59,8 +59,8 @@ type RecoveryPointPort interface {
 
 ## Provider boundary
 
-- SQLite provider: use existing `snapshotBeforePending`/`VACUUM INTO` family or a C3-specific native snapshot implementation; restore to a new SQLite file; run integrity/FK/type/sample checks.
-- PostgreSQL provider: fixed `pg_dump -F c` + `pg_restore` with a client/server major-version compatibility check; restore to a new database; verify `information_schema` types, catalog/checksums, 90 temporal columns and samples.
+- SQLite provider: use a **C3-specific native snapshot implementation** taken **after** the conversion batch has committed. The existing `snapshotBeforePending` per-migration `VACUUM INTO` boundary is **explicitly NOT** a RecoveryPoint source — it is a batch-boundary rollback artifact whose shape varies as the batch advances (see `r1-c3-backup-recovery-boundary-v1.0-fc.md` §2 class C and hard rule 1). Restore the converted artifact to a new SQLite file; run integrity/FK/type/sample checks.
+- PostgreSQL provider: fixed `pg_dump -F c` + `pg_restore` with a client/server major-version compatibility check; the dump must be taken **after** a successful conversion (the `<recovery-artifact>` token, not the `<rollback-artifact>` of the pre-conversion dump); restore to a new database; verify `information_schema` types, catalog/checksums, 90 temporal columns and samples.
 - Internal service owns provider selection, metadata serialization, temporary target cleanup, tool invocation, failure classification and audit evidence.
 - No scheduler, auth/permission, remote storage, retention, KMS/TLS or UI.
 
@@ -68,6 +68,8 @@ type RecoveryPointPort interface {
 
 - Exact kernel package/type names and `RecoveryPoint` metadata schema.
 - ArtifactRef safety/cleanup semantics and tool command construction.
-- SQLite conversion snapshot vs Backup Port artifact relationship.
+- ~~SQLite conversion snapshot vs Backup Port artifact relationship.~~ **已解决（2026-09-20）**：见 `r1-c3-backup-recovery-boundary-v1.0-fc.md` §2（三类产物唯一区分）与 §3（`<rollback-artifact>` / `<recovery-artifact>` 双 token）。`snapshotBeforePending` **不是** RecoveryPoint 源。
 - PG dump/restore test fixture and type/sample verification script.
 - Failure/rollback evidence and independent audit.
+
+> **权威说明（2026-09-20，响应 A-040 §G 第 2 项 / F-I-027）**：本文件的 C3 权威范围**仅限 kernel Port 的类型表面与后置条件**；C3 的产物区分、token、包路径、调用点、harness 与反向断言以 `r1-c3-backup-recovery-boundary-v1.0-fc.md` 为**唯一权威**。本文件 `status` 保持 `proposed`（其类型表面尚未被接受为冻结），但**不得**再被读作允许把 `snapshotBeforePending` 当 RecoveryPoint 源。

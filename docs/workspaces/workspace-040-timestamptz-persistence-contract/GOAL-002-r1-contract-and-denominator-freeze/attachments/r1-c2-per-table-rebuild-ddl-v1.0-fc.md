@@ -13,7 +13,7 @@ version: 1.0.0
 
 > **状态：`freeze-candidate`。** 本文件是 A-030/A-032 **F-I-002.1** 点名的**逐表 exact SQLite rebuild DDL 正文**（`CREATE TABLE` / `INSERT … SELECT` / `CREATE INDEX`），按用户 `D-019` 裁决的 **F-5 子女先行**模式与 `D-018` 选项 C 的行拷贝机制书写，表达式取 `r1-c2-sqlite-rebuild-mechanism-v1.0-fc.md` §2（已由 A-032 复证）。**不是实施证据**；R2 才落码。
 >
-> 覆盖：`D-014` allocation 的 v73–v87 共 15 个 descriptor / 20 张时间列表，加 `D-019` §2/§3 的 **FK-preserve 子表**（3 张联接表 + 3 张跨 descriptor 子表）。
+> 覆盖：`D-014` allocation 的 v73–v87 共 15 个 descriptor，含 **20 张带时间列的表**（分母 90 列），加 `D-019` §2/§3 的 **FK-preserve 子表**（3 张无时间列联接表 + 3 张跨 descriptor 子表，后者时间列由 v80/v81 另行转换）。
 >
 > **PG 侧**由配套附件承载（`D-019` §6：必须**显式书写**，禁止 `pgTimeColRe` 派生）。
 

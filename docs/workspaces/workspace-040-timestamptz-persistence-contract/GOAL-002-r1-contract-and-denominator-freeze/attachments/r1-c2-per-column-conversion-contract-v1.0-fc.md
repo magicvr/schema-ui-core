@@ -23,7 +23,7 @@ version: 1.0.0
 | `r1-c2-column-contract-matrix-v0.2.md` | 6-key 映射族 | 本文件是其逐列展开；两者精度规则必须同一 |
 | `r1-c2-owner-migration-spec-v0.1.md` | owner / version / descriptor 名 | 本文件是其验收清单第 1/2/3/4 项 |
 | `r1-c2-predicate-exact-sql-v1.0-fc.md` | 谓词 exact old/new SQL | 本文件「read/write」列引用其 `P-*` 行号，不重复 SQL |
-| `r1-c3-backup-recovery-boundary-v1.0-fc.md` | C3 备份/回滚边界 | **本文件不覆盖 C3**。该 C3 附件**尚未落盘**（A-030 F-I-020.1 点名悬空引用）；C3 权威在落盘前仍为 `r1-c3-backup-restore-runbook-v0.1.md` + `r1-backup-port-contract-draft-v0.1.md`。 |
+| `r1-c3-backup-recovery-boundary-v1.0-fc.md` | C3 备份/回滚边界 | **本文件不覆盖 C3。** 该 C3 附件**已落盘**（2026-09-20，`status: freeze-candidate`），为 C3 的**唯一权威**；原 `r1-c3-backup-restore-runbook-v0.1.md` 已标 `superseded`（响应 A-040 §G 第 1 项）。 |
 
 ## 1. 冻结表达式（唯一形态，全文件只允许这三种）
 
