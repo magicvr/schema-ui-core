@@ -15,6 +15,7 @@ version: 0.1.0
 | E-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|--------|------|
 | E-001 | 2026-09-20 | VP-040 激活与工作区骨架建立 | recorded | `02-execution/E-001-activation-and-scaffold.md` |
+| E-002 | 2026-09-20 | R1 用户裁决与子目标建立 | recorded | `02-execution/E-002-r1-user-decisions-and-child-goal.md` |
 
 ## 事实边界
 

@@ -51,7 +51,7 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 
 | 检查点 | 目的 | 状态 |
 |---------|------|------|
-| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | pending |
+| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **active**（GOAL-002） |
 | R2 | 双方言迁移 + Store 编解码 | pending |
 | R3 | 读写/时区回归、备份有界核对、证据与关门 | pending |
 
@@ -61,10 +61,10 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 
 | ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
 |----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
-| I-040-001 | required | SQLite 用什么物理类型与 PG 合同平等？精度、UTC 表示、NULL/零值与编解码如何定义？ | R1 冻结、R2 迁移 | R1 | 对照 VP-013 合同平等原则与现有 `INTEGER`/`BIGINT` 时间列；R1 冻结前不得实施不可逆迁移 | collecting | R1 冻结前复核；责任人：本 Root 编排 | 激活默认候选：SQLite `INTEGER` / PostgreSQL `BIGINT`，暂按 UTC Unix seconds；非最终冻结；现有毫秒字段须单独分类 |
-| I-040-002 | required | 哪些 `*_at` 列进入首波分母，哪些 `INTEGER` 明确排除？ | R1/R2 | R1 | 全仓扫描时间列与非时间整数列，形成可核对列清单 | open | — | 待 R1 |
-| I-040-003 | required | 存量库升级策略与备份 residual 是什么？ | R1/R3 | R1 | 对照 VP-013/016 dump/restore 路径；必要时用户书面接受有界 residual | open | — | 待 R1 |
-| I-040-004 | required | 与 VP-020 展示合同的回归矩阵如何覆盖会话时区与 UTC 存储？ | R3 | R1 | 复用 VP-020 用例并补存储形状变更对照 | open | — | 待 R1/R3 |
+| I-040-001 | required | SQLite 用什么物理类型与 PG 合同平等？精度、UTC 表示、NULL/零值与编解码如何定义？ | R1 冻结、R2 迁移 | R1 | 对照 VP-013 合同与用户 D-002；R1 冻结前不得实施不可逆迁移 | collecting | R1 冻结前复核；责任人：R1 子目标 | 用户已选 PG `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 TEXT；sentinel 0 → NULL；待逐列证据 |
+| I-040-002 | required | 哪些绝对时刻列进入首波分母，哪些 INTEGER 明确排除？ | R1/R2 | R1 | 全仓扫描并冻结列清单 | collecting | R1 冻结前复核；责任人：R1 子目标 | 用户已选全部绝对时刻列；ID/duration/step/version/计数/金额/flag 排除 |
+| I-040-003 | required | 存量库升级策略与备份 residual 是什么？ | R1/R3 | R1 | 对照 VP-013/016 dump/restore 路径；设计双方言原地转换失败策略 | collecting | R1 冻结前复核；责任人：R1 子目标 | 用户已选 SQLite/PG 各自原地转换；不提供 SQLite→PG 产品搬运器 |
+| I-040-004 | required | 与 VP-020 展示合同的回归矩阵如何覆盖会话时区与 UTC 存储？ | R3 | R1 | 复用 VP-020 用例并补存储形状对照 | open | — | 待 R3 |
 | I-040-005 | required | 激活前置：VP-039 波次、架构 freshness、激活 self Review、slug 是否满足？ | 激活 | 激活前 | `/vision` 核对 VP-039 `closed`、`6197e802` → `b0a6789b` freshness 与 VRev-104 | verified | — | VRev-104 `pass`；VP-039 `closed` v0.3.0；workspace/Root slug 已落盘 |
 
 ## 父目标

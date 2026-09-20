@@ -1,0 +1,28 @@
+---
+id: GOAL-002-r1-contract-and-denominator-freeze
+doc: decision
+status: active
+parent: GOAL-001-timestamptz-persistence-contract
+created: 2026-09-20
+updated: 2026-09-20
+version: 0.1.0
+---
+
+# 决策记录 · GOAL-002
+
+## 信息需求与阶段门禁
+
+| ID | 级别 | 所需信息 / 假设 | 影响门禁 | 状态 | 证据 / 决策 |
+|----|------|-----------------|----------|------|-------------|
+| I-040-001 | required | PG `timestamptz(6)` / SQLite fixed-6 RFC3339 TEXT 的精度、编解码、排序与 NULL 规则 | C2/R2 | collecting | Root D-002；待 C1/C2 |
+| I-040-002 | required | 全部绝对时刻列与排除列分母 | C1/C2/R2 | collecting | Root D-002；待 inventory |
+| I-040-003 | required | SQLite/PG 原地转换、失败恢复、备份依赖 | C3/R2/R3 | collecting | Root D-002；待设计 |
+| I-040-004 | required | VP-020 展示/输入回归矩阵 | R3 | open | Root I-040-004；后续阶段 |
+
+## 决策索引
+
+| D-ID | 日期 | 标题 | 状态 | 文件 |
+|------|------|------|------|------|
+| D-001 | 2026-09-20 | R1 合同冻结（承接 Root 用户裁决） | accepted | `01-decision/D-001-r1-contract-freeze.md` |
+
+> 用户裁决原文与范围记录在 Root `D-002-r1-contract-freeze-user-decisions.md`；本子目标承接并将其转为可验证 C1～C4 交付物。

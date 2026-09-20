@@ -19,23 +19,25 @@ workspace_id: workspace-040-timestamptz-persistence-contract
 
 ```text
 GOAL-001-timestamptz-persistence-contract [active] (0/3) · 纲领容器
+└── GOAL-002-r1-contract-and-denominator-freeze [active] (0/4) · R1 合同与分母冻结
 ```
 
 ## 纲领路线图
 
 ```text
-R1 合同与分母冻结 [pending]
+R1 合同与分母冻结 [active · GOAL-002 · 0/4]
    → R2 双方言迁移 + Store 编解码 [pending]
       → R3 读写/时区回归、备份核对、证据与关门 [pending]
 ```
 
-> 本次 `/govern` 只建立 Root；不预创建 R1/R2/R3 子目标。`progress: 0/3` 由 Root `00-meta.md` 的三个显式检查点派生。
+> R1 已按用户裁决渐进建立为 `GOAL-002-r1-contract-and-denominator-freeze`；R2/R3 仍不预创建。Root `progress: 0/3` 由 Root `00-meta.md` 的三个显式检查点派生。
 
 ## 状态表
 
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-timestamptz-persistence-contract | DB 时间列 timestamptz 持久化合同 | null | **active** | 0/3 | 2026-09-20 |
+| GOAL-002-r1-contract-and-denominator-freeze | R1 · 时间合同与分母冻结 | GOAL-001-timestamptz-persistence-contract | **active** | 0/4 | 2026-09-20 |
 
 ## 说明
 

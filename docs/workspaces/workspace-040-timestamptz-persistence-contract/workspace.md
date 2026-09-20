@@ -20,8 +20,8 @@ parent: null
 本工作区是 [VP-040-timestamptz-persistence-contract](../../vision/plans/VP-040-timestamptz-persistence-contract.md) 的唯一 `delivery` workspace，承接架构分支 C1：Store 时间列的 UTC 绝对时刻语义、PostgreSQL 生产权威物理类型、SQLite 合同平等物理类型、双方言迁移台账与读写编解码。
 
 - VP-040 于 2026-09-20 经 `/vision` 激活为 **`active` v0.2.0**；激活就绪 self Review = [VRev-104](../../vision/reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`，open required = 0。
-- Root `[workspace-040-timestamptz-persistence-contract] GOAL-001-timestamptz-persistence-contract` 初始为 **`active · 0/3`**；本次只建立实现层骨架，不预创建 R1/R2/R3 子目标。
-- `I-040-001` 的激活默认候选为 SQLite `INTEGER` / PostgreSQL `BIGINT` 的 UTC Unix seconds 合同；该候选尚未替代 R1 的最终冻结，现有毫秒字段必须显式分类。
+- Root `[workspace-040-timestamptz-persistence-contract] GOAL-001-timestamptz-persistence-contract` 仍为 **`active · 0/3`**；R1 已渐进建立为 `[workspace-040-timestamptz-persistence-contract] GOAL-002-r1-contract-and-denominator-freeze`（`active · 0/4`），R2/R3 尚未创建。
+- 用户已将 R1 合同改为 PostgreSQL `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`；所有绝对时刻列纳入分母；双方言各自原地转换；sentinel `0` 按语义转为 `NULL`。
 - 红线：不引入 ORM/第三库；不把 SQLite 假装成原生 `timestamptz`；不把驱动时间类型泄漏到 handler/模块公共契约；不消耗 Redis/MQ/多实例/A3 trigger；不重开 VP-013/VP-020。
 
 ## 绑定
@@ -47,7 +47,7 @@ parent: null
 
 | 阶段 | 目的 | 状态 |
 |------|------|------|
-| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | pending |
+| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **active**（GOAL-002 · 0/4） |
 | R2 | 双方言迁移 + Store 编解码，沿用不可变 checksum 台账 | pending |
 | R3 | 读写/时区回归 + 备份有界核对 + 证据与关门 | pending |
 
