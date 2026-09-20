@@ -37,5 +37,7 @@ version: 0.1.0
 | D-011 | 2026-09-20 | schema_migrations conversion owner 裁决 | accepted | `01-decision/D-011-schema-ledger-owner.md` |
 | D-012 | 2026-09-20 | Voucher 时间异常值策略裁决 | accepted | `01-decision/D-012-voucher-invalid-value-policy.md` |
 | D-013 | 2026-09-20 | 微秒单调 updated_at 裁决 | accepted | `01-decision/D-013-monotonic-updated-at-policy.md` |
+| D-014 | 2026-09-20 | v73–v87 allocation baseline 裁决 | accepted | `01-decision/D-014-v73-allocation-baseline.md` |
+| D-015 | 2026-09-20 | 负时间与微秒截断解释 | accepted | `01-decision/D-015-negative-instant-truncation.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

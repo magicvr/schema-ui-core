@@ -2,7 +2,7 @@
 id: r1-v73-owner-allocation-draft-v0.1
 doc_type: design-attachment
 title: R2 v73+ module conversion owner allocation draft
-status: proposed
+status: accepted
 created: 2026-09-20
 updated: 2026-09-20
 parent: GOAL-002-r1-contract-and-denominator-freeze
@@ -11,7 +11,7 @@ version: 0.1.0
 
 # R2 v73+ module conversion owner allocation draft
 
-> User D-004 freezes module-owned append-only migrations; this is a proposed deterministic allocation, not an implementation or accepted version reservation. Versions are global and must be revalidated against the compiled catalog before code.
+> User D-004/D-014 accepts this deterministic module allocation as the R2 baseline. It is not yet published migration history: before release, a recorded split/adjustment is allowed; after publication, versions/checksums are strictly append-only.
 
 | proposed version | ModuleID / owner | Tables / columns | mapping keys / special rules |
 |---:|---|---|---|
@@ -45,4 +45,4 @@ PG assertions must expect `timestamp with time zone` (precision 6) for all match
 - No version may alter v1–v72 canonical SQL/checksum; each conversion descriptor has its own transform ID/checksum and paired `Apply`/`ApplyPostgres`.
 - `core.persistence` is the selected platform owner for `schema_migrations.applied_at`, but Store runner remains the writer of applied_at rows.
 - `records.updated_at` is not assigned because the table is retired; conversion must assert no current table before proceeding.
-- Actual version reservation, descriptor names, checksums and order remain proposed until C2 self + independent acceptance.
+- Baseline owner/order is accepted by D-014; exact descriptor names/checksums and any pre-publication split still require C2 implementation evidence and independent acceptance. Once published, no historical rewrite is allowed.

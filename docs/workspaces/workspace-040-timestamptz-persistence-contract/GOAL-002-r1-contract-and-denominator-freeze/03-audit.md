@@ -5,7 +5,7 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.1.10
+version: 0.1.11
 ---
 
 # 审计 · GOAL-002
@@ -14,7 +14,7 @@ version: 0.1.10
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
-| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（`02-execution.md` L17–L35 现为 E-001～E-019 严格递增），并确认 C2/C3 仍不可冻结：逐列 codec/NULL mapping、谓词 exact old/new、备份回滚程序、append-only 测试改写与 v73 allocation（F-I-002～006）；草案不是实施证据 |
+| I-040-001～003 | collecting | A-006 接受 F-I-001 closed（90 列 + catalog 72 + v1–v72）；A-014 接受 F-I-014 closed；A-016 接受 leftover 列名表已列出及 F-I-015 碰撞 closed；A-018 接受 D-012/D-013 方向唯一及 F-I-004 开放标记准确；A-020 接受 A-019 已把 guardrails/column-contract/matrix 收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 接受 A-021 对 F-I-016 的关闭（`02-execution.md` 现为 E-001～E-023 严格递增）；A-025 确认 A-024 的 E-020～E-023 四份 proposed 草案可收窄但不可闭合 F-I-002～006：owner checklist / family 谓词 / backup 命令模板 / 测试改写清单纯文字已落盘，逐列 codec、90 列 mapping、Port 调用点、已接受 allocation+checksum、exact SQL 仍缺；草案不是实施证据 |
 | I-040-004 | open | R3 回归矩阵；R1 接口仍未登记（A-002/A-004/A-006/A-010/A-012/A-014 F-I-009） |
 | 资料引用 | 无 | 工作区 `shared_materials_catalog: none` |
 
@@ -46,7 +46,9 @@ version: 0.1.10
 | A-022 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-021 / F-I-016 closure | conditional | 5 | `03-audit/A-022-r1-independent-after-a021-c2-c3-evidence.md` |
 | A-023 | 2026-09-20 | self | response to A-022 / E-index closure | conditional | 5 | `03-audit/A-023-r1-self-response-to-a022.md` |
 | A-024 | 2026-09-20 | self | C2/C3 design evidence expansion | conditional | 5 | `03-audit/A-024-r1-self-response-design-evidence-expansion.md` |
+| A-025 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-024 / E-020..E-023 drafts | conditional | 5 | `03-audit/A-025-r1-independent-after-a024-c2-c3-evidence.md` |
+| A-026 | 2026-09-20 | self | response to A-025 / accepted allocation baseline | conditional | 5 | `03-audit/A-026-r1-self-response-to-a025.md` |
 
 ## 结论状态
 
-用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`；A-016 independent 接受 A-015 对 **F-I-015** 碰撞的 `fixed`；A-018 independent 确认 D-012/D-013 方向已唯一但发现 matrix 表达式不一致；A-020 independent 接受 A-019 已把三份 C2 载体收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 independent 接受 A-021 对 **F-I-016** 的 `fixed`（`02-execution.md` E-001～E-019 严格递增且路径/`id` 一致）；A-023 已响应并维持 F-I-002～F-I-006 open。F-I-010 planning 仍 closed。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014/A-016/A-018/A-020/A-022 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，leftover 列名表已列出，PG 式已同一，但确认 C2/C3 仍不可冻结：草案不是实施证据。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。
+用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`；A-016 independent 接受 A-015 对 **F-I-015** 碰撞的 `fixed`；A-018 independent 确认 D-012/D-013 方向已唯一但发现 matrix 表达式不一致；A-020 independent 接受 A-019 已把三份 C2 载体收成同一 `date_trunc`+整数 interval（F-I-002 表达式子项 `fixed`）；A-022 independent 接受 A-021 对 **F-I-016** 的 `fixed`（当时 `02-execution.md` E-001～E-019 严格递增且路径/`id` 一致）；A-023 已响应并维持 F-I-002～F-I-006 open。A-025 independent 确认索引现为 E-001～E-023 仍单调，且 A-024 的 E-020～E-023 proposed 草案可收窄 F-I-005（测试改写清单纯文字）与 F-I-006（voucher/monotonic family 行），但五条 required 均不可闭合：逐列 codec、90 列 mapping、Port 调用点、已接受 allocation+checksum、exact SQL 仍缺；D-012/D-013 无政策矛盾。F-I-010 planning 仍 closed。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014/A-016/A-018/A-020/A-022/A-025 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，leftover 列名表已列出，PG 式已同一，但确认 C2/C3 仍不可冻结：草案不是实施证据。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。

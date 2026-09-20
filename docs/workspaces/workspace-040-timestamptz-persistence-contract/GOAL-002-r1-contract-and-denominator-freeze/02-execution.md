@@ -30,6 +30,7 @@ version: 0.1.0
 | E-014 | 2026-09-20 | schema_migrations owner 用户裁决 | recorded | `02-execution/E-014-schema-ledger-owner.md` |
 | E-015 | 2026-09-20 | minimal Backup/RecoveryPoint Port contract 草案 | recorded | `02-execution/E-015-backup-port-contract-draft.md` |
 | E-016 | 2026-09-20 | voucher / monotonic policy 用户裁决 | recorded | `02-execution/E-016-voucher-monotonic-policy-decisions.md` |
+| E-017 | 2026-09-20 | v73 allocation / negative truncation policy | recorded | `02-execution/E-017-v73-negative-truncation-decision.md` |
 | E-017 | 2026-09-20 | C2 90 列 codec/NULL mapping matrix 草案 | recorded | `02-execution/E-017-c2-column-matrix-draft.md` |
 | E-018 | 2026-09-20 | predicate/index/check 矩阵草案 | recorded | `02-execution/E-018-predicate-index-matrix-draft.md` |
 | E-019 | 2026-09-20 | v73+ module conversion owner allocation draft | recorded | `02-execution/E-019-v73-owner-allocation-draft.md` |

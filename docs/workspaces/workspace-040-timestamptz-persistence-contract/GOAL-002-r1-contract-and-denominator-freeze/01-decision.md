@@ -34,5 +34,6 @@ version: 0.1.0
 | D-009 | 2026-09-20 | Backup Port 最小方法承接 | accepted | `01-decision/D-009-backup-port-methods.md` |
 | D-010 | 2026-09-20 | schema_migrations owner 承接 | accepted | `01-decision/D-010-schema-ledger-owner.md` |
 | D-011 | 2026-09-20 | voucher / monotonic time policies 承接 | accepted | `01-decision/D-011-voucher-monotonic-policies.md` |
+| D-012 | 2026-09-20 | v73 allocation / negative truncation 承接 | accepted | `01-decision/D-012-v73-allocation-negative-truncation.md` |
 
 > 用户裁决原文与范围记录在 Root `D-002-r1-contract-freeze-user-decisions.md`；本子目标承接并将其转为可验证 C1～C4 交付物。
