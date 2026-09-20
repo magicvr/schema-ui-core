@@ -66,18 +66,59 @@ ALTER TABLE users RENAME TO users_old;
 
 ## 2. 受影响的 FK 父表（workspace-040 范围内）
 
-| 父表（本 VP 内重建） | 引用它的子表 | 子表是否在本 VP 列范围内 |
-|----------------------|--------------|--------------------------|
-| `users` | `refresh_tokens`, `email_verification_challenges`, `password_recovery_challenges`, `login_failures`, `user_password_history`, `user_invites` | 是（v74 同 descriptor） |
-| `users` | `user_roles`, `notifications`, `user_mfa`, `mfa_proofs` | **部分否**：`notifications`(v81)、`user_mfa`/`mfa_proofs`(v80) 在其他 descriptor；`user_roles` 不在 v74 的 12 表清单内 |
-| `roles` | `user_roles`, `role_permissions`, `role_menu_items` | **否**（联接表不在 v74 清单内） |
-| `permissions` | `role_permissions` | **否** |
-| `menu_items` | `role_menu_items` | **否** |
+### 2.1 `users` 的完整被引用清单（**实测观察**，非推断）
+
+以 `OpenSeeded` 跑完整迁移后，查询 `sqlite_master` 中存留 DDL 含 `REFERENCES users` 的表，结果**恰好 10 张**：
+
+`email_verification_challenges`、`login_failures`、`mfa_proofs`、`notifications`、`password_recovery_challenges`、`refresh_tokens`、`user_invites`、`user_mfa`、`user_password_history`、**`user_roles`**
+
+> 早前版本的本文件只列了 6 张，漏掉 `user_roles`、`notifications`、`user_mfa`、`mfa_proofs`。以本节实测清单为准。
+
+### 2.2 全部 FK 父子关系与 descriptor 归属
+
+| 父表（本 VP 内重建） | 子表 | 子表是否在 v74/v77/v83 原定表清单内 |
+|----------------------|------|--------------------------------------|
+| `users` | `refresh_tokens`, `email_verification_challenges`, `password_recovery_challenges`, `login_failures`, `user_password_history`, `user_invites` | **是**（v74 内） |
+| `users` | **`user_roles`** | **否** — 联接表，未列入 v74 的 12 表 |
+| `users` | `notifications` | 否（v81 内） |
+| `users` | `user_mfa`, `mfa_proofs` | 否（v80 内） |
+| `roles` | **`user_roles`**（`ON DELETE RESTRICT`）、**`role_permissions`**（CASCADE）、**`role_menu_items`**（CASCADE） | **否** — 三张联接表均未列入 |
+| `permissions` | **`role_permissions`**（`ON DELETE RESTRICT`） | **否** |
+| `menu_items` | **`role_menu_items`**（`ON DELETE RESTRICT`） | **否** |
 | `operation_log` | `operation_log_session`, `operation_log_correlation` | 否（同模块旁表；已有 dance 可复用） |
-| `dict_types` | `dict_entries` | 是（v77 同 descriptor） |
-| `scheduled_tasks` | `task_runs` | 是（v83 同 descriptor） |
+| `dict_types` | `dict_entries` | 是（v77 内） |
+| `scheduled_tasks` | `task_runs` | 是（v83 内） |
 
 > `users.roles` 是 **JSON TEXT 数组**，`users` 本身**没有** FK 列；`users` 只是被引用方。
+
+### 2.3 三张联接表的 exact DDL（`authsession/migration/migration.go:55-88`）
+
+```sql
+CREATE TABLE user_roles (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE RESTRICT,
+  PRIMARY KEY (user_id, role_id)
+)
+CREATE INDEX idx_user_roles_role_id ON user_roles(role_id)
+
+CREATE TABLE role_permissions (
+  role_id       TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE RESTRICT,
+  PRIMARY KEY (role_id, permission_id)
+)
+CREATE INDEX idx_role_permissions_permission_id ON role_permissions(permission_id)
+
+CREATE TABLE role_menu_items (
+  role_id      TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  menu_item_id TEXT NOT NULL REFERENCES menu_items(id) ON DELETE RESTRICT,
+  PRIMARY KEY (role_id, menu_item_id)
+)
+CREATE INDEX idx_role_menu_items_menu_item_id ON role_menu_items(menu_item_id)
+```
+
+**结构性后果**：v74 原定重建 `users`/`roles`/`permissions`/`menu_items` 四张父表，但这三张联接表**同时引用其中两张父表**且**不在 v74 表清单内**。若不把这三张联接表并入 v74 的重建范围，它们的 FK 文本会被永久改写为指向 `*_old`，`ON DELETE RESTRICT` 还会让后续删除直接失败。→ **v74 的表清单必须从 12 张扩为 15 张**（新增 `user_roles`、`role_permissions`、`role_menu_items`），这是对 `D-014` 已接受 allocation 的**结构性修订**，需 P-004 裁决。
+
+> 注：三张联接表**没有时间列**，其重建纯为 FK 修复，不涉及时间转换；`INSERT … SELECT` 为逐列直通。
 
 ## 3. 附带的两个新发现（同轮实测/核对）
 
@@ -89,7 +130,31 @@ ALTER TABLE users RENAME TO users_old;
 | `notifications_enabled` | `notifications` 模块 v0017 | `apps/api/modules/notifications/migration/migration.go:46` |
 | `avatar_url` | `account` 模块 v0035 | `apps/api/modules/account/migration/migration.go:28` |
 
-v74 的 `users` 新 DDL **必须**包含这三列（连同 authsession 内的 6 个 ALTER 列：`token_version`、`failed_login_count`、`locked_until`、`must_change_password`、`email`、`email_status`、`last_login_failure_at`），否则重建静默丢列。**注意最终列序以 live 库为准**：SQLite 把 ALTER 追加列放在末尾，跨模块 ALTER 的**真实顺序**由全局版本序 v0012 → v0013 → v0017 → v0035 → v0038 → v0054 → v0061 决定，**不是**按文件分组。
+#### F-6.1 · `users` 的**实测**列序（权威证据 = live `PRAGMA table_info`）
+
+以 `OpenSeeded` 跑完整迁移后实测（这是权威证据，优于任何按文件分组的推断）：
+
+| cid | 列 | 类型 | notnull | default |
+|----:|----|------|--------:|---------|
+| 0 | `id` | TEXT | 0 | — |
+| 1 | `username` | TEXT | 1 | — |
+| 2 | `name` | TEXT | 1 | — |
+| 3 | `roles` | TEXT | 1 | — |
+| 4 | `password_hash` | TEXT | 1 | — |
+| 5 | `created_at` | INTEGER | 1 | — |
+| 6 | `updated_at` | INTEGER | 1 | — |
+| 7 | `token_version` | INTEGER | 1 | 0 |
+| 8 | `failed_login_count` | INTEGER | 1 | 0 |
+| 9 | `locked_until` | INTEGER | 1 | 0 |
+| 10 | `enabled` | INTEGER | 1 | 1 |
+| 11 | `notifications_enabled` | INTEGER | 1 | 1 |
+| 12 | `avatar_url` | TEXT | 1 | '' |
+| 13 | `must_change_password` | INTEGER | 1 | 0 |
+| 14 | `email` | TEXT | 0 | — |
+| 15 | `email_status` | TEXT | 0 | — |
+| 16 | `last_login_failure_at` | INTEGER | 1 | 0 |
+
+**列序由全局版本序决定**（`token_version` v0011 → `failed_login_count`/`locked_until` v0012 + `enabled` v0013 → `notifications_enabled` v0017 → `avatar_url` v0035 → `must_change_password` v0038 → `email`/`email_status` v0054 → `last_login_failure_at` v0061），**不是**按模块文件分组；且三个跨模块列夹在 authsession 自己的列**中间**（v0013/v0017/v0035 插在 v0038 之前）。v74 的 `users` 新 DDL 必须按**本表列序**书写，遗漏任一列即静默丢数据。
 
 ### F-7 · `operation_log` 的 PG DDL 由正则派生，改 SQLite 字面会**静默失效**
 
@@ -104,10 +169,11 @@ v74 的 `users` 新 DDL **必须**包含这三列（连同 authsession 内的 6 
 ## 4. 待 independent 复审的问题
 
 1. F-1～F-5 的技术结论是否成立、是否有更优处置（例如以显式重建联接表替代子女先行、或改变 descriptor 边界使父表与其全部子表同属一个 descriptor）。
-2. 受影响子表跨 descriptor（`user_roles` 不在 v74 清单；`notifications`/`mfa` 在其他 descriptor）时，**descriptor 边界**应如何调整才不残留悬挂 FK。
-3. 既有 `rebuildOperationLog` 的 FK 隐患是否为**生产缺陷**、修复应归属哪个目标。
-4. F-6 的跨模块列序应以什么为权威证据（live `PRAGMA table_info` 快照 vs 全局版本序推导）。
+2. **descriptor 边界（重点）**：`user_roles`/`role_permissions`/`role_menu_items` 三张联接表同时引用 v74 内的多张父表，却不在 v74 表清单内；`notifications`(v81)、`user_mfa`/`mfa_proofs`(v80) 在**其他** descriptor 内。请判定：v74 表清单是否必须由 12 张扩为 15 张（并入三张联接表）、跨 descriptor 子表（v80/v81）应如何处置、以及该扩表是否构成对 `D-014` 已接受 allocation 的结构性修订。
+3. 既有 `rebuildOperationLog`（`operationlog/migration/migration.go:756-776`）的 FK 隐患是否为**生产缺陷**、修复应归属哪个目标；修复后 v1–v72 的 canonical SQL/checksum 不变性是否受影响（append-only 边界）。
+4. F-6 的跨模块列序是否应以 **live `PRAGMA table_info` 快照**为权威证据（本文件 §F-6.1 已用实测给出 17 列完整列序）。
 5. F-7 的 PG 显式 DDL 是否属于 R1 冻结交付，或可与 R2 落码合并。
+6. 本轮两条转换表达式在边界值（负毫秒、999 ms、公元 9999 年、epoch 0）上是否有反例。
 
 ## 5. 声明
 
