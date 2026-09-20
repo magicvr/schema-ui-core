@@ -47,7 +47,7 @@ parent: null
 
 | 阶段 | 目的 | 状态 |
 |------|------|------|
-| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **active**（GOAL-002 · 0/4） |
+| R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **active**（GOAL-002 · 1/4；C1 completed） |
 | R2 | 双方言迁移 + Store 编解码，沿用不可变 checksum 台账 | pending |
 | R3 | 读写/时区回归 + 备份有界核对 + 证据与关门 | pending |
 

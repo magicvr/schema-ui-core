@@ -38,6 +38,13 @@ version: 0.1.0
 - `F-I-006`：CHECK/partial index/WHERE/ORDER/predicate 重建与改写。
 - `F-I-010`：公共 6 位微秒 RFC3339 formatter、解析、fixtures、协议/测试影响。
 
+## 追加响应（2026-09-20）
+
+- `F-I-010` → **fixed（planning coverage）**：`attachments/r1-public-wire-inventory-v0.1.md` 已逐项登记 fixed-3/RFC3339 formatter、parser、Go/Web fixtures、非 DB exceptions 与 R3 matrix 要求；公共 wire 仍未实施，C2 复审仍需核对。
+- `F-I-011` → **fixed**：`E-004`/`E-005`/`E-006`/`E-007` 已补入执行索引；原 finding 不改写。
+
+当前开放 required 为 `F-I-002`～`F-I-006` 五条。
+
 ## 放行
 
-independent A-004 的 required findings 仍未合法闭合；GOAL-002 不关闭，C2 不冻结，R2 不启动。下一步是起草 C2/C3 方案 guardrails，继续 self 后再次调用 grok independent 复审。
+independent A-004 的 required findings 尚未全部合法闭合；GOAL-002 不关闭，C2 不冻结，R2 不启动。下一步是起草 C2/C3 方案 guardrails，继续 self 后再次调用 grok independent 复审。

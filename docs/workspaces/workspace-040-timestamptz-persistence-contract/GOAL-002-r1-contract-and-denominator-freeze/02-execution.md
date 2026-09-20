@@ -19,6 +19,8 @@ version: 0.1.0
 | E-003 | 2026-09-20 | 完整时间列 inventory v0.2 | recorded | `02-execution/E-003-inventory-complete-v0.2.md` |
 | E-004 | 2026-09-20 | 公共时间输出合同用户裁决 | recorded | `02-execution/E-004-public-wire-decision-recorded.md` |
 | E-005 | 2026-09-20 | compiled catalog v72 口径纠正 | recorded | `02-execution/E-005-catalog-72-correction.md` |
+| E-006 | 2026-09-20 | wire 输入兼容用户裁决 | recorded | `02-execution/E-006-wire-input-compat-decision.md` |
+| E-007 | 2026-09-20 | 公共时间 wire inventory v0.1 | recorded | `02-execution/E-007-public-wire-inventory-v0.1.md` |
 
 ## 事实边界
 

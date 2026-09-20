@@ -19,7 +19,7 @@ workspace_id: workspace-040-timestamptz-persistence-contract
 
 ```text
 GOAL-001-timestamptz-persistence-contract [active] (0/3) · 纲领容器
-└── GOAL-002-r1-contract-and-denominator-freeze [active] (0/4) · R1 合同与分母冻结
+└── GOAL-002-r1-contract-and-denominator-freeze [active] (1/4) · R1 合同与分母冻结
 ```
 
 ## 纲领路线图
@@ -37,7 +37,7 @@ R1 合同与分母冻结 [active · GOAL-002 · 0/4]
 | id | title | parent | status | progress | updated |
 |----|-------|--------|--------|----------|---------|
 | GOAL-001-timestamptz-persistence-contract | DB 时间列 timestamptz 持久化合同 | null | **active** | 0/3 | 2026-09-20 |
-| GOAL-002-r1-contract-and-denominator-freeze | R1 · 时间合同与分母冻结 | GOAL-001-timestamptz-persistence-contract | **active** | 0/4 | 2026-09-20 |
+| GOAL-002-r1-contract-and-denominator-freeze | R1 · 时间合同与分母冻结 | GOAL-001-timestamptz-persistence-contract | **active** | 1/4 | 2026-09-20 |
 
 ## 说明
 
