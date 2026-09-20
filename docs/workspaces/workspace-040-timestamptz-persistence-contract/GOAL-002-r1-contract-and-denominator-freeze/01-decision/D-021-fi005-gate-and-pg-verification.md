@@ -34,9 +34,21 @@ version: 0.1.0
 2. `migrate_test.go` / `postgres_test.go` 的 v73+ 追加行与**金额列断言拆分**（`wallet_accounts.balance_total` / `wallet_ledger_entries.amount_delta` 保持 `bigint`）；
 3. leftover 21 名补入 PG 断言集合。
 
-- **范围**：本拆分只适用于「哈希值」这一子项；F-I-005 的其余子项（约定、名、算法、唯一范围、append-only 边界）**在 R1 内闭合**。
-- **复审触发条件**：R2 落码后首次记录哈希时，须由 independent 复审该哈希与约定一致；若约定被修订，本拆分的 R1 部分随之回退。
-- **不得**把本拆分读作「F-I-005 已完成」——它是**有范围的移交**，不是闭合声明。
+### 2026-09-20 用户书面裁决：F-I-005 记为 **`accepted-residual`**
+
+A-044 判定本拆分「既非 `fixed` 也非完整 `accepted-residual`」（范围句未覆盖全部延期子项、未写复审触发）。用户经 P-004 **书面裁决采用 P-003 的 `accepted-residual` 路径**，现补全如下：
+
+| 项 | 内容 |
+|----|------|
+| **路径** | `accepted-residual`（P-003 三路径之一；用户 2026-09-20 书面接受） |
+| **残余范围**（穷举，不得外扩） | ① v73–v87 共 15 个 descriptor 的**真实 `MigrationChecksum` 哈希值**尚未记录；② 随之的 `migrate_test.go` / `postgres_test.go` 的 **v73+ 追加断言**与**金额列断言拆分**（`wallet_accounts.balance_total` / `wallet_ledger_entries.amount_delta` 保持 `bigint`）；③ **leftover 21 名**补入 PG 断言集合 |
+| **范围内不算残余**（已在 R1 闭合） | checksum **计算约定**（`D-017`）；15 个 descriptor 的 `Name` 与 `transform_id`；`MigrationChecksum` **算法与输入结构**（`m0–m5` 序位）；**唯一表范围**；**append-only 边界** |
+| **复审触发** | **R2 首次记录任一 v73+ 哈希时**，由 independent（grok build）复审「所记哈希与 `D-017` 约定一致、且覆盖范围内全部三项」；任一不符即 residual 失效、F-I-005 回到 open |
+| **失效条件** | 若 `D-017` 的 checksum 约定被修订，本 residual 的 R1 侧结论随之回退，须重新裁决 |
+| **不适用** | 本节**不**替代 R2 的实现与验收；R2 仍须完整遵守 `D-019`（FK 重建）、`D-018`（行拷贝与无过渡期）等 |
+
+- **不得**把本 residual 读作「F-I-005 已完成」或「哈希已被验证」——它是**有范围、有触发条件的残余风险接受**，不是信息已验证。
+- 本条为**用户书面决定**，非编排器自裁（P-004 合规）。
 
 ## 决定 2 · 允许临时起 PostgreSQL 容器做经验验证
 
