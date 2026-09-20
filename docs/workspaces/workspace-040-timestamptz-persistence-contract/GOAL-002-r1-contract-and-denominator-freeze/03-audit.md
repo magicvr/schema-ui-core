@@ -36,7 +36,8 @@ version: 0.1.6
 | A-012 | 2026-09-20 | independent | C2/C3 freeze-gate follow-up after A-011 / D-008 / D-009 | conditional | 6 | `03-audit/A-012-r1-independent-after-a011-d008-d009.md` |
 | A-013 | 2026-09-20 | self | response to A-012 / freeze-package alignment | conditional | 6 | `03-audit/A-013-r1-self-response-to-a012.md` |
 | A-014 | 2026-09-20 | independent | C2/C3 design-evidence follow-up after A-013 | conditional | 5 | `03-audit/A-014-r1-independent-after-a013-c2-c3-evidence.md` |
+| A-015 | 2026-09-20 | self | response to A-014 / concrete C2/C3 evidence | conditional | 5 | `03-audit/A-015-r1-self-response-to-a014.md` |
 
 ## 结论状态
 
-用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`（冻结载体与 Root D-008/D-009 及 Port/`core.persistence` owner 唯一），并维持 **F-I-010 planning closed**（不按 A-013 重开）。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，但确认 C2/C3 仍不可冻结。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。
+用户已完成 A-010/A-012 点名的关键方案裁决。A-014 independent 接受 A-013 对 **F-I-014** 的 `fixed`，A-015 已响应并修正执行索引 F-I-015；并维持 **F-I-010 planning closed**。R1 仍处于证据收集阶段。A-006 接受 F-I-001 `fixed`；A-012/A-014 接受精度截断、config D0 0→NULL、`pg_dump -F c`/`pg_restore`、Port 仅 `CreateRecoveryPoint`、`schema_migrations` owner = `core.persistence` 为方向已选，但确认 C2/C3 仍不可冻结。90 列、catalog 72、v1–v72 / v67–v72 扫描、`login_failures` 与 retired `records` 已处理。**开放 required = F-I-002～006（5 条）**。存在未合法闭合的 required findings 时，不得冻结 C2/C3、不得关闭本子目标、不得将 Root R1 标 completed、不得放行 R2。
