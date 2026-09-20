@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	datapermissionstore "github.com/magicvr/schema-ui-core/apps/api/modules/datapermission/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // DataPermissionService is the surface the data-permission routes consume. It
@@ -82,7 +82,7 @@ func DataPermissionRoutes(a *auth.Authenticator, service DataPermissionService, 
 				"ownerColumn":  policy.OwnerColumn,
 				"defaultScope": policy.DefaultScope,
 				"enabled":      policy.Enabled,
-				"updatedAt":    policy.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+				"updatedAt":    FormatWireTime(policy.UpdatedAt),
 			})
 		}
 		writeJSON(w, http.StatusOK, resourceList{Items: items, Total: total, Page: page, PageSize: pageSize})

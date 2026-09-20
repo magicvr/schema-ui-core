@@ -706,12 +706,12 @@ func TestVouchersGenerateExpiresAtDatePicker(t *testing.T) {
 
 	// 1. Chosen date → expiry at 23:59:59 UTC of the SAME day.
 	exp, ok := firstExpiry(post(`{"count":1,"amount":"1.00","expiresAt":"2027-01-15"}`))
-	if !ok || exp != "2027-01-15T23:59:59.000Z" {
-		t.Fatalf("date expiry = %q (ok=%v), want 2027-01-15T23:59:59.000Z", exp, ok)
+	if !ok || exp != "2027-01-15T23:59:59.000000Z" {
+		t.Fatalf("date expiry = %q (ok=%v), want 2027-01-15T23:59:59.000000Z", exp, ok)
 	}
 
 	// 2. Upper-edge date (2099-12-31) is accepted; the day after the window is not.
-	if exp, ok := firstExpiry(post(`{"count":1,"amount":"1.00","expiresAt":"2099-12-31"}`)); !ok || exp != "2099-12-31T23:59:59.000Z" {
+	if exp, ok := firstExpiry(post(`{"count":1,"amount":"1.00","expiresAt":"2099-12-31"}`)); !ok || exp != "2099-12-31T23:59:59.000000Z" {
 		t.Fatalf("2099-12-31 expiry = %q (ok=%v)", exp, ok)
 	}
 	rejects := []string{

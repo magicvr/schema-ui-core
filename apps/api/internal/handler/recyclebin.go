@@ -176,11 +176,11 @@ func recycleItemToMap(item RecycleItem) map[string]any {
 		"resourceId": item.ResourceID,
 		"actorId":    item.ActorID,
 		"actorName":  item.ActorName,
-		"deletedAt":  item.DeletedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"deletedAt":  FormatWireTime(item.DeletedAt),
 		"restored":   !item.RestoredAt.IsZero(),
 	}
 	if !item.RestoredAt.IsZero() {
-		row["restoredAt"] = item.RestoredAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["restoredAt"] = FormatWireTime(item.RestoredAt)
 	}
 	if item.Payload != nil {
 		row["payload"] = item.Payload

@@ -288,8 +288,8 @@ func digitalOfferToMap(o store.Offer) map[string]any {
 		"entitlementForm": o.EntitlementForm,
 		"status":          o.Status,
 		"version":         o.Version,
-		"createdAt":       o.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":       o.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":       FormatWireTime(o.CreatedAt),
+		"updatedAt":       FormatWireTime(o.UpdatedAt),
 	}
 	if o.EntitlementForm == store.FormDuration {
 		out["durationSeconds"] = o.DurationSeconds
@@ -332,7 +332,7 @@ func digitalPurchaseToMap(p store.Purchase) map[string]any {
 		"deductEntryId": p.DeductEntryID,
 		"requestId":     p.RequestID,
 		"status":        p.Status,
-		"createdAt":     p.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":     FormatWireTime(p.CreatedAt),
 	}
 }
 
@@ -344,11 +344,11 @@ func digitalEntitlementToMap(e store.Entitlement) map[string]any {
 		"purchaseId": e.PurchaseID,
 		"form":       e.Form,
 		"status":     e.Status,
-		"createdAt":  e.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":  e.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":  FormatWireTime(e.CreatedAt),
+		"updatedAt":  FormatWireTime(e.UpdatedAt),
 	}
 	if e.ExpiresAt != nil {
-		out["expiresAt"] = e.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		out["expiresAt"] = FormatWireTime(*e.ExpiresAt)
 	}
 	if e.RemainingCount != nil {
 		out["remainingCount"] = *e.RemainingCount

@@ -19,9 +19,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // passwordHashCost is the bcrypt cost for users resource password hashing
@@ -61,10 +61,10 @@ func usersResourceWithNotifier(repository UsersRepository, operations operationl
 		QSearch:    true,
 		// T-02 (GOAL-013 D-003): management-list filters — enabled / locked
 		// state selects on the users search form.
-		ExtraQuery:      []string{"enabled", "locked"},
-		Entity:          &usersEntity{repository: repository, notifier: notifier},
-		CreateFields:    []string{"username", "name"},
-		PatchFields:     []string{"name"},
+		ExtraQuery:   []string{"enabled", "locked"},
+		Entity:       &usersEntity{repository: repository, notifier: notifier},
+		CreateFields: []string{"username", "name"},
+		PatchFields:  []string{"name"},
 		// workspace-018 R3 (I-006): managed email prefill travels raw so an
 		// explicit "" can CLEAR the address back to unbound (PatchFields
 		// rejects empty strings); Update() type-asserts string.
@@ -127,8 +127,8 @@ func userToMap(u authsession.User) map[string]any {
 		"email":              u.Email,
 		"emailStatus":        u.EmailStatus,
 		"emailStatusStyle":   emailStatusStyle,
-		"createdAt":          u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":          u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":          FormatWireTime(u.CreatedAt),
+		"updatedAt":          FormatWireTime(u.UpdatedAt),
 	}
 }
 

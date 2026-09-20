@@ -50,7 +50,7 @@ func (e *memEntity) Create(body map[string]any, id string, now time.Time, _ acco
 		"id":        id,
 		"sku":       stringField(body, "sku"),
 		"title":     stringField(body, "title"),
-		"updatedAt": now.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt": FormatWireTime(now),
 	}
 	e.rows[id] = row
 	return row, nil
@@ -64,7 +64,7 @@ func (e *memEntity) Update(id string, body map[string]any, now time.Time, _ acco
 	if v, ok := body["title"]; ok {
 		row["title"] = v
 	}
-	row["updatedAt"] = now.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+	row["updatedAt"] = FormatWireTime(now)
 	return row, nil
 }
 
@@ -117,7 +117,7 @@ func expectError(t *testing.T, rr *httptest.ResponseRecorder, wantStatus int, wa
 func TestResourceFactoryServesNewResourceWithoutHandwrittenHandler(t *testing.T) {
 	env := newAuthTestEnv(t)
 	entity := newMemEntity(
-		map[string]any{"id": "cat-1", "sku": "S-1", "title": "Widget", "updatedAt": "2026-08-03T00:00:00.000Z"},
+		map[string]any{"id": "cat-1", "sku": "S-1", "title": "Widget", "updatedAt": "2026-08-03T00:00:00.000000Z"},
 	)
 	mux := http.NewServeMux()
 	registerResource(mux, env.a, catalogResource(entity))
@@ -269,6 +269,7 @@ func TestResourceFactoryDefaultPermissionDerivation(t *testing.T) {
 	mux.ServeHTTP(rr, req)
 	expectError(t, rr, http.StatusForbidden, "FORBIDDEN")
 }
+
 // --- S-09 (GOAL-016 D-002 §2): row-level scope enforcement in the factory ---
 
 // scopedEntity is an in-memory ScopeAware entity: rows carry an owner column
@@ -339,21 +340,23 @@ type fixedScoper struct {
 	constraint *ScopeConstraint
 }
 
-func (s fixedScoper) ScopeFor(userID, resource string) (*ScopeConstraint, error) { return s.constraint, nil }
+func (s fixedScoper) ScopeFor(userID, resource string) (*ScopeConstraint, error) {
+	return s.constraint, nil
+}
 
 func scopedResource(entity ResourceEntity, scoper RowScopeProvider) Resource {
 	next := 0
 	return Resource{
-		ID:           "orders",
-		Path:         "/api/orders",
-		Listable:     true,
-		SortFields:   []string{"id"},
-		Entity:       entity,
-		CreateFields: []string{"title"},
-		PatchFields:  []string{"title"},
+		ID:              "orders",
+		Path:            "/api/orders",
+		Listable:        true,
+		SortFields:      []string{"id"},
+		Entity:          entity,
+		CreateFields:    []string{"title"},
+		PatchFields:     []string{"title"},
 		PermissionRead:  "users.read",
 		PermissionWrite: "users.write",
-		Scoper:       scoper,
+		Scoper:          scoper,
 		NewID: func() (string, error) {
 			next++
 			return fmt.Sprintf("o-%d", next), nil

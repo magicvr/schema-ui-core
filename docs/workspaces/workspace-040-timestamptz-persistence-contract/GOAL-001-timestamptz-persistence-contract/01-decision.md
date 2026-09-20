@@ -41,5 +41,6 @@ version: 0.1.0
 | D-015 | 2026-09-20 | 负时间与微秒截断解释（**毫秒族已于同日按 PG 15/16/17 实测更正**） | accepted | `01-decision/D-015-negative-instant-truncation.md` |
 | D-016 | 2026-09-20 | **R2 阶段边界与信息门禁**（范围 / 非目标 / M1–M4 检查点 / I-041-001～004） | accepted | `01-decision/D-016-r2-boundary.md` |
 | D-017 | 2026-09-20 | **M2/M3 交付次序与 PG 验证环境裁决**（用户方案 1；M3 slug；`I-041-003` 关闭 + 测试库约束） | accepted | `01-decision/D-017-m3-staging-and-pg-verification-environment.md` |
+| D-018 | 2026-09-20 | **R3 阶段边界与信息门禁**（范围/A-D 检查点/`I-040-004`+`I-041-004`+`I-041-007`/`I-041-008`） | accepted | `01-decision/D-018-r3-boundary.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

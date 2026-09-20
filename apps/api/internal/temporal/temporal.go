@@ -117,6 +117,16 @@ func MustFormat(t time.Time) string {
 	return s
 }
 
+// FormatWire renders t in the public wire form, which is byte-identical to the
+// canonical storage form: UTC, six fractional digits, "Z" only.
+//
+// It is the single formatting authority for the VP-040 R3 wire contract, so
+// handlers, modules and tooling cannot drift apart; like Value it truncates
+// toward zero to microsecond precision (Root D-008: never round).
+func FormatWire(t time.Time) string {
+	return NewValue(t).String()
+}
+
 // Parse reads a legal RFC3339 timestamp and normalizes it to a UTC domain value.
 //
 // The input surface is deliberately wider than the output surface (inbound

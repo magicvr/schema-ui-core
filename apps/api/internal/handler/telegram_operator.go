@@ -237,7 +237,7 @@ func (h *TelegramOperatorHandler) listSessions(w http.ResponseWriter, r *http.Re
 			ChatType:      session.ChatType,
 			Title:         session.Title,
 			Username:      session.Username,
-			LastMessageAt: session.LastMessageAt.UTC().Format(time.RFC3339),
+			LastMessageAt: FormatWireTime(session.LastMessageAt),
 		})
 	}
 	writeJSON(w, http.StatusOK, telegramSessionListResponse{Items: items, Total: total, Page: page, PageSize: pageSize})
@@ -331,7 +331,7 @@ func (h *TelegramOperatorHandler) listMessages(w http.ResponseWriter, r *http.Re
 			ChatID:     strconv.FormatInt(entry.ChatID, 10),
 			Direction:  entry.Direction,
 			Status:     entry.Status,
-			OccurredAt: entry.OccurredAt.UTC().Format(time.RFC3339),
+			OccurredAt: FormatWireTime(entry.OccurredAt),
 			Text:       entry.Text,
 		}
 		if entry.UpdateID != 0 {
@@ -502,8 +502,8 @@ func telegramOutboundResponseFrom(message telegramstore.OutboundMessage) telegra
 		Text:         message.Text,
 		Status:       message.Status,
 		ErrorMessage: message.ErrorMessage,
-		CreatedAt:    message.CreatedAt.UTC().Format(time.RFC3339),
-		UpdatedAt:    message.UpdatedAt.UTC().Format(time.RFC3339),
+		CreatedAt:    FormatWireTime(message.CreatedAt),
+		UpdatedAt:    FormatWireTime(message.UpdatedAt),
 	}
 	if message.RetryOf != "" {
 		retryOf := message.RetryOf

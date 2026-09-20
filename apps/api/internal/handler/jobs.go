@@ -322,8 +322,8 @@ func jobToMap(job jobs.Job) map[string]any {
 		"progress": job.Progress, "attempt": job.Attempt, "maxAttempts": job.MaxAttempts,
 		"cancelRequested": job.CancelRequested, "actorId": job.ActorID,
 		"correlationId": job.CorrelationID,
-		"createdAt":     job.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":     job.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":     FormatWireTime(job.CreatedAt),
+		"updatedAt":     FormatWireTime(job.UpdatedAt),
 		// Action availability, mirroring the write contract exactly
 		// (internal/jobs/actions.go): cancel accepts queued|running, retry
 		// accepts failed WITH remaining attempt budget, and only a succeeded job
@@ -341,10 +341,10 @@ func jobToMap(job jobs.Job) map[string]any {
 		row["errorMessage"] = job.ErrorMessage
 	}
 	if job.FinishedAt != nil {
-		row["finishedAt"] = job.FinishedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["finishedAt"] = FormatWireTime(*job.FinishedAt)
 	}
 	if job.ResultExpiresAt != nil {
-		row["resultExpiresAt"] = job.ResultExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["resultExpiresAt"] = FormatWireTime(*job.ResultExpiresAt)
 	}
 	if job.Status == jobs.StatusSucceeded {
 		row["resultUrl"] = jobs.ResultURL(JobsBasePath, job.ID)
@@ -386,7 +386,7 @@ func parseJobTime(value string) (time.Time, bool) {
 	if value == "" {
 		return time.Time{}, true
 	}
-	parsed, err := time.Parse(time.RFC3339, value)
+	parsed, err := ParseWireTime(value)
 	if err != nil {
 		return time.Time{}, false
 	}

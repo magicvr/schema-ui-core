@@ -82,17 +82,17 @@ func voucherJSON(v voucher.Voucher) map[string]any {
 		"currency":   v.Currency,
 		"status":     string(v.Status),
 		"voidable":   v.Status == voucher.StatusUnused,
-		"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":  FormatWireTime(v.CreatedAt),
+		"updatedAt":  FormatWireTime(v.UpdatedAt),
 	}
 	if v.ExpiresAt != nil {
-		row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["expiresAt"] = FormatWireTime(*v.ExpiresAt)
 	}
 	if v.RedeemedBy != nil {
 		row["redeemedBy"] = *v.RedeemedBy
 	}
 	if v.RedeemedAt != nil {
-		row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["redeemedAt"] = FormatWireTime(*v.RedeemedAt)
 	}
 	return row
 }
@@ -572,10 +572,10 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 				"currency":   g.Voucher.Currency,
 				"status":     string(g.Voucher.Status),
 				"code":       g.Code, // One-time plaintext returned only here
-				"createdAt":  g.Voucher.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+				"createdAt":  FormatWireTime(g.Voucher.CreatedAt),
 			}
 			if g.Voucher.ExpiresAt != nil {
-				item["expiresAt"] = g.Voucher.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+				item["expiresAt"] = FormatWireTime(*g.Voucher.ExpiresAt)
 			}
 			items[i] = item
 		}
@@ -942,7 +942,7 @@ func accountToMap(a walletstore.Account) map[string]any {
 		"balanceFrozen":    a.BalanceFrozen,
 		"status":           a.Status,
 		"version":          a.Version,
-		"updatedAt":        a.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt":        FormatWireTime(a.UpdatedAt),
 		"decimals":         2,
 	}
 }
@@ -984,7 +984,7 @@ func entryToMap(e walletstore.LedgerEntry) map[string]any {
 		"memo":               e.Memo,
 		"actorId":            e.ActorID,
 		"actorName":          e.ActorName,
-		"createdAt":          e.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":          FormatWireTime(e.CreatedAt),
 	}
 }
 
@@ -996,7 +996,7 @@ func reconcileRunToMap(r walletstore.ReconciliationRun) map[string]any {
 		"mismatchCount": r.MismatchCount,
 		"details":       r.Details,
 		"actorId":       r.ActorID,
-		"createdAt":     r.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":     FormatWireTime(r.CreatedAt),
 	}
 }
 
@@ -1004,14 +1004,14 @@ func walletJobToMap(job jobs.Job) map[string]any {
 	row := map[string]any{
 		"id": job.ID, "kind": job.Kind, "status": job.Status,
 		"progress": job.Progress, "attempt": job.Attempt, "maxAttempts": job.MaxAttempts,
-		"cancelRequested": job.CancelRequested, "createdAt": job.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt": job.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"cancelRequested": job.CancelRequested, "createdAt": FormatWireTime(job.CreatedAt),
+		"updatedAt": FormatWireTime(job.UpdatedAt),
 	}
 	if job.ErrorCode != "" {
 		row["error"] = map[string]any{"code": job.ErrorCode, "message": job.ErrorMessage}
 	}
 	if job.FinishedAt != nil {
-		row["finishedAt"] = job.FinishedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["finishedAt"] = FormatWireTime(*job.FinishedAt)
 	}
 	if job.Status == jobs.StatusSucceeded {
 		// GOAL-003 R2 (D-001 §2.3): the address now comes from the shared

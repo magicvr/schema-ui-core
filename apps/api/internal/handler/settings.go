@@ -12,10 +12,10 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	settingsrepository "github.com/magicvr/schema-ui-core/apps/api/modules/settings/repository"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 // RegisterSettings is removed in R6 C6.1: the Settings module mounts its HTTP
@@ -111,21 +111,21 @@ func brandingRow(s *settingsrepository.SiteSettings) brandingResponse {
 
 func settingsRow(s *settingsrepository.SiteSettings) map[string]any {
 	return map[string]any{
-		"id":            s.ID,
-		"siteTitle":     s.SiteTitle,
-		"logoUrl":       s.LogoURL,
-		"logoUrlLight":  s.LogoURLLight,
-		"logoUrlDark":   s.LogoURLDark,
-		"faviconUrl":    s.FaviconURL,
-		"defaultLocale": s.DefaultLocale,
-		"siteTimezone":  s.SiteTimezone,
-		"defaultCurrency": s.DefaultCurrency,
-		"defaultTheme":  s.DefaultTheme,
-		"copyrightText":                  s.CopyrightText,
-		"icpNumber":                      s.ICPNumber,
-		"operationLogRetentionDays":      s.OperationLogRetentionDays,
-		"operationLogExpirationAction":   s.OperationLogExpirationAction,
-		"updatedAt":                      s.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"id":                           s.ID,
+		"siteTitle":                    s.SiteTitle,
+		"logoUrl":                      s.LogoURL,
+		"logoUrlLight":                 s.LogoURLLight,
+		"logoUrlDark":                  s.LogoURLDark,
+		"faviconUrl":                   s.FaviconURL,
+		"defaultLocale":                s.DefaultLocale,
+		"siteTimezone":                 s.SiteTimezone,
+		"defaultCurrency":              s.DefaultCurrency,
+		"defaultTheme":                 s.DefaultTheme,
+		"copyrightText":                s.CopyrightText,
+		"icpNumber":                    s.ICPNumber,
+		"operationLogRetentionDays":    s.OperationLogRetentionDays,
+		"operationLogExpirationAction": s.OperationLogExpirationAction,
+		"updatedAt":                    FormatWireTime(s.UpdatedAt),
 	}
 }
 
@@ -347,15 +347,15 @@ func settingsAuditValues(settings *settingsrepository.SiteSettings) map[string]a
 		return nil
 	}
 	return map[string]any{
-		"siteTitle":     settings.SiteTitle,
-		"logoUrl":       settings.LogoURL,
-		"logoUrlLight":  settings.LogoURLLight,
-		"logoUrlDark":   settings.LogoURLDark,
-		"faviconUrl":    settings.FaviconURL,
-		"defaultLocale": settings.DefaultLocale,
-		"siteTimezone":  settings.SiteTimezone,
-		"defaultCurrency": settings.DefaultCurrency,
-		"defaultTheme":  settings.DefaultTheme,
+		"siteTitle":                    settings.SiteTitle,
+		"logoUrl":                      settings.LogoURL,
+		"logoUrlLight":                 settings.LogoURLLight,
+		"logoUrlDark":                  settings.LogoURLDark,
+		"faviconUrl":                   settings.FaviconURL,
+		"defaultLocale":                settings.DefaultLocale,
+		"siteTimezone":                 settings.SiteTimezone,
+		"defaultCurrency":              settings.DefaultCurrency,
+		"defaultTheme":                 settings.DefaultTheme,
 		"copyrightText":                settings.CopyrightText,
 		"icpNumber":                    settings.ICPNumber,
 		"operationLogRetentionDays":    settings.OperationLogRetentionDays,

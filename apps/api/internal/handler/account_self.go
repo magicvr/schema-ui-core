@@ -16,10 +16,10 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // AccountRepository is the persistence surface consumed by the self-service
@@ -102,8 +102,8 @@ func accountProfileRow(u *authsession.User) map[string]any {
 		"name":      u.Name,
 		"avatarUrl": u.AvatarURL,
 		"enabled":   u.Enabled,
-		"createdAt": u.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt": u.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt": FormatWireTime(u.CreatedAt),
+		"updatedAt": FormatWireTime(u.UpdatedAt),
 	}
 }
 
@@ -378,8 +378,8 @@ func (h *accountSelfHandler) sessions() http.Handler {
 			current := currentHash != "" && token.TokenHash == currentHash
 			row := map[string]any{
 				"id":        token.ID,
-				"createdAt": token.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-				"expiresAt": token.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+				"createdAt": FormatWireTime(token.CreatedAt),
+				"expiresAt": FormatWireTime(token.ExpiresAt),
 				"status":    status,
 				"current":   current,
 			}
@@ -388,7 +388,7 @@ func (h *accountSelfHandler) sessions() http.Handler {
 				row["ip"] = loginClientIP(r)
 			}
 			if token.RevokedAt != nil {
-				row["revokedAt"] = token.RevokedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+				row["revokedAt"] = FormatWireTime(*token.RevokedAt)
 			}
 			items = append(items, row)
 		}

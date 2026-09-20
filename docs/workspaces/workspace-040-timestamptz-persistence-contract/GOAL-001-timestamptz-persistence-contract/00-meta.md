@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-20
 updated: 2026-09-20
-version: 0.4.0
+version: 0.5.0
 progress: 2/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
@@ -53,7 +53,7 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 |---------|------|------|
 | R1 | 合同与分母冻结：方言物理类型、列清单、零值/NULL、备份 residual | **completed**（GOAL-002 `done · 4/4`；关门向 independent = A-046，开放 required = 0；用户 2026-09-20 书面确认） |
 | R2 | 双方言迁移 + Store 编解码 | **completed**（M1–M4 全绿：M1/M2 = `GOAL-003` `done · 4/4`、M3 = `GOAL-004` `done · 3/3`、M4 = `GOAL-005` `done · 3/3`；独立关门审计 `A-004` **pass / open required = 0**） |
-| R3 | 读写/时区回归、备份有界核对、证据与关门 | pending |
+| R3 | 读写/时区回归、备份有界核对、证据与关门 | **active**（边界与门禁已冻结：Root `D-018`；检查点 R3-A～D；子目标待渐进立项） |
 
 `progress: 2/3` = 2/3 个检查点完成（**R1、R2 completed**；R3 pending）。progress 只作展示，不放行阶段、不关闭 finding、不推导 `done`。
 

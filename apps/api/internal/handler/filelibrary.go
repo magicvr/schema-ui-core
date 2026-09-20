@@ -22,9 +22,9 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/pagination"
 )
 
 // fileLibraryEntity adapts the shared upload store to the generic resource
@@ -83,7 +83,7 @@ func (e *fileLibraryEntity) Get(id string) (map[string]any, error) {
 		}
 		return nil, err
 	}
-	row := fileRow{ID: id, Name: info.Meta.Name, Type: info.Meta.Type, Owner: info.Meta.Owner, Size: info.Size, Created: formatRFC3339Milli(info.ModTime)}
+	row := fileRow{ID: id, Name: info.Meta.Name, Type: info.Meta.Type, Owner: info.Meta.Owner, Size: info.Size, Created: FormatWireTime(info.ModTime)}
 	return fileRowToMap(row), nil
 }
 
@@ -118,7 +118,7 @@ func (e *fileLibraryEntity) scan() ([]fileRow, error) {
 		if meta.Name == "" && meta.Type == "" && meta.Owner == "" {
 			continue // body-only leftover: invisible, as before the migration
 		}
-		row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner, Size: info.Size, Created: formatRFC3339Milli(info.ModTime)}
+		row := fileRow{ID: id, Name: meta.Name, Type: meta.Type, Owner: meta.Owner, Size: info.Size, Created: FormatWireTime(info.ModTime)}
 		rows = append(rows, row)
 	}
 	return rows, nil

@@ -33,11 +33,11 @@ type RolesRepository interface {
 
 func rolesResource(repository RolesRepository, operations operationlog.Recorder) Resource {
 	return Resource{
-		ID:              "roles",
-		Path:            "/api/roles",
-		Listable:        true,
-		SortFields:      []string{"key", "name", "updatedAt"},
-		QSearch:         true,
+		ID:         "roles",
+		Path:       "/api/roles",
+		Listable:   true,
+		SortFields: []string{"key", "name", "updatedAt"},
+		QSearch:    true,
 		// T-02 (GOAL-013 D-003): system-flag select on the roles search form.
 		ExtraQuery:      []string{"system"},
 		Entity:          &rolesEntity{repository: repository},
@@ -78,8 +78,8 @@ func roleToMap(r authsession.Role) map[string]any {
 		"assignedUsers": r.AssignedUsers,
 		"editable":      !r.System,
 		"deletable":     !r.System && r.AssignedUsers == 0,
-		"createdAt":     r.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":     r.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":     FormatWireTime(r.CreatedAt),
+		"updatedAt":     FormatWireTime(r.UpdatedAt),
 	}
 }
 

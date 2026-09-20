@@ -73,7 +73,7 @@ func TestRecycleBinListAndDetail(t *testing.T) {
 	if !ok {
 		t.Fatalf("deletedAt = %v, want ISO-8601 string", detail["deletedAt"])
 	}
-	if _, err := time.Parse("2006-01-02T15:04:05.000Z07:00", rawDeleted); err != nil {
+	if _, err := time.Parse("2006-01-02T15:04:05.000000Z", rawDeleted); err != nil {
 		t.Fatalf("deletedAt %q is not ISO-8601: %v", rawDeleted, err)
 	}
 }
@@ -313,7 +313,6 @@ func TestRecycleFactoryHookNilKeepsLegacySemantics(t *testing.T) {
 	}
 }
 
-
 // F-009 (grok A-004): the sequential batch-delete path must snapshot EVERY
 // id (the factory records per id after each successful delete).
 func TestRecycleFactoryHookBatchDeleteSnapshots(t *testing.T) {
@@ -349,7 +348,7 @@ func TestRecycleFactoryHookBatchDeleteSnapshots(t *testing.T) {
 		idsJSON += "\"" + id + "\""
 	}
 	idsJSON += "]"
-	req := bearer(t, token, http.MethodPost, "/api/data-dictionary/types/batch-delete", "{\"ids\":" + idsJSON + "}")
+	req := bearer(t, token, http.MethodPost, "/api/data-dictionary/types/batch-delete", "{\"ids\":"+idsJSON+"}")
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
