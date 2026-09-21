@@ -4,8 +4,8 @@ doc: execution
 status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-20
-updated: 2026-09-20
-version: 0.4.0
+updated: 2026-09-21
+version: 0.5.0
 ---
 
 # 执行记录 · GOAL-005-r2-backup-port-and-closeout
@@ -18,6 +18,7 @@ version: 0.4.0
 | E-002 | 2026-09-20 | Backup Port + SQLite/PG provider + restore harness（检查点 A，含真实 PG 路径） | recorded | `02-execution/E-002-backup-port-and-providers-checkpoint-a.md` |
 | E-003 | 2026-09-20 | C3 §4.2 调用点全部接线（检查点 B：A/B/C + §4.3 有界重试 + PG 对称校验） | recorded | `02-execution/E-003-c3-anchors-wired-checkpoint-b.md` |
 | E-004 | 2026-09-20 | R2 关门审计与检查点 C 完成（A-002 三条 required 修复 + A-004 复审 pass） | recorded | `03-audit/A-003-response-to-closeout-audit.md`、`03-audit/A-005-response-to-reaudit-and-checkpoint-c-closure.md` |
+| E-005 | 2026-09-21 | PR #16 PostgreSQL CI 暴露 helper network 缺口并修复 | recorded | `02-execution/E-005-post-close-pg-client-network-fix.md` |
 
 ## 事实边界
 

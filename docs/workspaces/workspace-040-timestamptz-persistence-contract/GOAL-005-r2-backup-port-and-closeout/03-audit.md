@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-09-20
-updated: 2026-09-20
-version: 0.5.0
+updated: 2026-09-21
+version: 0.6.0
 ---
 
 # 审计台账 · GOAL-005-r2-backup-port-and-closeout（R2 M4）
@@ -31,11 +31,27 @@ version: 0.5.0
 | A-003 | self（编排器响应） | 2026-09-20 | 响应 A-002 全部意见 | **pass** | 3 required 全部 `fixed`；F-I-004/005/006 fixed；F-I-007（元数据同步）fixed；待 independent 复审确认 | `03-audit/A-003-response-to-closeout-audit.md` |
 | A-004 | independent | 2026-09-20 | 复审 A-002 三条 required 的闭合（grok-build grok-4.6 · high） | **pass** | **open required = 0**：F-I-001/002/003 均 `fixed`（真实 PG 复跑未 skip）；F-I-007 partial；新增 recommended F-I-008/009/010（不阻断检查点 C） | `03-audit/A-004-independent-a002-required-closure.md` |
 | A-005 | self（编排器响应） | 2026-09-20 | 响应 A-004 + 检查点 C 关门 | **pass** | F-I-007/010 索引同步；F-I-008（PG 样本正向覆盖，实测 ms:2/sec:90）；F-I-009（marker 诊断并列保留 + PG 读失败不阻断）；**检查点 C 完成 → R2 阶段完成** | `03-audit/A-005-response-to-reaudit-and-checkpoint-c-closure.md` |
+| A-006 | self | 2026-09-21 | PR #16 post-close PostgreSQL CI 缺口修复与发布候选复验 | **pass** | 首次 PG helper `localhost` 访问失败已修复；最终候选 CI 9/9 通过 | `03-audit/A-006-post-close-pg-client-network-self.md` |
 
 ## R2 关门审计范围
 
 - 判据：Root `D-016` §4 M4（`D-021` residual 三项完成且经 independent 复审 → R2 self + independent 关门审计通过）。
 - 必查：`GOAL-003`/`GOAL-004` 的 required 闭合状态、`D-021` residual 收口记录（`GOAL-002/03-audit/A-048`）、`I-041-006` 的用户裁决、Backup Port 的 `<recovery-artifact>` 校验与错误分类证据。
+
+## A-006 · self · PR #16 post-close PostgreSQL CI 缺口修复（2026-09-21）
+
+- **source**：self
+- **auditor**：current-session
+- **scope**：PR #16 中 `PgProvider` helper-container 网络选择、配置接线、PostgreSQL CI 验证；不复审 VP/Root 关门状态
+- **verdict**：**pass**（本 scope open required = 0）
+- **完整意见**：[`03-audit/A-006-post-close-pg-client-network-self.md`](A-006-post-close-pg-client-network-self.md)
+
+### 结论摘要
+
+- 首次 Hosted CI 的 PG 失败有明确根因：默认 bridge 下 helper 容器中的 `localhost` 不指向 runner 的 PostgreSQL service。
+- `DB_CLIENT_DOCKER_NETWORK` 可选配置向 `pg_dump` 与 `pg_restore` 注入 Docker 网络；本地配置与 composition 测试通过。
+- Hosted `api + postgres` job 实际运行成功；最终候选 `971ebbce` 的 `r6-basic-matrix` 9/9 `success`。
+- 此为已关闭目标的后续证据补录，不改目标状态或 progress。
 
 ## A-002 · independent · R2 关门（2026-09-20）
 

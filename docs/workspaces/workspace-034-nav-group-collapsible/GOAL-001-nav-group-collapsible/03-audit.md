@@ -4,8 +4,8 @@ doc: audit
 status: active
 parent: null
 created: 2026-09-07
-updated: 2026-09-09
-version: 0.1.0
+updated: 2026-09-21
+version: 0.2.0
 ---
 
 # 审计 · GOAL-001-nav-group-collapsible
@@ -39,6 +39,7 @@ version: 0.1.0
 | A-012 | 2026-09-07 | self | A-011 recommended 响应与 R5 关门放行 | pass | 0 | [`03-audit/A-012-a011-recommended-response.md`](03-audit/A-012-a011-recommended-response.md) |
 | A-013 | 2026-09-08 | self | 发布候选预检（v0.6.0 版本钉 + 本地 API/Web 回归） | pass | 0 | [`03-audit/A-013-release-preflight-self.md`](03-audit/A-013-release-preflight-self.md) |
 | A-014 | 2026-09-08 | independent | 发布候选预检（版本/本地证据/外部发布门禁） | pass | 0 | [`03-audit/A-014-release-preflight-independent.md`](03-audit/A-014-release-preflight-independent.md) |
+| A-015 | 2026-09-21 | self | apps/api/v0.7.0 发布候选预检（PR #16、最终 CI、npm 版本钉与包名映射） | pass | 0 | [`03-audit/A-015-release-v0.7.0-preflight-self.md`](03-audit/A-015-release-v0.7.0-preflight-self.md) |
 
 ## 愿景层意见（仅作上下文）
 
