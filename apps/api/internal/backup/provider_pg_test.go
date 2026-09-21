@@ -275,6 +275,51 @@ func TestPGMidBatchArtifactMustFail(t *testing.T) {
 	}
 }
 
+// TestPgProviderRejectsRelativeWorkDir is the boundary guard from the
+// independent re-audit (A-005 F-I-102): Create/Restore are the components that
+// actually build `docker run -v <WorkDir>:...`, so a relative WorkDir must fail
+// closed here rather than reaching docker and failing with exit 125.
+func TestPgProviderRejectsRelativeWorkDir(t *testing.T) {
+	const sourceDSN = "postgres://sa:secret@127.0.0.1:5432/src?sslmode=disable"
+	for _, tc := range []struct {
+		name    string
+		workDir string
+	}{
+		{"dot-slash relative", filepath.Join(".", "data", "recovery")},
+		{"bare relative", filepath.Join("data", "recovery")},
+		{"single dot", "."},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			called := false
+			provider := PgProvider{
+				AdminDSN: "postgres://sa:secret@127.0.0.1:5432/postgres?sslmode=disable",
+				WorkDir:  tc.workDir,
+				exec: func(context.Context, string, ...string) ([]byte, error) {
+					called = true
+					return nil, nil
+				},
+			}
+			err := provider.Create(context.Background(), sourceDSN, filepath.Join(t.TempDir(), "a.dump"))
+			if err == nil {
+				t.Fatalf("Create with WorkDir %q must fail closed", tc.workDir)
+			}
+			if KindOf(err) != KindInvalidRequest {
+				t.Fatalf("Create WorkDir %q classification = %q, want InvalidRequest (%v)", tc.workDir, KindOf(err), err)
+			}
+			if called {
+				t.Fatalf("Create with WorkDir %q still invoked docker", tc.workDir)
+			}
+			_, _, err = provider.Restore(context.Background(), filepath.Join(t.TempDir(), "a.dump"))
+			if err == nil {
+				t.Fatalf("Restore with WorkDir %q must fail closed", tc.workDir)
+			}
+			if KindOf(err) != KindInvalidRequest {
+				t.Fatalf("Restore WorkDir %q classification = %q, want InvalidRequest (%v)", tc.workDir, KindOf(err), err)
+			}
+		})
+	}
+}
+
 // TestPgProviderCommandConstruction pins the tool invocation without needing a
 // server: the dump and restore commands must carry the C3 flags.
 func TestPgProviderCommandConstruction(t *testing.T) {

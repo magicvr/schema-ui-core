@@ -284,12 +284,13 @@ func recoveryWiring(dialect kernel.Dialect, cfg *config.Config) (kernel.Recovery
 // it, and for postgres db.path is the file-storage root), otherwise under the
 // user cache directory keyed by the DSN host/database.
 //
-// The result is ALWAYS absolute: the postgres provider bind-mounts this
+// The result is ALWAYS absolute or empty: the postgres provider bind-mounts this
 // directory into the pg_dump/pg_restore container, and docker rejects a relative
 // source path ("includes invalid characters for a local volume name ... use
-// absolute path"). A relative db.path such as "./data/schema-ui.db" used to
-// reach the provider as "data\recovery" and aborted startup (dev launcher
-// 2026-09-21).
+// absolute path"). A relative db.path such as "./data/schema-ui.db" used to reach
+// the provider as "data\recovery" and aborted startup (dev launcher 2026-09-21).
+// An unresolvable path returns "" so recoveryWiring disables the anchors and the
+// store records that fact, rather than handing a relative path to docker.
 func recoveryArtifactsDir(cfg *config.Config) string {
 	if strings.TrimSpace(cfg.DBPath) != "" {
 		return absoluteArtifactDir(filepath.Join(filepath.Dir(cfg.DBPath), "recovery"))
@@ -309,12 +310,12 @@ func recoveryArtifactsDir(cfg *config.Config) string {
 }
 
 // absoluteArtifactDir resolves a configured artifact directory against the
-// process working directory. It keeps the configured-but-unresolvable value as a
-// last resort rather than dropping the directory entirely.
+// process working directory. A path that cannot be resolved fails closed (empty
+// result = anchors disabled) instead of being passed on as a relative value.
 func absoluteArtifactDir(dir string) string {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
-		return dir
+		return ""
 	}
 	return abs
 }

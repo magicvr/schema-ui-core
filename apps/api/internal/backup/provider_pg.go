@@ -125,6 +125,10 @@ func (p PgProvider) Create(ctx context.Context, sourceDSN, artifactPath string) 
 	if strings.TrimSpace(p.WorkDir) == "" {
 		return classify(KindInvalidRequest, "pg create", fmt.Errorf("WorkDir is required to mount the artifact volume"))
 	}
+	if !filepath.IsAbs(p.WorkDir) {
+		return classify(KindInvalidRequest, "pg create", fmt.Errorf(
+			"WorkDir %q must be absolute: docker rejects a relative bind-mount source", p.WorkDir))
+	}
 	if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
 		return classify(KindArtifactUnreadable, "pg create", err)
 	}
@@ -154,6 +158,10 @@ func (p PgProvider) Create(ctx context.Context, sourceDSN, artifactPath string) 
 func (p PgProvider) Restore(ctx context.Context, artifactPath string) (string, func(), error) {
 	if strings.TrimSpace(p.AdminDSN) == "" {
 		return "", nil, classify(KindInvalidRequest, "pg restore", fmt.Errorf("AdminDSN is required"))
+	}
+	if !filepath.IsAbs(p.WorkDir) {
+		return "", nil, classify(KindInvalidRequest, "pg restore", fmt.Errorf(
+			"WorkDir %q must be absolute: docker rejects a relative bind-mount source", p.WorkDir))
 	}
 	if _, err := os.Stat(artifactPath); err != nil {
 		return "", nil, classify(KindArtifactNotFound, "pg restore", fmt.Errorf("artifact %s: %w", artifactPath, err))
