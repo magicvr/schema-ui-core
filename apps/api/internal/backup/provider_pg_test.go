@@ -67,7 +67,7 @@ func requirePgBackupEnv(t *testing.T) (adminDSN string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	probe := PgProvider{ClientImage: pgClientImage(), WorkDir: t.TempDir()}
+	probe := PgProvider{ClientImage: pgClientImage(), WorkDir: t.TempDir(), ClientDockerNetwork: os.Getenv("DB_CLIENT_DOCKER_NETWORK")}
 	if _, err := probe.ClientVersion(ctx); err != nil {
 		t.Skipf("pg client image unavailable: %v", err)
 	}
@@ -135,9 +135,10 @@ func TestPGRestoreToNewDB(t *testing.T) {
 
 	workDir := t.TempDir()
 	provider := PgProvider{
-		AdminDSN:    adminDSN,
-		ClientImage: pgClientImage(),
-		WorkDir:     workDir,
+		AdminDSN:            adminDSN,
+		ClientImage:         pgClientImage(),
+		WorkDir:             workDir,
+		ClientDockerNetwork: os.Getenv("DB_CLIENT_DOCKER_NETWORK"),
 	}
 	if version, err := provider.ClientVersion(ctx); err == nil {
 		t.Logf("pg client: %s", version)
@@ -206,7 +207,7 @@ func TestPGLegacyArtifactMustFail(t *testing.T) {
 	}
 
 	workDir := t.TempDir()
-	provider := PgProvider{AdminDSN: adminDSN, ClientImage: pgClientImage(), WorkDir: workDir}
+	provider := PgProvider{AdminDSN: adminDSN, ClientImage: pgClientImage(), WorkDir: workDir, ClientDockerNetwork: os.Getenv("DB_CLIENT_DOCKER_NETWORK")}
 	service := NewService(workDir)
 	service.RegisterProvider(provider)
 
@@ -251,7 +252,7 @@ func TestPGMidBatchArtifactMustFail(t *testing.T) {
 	}
 
 	workDir := t.TempDir()
-	provider := PgProvider{AdminDSN: adminDSN, ClientImage: pgClientImage(), WorkDir: workDir}
+	provider := PgProvider{AdminDSN: adminDSN, ClientImage: pgClientImage(), WorkDir: workDir, ClientDockerNetwork: os.Getenv("DB_CLIENT_DOCKER_NETWORK")}
 	service := NewService(workDir)
 	service.RegisterProvider(provider)
 
@@ -327,9 +328,10 @@ func TestPgProviderCommandConstruction(t *testing.T) {
 	artifact := filepath.Join(workDir, "artifact.dump")
 	var calls [][]string
 	provider := PgProvider{
-		AdminDSN:    "postgres://sa:secret@127.0.0.1:5432/postgres?sslmode=disable",
-		ClientImage: "postgres:15-alpine",
-		WorkDir:     workDir,
+		AdminDSN:            "postgres://sa:secret@127.0.0.1:5432/postgres?sslmode=disable",
+		ClientImage:         "postgres:15-alpine",
+		WorkDir:             workDir,
+		ClientDockerNetwork: "host",
 		exec: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			calls = append(calls, append([]string{name}, args...))
 			if len(args) > 0 && args[len(args)-1] == "pg_dump" {
@@ -353,7 +355,7 @@ func TestPgProviderCommandConstruction(t *testing.T) {
 		t.Fatalf("expected one tool invocation, got %d", len(calls))
 	}
 	joined := strings.Join(calls[0], " ")
-	for _, want := range []string{"docker", "run", "-F c", "--no-owner", "--file", pgMountPoint} {
+	for _, want := range []string{"docker", "run", "--network host", "-F c", "--no-owner", "--file", pgMountPoint} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("pg_dump invocation %q lacks %q", joined, want)
 		}

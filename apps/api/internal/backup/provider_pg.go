@@ -31,6 +31,11 @@ type PgProvider struct {
 	// WorkDir is the host directory that holds artifacts; it is mounted into the
 	// container at /vp040-backup.
 	WorkDir string
+	// ClientDockerNetwork attaches the pg_dump/pg_restore helper container to a
+	// Docker network that can reach the configured PostgreSQL server. Empty keeps
+	// Docker's default bridge; use "host" for host-published services on Linux, or
+	// the Compose network name when the API and database share a user-defined net.
+	ClientDockerNetwork string
 	// exec runs one external command (injectable for tests).
 	exec func(ctx context.Context, name string, args ...string) ([]byte, error)
 }
@@ -54,6 +59,14 @@ func (p PgProvider) image() string {
 		return DefaultPgClientImage
 	}
 	return p.ClientImage
+}
+
+func (p PgProvider) clientDockerArgs() []string {
+	args := []string{"run", "--rm"}
+	if network := strings.TrimSpace(p.ClientDockerNetwork); network != "" {
+		args = append(args, "--network", network)
+	}
+	return args
 }
 
 func (p PgProvider) runner() func(ctx context.Context, name string, args ...string) ([]byte, error) {
@@ -136,13 +149,14 @@ func (p PgProvider) Create(ctx context.Context, sourceDSN, artifactPath string) 
 		return classify(KindInvalidRequest, "pg create", fmt.Errorf("artifact %s already exists", artifactPath))
 	}
 	name := filepath.Base(artifactPath)
-	_, err := p.runner()(ctx, "docker", "run", "--rm",
+	args := append(p.clientDockerArgs(),
 		"-v", p.WorkDir+":"+pgMountPoint,
 		p.image(),
 		"pg_dump", "-F", "c", "--no-owner",
 		"--file", pgMountPoint+"/"+name,
 		sourceDSN,
 	)
+	_, err := p.runner()(ctx, "docker", args...)
 	if err != nil {
 		return classify(KindToolFailure, "pg create (pg_dump)", err)
 	}
@@ -190,13 +204,14 @@ func (p PgProvider) Restore(ctx context.Context, artifactPath string) (string, f
 	}
 
 	name := filepath.Base(artifactPath)
-	if _, err := p.runner()(ctx, "docker", "run", "--rm",
+	args := append(p.clientDockerArgs(),
 		"-v", p.WorkDir+":"+pgMountPoint,
 		p.image(),
 		"pg_restore", "--exit-on-error", "--no-owner",
 		"-d", targetDSN,
 		pgMountPoint+"/"+name,
-	); err != nil {
+	)
+	if _, err := p.runner()(ctx, "docker", args...); err != nil {
 		cleanup()
 		return "", nil, classify(KindToolFailure, "pg restore (pg_restore)", err)
 	}

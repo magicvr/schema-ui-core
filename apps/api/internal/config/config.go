@@ -107,6 +107,11 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBSSLMode  string
+	// DBClientDockerNetwork optionally selects the Docker network used by the
+	// transient pg_dump/pg_restore client container. Empty preserves Docker's
+	// default bridge; set to "host" for Linux host-published PostgreSQL or to
+	// the Compose network name when the helper must reach a Compose service.
+	DBClientDockerNetwork string
 	// DBConnPool carries connection-pool bounds (0 = driver default for
 	// postgres / the sqlite file-store default of 4). Wired through to
 	// store.OpenOptions; sqlite uses PoolMaxOpenConns only.
@@ -341,18 +346,19 @@ type yamlFile struct {
 		PublicBaseURL     *string `yaml:"public_base_url"`
 	} `yaml:"auth"`
 	DB struct {
-		Path         *string `yaml:"path"`
-		Dialect      *string `yaml:"dialect"`
-		DSN          *string `yaml:"dsn"`
-		Host         *string `yaml:"host"`
-		Port         *string `yaml:"port"`
-		Name         *string `yaml:"name"`
-		User         *string `yaml:"user"`
-		Password     *string `yaml:"password"`
-		SSLMode      *string `yaml:"sslmode"`
-		PoolMaxOpen  *int    `yaml:"pool_max_open"`
-		PoolMaxIdle  *int    `yaml:"pool_max_idle"`
-		ConnLifetime *string `yaml:"conn_max_lifetime"`
+		Path                *string `yaml:"path"`
+		Dialect             *string `yaml:"dialect"`
+		DSN                 *string `yaml:"dsn"`
+		Host                *string `yaml:"host"`
+		Port                *string `yaml:"port"`
+		Name                *string `yaml:"name"`
+		User                *string `yaml:"user"`
+		Password            *string `yaml:"password"`
+		SSLMode             *string `yaml:"sslmode"`
+		ClientDockerNetwork *string `yaml:"client_docker_network"`
+		PoolMaxOpen         *int    `yaml:"pool_max_open"`
+		PoolMaxIdle         *int    `yaml:"pool_max_idle"`
+		ConnLifetime        *string `yaml:"conn_max_lifetime"`
 	} `yaml:"db"`
 	Admin struct {
 		InitialPassword *string `yaml:"initial_password"`
@@ -592,6 +598,7 @@ func Load() *Config {
 	cfg.DBUser = strPtrOr(yf.DB.User, cfg.DBUser)
 	cfg.DBPassword = strPtrOr(yf.DB.Password, cfg.DBPassword)
 	cfg.DBSSLMode = strPtrOr(yf.DB.SSLMode, cfg.DBSSLMode)
+	cfg.DBClientDockerNetwork = strPtrOr(yf.DB.ClientDockerNetwork, cfg.DBClientDockerNetwork)
 	if yf.DB.PoolMaxOpen != nil {
 		cfg.DBPoolMaxOpen = *yf.DB.PoolMaxOpen
 	}
@@ -732,6 +739,7 @@ func Load() *Config {
 	cfg.DBUser = envOr("DB_USER", cfg.DBUser)
 	cfg.DBPassword = envOr("DB_PASSWORD", cfg.DBPassword)
 	cfg.DBSSLMode = envOr("DB_SSLMODE", cfg.DBSSLMode)
+	cfg.DBClientDockerNetwork = envOr("DB_CLIENT_DOCKER_NETWORK", cfg.DBClientDockerNetwork)
 	cfg.DBPoolMaxOpen = nonNegIntEnv("DB_POOL_MAX_OPEN", cfg.DBPoolMaxOpen)
 	cfg.DBPoolMaxIdle = nonNegIntEnv("DB_POOL_MAX_IDLE", cfg.DBPoolMaxIdle)
 	cfg.DBConnLifetime = durationEnv("DB_CONN_MAX_LIFETIME", cfg.DBConnLifetime)

@@ -995,7 +995,8 @@ func TestDBPostgresExplodedParams(t *testing.T) {
 	t.Run("builds DSN from exploded params with env password", func(t *testing.T) {
 		t.Setenv("DB_PASSWORD", "test-only-password")
 		t.Setenv("DB_DSN", "")
-		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: db.example.internal\n  port: 5432\n  name: appdb\n  user: appuser\n  sslmode: disable\n"
+		t.Setenv("DB_CLIENT_DOCKER_NETWORK", "")
+		y := "app:\n  env: development\ndb:\n  dialect: postgres\n  host: db.example.internal\n  port: 5432\n  name: appdb\n  user: appuser\n  sslmode: disable\n  client_docker_network: helper_net\n"
 		writeConfig(t, y)
 		cfg := Load()
 		if cfg.LoadError != nil {
@@ -1007,6 +1008,23 @@ func TestDBPostgresExplodedParams(t *testing.T) {
 		}
 		if cfg.DBPassword != "test-only-password" {
 			t.Errorf("DBPassword = %q, want value from env", cfg.DBPassword)
+		}
+		if cfg.DBClientDockerNetwork != "helper_net" {
+			t.Errorf("DBClientDockerNetwork = %q, want helper_net", cfg.DBClientDockerNetwork)
+		}
+	})
+
+	t.Run("client docker network env overrides yaml", func(t *testing.T) {
+		t.Setenv("DB_PASSWORD", "test-only-password")
+		t.Setenv("DB_DSN", "")
+		t.Setenv("DB_CLIENT_DOCKER_NETWORK", "host")
+		writeConfig(t, "app:\n  env: development\ndb:\n  dialect: postgres\n  host: db.example.internal\n  name: appdb\n  user: appuser\n  client_docker_network: compose_net\n")
+		cfg := Load()
+		if cfg.LoadError != nil {
+			t.Fatalf("LoadError: %v", cfg.LoadError)
+		}
+		if cfg.DBClientDockerNetwork != "host" {
+			t.Fatalf("DBClientDockerNetwork = %q, want env override host", cfg.DBClientDockerNetwork)
 		}
 	})
 

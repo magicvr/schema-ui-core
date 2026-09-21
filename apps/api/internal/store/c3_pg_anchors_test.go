@@ -69,7 +69,12 @@ func TestC3RecoveryAnchorsOnPostgresUpgrade(t *testing.T) {
 	}
 
 	workDir := t.TempDir()
-	provider := backup.PgProvider{AdminDSN: serverDSN, ClientImage: pgAnchorClientImage, WorkDir: workDir}
+	provider := backup.PgProvider{
+		AdminDSN:            serverDSN,
+		ClientImage:         pgAnchorClientImage,
+		WorkDir:             workDir,
+		ClientDockerNetwork: os.Getenv("DB_CLIENT_DOCKER_NETWORK"),
+	}
 	service := backup.NewService(workDir)
 	service.RegisterProvider(provider)
 

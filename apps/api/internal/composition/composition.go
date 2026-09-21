@@ -267,9 +267,10 @@ func recoveryWiring(dialect kernel.Dialect, cfg *config.Config) (kernel.Recovery
 			return nil, nil, ""
 		}
 		provider := backup.PgProvider{
-			AdminDSN:    cfg.DBDSN,
-			ClientImage: backup.DefaultPgClientImage,
-			WorkDir:     artifactDir,
+			AdminDSN:            cfg.DBDSN,
+			ClientImage:         backup.DefaultPgClientImage,
+			WorkDir:             artifactDir,
+			ClientDockerNetwork: cfg.DBClientDockerNetwork,
 		}
 		service.RegisterProvider(provider)
 		return service, provider, artifactDir

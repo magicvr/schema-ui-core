@@ -76,8 +76,9 @@ func TestRecoveryArtifactsDirIsAbsolute(t *testing.T) {
 // so its WorkDir must be absolute for a relative db.path.
 func TestRecoveryWiringHandsPgProviderAnAbsoluteWorkDir(t *testing.T) {
 	cfg := &config.Config{
-		DBPath: filepath.Join("data", "schema-ui.db"),
-		DBDSN:  "postgres://sa@127.0.0.1:5432/postgres?sslmode=disable",
+		DBPath:                filepath.Join("data", "schema-ui.db"),
+		DBDSN:                 "postgres://sa@127.0.0.1:5432/postgres?sslmode=disable",
+		DBClientDockerNetwork: "schema-ui_default",
 	}
 	port, creator, dir := recoveryWiring(kernel.DialectPostgres, cfg)
 	if port == nil {
@@ -98,6 +99,9 @@ func TestRecoveryWiringHandsPgProviderAnAbsoluteWorkDir(t *testing.T) {
 	}
 	if provider.ClientImage != backup.DefaultPgClientImage {
 		t.Fatalf("PgProvider.ClientImage = %q, want %q", provider.ClientImage, backup.DefaultPgClientImage)
+	}
+	if provider.ClientDockerNetwork != "schema-ui_default" {
+		t.Fatalf("PgProvider.ClientDockerNetwork = %q, want configured network", provider.ClientDockerNetwork)
 	}
 
 	// A configuration with neither path nor DSN must disable the anchors rather

@@ -109,6 +109,7 @@ jobs:
       PG_TEST_PASSWORD: postgres
       PG_TEST_DB: postgres
       PG_TEST_SSLMODE: disable
+      DB_CLIENT_DOCKER_NETWORK: host
     defaults:
       run:
         working-directory: apps/api
@@ -138,6 +139,9 @@ jobs:
       # The harness dialect contract (playwright.config.ts); explicit value so
       # the intended target is unambiguous in logs.
       DB_DIALECT: ${{ matrix.dialect }}
+      # pg_dump/pg_restore run in a helper container; the PG service is exposed
+      # on the runner's localhost in this Linux job.
+      DB_CLIENT_DOCKER_NETWORK: host
     services:
       postgres:
         image: postgres:15-alpine

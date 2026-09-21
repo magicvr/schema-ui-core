@@ -132,6 +132,11 @@ db:
   # exploded params. DATABASE_URL is intentionally not read.
   name: schema_ui         # DB_NAME (database to connect — stable per env)
   sslmode: disable        # DB_SSLMODE (disable | require | verify-full...)
+  # Network used by the short-lived Docker container that runs pg_dump/pg_restore.
+  # Empty uses Docker's default bridge. Set DB_CLIENT_DOCKER_NETWORK=host for a
+  # host-published PostgreSQL service on Linux, or the Compose network name when
+  # PostgreSQL is another service on a user-defined network.
+  client_docker_network: ${DB_CLIENT_DOCKER_NETWORK:-}
   # password: NEVER set here — only via DB_PASSWORD env / configs/.env.
   #
   # postgres connection-pool bounds (0 = driver default / no cap; sqlite ignores).
