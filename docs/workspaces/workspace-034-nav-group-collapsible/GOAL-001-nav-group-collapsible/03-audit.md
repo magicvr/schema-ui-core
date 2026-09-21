@@ -11,14 +11,14 @@ version: 0.2.0
 # 审计 · GOAL-001-nav-group-collapsible
 
 > 本文件是 Goal 审计稳定索引；Vision Review 不替代本目标的 Goal `03-audit`。
-> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended。Root 已 `done` 5/5。VP-034 已于 2026-09-09 经 `/vision` `closed` v0.4.0（VRev-085 self `pass`）。2026-09-21 追加 A-016 independent（PR #16 / v0.7.0 预检）`pass`：open required = 0，开放 recommended = F-001（合并后 npm 可见性先于 tag）。同日 A-019 independent 对未提交的 npm ESM 修复候选判定 `pass`：开 PR 前 open required = 0；开放 recommended = F-001（Hosted PR CI）与 F-002（修复版 npm 先于 tag）。
+> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended。Root 已 `done` 5/5。VP-034 已于 2026-09-09 经 `/vision` `closed` v0.4.0（VRev-085 self `pass`）。2026-09-21 追加 A-016 independent（PR #16 / v0.7.0 预检）`pass`：open required = 0，开放 recommended = F-001（合并后 npm 可见性先于 tag）。同日 A-019 independent 对未提交的 npm ESM 修复候选判定 `pass`：开 PR 前 open required = 0；开放 recommended = F-001（Hosted PR CI）与 F-002（修复版 npm 先于 tag），均已由后续证据满足。同日 A-022 independent 对 PR #17 合并后 tag 前发布门禁判定 `pass`：open required = 0；其 F-001（Release 只上传六 ZIP + SHA256SUMS）已由 A-023 核实实施。v0.7.0 tag 与正式 Release 已发布，下载资产校验通过。
 
 ## 信息就绪核对（按 scope）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-034-001～005 | I-034-001～005 verified | 详见 `00-meta.md` 与 `01-decision.md`；R5 close-out matrix 与 independent 审计已落盘 |
-| 到期 required 是否已 verified / residual | R1-R5 信息与 finding 已处理 | 无到期 required 信息项；A-016 / A-019 均无 open required。A-016 F-001 与 A-019 F-002 为合并后修复版 npm 先于 tag 的 recommended；A-019 F-001 为 Hosted PR CI 的 recommended；A-002 F-007 仅为 Vision 层历史 recommended |
+| 到期 required 是否已 verified / residual | R1-R5 信息与 finding 已处理 | 无到期 required 信息项；A-016 / A-019 / A-022 均无 open required。A-016 F-001 与 A-019 F-001/F-002 已由 A-022 独立核对为满足；A-022 F-001 recommended 已由 A-023 确认实施。A-002 F-007 仅为 Vision 层历史 recommended |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -45,6 +45,9 @@ version: 0.2.0
 | A-018 | 2026-09-21 | self | v0.7.0 合并后 npm consumer failure 修复候选（真实 tarball ESM 导入与 CI smoke） | pass | 0 | [`03-audit/A-018-v0.7.0-npm-remediation-self.md`](03-audit/A-018-v0.7.0-npm-remediation-self.md) |
 | A-019 | 2026-09-21 | independent | 未提交 v0.7.0 npm ESM 修复候选（A-018/E-016、加固隔离 smoke、workflow、finalization、包元数据） | pass | 0 | [`03-audit/A-019-v0.7.0-npm-remediation-independent.md`](03-audit/A-019-v0.7.0-npm-remediation-independent.md) |
 | A-020 | 2026-09-21 | self（编排器响应） | 响应 A-018/A-019，采纳 Hosted CI 与修复包先于 tag 的后续门禁 | pass | 0 | [`03-audit/A-020-response-to-v0.7.0-npm-remediation.md`](03-audit/A-020-response-to-v0.7.0-npm-remediation.md) |
+| A-021 | 2026-09-21 | self | PR #17 合并后 pre-tag 发布门禁（main CI、npm registry consumer、六平台 CLI 资产与 SHA256SUMS） | pass | 0 | [`03-audit/A-021-v0.7.0-postmerge-release-self.md`](03-audit/A-021-v0.7.0-postmerge-release-self.md) |
+| A-022 | 2026-09-21 | independent | PR #17 合并后 tag 前发布门禁（main CI、registry npm 消费者、六平台 CLI 资产与 SHA256SUMS、tag/Release 缺席） | pass | 0 | [`03-audit/A-022-v0.7.0-postmerge-release-independent.md`](03-audit/A-022-v0.7.0-postmerge-release-independent.md) |
+| A-023 | 2026-09-21 | self（编排器响应） | 响应 A-022 并核实 v0.7.0 tag、Go module、正式 Release 与下载资产校验 | pass | 0 | [`03-audit/A-023-response-to-v0.7.0-release-gate.md`](03-audit/A-023-response-to-v0.7.0-release-gate.md) |
 
 ## 愿景层意见（仅作上下文）
 
@@ -54,4 +57,4 @@ version: 0.2.0
 
 ## 结论状态
 
-R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 已于 2026-09-09 `closed` v0.4.0（VRev-085）。A-016 independent 与 A-017 response 对 PR #16 / v0.7.0 预检判定 `pass`：合并前 open required = 0；F-001 recommended 已采纳。PR #16 已合并，但实际 npm 消费 smoke 随后发现包面问题；A-018 记录修复候选 self `pass` 与 F-S-002 `fixed`。A-019 independent 对现行未提交修复候选判定 `pass` 并独立同意 F-S-002 `fixed`：开 PR 前 open required = 0；A-020 已响应并采纳 F-001（PR Hosted CI 全绿后才 merge）与 F-002（npm 修复包可见、消费者验证后才 tag）。PR 与后续外部发布门禁仍未完成。
+R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 已于 2026-09-09 `closed` v0.4.0（VRev-085）。PR #16 合并后实际 npm smoke 发现包面问题；A-018 记录修复与 F-S-002 `fixed`，A-019 Grok independent 复核 `pass`、无 open required；A-020 已响应并采纳 PR CI / npm-before-tag 门禁。PR #17 已合并，PR 与 main CI 各 9/9 success；四个修复 npm 版本已发布并经 registry 隔离消费者 13/13 验证。A-022 Grok independent 对 tag 前门禁 `pass`、无 open required；A-023 确认推荐的七项资产集合已执行。annotated tag `apps/api/v0.7.0` 指向 merge SHA `455df884…`，Go module v0.7.0 可解析，正式 [GitHub Release](https://github.com/magicvr/schema-ui-core/releases/tag/apps/api/v0.7.0) 已发布；六平台 ZIP 从 Release 下载后的 SHA-256 均匹配 `SHA256SUMS`。Goal 与 VP 状态未因发布改变。

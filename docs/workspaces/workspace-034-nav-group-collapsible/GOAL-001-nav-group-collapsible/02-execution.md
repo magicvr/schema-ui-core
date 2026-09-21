@@ -30,7 +30,9 @@ version: 0.2.0
 | E-014 | 2026-09-21 | apps/api/v0.7.0 发布候选预检（PR #16） | recorded | `02-execution/E-014-release-v0.7.0-preflight.md` |
 | E-015 | 2026-09-21 | PR #16 独立预审、最终合并前 CI 与发布顺序门禁 | recorded | `02-execution/E-015-v0.7.0-premerge-gates.md` |
 | E-016 | 2026-09-21 | v0.7.0 合并后 npm 消费回归与发布包修复 | recorded | `02-execution/E-016-npm-consumer-remediation.md` |
+| E-017 | 2026-09-21 | PR #17 合并后 main CI、修复包 registry 消费与平台资产预检 | recorded | `02-execution/E-017-v0.7.0-postmerge-release-gates.md` |
+| E-018 | 2026-09-21 | apps/api/v0.7.0 tag、Go module 与 GitHub Release 发布验证 | recorded | `02-execution/E-018-v0.7.0-release-publication.md` |
 
 ## 事实边界
 
-本文件只记录已发生且有证据的实现事实。当前已完成并分别记录：VP-034 v0.3.0 scope correction、VRev-084 self `pass`、workspace-034 与 Root 五件套 scaffold、R1 静态导航/Profile/slot 盘点与用户决策、A-002 required 响应、R2 分组注册与 Manifest 聚合实现及 API/Web 验证、R2 Grok independent `pass` 与 checkpoint、R3 Shell 交互实现及 Web 验证与 checkpoint `6e581ca9`、R4 全量矩阵/Playbook/验证与 checkpoint `b25bd777`、R5 证据矩阵与最终验证、R5 A-010 self/A-011 Grok independent/A-012 响应、Root 最终 checkpoint `b1d569a1` 与 `done 5/5`，E-012/E-013 记录的 v0.6.0/v0.6.1 发布，以及 E-014/E-015 记录的 v0.7.0 候选与合并前预审、E-016 记录的 PR #16 合并后 npm 消费故障、修复候选与本地验证事实。VP-034 Vision 层已按 VRev-085 `closed`；本次只追加发布历史，不修改目标状态。
+本文件只记录已发生且有证据的实现事实。当前已完成并分别记录：VP-034 v0.3.0 scope correction、VRev-084 self `pass`、workspace-034 与 Root 五件套 scaffold、R1 静态导航/Profile/slot 盘点与用户决策、A-002 required 响应、R2 分组注册与 Manifest 聚合实现及 API/Web 验证、R2 Grok independent `pass` 与 checkpoint、R3 Shell 交互实现及 Web 验证与 checkpoint `6e581ca9`、R4 全量矩阵/Playbook/验证与 checkpoint `b25bd777`、R5 证据矩阵与最终验证、R5 A-010 self/A-011 Grok independent/A-012 响应、Root 最终 checkpoint `b1d569a1` 与 `done 5/5`，E-012/E-013 记录的 v0.6.0/v0.6.1 发布，以及 E-014～E-017 记录的 v0.7.0 候选、PR #16 后的 npm 消费修复、PR #17 合并后门禁证据。E-018 记录 `apps/api/v0.7.0` tag、Go module 解析、七项 Release 资产上传及远端下载哈希验证；A-023 响应 A-022 recommended 并确认正式 Release 已发布。VP-034 Vision 层已按 VRev-085 `closed`；本次只追加发布历史，不修改目标状态。
