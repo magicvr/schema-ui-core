@@ -20,6 +20,9 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - name: Test npmjs package name mapping
+        working-directory: ${{ github.workspace }}
+        run: node --test scripts/npmjs-package-name.test.mjs
       - run: npm ci
       - run: npm test
       # GOAL-008: an explicit type-check gate. `npm test` also runs the
