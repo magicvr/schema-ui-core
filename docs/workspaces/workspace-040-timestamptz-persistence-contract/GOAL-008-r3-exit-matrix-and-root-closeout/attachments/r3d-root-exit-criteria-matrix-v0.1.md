@@ -83,6 +83,8 @@ go test -count=1 -v -run "TestPGRestoreToNewDB|TestSQLiteRestoreToNewDB|TestC3Re
 ```
 
 > 诚实边界：这些测试在**缺少 `PG_TEST_*` 的环境会 skip（并记录原因）**；本矩阵的「满足」绑定的是**本环境实测非 skip** 的事实，不声称任何环境都必然执行。
+>
+> **追加限定（2026-09-21，源自 `F-I-101`）**：这些测试使用 `t.TempDir()` 等**绝对**路径夹具，**不能代表「配置里 `db.path` 为相对路径」的真实入口**。用户报告的 `.\dev.cmd start` 失败正是该差异掩盖的启动级缺陷（`recoveryArtifactsDir` 相对路径 → `docker run -v` exit 125）。修复（绝对化 + 两条回归 + 一次性库端到端实测）见 `02-execution/E-003` 与 `03-audit/A-004`；据此判据 3/4 的结论仍成立，但证据面从「测试夹具」扩展到「真实入口实测」。
 
 **结论**：判据 3 满足（含真实 PG 路径，非 skip）。
 

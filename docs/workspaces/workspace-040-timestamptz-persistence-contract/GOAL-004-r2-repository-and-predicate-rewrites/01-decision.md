@@ -4,8 +4,8 @@ doc: decision
 status: active
 parent: null
 created: 2026-09-20
-updated: 2026-09-20
-version: 0.1.0
+updated: 2026-09-21
+version: 0.2.0
 ---
 
 # 决策记录 · GOAL-004（R2 M3）
@@ -22,5 +22,6 @@ version: 0.1.0
 | D-ID | 日期 | 标题 | 状态 | 文件 |
 |------|------|------|--------|------|
 | D-001 | 2026-09-20 | M3 绑定载体、谓词改造范围与回归载体 | accepted | `01-decision/D-001-temporal-binding-and-predicate-scope.md` |
+| D-002 | 2026-09-21 | `F-I-002` 的 `user-overruled` 正式载体（用户 2026-09-20 裁决 + 2026-09-21 授权补写；结论不变） | accepted | `01-decision/D-002-fi002-user-overruled-record.md` |
 
 > 新决策从 `01-decision/D-NNN-<slug>.md` 写入；编号在本目标内单调不复用。

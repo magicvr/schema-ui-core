@@ -279,12 +279,20 @@ func recoveryWiring(dialect kernel.Dialect, cfg *config.Config) (kernel.Recovery
 	return service, nil, artifactDir
 }
 
-// recoveryArtifactsDir is where recovery/rollback artifacts live. It sits beside
-// the configured database file (sqlite) or under the user cache directory keyed
-// by the DSN host/database (postgres).
+// recoveryArtifactsDir is where recovery/rollback artifacts live: beside the
+// configured database file when db.path is set (the shipped config always sets
+// it, and for postgres db.path is the file-storage root), otherwise under the
+// user cache directory keyed by the DSN host/database.
+//
+// The result is ALWAYS absolute: the postgres provider bind-mounts this
+// directory into the pg_dump/pg_restore container, and docker rejects a relative
+// source path ("includes invalid characters for a local volume name ... use
+// absolute path"). A relative db.path such as "./data/schema-ui.db" used to
+// reach the provider as "data\recovery" and aborted startup (dev launcher
+// 2026-09-21).
 func recoveryArtifactsDir(cfg *config.Config) string {
 	if strings.TrimSpace(cfg.DBPath) != "" {
-		return filepath.Join(filepath.Dir(cfg.DBPath), "recovery")
+		return absoluteArtifactDir(filepath.Join(filepath.Dir(cfg.DBPath), "recovery"))
 	}
 	if strings.TrimSpace(cfg.DBDSN) == "" {
 		return ""
@@ -297,7 +305,18 @@ func recoveryArtifactsDir(cfg *config.Config) string {
 	if err != nil || base == "" {
 		base = os.TempDir()
 	}
-	return filepath.Join(base, "schema-ui-core", "recovery", key)
+	return absoluteArtifactDir(filepath.Join(base, "schema-ui-core", "recovery", key))
+}
+
+// absoluteArtifactDir resolves a configured artifact directory against the
+// process working directory. It keeps the configured-but-unresolvable value as a
+// last resort rather than dropping the directory entirely.
+func absoluteArtifactDir(dir string) string {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return dir
+	}
+	return abs
 }
 
 // sanitizeArtifactKey turns a DSN into a filesystem-safe directory name.

@@ -5,8 +5,8 @@ status: active
 parent: GOAL-001-timestamptz-persistence-contract
 created: 2026-09-21
 updated: 2026-09-21
-version: 0.2.0
-progress: 1/3
+version: 0.3.0
+progress: 2/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
 primary_plan: VP-040-timestamptz-persistence-contract
@@ -49,10 +49,10 @@ serves_summary: 承接 Root R3 的 R3-D：把 Root 六条成功标准逐条落�
 | 检查点 | 判据 | 状态 |
 |--------|------|------|
 | **A** | 退出矩阵落盘（六条判据逐条证据 + 判据 5 反向核验 + 残留/例外清账）；每条指向可核对产物 | **completed**（E-002；`attachments/r3d-root-exit-criteria-matrix-v0.1.md`：判据 1–5 **满足**，判据 6 **部分满足**（矩阵与独立意见已落盘、跨目标开放 required = 0，用户确认待 `I-041-010`）；判据 5 由本轮亲自扫描核验；判据 3/4 的真实 PG 路径实测非 skip） |
-| **B** | self + grok independent 关门审计落盘；开放 required = 0（required 按三路径合法闭合） | pending |
-| **C** | **用户确认关门**（判据 6）；Root `status: done` / `progress: 3/3`；goal-tree 与 `docs/vision` 投影同步 | pending |
+| **B** | self + grok independent 关门审计落盘；开放 required = 0（required 按三路径合法闭合） | **completed**（`A-001` self + `A-002` independent **conditional / 开放 required = 0**（独立复跑四测试与判据 5 扫描、逐个核对跨目标关门意见）→ `A-003` 响应：6 条 recommended 全闭合或登记 → 用户报告 `dev.cmd start` 缺陷 → `A-004`：新 **required `F-I-101` 已 `fixed`**（绝对化 + 回归测试 + 一次性库端到端实测）；开放 required = 0） |
+| **C** | **用户确认关门**（判据 6）；Root `status: done` / `progress: 3/3`；goal-tree 与 `docs/vision` 投影同步 | pending（`I-041-010` required 仍 open：用户 2026-09-21 未选任一选项、要求先修 `dev.cmd start`；缺陷已修，等待重新裁决。`I-041-011` 已按用户裁决 verified） |
 
-`progress: 1/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
 
 ## 信息需求与阶段门禁
 
