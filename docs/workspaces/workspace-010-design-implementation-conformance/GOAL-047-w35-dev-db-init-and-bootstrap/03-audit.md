@@ -19,6 +19,9 @@ version: 0.1.0
 | A-ID | source | 日期 | scope | verdict | 摘要 | 文件 |
 |------|--------|------|-------|---------|------|------|
 | A-001 | self | 2026-09-21 | GOAL-047 检查点 A/B（自举、快捷方式、hint、文档、reset→init→start 实测） | conditional | 7 项成果可核对；开放 required = 0；`F-S-001`～`F-S-004` recommended 提交 independent 复核 | `03-audit/A-001-self-w35-db-init.md` |
+| A-002 | independent（grok build · grok-4.6 · high） | 2026-09-21 | 检查点 A/B 全量独立审计 | conditional | 3 条 required：F-001 参数转发、F-002 YAML 库名来源、F-003 progress 台账；A/B 不放行；要求修复后复审 | `03-audit/A-002-independent-w35-db-init.md` |
+| A-003 | independent（grok build · grok-4.6 · high） | 2026-09-21 | 定向复审 A-002 F-001/F-002/F-003 | **pass** | 3 条 required 全部 `fixed`；开放 required = 0；A/B 成立，可进入 C；无 P-004 | `03-audit/A-003-independent-w35-findings-rereview.md` |
+| A-004 | self（编排器响应 / 关门记录） | 2026-09-21 | 响应 A-003 + GOAL-047 检查点 C 关门 | **pass** | F-001/F-002/F-003 全部 fixed；开放 required = 0；GOAL-047 静默关闭 `done · 3/3` | `03-audit/A-004-response-to-a003-and-closeout.md` |
 
 ## 待复审事项（编排器登记，供独立审计取证）
 

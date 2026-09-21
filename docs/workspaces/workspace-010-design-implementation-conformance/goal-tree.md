@@ -4,7 +4,7 @@ status: active
 created: 2026-08-11
 updated: 2026-09-21
 parent: null
-version: 0.60.0
+version: 0.61.0
 workspace_id: workspace-010-design-implementation-conformance
 ---
 
@@ -64,7 +64,7 @@ GOAL-001-design-implementation-conformance [active]  · 持续符合性程序
 └── GOAL-044-w32-r4-residual-seams [done] (4/4) · W32 · R4 三项残余修复（列值本地化 · 表格定向刷新 seam · 空闲不轮询）——承接 [workspace-038] GOAL-005 A-001 F-002/F-003/F-004，已回填 fixed
 └── GOAL-045-w33-list-actions-slot-and-roles-trigger [done] (4/4) · W33 · 列表页 actions 左侧插槽与 roles 触发面补齐（用户两问：roles 页缺「导出所选」· 按钮应在列表控件行靠左）
 └── GOAL-046-w34-batch-export-availability [done] (4/4) · W34 · 「导出所选」404 根因修复（operator config 漏 admin.jobs）+ 触发面可用性门禁与双 profile e2e 契约
-└── GOAL-047-w35-dev-db-init-and-bootstrap [active] (2/3) · W35 · dev/test 数据库初始化快捷方式与自举修复（A/B 已完成，C 待 self + grok independent 审计）
+└── GOAL-047-w35-dev-db-init-and-bootstrap [done] (3/3) · W35 · dev/test 数据库初始化快捷方式与自举修复（A-002 required 修复后 A-003 pass，GOAL-047 已关门）
 ```
 
 **W24（2026-08-23 关门，4/4）**：承接 GOAL-034 用户复审（强制 sqlite 属绕过；收尾层应双方言各测一次）。实现方言契约（默认 sqlite / pg 显式 opt-in）+ `cmd/e2e-pgset` scratch 库自动建/验/删 + `globalSetup` fail-fast 校验 + CI `profile×dialect` 矩阵；F-1 配置双载（双份 scratch 库）修复（E2E_PG_NAME 守卫 + DROP WITH FORCE）。回归：sqlite 9/9 + postgres 9/9（遗留 0）+ vitest 1088 + go 全绿 + tsc/build 0；A-001 self pass。I-001 实验先证（专用 pg 9/9 绿）closed。
@@ -168,7 +168,7 @@ A-003 independent + A-004 self，BLOCKING 清零，F-1/F-2/F-3 全 fixed，E-004
 | GOAL-044-w32-r4-residual-seams | W32 · R4 三项残余修复（通用列值本地化 / 表格定向刷新 seam / 空闲不轮询；承接 `[workspace-038]` GOAL-005 A-001 F-002/F-003/F-004，已回填 `fixed`） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-09-19 |
 | GOAL-045-w33-list-actions-slot-and-roles-trigger | W33 · 列表页 actions 左侧插槽与 roles 触发面补齐（`props.slot = "list-page-actions"` 本地扩展 + roles 页多选与触发节点；副产物：修复跨页 table 状态串扰） | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-09-19 |
 | GOAL-046-w34-batch-export-availability | W34 · 「导出所选」可用性（operator config 漂移根因 + 触发面门禁）：`configs/config.yaml` 补 `admin.jobs`；组件按 `jobs.write`+`data.export` 渲染「可见但禁用 + 说明」；404 语义纠正；新增 config 超集守卫 + 双 profile e2e 可用性契约 | GOAL-001-design-implementation-conformance | done | 4/4 | 2026-09-19 |
-| GOAL-047-w35-dev-db-init-and-bootstrap | W35 · dev/test 数据库初始化快捷方式与自举修复：`e2e-pgset` 在 `DB_NAME` 不存在时可自举 + 一次性建齐 dev/test 库的快捷方式 + README/QUICKSTART 初始化章节 + 启动错误可操作化 | GOAL-001-design-implementation-conformance | active | 2/3 | 2026-09-21 |
+| GOAL-047-w35-dev-db-init-and-bootstrap | W35 · dev/test 数据库初始化快捷方式与自举修复：`e2e-pgset` 在 `DB_NAME` 不存在时可自举 + 一次性建齐 dev/test 库的快捷方式 + README/QUICKSTART 初始化章节 + 启动错误可操作化 | GOAL-001-design-implementation-conformance | done | 3/3 | 2026-09-21 |
 
 
 ## 维护说明

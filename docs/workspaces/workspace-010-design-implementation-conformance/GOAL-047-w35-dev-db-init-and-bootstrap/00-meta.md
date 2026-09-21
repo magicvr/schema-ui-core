@@ -1,12 +1,12 @@
 ---
 id: GOAL-047-w35-dev-db-init-and-bootstrap
 title: W35 · dev/test 数据库初始化快捷方式与自举修复
-status: active
+status: done
 parent: GOAL-001-design-implementation-conformance
 created: 2026-09-21
 updated: 2026-09-21
-version: 0.2.0
-progress: 2/3
+version: 1.0.0
+progress: 3/3
 plan_refs:
   - VP-010-design-implementation-conformance
 primary_plan: VP-010-design-implementation-conformance
@@ -66,9 +66,9 @@ serves_summary: 用户报告实例重置后 .\dev.cmd start 启动失败（PG �
 |--------|------|------|
 | **A** | `e2e-pgset` 自举修复（`DB_NAME` 不存在时可创建第一个库）+ 初始化快捷方式落码（dev 与 test 库一次建齐、幂等）+ 启动错误给出可操作提示；均有可执行测试 | **completed**（`D-001`；`internal/pgsetup` 测试；`TestMatrixClassify`/startup hint；`dev.cmd init-db` reset 实测） |
 | **B** | 文档章节落盘（README/QUICKSTART）；**实测**：删除两个库 → 快捷方式 → `dev.cmd start` 全绿（API `/readyz 200` + Web 200）；全仓回归绿 | **completed**（`E-002`；reset → init-db → dev.cmd start/stop；PG test path；Go 64/64） |
-| **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | pending |
+| **C** | self + grok independent 审计落盘、required 合法闭合 → 静默关门 | **completed**（A-001 self → A-002 independent conditional/3 required → 修复 → A-003 independent pass/0 required → A-004 关门记录） |
 
-`progress: 2/3` 由 A～C 等权派生；**不**放行阶段、**不**关闭 finding、**不**推导 `done`。
+`progress: 3/3` 由 A～C 等权派生；GOAL-047 已 `done`。
 
 ## 信息需求与阶段门禁
 
