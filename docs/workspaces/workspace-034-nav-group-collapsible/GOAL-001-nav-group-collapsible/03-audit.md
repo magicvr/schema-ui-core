@@ -11,14 +11,14 @@ version: 0.2.0
 # 审计 · GOAL-001-nav-group-collapsible
 
 > 本文件是 Goal 审计稳定索引；Vision Review 不替代本目标的 Goal `03-audit`。
-> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended，当前 open required/recommended = 0。Root 已 `done` 5/5。VP-034 已于 2026-09-09 经 `/vision` `closed` v0.4.0（VRev-085 self `pass`）。
+> R1-R5 证据、验证与审计已完成：R2 A-005/A-006 双腿 `pass`，R3 A-008 `pass`，R4 A-009 `pass`，R5 A-010/A-011 双腿 `pass`；I-034-001～005 verified，A-012 已响应全部 Goal recommended。Root 已 `done` 5/5。VP-034 已于 2026-09-09 经 `/vision` `closed` v0.4.0（VRev-085 self `pass`）。2026-09-21 追加 A-016 independent（PR #16 / v0.7.0 预检）`pass`：open required = 0，开放 recommended = F-001（合并后 npm 可见性先于 tag）。
 
 ## 信息就绪核对（按 scope）
 
 | 核对项 | 状态 | 备注 |
 |--------|------|------|
 | 影响本 scope 的 I-034-001～005 | I-034-001～005 verified | 详见 `00-meta.md` 与 `01-decision.md`；R5 close-out matrix 与 independent 审计已落盘 |
-| 到期 required 是否已 verified / residual | R1-R5 信息与 finding 已处理 | 当前无 open required/recommended Goal finding；A-002 F-007 仅为 Vision 层历史 recommended |
+| 到期 required 是否已 verified / residual | R1-R5 信息与 finding 已处理 | 无到期 required 信息项；A-016 无 open required。A-016 F-001 为合并后 tag 顺序的 recommended；A-002 F-007 仅为 Vision 层历史 recommended |
 | 资料引用（若有）是否固定且用户确认 | 无 | `shared_materials_catalog: none` |
 
 ## 意见台账索引
@@ -40,6 +40,8 @@ version: 0.2.0
 | A-013 | 2026-09-08 | self | 发布候选预检（v0.6.0 版本钉 + 本地 API/Web 回归） | pass | 0 | [`03-audit/A-013-release-preflight-self.md`](03-audit/A-013-release-preflight-self.md) |
 | A-014 | 2026-09-08 | independent | 发布候选预检（版本/本地证据/外部发布门禁） | pass | 0 | [`03-audit/A-014-release-preflight-independent.md`](03-audit/A-014-release-preflight-independent.md) |
 | A-015 | 2026-09-21 | self | apps/api/v0.7.0 发布候选预检（PR #16、最终 CI、npm 版本钉与包名映射） | pass | 0 | [`03-audit/A-015-release-v0.7.0-preflight-self.md`](03-audit/A-015-release-v0.7.0-preflight-self.md) |
+| A-016 | 2026-09-21 | independent | PR #16 apps/api/v0.7.0 发布候选与外部发布门禁准备（head 33b07b68） | pass | 0 | [`03-audit/A-016-release-v0.7.0-preflight-independent.md`](03-audit/A-016-release-v0.7.0-preflight-independent.md) |
+| A-017 | 2026-09-21 | self（编排器响应） | 响应 A-016 与 A-015：确认合并前门禁并采纳 npm 先于 tag 的顺序 | pass | 0 | [`03-audit/A-017-response-to-v0.7.0-preflight.md`](03-audit/A-017-response-to-v0.7.0-preflight.md) |
 
 ## 愿景层意见（仅作上下文）
 
@@ -49,4 +51,4 @@ version: 0.2.0
 
 ## 结论状态
 
-R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified，当前 open required/recommended = 0。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 已于 2026-09-09 `closed` v0.4.0（VRev-085）。
+R1-R5 检查点、矩阵、验证与审计已完成；A-010 self 与 A-011 本地 grok build independent 均 `pass`，A-012 已响应全部 Goal recommended，I-034-001～005 verified。Root 已在最终 checkpoint `b1d569a1` 标记 `done 5/5`；VP-034 已于 2026-09-09 `closed` v0.4.0（VRev-085）。A-016 independent 与 A-017 response 对 PR #16 / v0.7.0 预检判定 `pass`：合并前 open required = 0；F-001 recommended 已采纳为发布顺序，四包 npm 可见后再打 tag；当前 PR 仍未合并，npm / tag / Release 仍未执行。

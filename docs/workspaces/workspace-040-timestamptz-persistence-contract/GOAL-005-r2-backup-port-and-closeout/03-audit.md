@@ -5,7 +5,7 @@ status: active
 parent: null
 created: 2026-09-20
 updated: 2026-09-21
-version: 0.6.0
+version: 0.8.0
 ---
 
 # 审计台账 · GOAL-005-r2-backup-port-and-closeout（R2 M4）
@@ -32,6 +32,8 @@ version: 0.6.0
 | A-004 | independent | 2026-09-20 | 复审 A-002 三条 required 的闭合（grok-build grok-4.6 · high） | **pass** | **open required = 0**：F-I-001/002/003 均 `fixed`（真实 PG 复跑未 skip）；F-I-007 partial；新增 recommended F-I-008/009/010（不阻断检查点 C） | `03-audit/A-004-independent-a002-required-closure.md` |
 | A-005 | self（编排器响应） | 2026-09-20 | 响应 A-004 + 检查点 C 关门 | **pass** | F-I-007/010 索引同步；F-I-008（PG 样本正向覆盖，实测 ms:2/sec:90）；F-I-009（marker 诊断并列保留 + PG 读失败不阻断）；**检查点 C 完成 → R2 阶段完成** | `03-audit/A-005-response-to-reaudit-and-checkpoint-c-closure.md` |
 | A-006 | self | 2026-09-21 | PR #16 post-close PostgreSQL CI 缺口修复与发布候选复验 | **pass** | 首次 PG helper `localhost` 访问失败已修复；最终候选 CI 9/9 通过 | `03-audit/A-006-post-close-pg-client-network-self.md` |
+| A-007 | independent | 2026-09-21 | PR #16 helper Docker 网络修复与 A-006 F-S-001 闭合复审（grok-4.6 · high） | **pass** | F-S-001 独立确认为 `fixed`；open required = 0；recommended F-I-001/F-I-002（单测钉点、默认 YAML/Compose 文档） | `03-audit/A-007-independent-pg-client-network-fix.md` |
+| A-008 | self（编排器响应） | 2026-09-21 | 响应 A-007：确认 F-S-001 独立闭合并评估两条 recommended | **pass** | F-S-001 确认为 `fixed`；F-I-001/F-I-002 保持 open recommended，不阻断 PR #16 | `03-audit/A-008-response-to-a007.md` |
 
 ## R2 关门审计范围
 
@@ -52,6 +54,35 @@ version: 0.6.0
 - `DB_CLIENT_DOCKER_NETWORK` 可选配置向 `pg_dump` 与 `pg_restore` 注入 Docker 网络；本地配置与 composition 测试通过。
 - Hosted `api + postgres` job 实际运行成功；最终候选 `971ebbce` 的 `r6-basic-matrix` 9/9 `success`。
 - 此为已关闭目标的后续证据补录，不改目标状态或 progress。
+
+## A-007 · independent · PR #16 PostgreSQL helper Docker 网络修复复审（2026-09-21）
+
+- **source**：independent
+- **auditor**：Grok Build grok-4.6 (high)
+- **类型** / **scope**：finding-closure + execution-facts · commit `20026ffd` / PR head `33b07b68` 的 helper 网络修复与 A-006 F-S-001 闭合声明
+- **verdict**：**pass**（本 scope open required = 0）
+- **完整意见**：[`03-audit/A-007-independent-pg-client-network-fix.md`](A-007-independent-pg-client-network-fix.md)
+
+### 结论摘要
+
+- 独立复核确认 A-006 F-S-001 为 `fixed`：失败 run `35567407333` 的四条 PG recovery 用例在无 `--network` 的 helper 容器内连接 `localhost:5432` 被拒绝；修复后 Hosted `api + postgres` 在 `20026ffd`、`971ebbce` 与当前 head `33b07b68` 上均为 `success`。
+- `ClientDockerNetwork` → `clientDockerArgs()` → Create/Restore 共用 `--network`；CI 与备份测试走 `DB_CLIENT_DOCKER_NETWORK=host`。
+- recommended 两项（Restore/空配置单测钉点；嵌入默认 YAML 与 Compose 未登记该键）不阻断本修复。
+- 本意见不修改目标状态或 progress。
+
+## A-008 · self · 响应 A-007（2026-09-21）
+
+- **source**：self（编排器响应）
+- **auditor**：current-session
+- **类型** / **scope**：response · 确认 A-007 对 A-006 F-S-001 的独立复审，并处理两条 low/recommended 意见
+- **verdict**：**pass**（当前 PR scope open required = 0）
+- **完整意见**：[`03-audit/A-008-response-to-a007.md`](A-008-response-to-a007.md)
+
+### 响应摘要
+
+- 接受 A-007 对 F-S-001 `fixed` 的独立确认；修复与 Hosted PostgreSQL CI 证据已经进入 PR #16。
+- F-I-001（Restore/空配置命令参数测试钉点）与 F-I-002（嵌入默认 YAML/Compose 配置对称性）是 low/recommended；本次发布 PR 不扩展该维护范围，保持开放，后续在修改 PG helper 或配置模板时复核。
+- 不改变已完成的 GOAL-005 `status` / `progress` / goal-tree。
 
 ## A-002 · independent · R2 关门（2026-09-20）
 
