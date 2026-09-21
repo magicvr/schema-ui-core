@@ -74,3 +74,34 @@ DB_NAME=vp040_devsmoke APP_ENV=development CONFIG_FILE=...config.yaml HTTP_ADDR=
 ## 进度评估
 
 修复 + 回归测试 + 端到端验证完成；`GOAL-008` 仍 `1/3`（检查点 B 已完成，检查点 C 待用户确认）。该缺陷已被记为 `A-004` 中的新 finding 并以 `fixed` 闭合。
+
+## 追加：**启动器本体**实测（2026-09-21，响应 A-005 后的最终确认）
+
+上面验证的是 API 侧同一条路径；本节验证用户**实际执行的命令**——`dev.cmd start`（其对 API 的调用即上述路径，另加 Web/Vite 与就绪门）。为避免污染共享库，用进程环境把 DB 指向一次性库（环境优先于 `.env`）：
+
+```text
+psql: CREATE DATABASE vp040_devsmoke2
+cmd /c "set DB_NAME=vp040_devsmoke2&& set API_PORT=25082&& set WEB_PORT=25174&& dev.cmd start --no-browser"
+
+== schema-ui-core dev | profile=config ==
+  API  :25082   ...\apps\api
+  Web  :25174   ...\apps\web
+[start] API ... go run ./cmd/server
+Waiting for API to come up ...
+  ok   API listening on :25082
+  ok   API ready (/readyz 200)
+[start] Web ... npm run dev
+Waiting for Web to come up ...
+  ok   Web listening on :25174
+exit=0
+
+GET http://127.0.0.1:25082/readyz → 200
+  {"status":"ok","timestamp":"2026-09-21T00:51:19.750134Z","version":"0.1.0","commit":"unknown"}
+GET http://127.0.0.1:25174/     → 200 (1006 bytes, Vite shell)
+cmd /c "set API_PORT=25082&& set WEB_PORT=25174&& dev.cmd stop"
+  stopped services (:25082 / :25174)
+```
+
+清理：`dev.cmd stop` 后两端口均无监听；`DROP DATABASE vp040_devsmoke2 WITH (FORCE)`；`apps/api/data/recovery/` 清空（0 文件）；`git status` clean。
+
+**结论**：用户报告的命令现已可用（`F-I-101` 的修复在启动器层面复现为通过）。附带再次确认 `/readyz` 的 `timestamp` 是 R3-A 的规范 fixed-6 形状（`…T00:51:19.750134Z`）。
