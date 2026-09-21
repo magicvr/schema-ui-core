@@ -3,9 +3,9 @@ doc_type: vision-reviews
 title: Vision Review 台账
 status: active
 created: 2026-07-31
-updated: 2026-09-20
+updated: 2026-09-21
 parent: null
-version: 1.8.6
+version: 1.8.7
 ---
 
 # Vision Review 台账
@@ -30,7 +30,7 @@ version: 1.8.6
 
 | finding | level | 所属 | 状态 | 备注 |
 |---------|-------|------|------|------|
-| — | — | — | **无** | **VRev-104（self · `/vision` · 2026-09-20，`pass`）**：**VP-040 激活就绪**——VP-039 已 `closed`；`I-040-001` 已登记 R1 默认候选但仍 `collecting`；架构 freshness `6197e802` → `b0a6789b` PASS；slug/workspace/Root 已落盘；VP-040 `planned → active` v0.2.0；open required = 0。V-F132 激活前置子要求已 fixed，R1 最终合同仍开放。 |
+| — | — | — | **无** | **VRev-105（self · `/vision` · 2026-09-21，`pass`）**：VP-040 关门——Root `done · 3/3`；六条方向级判据满足；GOAL-008/A-002、A-005 independent 关门意见及 A-007 响应就绪；`I-040-001`～`005` verified；V-F133 投影同步 finding 已 fixed；VP-040 `active → closed` v0.3.0；open required = 0。 |
 | — | — | — | **无** | **VRev-103（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 关门审视**——判据 1–7 verified；workspace-039 Root `done · 4/4`；Goal R1–R4 cross required=0；用户书面确认「确认关闭 VP-039 与 workspace-039 Root」；既有 fresh-seed harness bounded residual 保持登记；open required = 0。VP-039 `active → closed` v0.3.0。 |
 | — | — | — | **无** | **VRev-102（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 激活就绪** —— `I-039-004` 接受默认候选（Shell 横幅 + 复用 `admin.system-monitoring`，不新模块、不改默认集 → 不暂挂 `go`）；Admin 类 freshness `7e5ce891` → `6197e802` PASS；`I-039-004`/`I-039-005` verified；**VP-039 `planned → active` v0.2.0**，lead `workspace-039-version-maintenance-diagnostics`。`V-F131` → fixed。VP-040 保持 planned 停放。 |
 | — | — | — | **无** | **VRev-101（self · `/vision` · 2026-09-19，`pass`）**：**VP-039 / VP-040 计划阶段**——用户选项 1：VP-039 `planned`（体验增强收口，下一拍）+ VP-040 `planned` 停放（C1 timestamptz，激活硬门禁 = VP-039 波次之后）。结构选型成立（两 VP 串行，不塞 VP-010、不合成）。0 required；V-F131（039 承载面/`go`）/ V-F132（040 SQLite 物理类型）recommended 不阻断 planned。**不是激活许可。** |
@@ -58,6 +58,7 @@ version: 1.8.6
 
 | id | date | source | scope | verdict | open required | summary | file |
 |----|------|--------|-------|---------|---------------|---------|------|
+| VRev-105 | 2026-09-21 | self | VP-040 DB 时间列 timestamptz 合同 · 关门 / 六条退出判据 / Goal 审计 / P-005 / 投影同步 | pass | 0 | Root `GOAL-001` `done · 3/3`；六条退出判据满足；GOAL-008/A-002（conditional/0）经 D-020/A-007、A-005（pass/0）复核；`I-040-001`～`005` verified；V-F133 fixed；VP-040 `active → closed` v0.3.0 | [VRev-105-vp040-closeout.md](reviews/VRev-105-vp040-closeout.md) |
 | VRev-104 | 2026-09-20 | self | VP-040 DB 时间列 timestamptz 合同 · 激活就绪 / P-005 默认候选 / 架构 freshness / slug | pass | 0 | **VP-040 `planned → active` v0.2.0**；VP-039 `closed` 前置满足；`I-040-001` 默认候选已登记但仍 collecting；freshness `6197e802`→`b0a6789b` PASS；workspace-040 / Root 已 scaffold；V-F132 激活前置子要求 fixed | [VRev-104-vp040-timestamptz-persistence-contract-activation.md](reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) |
 | VRev-103 | 2026-09-19 | self | VP-039 关门审视 · 判据 1–7 / Goal cross 审计 / 回归矩阵 / 用户确认 | pass | 0 | **VP-039 `active → closed` v0.3.0**；Root `GOAL-001-version-maintenance-diagnostics` `done · 4/4`；R1–R4 cross required=0；用户书面确认；bounded harness residual 保持登记 | [VRev-103-vp039-closeout.md](reviews/VRev-103-vp039-closeout.md) |
 | VRev-102 | 2026-09-19 | self | VP-039 激活就绪 · `I-039-004` 默认候选 / Admin 类 freshness / slug | pass | 0 | **VP-039 `planned → active` v0.2.0**，lead `workspace-039-version-maintenance-diagnostics`。默认候选不暂挂 `go`；freshness `7e5ce891`→`6197e802` PASS（区间 = VP-038 已审结目 + W32–W34）；`V-F131` → fixed | [VRev-102-vp039-activation.md](reviews/VRev-102-vp039-activation.md) |

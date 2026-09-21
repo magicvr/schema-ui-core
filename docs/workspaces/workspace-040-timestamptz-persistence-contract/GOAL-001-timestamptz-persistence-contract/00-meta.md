@@ -5,7 +5,7 @@ status: done
 parent: null
 created: 2026-09-20
 updated: 2026-09-21
-version: 1.0.0
+version: 1.0.1
 progress: 3/3
 plan_refs:
   - VP-040-timestamptz-persistence-contract
@@ -17,14 +17,14 @@ serves_summary: 在 Charter 0.4.0 与 VP-013 双方言 Store 合同之上，冻�
 
 ## 概述
 
-承接 [VP-040-timestamptz-persistence-contract](../../../vision/plans/VP-040-timestamptz-persistence-contract.md)（`active` v0.2.0；2026-09-20 激活，激活 self Review = [VRev-104](../../../vision/reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`）。本 Root 是本工作区唯一总目标，`parent: null`。
+承接 [VP-040-timestamptz-persistence-contract](../../../vision/plans/VP-040-timestamptz-persistence-contract.md)（`closed` v0.3.0；2026-09-20 激活，self Review [VRev-104](../../../vision/reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) `pass`；2026-09-21 关门，self Review [VRev-105](../../../vision/reviews/VRev-105-vp040-closeout.md) `pass`）。本 Root 是本工作区唯一总目标，`parent: null`。
 
 本目标处理 C1 / `RT-T03` 的持久化层合同：生产权威 PostgreSQL 的时间物理类型、SQLite 合同平等物理类型、UTC 绝对时刻语义、纳入分母的 `*_at` 列、读写编解码、不可变迁移台账与备份/恢复边界。它不重做 VP-020 的展示/输入时区能力，不重开 VP-013 的 Store 方言决策，也不实现 Redis/MQ/A3/多实例。
 
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：`VP-040-timestamptz-persistence-contract`（`active` · v0.2.0）
+- VP：`VP-040-timestamptz-persistence-contract`（`closed` · v0.3.0）
 - 工作区：`workspace-040-timestamptz-persistence-contract`（`delivery`）
 - 激活依据：[VRev-104](../../../vision/reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) self `pass`；Vision open required = 0
 

@@ -11,7 +11,7 @@ plan_refs:
 primary_plan: VP-040-timestamptz-persistence-contract
 created: 2026-09-20
 updated: 2026-09-21
-version: 0.2.0
+version: 0.2.1
 parent: null
 ---
 
@@ -23,7 +23,7 @@ parent: null
 - **Root `[workspace-040-timestamptz-persistence-contract] GOAL-001-timestamptz-persistence-contract` 已于 2026-09-21 经用户书面确认关门（`done · 3/3`）**：R1（`GOAL-002` `done · 4/4`）→ R2（`GOAL-003` 4/4 + `GOAL-004` 3/3 + `GOAL-005` 3/3）→ R3（`GOAL-006` 3/3 + `GOAL-007` 3/3 + `GOAL-008` 3/3）全部完成；六条成功标准已勾选；跨目标开放 required = 0。关门依据：Root `D-020`、`GOAL-008/attachments/r3d-root-exit-criteria-matrix-v0.1.md`、independent 关门审计 `GOAL-008/A-002`（conditional/0）与 `A-005`（pass/0）。
 - 用户已将 R1 合同定为 PostgreSQL `timestamptz(6)` + SQLite fixed-6 UTC RFC3339 `TEXT`；所有绝对时刻列纳入分母（90 列 / 44 表）；双方言各自原地转换；sentinel `0` 按语义转为 `NULL`；公共 wire 输出统一固定 6 位微秒 UTC `Z`。
 - 红线：不引入 ORM/第三库；不把 SQLite 假装成原生 `timestamptz`；不把驱动时间类型泄漏到 handler/模块公共契约；不消耗 Redis/MQ/多实例/A3 trigger；不重开 VP-013/VP-020。
-- **本工作区的实现层工作已收口**；VP-040 自身的波次关闭 / Vision Review 属决策层（`/vision`）动作，不在本工作区 Root 关门范围内。
+- **本工作区与 VP-040 均已收口**：Root 于 2026-09-21 关门；VP-040 随后经 `/vision` 的 VRev-105 `pass` 关闭为 `closed` v0.3.0。
 
 ## 绑定
 
@@ -39,7 +39,7 @@ parent: null
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：[VP-040-timestamptz-persistence-contract](../../vision/plans/VP-040-timestamptz-persistence-contract.md)（`active` · v0.2.3；本区交付已完成，VP 波次关闭待 `/vision`）
+- VP：[VP-040-timestamptz-persistence-contract](../../vision/plans/VP-040-timestamptz-persistence-contract.md)（`closed` · v0.3.0；VRev-105 `pass`）
 - 计划阶段审视：[VRev-101](../../vision/reviews/VRev-101-vp039-vp040-planned.md) self `pass`
 - 激活审视：[VRev-104](../../vision/reviews/VRev-104-vp040-timestamptz-persistence-contract-activation.md) self `pass`
 - Vision open required：0；R1/R2/R3 信息门禁均已在实现层关闭（各目标 `00-meta` 与审计台账为证）

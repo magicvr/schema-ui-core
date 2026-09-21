@@ -3,9 +3,9 @@ doc_type: vision-revisions
 title: Charter 修订台账
 status: active
 created: 2026-07-31
-updated: 2026-09-20
+updated: 2026-09-21
 parent: null
-version: 0.4.67
+version: 0.4.68
 ---
 
 # Charter 修订台账
@@ -108,3 +108,4 @@ version: 0.4.67
 | VR-091 | 2026-09-20 | editorial | VP-040 公共时间 wire 合同裁决投影 | 用户 P-004 追加选择：公共 API 时间输出统一为 6 位微秒 RFC3339 UTC `Z`；影响 formatter、入站 parser、protocol fixtures、Web/Go 回归与 VP-020 R3 矩阵；不改 Charter 目的/边界/非目标或 `vision_id@version`，由 GOAL-002 C2/C4 与 R3 承接。 |
 | VR-092 | 2026-09-20 | editorial | VP-040 C3 Backup SPI/Service 裁决投影 | 用户 P-004 选择在本 VP 建立统一 Backup SPI/Service：SQLite/PG native provider、统一 metadata/verification/restore-to-new-db、事务 rollback 优先；不含调度、权限、远程存储、保留策略、KMS/TLS/UI。VP-040 修订为 v0.2.2；Charter 与 `vision_id@version` 不变。 |
 | VR-093 | 2026-09-20 | editorial | VP-040 R2 migration 归属与最小 Backup Port 投影 | 用户 P-004 选择按模块从 v73 append-only 追加 conversion migrations；最小 Backup/RecoveryPoint Port 进入 kernel，orchestration/providers 留在 internal；C2/C3 guardrails 草案承接。VP-040 修订为 v0.2.3；Charter 与 `vision_id@version` 不变。 |
+| VR-094 | 2026-09-21 | editorial | VP-040 关门与现行组合投影同步 | 用户指令「走流程闭门 VP-040（如果没有问题的话）」；workspace-040 Root `done · 3/3`，R1/R2/R3 与六条退出判据完成；Goal independent 关门意见 `GOAL-008/A-002`（conditional/0）与 `A-005`（pass/0）；Vision Review open required = 0。发现旧的 `active / 0/3` 当前投影并由 V-F133 required 追踪，本轮已同步 VP 计划、roadmap、Charter、workspace、工作区索引与 README；VRev-105 self `pass`。VP-040 `active → closed` v0.3.0。Charter `@0.4.0`、`primary_workspace` 与 strategic 边界不变。 |

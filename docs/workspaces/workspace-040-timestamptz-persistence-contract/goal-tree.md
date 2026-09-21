@@ -4,7 +4,7 @@ status: done
 created: 2026-09-20
 updated: 2026-09-21
 parent: null
-version: 1.0.0
+version: 1.0.1
 workspace_id: workspace-040-timestamptz-persistence-contract
 ---
 
@@ -13,7 +13,7 @@ workspace_id: workspace-040-timestamptz-persistence-contract
 > 工作区：`workspace-040-timestamptz-persistence-contract`
 > canonical：`docs/workspaces/workspace-040-timestamptz-persistence-contract/`
 > Root：`GOAL-001-timestamptz-persistence-contract`（**`done · 3/3`**，2026-09-21 用户确认关门）
-> primary_plan：`VP-040-timestamptz-persistence-contract`（**`active`** v0.2.3；VP 自身的波次关闭属 `/vision`）
+> primary_plan：`VP-040-timestamptz-persistence-contract`（**`closed`** v0.3.0；VRev-105 `pass`）
 
 ## 树
 
