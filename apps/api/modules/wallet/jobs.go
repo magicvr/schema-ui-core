@@ -12,6 +12,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/jobs"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
@@ -216,6 +217,6 @@ func reconciliationResult(run walletstore.ReconciliationRun) map[string]any {
 		"id": run.ID, "accountId": run.AccountID, "result": run.Result,
 		"mismatchCount": run.MismatchCount, "details": run.Details,
 		"actorId":   run.ActorID,
-		"createdAt": run.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt": temporal.FormatWire(run.CreatedAt),
 	}
 }

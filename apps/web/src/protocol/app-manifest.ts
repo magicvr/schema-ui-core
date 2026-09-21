@@ -42,10 +42,19 @@ export function isValidExpression(expression: string): boolean {
     return false;
   }
   const literal = match[4]!.trim();
-  return (
-    /^true$|^false$|^-?\d+(?:\.\d+)?$/.test(literal) ||
-    /^"(?:[^"\\]|\\.)*"$/.test(literal)
-  );
+  if (/^true$|^false$|^-?\d+(?:\.\d+)?$/.test(literal)) {
+    return true;
+  }
+  if (!/^"(?:[^"\\]|\\.)*"$/.test(literal)) {
+    return false;
+  }
+  try {
+    return typeof JSON.parse(literal) === "string";
+  } catch {
+    // The broad shape check above accepts escape sequences that JSON does not;
+    // reject them here so an invalid gate cannot become an enabled command.
+    return false;
+  }
 }
 
 export type ManifestErrorCode =
@@ -965,7 +974,18 @@ export function evaluateExpression(
     return false;
   }
   const actual = getContextValue(context, match[1] as "user" | "features", match[2]);
-  const expected = parseLiteral(match[4].trim());
+  // Missing context paths are unknown, not a successful inequality. Keeping
+  // this fail-closed prevents an undeclared feature/permission from becoming
+  // visible merely because `undefined != literal` is true in JavaScript.
+  if (actual === undefined) {
+    return false;
+  }
+  let expected: unknown;
+  try {
+    expected = parseLiteral(match[4].trim());
+  } catch {
+    return false;
+  }
   switch (match[3]) {
     case "contains":
       return Array.isArray(actual)

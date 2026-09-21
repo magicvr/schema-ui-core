@@ -7,7 +7,7 @@ updated: 2026-08-23
 parent: GOAL-036-w25-page-performance-guardrails
 version: 0.1.0
 scope: 响应 A-001（independent · conditional · F-001～F-005）；含 self 新增 F-006/F-007
-verdict: conditional（原 verdict 不回溯；本响应在 P-003 三路径下闭合全部 required）
+verdict: conditional
 ---
 
 # A-002 · 响应 A-001 独立复审意见（2026-08-23，self）

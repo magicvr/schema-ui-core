@@ -11,10 +11,10 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/errorcatalog"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	authsession "github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
-	"github.com/magicvr/schema-ui-core/apps/api/internal/requestid"
 )
 
 const (
@@ -167,7 +167,7 @@ func (h *serviceCredentialHandler) create() http.Handler {
 			}
 		}
 		now := h.now().UTC()
-		expiresAt, err := time.Parse(time.RFC3339, strings.TrimSpace(body.ExpiresAt))
+		expiresAt, err := ParseWireTime(strings.TrimSpace(body.ExpiresAt))
 		if err != nil || !expiresAt.After(now) || expiresAt.After(now.Add(maxServiceCredentialLifetime)) {
 			writeLocalizedFieldError(w, r, http.StatusBadRequest, "INVALID_CREATE_FIELD", "expiresAt must be a future RFC3339 timestamp within 365 days", []errorcatalog.FieldError{{Field: "expiresAt", Reason: "must be a future RFC3339 timestamp within 365 days"}})
 			return
@@ -261,20 +261,20 @@ func serviceCredentialRow(credential authsession.ServiceCredential, now time.Tim
 	row["revokedAt"] = nil
 	row["lastUsedAt"] = nil
 	if credential.RevokedAt != nil {
-		row["revokedAt"] = credential.RevokedAt.UTC().Format(time.RFC3339)
+		row["revokedAt"] = FormatWireTime(*credential.RevokedAt)
 	}
 	if credential.LastUsedAt != nil {
-		row["lastUsedAt"] = credential.LastUsedAt.UTC().Format(time.RFC3339)
+		row["lastUsedAt"] = FormatWireTime(*credential.LastUsedAt)
 	}
-	row["createdAt"] = credential.CreatedAt.UTC().Format(time.RFC3339)
-	row["updatedAt"] = credential.UpdatedAt.UTC().Format(time.RFC3339)
+	row["createdAt"] = FormatWireTime(credential.CreatedAt)
+	row["updatedAt"] = FormatWireTime(credential.UpdatedAt)
 	return row
 }
 
 func serviceCredentialAuditRow(credential authsession.ServiceCredential) map[string]any {
 	return map[string]any{
 		"id": credential.ID, "name": credential.Name, "tokenPrefix": credential.TokenPrefix,
-		"scopes": credential.Scopes, "expiresAt": credential.ExpiresAt.UTC().Format(time.RFC3339),
+		"scopes": credential.Scopes, "expiresAt": FormatWireTime(credential.ExpiresAt),
 		"createdBy": credential.CreatedBy,
 	}
 }

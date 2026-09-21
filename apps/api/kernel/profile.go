@@ -90,6 +90,11 @@ var profileDefaults = map[ProfileName][]string{
 		// S-14 (GOAL-019 D-002 §3): admin.wallet — admin-only profile; wallet
 		// accounts + immutable ledger + reconciliation (content extension).
 		"admin.wallet",
+		// R2 (GOAL-003 D-001 §4): admin.jobs — admin-only profile; the
+		// management-scope read surface over the async Job runtime. Profile
+		// content extension (same precedent as the S-series above), not an
+		// assembly-semantics change.
+		"admin.jobs",
 	},
 	// ProfileDemo is the non-production demonstration profile (W2, GOAL-003 /
 	// workspace-010): the full mvp capability surface plus the optional
@@ -205,6 +210,17 @@ func BuiltinModules() []Module {
 		// It is compiled but never enabled by mvp/admin defaults; enable via
 		// app.modules (config.yaml) or a dedicated dogfood profile (D-003 §3).
 		{ID: "dev.examples", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.schema-render", "core.navigation-capability"}, Contributions: ContributionKeys{Pages: []string{"overview", "data-table", "search-form-table", "form-controls", "form-with-reactions", "form-with-upload", "data-display", "admin-list-batch"}, Fragments: []string{"examples"}}},
+		// R2 admin.jobs (GOAL-003): management-scope read surface over the
+		// durable async Job runtime — cross-actor list/detail/result behind
+		// jobs.read. The jobs table stays owned by the migration-only core.jobs
+		// provider; this module contributes no persistence.
+		// R3 (GOAL-004): the same module carries the first real batch operation
+		// (batch export) behind jobs.write; the route is paired with
+		// data.export at the handler so it cannot widen data egress.
+		// R4 (GOAL-005): it also carries the management-scope cancel/retry
+		// actions of the result center, behind the same jobs.write key; the
+		// accepted state sets mirror the actor-scoped wallet contract exactly.
+		{ID: "admin.jobs", Version: "2.0.0", KernelAPIRange: ">=2.0 <3.0", DependsOn: []string{"core.auth-session", "core.navigation-capability", "core.schema-render"}, Requires: StandardAdminCapabilities(), Contributions: ContributionKeys{Routes: []string{"GET /api/jobs", "GET /api/jobs/{id}", "GET /api/jobs/{id}/result", "POST /api/jobs/batch-export", "POST /api/jobs/{id}/cancel", "POST /api/jobs/{id}/retry"}, Pages: []string{"jobs"}, Navigation: []string{"menu_jobs"}, Permissions: []string{"jobs.read", "jobs.write"}, Fragments: []string{"jobs"}}},
 		// VP-030 (GOAL-003/GOAL-004): channel.telegram — Telegram bot channel runtime.
 		// Exposes the public webhook, authenticated settings endpoints, the
 		// authenticated console-session polling lease, and the operator console

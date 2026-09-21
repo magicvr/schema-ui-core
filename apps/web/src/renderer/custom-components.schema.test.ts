@@ -19,6 +19,10 @@ import "@/components/mfa-manager";
 import "@/components/account-session-toolbar";
 import "@/components/cron-preview";
 import "@/components/monitoring-auto-refresh";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 import "@/components/import-template-download";
 import "@/components/wallet-ensure";
 import "@/components/notification-center";

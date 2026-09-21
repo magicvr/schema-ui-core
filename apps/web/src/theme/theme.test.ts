@@ -128,6 +128,10 @@ describe("index.css Token structure", () => {
   const requiredTokens = [
     "--destructive",
     "--success",
+    // R6 C8: the filled interactive-control surface worn by toggle-like
+    // controls (expand/collapse filters), distinct from plain bordered actions.
+    "--control",
+    "--control-foreground",
     "--chart-1",
     "--chart-2",
     "--chart-3",
@@ -146,6 +150,22 @@ describe("index.css Token structure", () => {
       expect(css).toContain(token);
     });
   }
+
+  it("maps the control surface into the Tailwind theme namespace", () => {
+    // Raw semantic value + @theme alias (no self-reference), matching the
+    // Color two-layer discipline used by every other token family.
+    expect(css).toContain("--color-control: var(--control)");
+    expect(css).toContain("--color-control-foreground: var(--control-foreground)");
+    expect(css).not.toContain("--color-control: var(--color-control)");
+  });
+
+  it("declares the control surface in both light and dark themes", () => {
+    const controlIdx = css.indexOf("--control:");
+    const darkIdx = css.indexOf(".dark");
+    expect(controlIdx).toBeGreaterThanOrEqual(0);
+    // A second declaration must exist after the .dark block opens.
+    expect(css.indexOf("--control:", controlIdx + 1)).toBeGreaterThan(darkIdx);
+  });
 
   it("maps --shadow-sm to var(--elevation-sm) without self-reference", () => {
     // Must contain the alias declaration.

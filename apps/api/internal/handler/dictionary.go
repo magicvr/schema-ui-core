@@ -113,11 +113,11 @@ func (e *dictTypeEntity) Update(id string, body map[string]any, now time.Time, a
 }
 
 // DeleteTrashTx implements handler.TrashTxDeleter (W11 F-002): the type
-	// delete (with its entry cascade) and the recycle snapshot commit in ONE
-	// transaction — a snapshot failure rolls the delete back instead of
-	// committing a delete with no recyclable snapshot. Audit events are
-	// recorded only after the transaction committed, so a rolled-back delete
-	// leaves no audit row.
+// delete (with its entry cascade) and the recycle snapshot commit in ONE
+// transaction — a snapshot failure rolls the delete back instead of
+// committing a delete with no recyclable snapshot. Audit events are
+// recorded only after the transaction committed, so a rolled-back delete
+// leaves no audit row.
 func (e *dictTypeEntity) DeleteTrashTx(ctx context.Context, id string, actor account.User, now time.Time, record func(context.Context, kernel.Tx) error) error {
 	txrepo, ok := e.repository.(interface {
 		DeleteTypeTx(ctx context.Context, id string, record func(context.Context, kernel.Tx) error) ([]string, error)
@@ -245,9 +245,9 @@ func (e *dictEntryEntity) Update(id string, body map[string]any, now time.Time, 
 }
 
 // DeleteTrashTx implements handler.TrashTxDeleter (W11 F-002): the entry
-	// delete and the recycle snapshot commit in ONE transaction — a snapshot
-	// failure rolls the delete back. Audit events are recorded only after
-	// the transaction committed.
+// delete and the recycle snapshot commit in ONE transaction — a snapshot
+// failure rolls the delete back. Audit events are recorded only after
+// the transaction committed.
 func (e *dictEntryEntity) DeleteTrashTx(ctx context.Context, id string, actor account.User, now time.Time, record func(context.Context, kernel.Tx) error) error {
 	txrepo, ok := e.repository.(interface {
 		DeleteEntryTx(ctx context.Context, id string, record func(context.Context, kernel.Tx) error) error
@@ -326,7 +326,7 @@ func dictTypeToMap(t datadictionarystore.DictType) map[string]any {
 	return map[string]any{
 		"id": t.ID, "key": t.Key, "name": t.Name, "enabled": t.Enabled,
 		"description": t.Description, "sort": t.Sort,
-		"createdAt": formatRFC3339Milli(t.CreatedAt), "updatedAt": formatRFC3339Milli(t.UpdatedAt),
+		"createdAt": FormatWireTime(t.CreatedAt), "updatedAt": FormatWireTime(t.UpdatedAt),
 	}
 }
 
@@ -334,7 +334,7 @@ func dictEntryToMap(e datadictionarystore.DictEntry) map[string]any {
 	return map[string]any{
 		"id": e.ID, "dictKey": e.DictKey, "dictTypeName": e.DictTypeName, "entryKey": e.EntryKey, "label": e.Label,
 		"enabled": e.Enabled, "sort": e.Sort, "remark": e.Remark, "badgeStyle": e.BadgeStyle,
-		"createdAt": formatRFC3339Milli(e.CreatedAt), "updatedAt": formatRFC3339Milli(e.UpdatedAt),
+		"createdAt": FormatWireTime(e.CreatedAt), "updatedAt": FormatWireTime(e.UpdatedAt),
 	}
 }
 

@@ -37,7 +37,7 @@ canonical digest `sha256:60f75039b3256a970d10f45624cb523f6be0e746ce7218f58f38606
 | 门禁 | 结果 |
 |------|------|
 | Web vitest | **48 文件 871 通过** |
-| TypeScript | `tsc --noEmit` 0 错误 |
+| TypeScript | `tsc --noEmit` 0 错误 **（勘误 2026-09-18：裸命令空转，非有效类型校验；见下注）** |
 | Go 内部套件 | `go test ./internal/...` 全 ok（manifest/handler/composition/modules/users/roles/settings/schemarender/store） |
 | 上游 fixtures | host 三 suite **96 零排除**（23+43+30）、app-manifest 41、app-navigation 16、version-negotiation（stage3 266）零排除 |
 | Claim 门禁 | `claim-artifact.test.ts` 5/5 |
@@ -48,6 +48,8 @@ canonical digest `sha256:60f75039b3256a970d10f45624cb523f6be0e746ce7218f58f38606
 ## 阻塞 / 风险
 
 无阻断。唯一拟议 residual：account-locked 生产源缺位（S4-6），S6 关门时点用户 P-004 书面决策。
+
+> **勘误注记（事后追加 2026-09-18，不改本条结论）**：上方 S5 证据表中 `tsc --noEmit` 一行为裸命令，在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；该表其余门禁（vitest、go、上游 fixtures、claim、Playwright 等）不受影响。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。
 
 ## 关联信息项
 

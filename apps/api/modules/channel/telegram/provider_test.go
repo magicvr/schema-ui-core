@@ -72,9 +72,15 @@ func TestTelegramModuleProvider(t *testing.T) {
 		t.Fatalf("expected menu_telegram navigation contribution, got %+v", desc.Contributions.Navigation)
 	}
 
-	// Check Persistence
+	// Check Persistence. workspace-040 R2 (GOAL-004) prepends the v86
+	// timestamp conversion descriptor ahead of the frozen v66-v69 history.
 	contribs, err := p.CompiledPersistence()
-	if err != nil || len(contribs) != 4 || contribs[0].Version != 66 || contribs[0].Name != "telegram_config" || contribs[1].Version != 67 || contribs[1].Name != "telegram_config_connection" || contribs[2].Version != 68 || contribs[2].Name != "telegram_ingress" || contribs[3].Version != 69 || contribs[3].Name != "telegram_outbound" {
+	if err != nil || len(contribs) != 5 ||
+		contribs[0].Version != 86 || contribs[0].Name != "vp040_temporal_telegram" ||
+		contribs[1].Version != 66 || contribs[1].Name != "telegram_config" ||
+		contribs[2].Version != 67 || contribs[2].Name != "telegram_config_connection" ||
+		contribs[3].Version != 68 || contribs[3].Name != "telegram_ingress" ||
+		contribs[4].Version != 69 || contribs[4].Name != "telegram_outbound" {
 		t.Fatalf("unexpected persistence: %+v, err=%v", contribs, err)
 	}
 

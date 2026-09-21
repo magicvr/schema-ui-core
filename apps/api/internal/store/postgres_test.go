@@ -298,29 +298,51 @@ func TestFullCatalogPostgresBootstrapIntegration(t *testing.T) {
 		{"scheduled_tasks", "created_at"}, {"task_runs", "started_at"},
 		{"site_settings", "updated_at"},
 		{"recycle_items", "deleted_at"},
-		{"wallet_accounts", "balance_total"}, {"wallet_accounts", "created_at"},
-		{"wallet_ledger_entries", "amount_delta"},
+		{"wallet_accounts", "created_at"},
 		{"operation_log", "created_at"},
 		{"operation_log_archive", "created_at"}, {"operation_log_archive", "archived_at"},
+	} {
+		assertPGType(tc.table, tc.col, "timestamp with time zone")
+	}
+	// workspace-040 R2 (D-021 residual ②): the money columns are NOT part of the
+	// time conversion and must stay bigint.
+	for _, tc := range []struct{ table, col string }{
+		{"wallet_accounts", "balance_total"},
+		{"wallet_ledger_entries", "amount_delta"},
 	} {
 		assertPGType(tc.table, tc.col, "bigint")
 	}
 
-	// R1 v1.3 hard rule — no Unix time column may remain integer/int4 on
-	// postgres: any column whose name looks like a time stamp must be bigint.
-	var leftover int
+	// workspace-040 R2: no time-named column may still be integer/int4 on
+	// postgres, and every one of them must carry microsecond precision. The name
+	// set is the full 21-name set (D-021 residual ③).
 	timeNames := []string{
-		`created_at`, `updated_at`, `expires_at`, `applied_at`, `archived_at`,
-		`lease_expires_at`, `finished_at`, `started_at`, `read_at`, `revoked_at`,
-		`last_used_at`, `restored_at`, `deleted_at`, `locked_until`,
+		`applied_at`, `archived_at`, `consumed_at`, `created_at`, `deleted_at`,
+		`expires_at`, `finished_at`, `last_login_failure_at`, `last_message_at`,
+		`last_sent_at`, `last_used_at`, `lease_expires_at`, `locked_until`,
+		`read_at`, `received_at`, `redeemed_at`, `restored_at`, `revoked_at`,
+		`sent_at`, `started_at`, `updated_at`,
 	}
+	var leftover int
+	// Both integer widths: a legacy PG time column was bigint, not int4, so the
+	// check must name both (GOAL-004 A-002 F-I-006).
 	q := `SELECT count(*) FROM information_schema.columns
-WHERE table_schema = 'public' AND data_type = 'integer' AND column_name = ANY($1)`
+WHERE table_schema = 'public' AND data_type IN ('integer', 'bigint') AND column_name = ANY($1)`
 	if err := st2.(*postgres).db.QueryRowContext(ctx, q, timeNames).Scan(&leftover); err != nil {
 		t.Fatal(err)
 	}
 	if leftover != 0 {
-		t.Fatalf("%d Unix time column(s) are still integer/int4 on postgres (violates R1 v1.3)", leftover)
+		t.Fatalf("%d Unix time column(s) are still integer/bigint on postgres (violates R1 v1.3)", leftover)
+	}
+	var unprecise int
+	qp := `SELECT count(*) FROM information_schema.columns
+WHERE table_schema = 'public' AND column_name = ANY($1)
+  AND (data_type <> 'timestamp with time zone' OR COALESCE(datetime_precision, -1) <> 6)`
+	if err := st2.(*postgres).db.QueryRowContext(ctx, qp, timeNames).Scan(&unprecise); err != nil {
+		t.Fatal(err)
+	}
+	if unprecise != 0 {
+		t.Fatalf("%d time column(s) are not timestamptz(6) on postgres (violates workspace-040 R2)", unprecise)
 	}
 
 	// R4 evidence: a repository migrated to the kernel.Tx port runs on the
@@ -795,7 +817,7 @@ func TestPostgresMigrateRestoresLostLedger(t *testing.T) {
 	}
 	pg := st.(*postgres)
 	if _, err := pg.db.ExecContext(ctx, `INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
-		VALUES ('user-keep', 'keeper', 'Keeper', '["admin"]', 'hash', 1, 1)`); err != nil {
+		VALUES ('user-keep', 'keeper', 'Keeper', '["admin"]', 'hash', to_timestamp(1), to_timestamp(1))`); err != nil {
 		_ = st.Close()
 		t.Fatalf("seed user: %v", err)
 	}
@@ -1154,7 +1176,7 @@ func TestPostgresCreateUserManagementExistsScan(t *testing.T) {
 	// CreateUserManagement validates role keys against the roles table; seed
 	// the admin role the way the system-data bootstrap does.
 	if err := st.Run(ctx, func(tx kernel.Tx) error {
-		_, err := tx.Exec(ctx, `INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES ('role-admin', 'admin', 'Admin', 1, 0, 0)`)
+		_, err := tx.Exec(ctx, `INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES ('role-admin', 'admin', 'Admin', 1, to_timestamp(0), to_timestamp(0))`)
 		return err
 	}); err != nil {
 		t.Fatalf("seed role: %v", err)
@@ -1232,7 +1254,7 @@ func TestPostgresWalletVoucherAndSubject0064(t *testing.T) {
 
 	// 1. Verify subjects table exists and insert works on PG.
 	err := st.Run(context.Background(), func(tx kernel.Tx) error {
-		_, err := tx.Exec(context.Background(), `INSERT INTO subjects (id, issuer, external_id, created_at) VALUES ('sub-pg-1', 'telegram', 'tg-pg-1', $1)`, now.Unix())
+		_, err := tx.Exec(context.Background(), `INSERT INTO subjects (id, issuer, external_id, created_at) VALUES ('sub-pg-1', 'telegram', 'tg-pg-1', $1)`, now)
 		return err
 	})
 	if err != nil {
@@ -1242,7 +1264,7 @@ func TestPostgresWalletVoucherAndSubject0064(t *testing.T) {
 	// 2. Verify wallet_accounts owner_type='subject' is accepted by the rebuilt CHECK constraint.
 	err = st.Run(context.Background(), func(tx kernel.Tx) error {
 		_, err := tx.Exec(context.Background(), `INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
-			VALUES ('acct-pg-1', 'subject', 'sub-pg-1', 'CNY', 0, 0, 0, 'active', 0, $1, $1)`, now.Unix())
+			VALUES ('acct-pg-1', 'subject', 'sub-pg-1', 'CNY', 0, 0, 0, 'active', 0, $1, $1)`, now)
 		return err
 	})
 	if err != nil {
@@ -1255,7 +1277,7 @@ func TestPostgresWalletVoucherAndSubject0064(t *testing.T) {
 			`INSERT INTO wallet_accounts (id, owner_type, owner_id, currency, balance_total, balance_available, balance_frozen, status, version, created_at, updated_at)
 			 VALUES ('acct-conflict', 'subject', 'sub-pg-1', 'CNY', 0, 0, 0, 'active', 0, $1, $1)
 			 ON CONFLICT (owner_type, owner_id, currency) DO NOTHING`,
-			now.Unix(),
+			now,
 		)
 		if err != nil {
 			return err

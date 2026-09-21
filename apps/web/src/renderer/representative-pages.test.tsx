@@ -33,6 +33,10 @@ import "@/components/import-template-download";
 import "@/components/invite-issue-card";
 import "@/components/invite-resend-dialog";
 import "@/components/password-policy-tab";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 
 const CORE_FIXTURE_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),

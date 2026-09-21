@@ -1,0 +1,108 @@
+---
+id: GOAL-001-batch-operations-and-job-center
+title: Admin 批量操作与异步结果中心交付
+status: done
+parent: null
+created: 2026-09-19
+updated: 2026-09-19
+version: 1.0.0
+progress: 5/5
+plan_refs:
+  - VP-038-batch-operations-and-job-center
+primary_plan: VP-038-batch-operations-and-job-center
+vision_ref: schema-ui-core-admin-foundation@0.4.0
+---
+
+# GOAL-001 · Admin 批量操作与异步结果中心交付
+
+## 概述
+
+在 VP-012 已交付的 profile 无关 Job 六态运行时、VP-011 已交付的批量/导出导入面、VP-037 已交付的统一反馈与列表基线之上，交付 VP-038 的批量操作与异步结果中心：让已注册 Job 种类与纳入首波的批量操作在 Admin 中可观察、可操作、可追溯。
+
+Root 只承接 VP-038 的实现层路线图（R1→R5），不把实体全文检索、组织/数据权限、新业务域或架构 gated 项（Redis / 外部队列 / 多实例 / 专用搜索引擎）写入本目标，也不重开 VP-012/011/037/036。
+
+工作区与 Root 已建立（2026-09-19）；纲领阶段 **R1、R2、R3、R4 已分别由 `GOAL-002` / `GOAL-003` / `GOAL-004` / `GOAL-005` 交付并关门**（均 `done · 4/4`），`progress: 4/5` 是显式检查点的派生展示；仅 R5（证据与关门）待承接。
+
+## 子目标
+
+| id | 纲领阶段 | status | progress |
+|----|---------|--------|----------|
+| GOAL-002-r1-denominator-and-contract-freeze | R1 分母与契约冻结 | **done** | 4/4 |
+| GOAL-003-r2-generic-job-read-surface | R2 通用作业读面 | **done** | 4/4 |
+| GOAL-004-r3-async-batch-operation | R3 批量操作异步承接 | **done** | 4/4 |
+| GOAL-005-r4-result-center-experience | R4 结果中心与体验收敛 | **done** | 4/4 |
+| GOAL-006-r5-evidence-and-closeout | R5 证据与关门 | **done** | 4/4 |
+
+R1 已于 2026-09-19 关门（审计模式 `cross`：self `A-001` `pass` + grok build 4.6 high independent `A-002` `conditional` → `A-003` 响应 required 全 `fixed`，开放 required = 0）。R2 于同日立项并关门（`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 6 条 recommended 全 `fixed`，开放 required = 0）；R2 交付 `admin.jobs` 模块与跨 actor 管理读面。**R3 于同日立项并关门**（`GOAL-004`，`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 8 条 recommended 全 `fixed`，开放 required = 0）；R3 交付 `jobs.batch-export` 异步批量导出（202 + 真实进度 + 结果）与前端触发组件。**R4 于同日立项并关门**（`GOAL-005`，`cross`：self `A-001` `pass` + grok independent `A-002` **`pass`** → `A-003` 响应 5 `fixed` + 3 条经用户书面裁决 `accepted-residual`（有界接受，负载移交 `[workspace-010]` `GOAL-044`），开放 required = 0）；R4 交付管理作用域取消/重试 + `jobs` 页结果中心（六态/详情/下载/自动刷新）与交互级测试。R5 子目标在对应阶段立项。
+
+## 愿景对齐
+
+- 工作区：`workspace-038-batch-operations-and-job-center`
+- Charter：`schema-ui-core-admin-foundation@0.4.0`
+- VP：`VP-038-batch-operations-and-job-center`（`active` v0.2.0）
+- `plan_refs` / `primary_plan`：均为 `VP-038-batch-operations-and-job-center`
+- `serves_summary`：把已交付的 Job 六态运行时与批量请求能力收敛为可观察、可操作的 Admin 产品面（作业可见性 + 至少一条异步批量承接 + 结果中心），保持既有权限/Profile 语义与同步 `batch-delete` 合同不回退；不新增业务域或解除 Redis/MQ/多实例/搜索 gated 条件。
+
+## 范围与非目标
+
+### 本目标范围
+
+- 已注册 Job 种类的列表、详情、六态、进度、attempt、错误码/消息、结果读取与过期语义的对外契约。
+- 作业可见作用域（管理作用域 vs actor 作用域）与按权限/数据范围的 fail-closed 过滤。
+- 至少一条真实批量操作以异步 Job 承接（202 + jobId → 进度 → 结果）。
+- 结果中心体验：进行中/成功/失败/取消/过期/结果已过期呈现、导出类结果下载、失败重试与取消。
+- 中英文、浅色/深色、加载/空态/错误态与既有产品约定一致性；Profile/权限边界回归。
+- `admin.jobs` 模块建立与 admin 默认集内容扩展（`I-038-004` 用户 P-004 裁决）。
+
+### 明确非目标
+
+- 实体全文索引、专用搜索引擎 `RT-X01` / `RT-X02`、跨进程索引。
+- Redis、外部队列 / broker（`RT-Q02`）、多实例（A3）、第二持久化栈。
+- 组织/部门/岗位、数据权限 `org`、SSO/多租户、新业务域。
+- 重开 VP-012/011/037/036；改变 Job 六态合同本身；把同步 `batch-delete` 改成 breaking 异步语义。
+- 通用 BI/报表中心、跨模块数据仓库、批量审批工作流。
+
+## 成功标准与纲领路线图
+
+以下 5 个检查点构成 Root 的派生 progress 来源；纲领阶段按 R1 → R2 → R3 → R4 → R5 串行推进。
+
+- [x] **R1 分母与契约冻结**：Job 种类×作用域矩阵、批量异步契约（含同步 `batch-delete` 兼容口径与协议面影响判定）、首波批量操作分母（保持同步 / 改异步 / 不进首波）、权限/Profile 边界与排除项冻结；`I-038-001`～`003` 关闭。→ 由 `GOAL-002-r1-denominator-and-contract-freeze` 交付（**`done · 4/4`**，2026-09-19）。
+- [x] **R2 通用作业读面**：Job 列表/详情/结果读取 API + 权限与作用域过滤 + fail-closed；不改变 Job 六态合同。→ 由 `GOAL-003-r2-generic-job-read-surface` 交付（**`done · 4/4`**，2026-09-19）。
+- [x] **R3 批量操作异步承接**：至少一条真实批量操作走 Job（202 + jobId + 进度 + 结果）；同步 `batch-delete` 既有语义与回归不退化。→ 由 `GOAL-004-r3-async-batch-operation` 交付（**`done · 4/4`**，2026-09-19）。
+- [x] **R4 结果中心与体验收敛**：列表/详情/进度/终态/过期/重试/取消/下载；中英文、浅色深色、加载空态错误态、可访问。→ 由 `GOAL-005-r4-result-center-experience` 交付（**`done · 4/4`**，2026-09-19；cross 审计 A-001 self `pass` + A-002 grok independent `pass` → A-003 响应 5 `fixed` + 3 用户裁决 `accepted-residual`（移交 `[workspace-010]` `GOAL-044`），开放 required = 0）。
+- [x] **R5 证据与关门**：退出矩阵、浏览器/自动化回归、独立意见、残余登记、组合投影同步与用户确认；开放 required = 0。→ 由 `GOAL-006-r5-evidence-and-closeout` 交付（**`done · 4/4`**，2026-09-19；VP-038 判据 1～7 达成，cross 审计 self `A-001` + grok independent `A-002` 均 `pass`，响应后开放 required = 0；e2e 双 profile 全绿含新增 jobs 端到端用例；**用户书面确认 VP-038 关门**）。
+
+## 关门（2026-09-19）
+
+五个纲领检查点全部达成（`done · 5/5`）。VP-038 经**用户书面确认**于同日 `closed` v1.0.0（依据：判据 1～7 逐条证据 + R5 cross 关门审计两腿 `pass` + 开放 required = 0 + 双 profile 浏览器回归全绿）。关门后残余 1 条 bounded residual（e2e fresh-seed 顺序契约）登记于 `docs/vision/roadmap.md`「未决项统一登记」；`I-038-006`（历史作业保留/清理）保持 `deferred · non-blocking`。**关门 Vision Review 未执行**（如实登记；如需愿景层独立审视可另行 `/vision-audit`）。
+
+## 信息就绪与未知项（P-005）
+
+| ID | 级别 | 所需信息 / 问题 | 影响门禁 | 最晚需要阶段 | 验证 / 收集动作 | 状态 | 延期 / 复核 | 证据 / 结论 |
+|----|------|-----------------|----------|--------------|-----------------|------|-------------|-------------|
+| I-038-001 | required | 现存及首波纳入的 Job 种类、可见作用域（全量/本 actor/按数据范围）与 `wallet.reconcile` 既有 actor 作用域的兼容关系是什么？ | R1 范围冻结、R2 读面 | R1 | 扫描 `internal/jobs` 与各模块 `Register*JobKind` 消费点，形成种类×作用域矩阵；确认是否需要新增 repository 列表查询 | **verified** | — | 由 `GOAL-002`（R1）关闭：种类×作用域矩阵见 `GOAL-002/attachments/r1-job-kind-scope-matrix.md`，冻结口径见 `GOAL-002/01-decision/D-001` §1；`admin.jobs` 管理读面由 `GOAL-003`（R2）交付 |
+| I-038-002 | required | 批量异步契约是扩展 ADR-0022 还是另立独立契约？同步 `batch-delete` 是否保持？是否触碰 pinned `schema-ui-docs@v2.9.0` 协议面？ | R1 方案冻结、R3 实施 | R1 | 对照 `apps/web/src/protocol`（`actions.batch.request` / `batchMapping`）与上游 v2.9.0 契约；判定「本地扩展」vs「上游协议变更」，给出兼容与回归口径 | **verified** | 2026-09-19 用户 P-004 裁决 | 用户裁决 = **方案 B**（另立模块自有异步契约）；ADR-0022 同步 `batch-delete` 语义逐字冻结、pinned 工件零改动；见 `GOAL-002/01-decision/D-001` §2 |
+| I-038-003 | required | 哪些现有批量/长操作进入异步首波，哪些保持同步？ | R1 范围冻结、R3 实施 | R1 | 盘点 `resources.go` 批量面、`data-transfer` 导出导入、wallet reconcile 现状，逐项给出「保持同步 / 改异步 / 不进首波」 | **verified** | 2026-09-19 用户 P-004 裁决（同时承接 `V-F126`） | 用户裁决 = 首波**仅**「新建批量导出所选」1 条；逐项矩阵见 `GOAL-002/attachments/r1-first-wave-denominator-matrix.md`；实现见 `GOAL-004`（R3） |
+| I-038-004 | required | 作业中心以新模块承载还是挂既有模块；是否进入默认 Profile 集？ | 激活、R1、VP-008 `go` 消费有效性 | 激活前 | 读 `kernel/profile.go` 现行模块矩阵与 `mvp`/`admin`/`demo` 集合，给出方案影响面与红线结论 | **verified** | 2026-09-19 用户 P-004 裁决方案 A | 新建 `admin.jobs` 进 admin 默认集（Profile 内容扩展，不改装配语义，不暂挂 `go`）；VRev-099 |
+| I-038-005 | required | 激活前 Admin 类 freshness 与 VP-008 `go` 消费有效性是否仍成立？ | 激活与开区 | 激活前 | 执行 Admin 类 freshness review，核对协议 pin、依赖锁、迁移台账、Profile 默认集与装配、provenance 及区间变更 | **verified** | 2026-09-19 已完成 | `0c29c08` → `7e5ce891` 五域 PASS，不暂挂 `go`；VRev-099 |
+| I-038-006 | non-blocking | 历史作业保留与清理策略（`expires_at` 已存在；是否需要归档/清理/容量上限）？ | 后续运维波次边界 | 关门后或出现容量触发 | 不纳入首波；出现真实容量或合规需求时由 `/vision` 复核 | deferred | 理由：首波聚焦可见性与结果读取，不新建数据生命周期程序；责任人：`/vision`；复核触发：作业表容量/保留期出现真实需求 | 待确认 |
+
+`I-038-004` 与 `I-038-005` 已于 2026-09-19 关闭（用户 P-004 裁决 + Admin 类 freshness PASS），激活门禁解除。`I-038-001`～`003` 已由 `GOAL-002`（R1）关闭为 `verified`（三项均经用户 P-004 裁决；证据见 `GOAL-002/01-decision/D-001` 与 `GOAL-002/attachments/R1-*.md`）。`I-038-003` 同时承接 `V-F126`。`I-038-006` 是有界延期，不代表已验证或承诺后续实现。
+
+> R4 阶段（`GOAL-005`）新增的信息项登记在 `GOAL-005/00-meta.md`（`I-038-014`～`016` 与承接的 `I-038-013`），均已关闭为 `verified`，不重复登记于本表。
+
+## 父目标
+
+- Root 目标，`parent: null`。
+
+## 台账布局
+
+本目标从第一条记录起使用平铺 ledger：`01-decision/`、`02-execution/`、`03-audit/`。索引文件保留 frontmatter、摘要与条目链接；独立记录使用 `D-NNN-*`、`E-NNN-*`、`A-NNN-*` 文件。
+
+## 备注
+
+- workspace/Root scaffold 是已发生事实；纲领 R1、R2、R3、R4、R5 已由 `GOAL-002` / `GOAL-003` / `GOAL-004` / `GOAL-005` / `GOAL-006` 全部交付并关门（各 `done · 4/4`），`progress: 5/5` 只由上方 5 个显式检查点派生，不放行阶段、不关闭 finding、不覆盖 status；本 Root 已 `done`。
+- 建区不代表任何实现阶段完成；VP-038 关门已链接本区证据并经**用户书面确认**（2026-09-19）。
+- Vision Review `VRev-098`/`VRev-099` 属愿景层；Goal 审计已写入各子目标 `03-audit/`，**未**用 Vision Review 代替；关门 Vision Review 未执行（如实登记，可另行 `/vision-audit`）。
+- `admin.jobs` 模块已由 R2（`GOAL-003`）建立并交付管理读面；R2 之后 `apps/**` 有实质实现变更（见 `GOAL-003`/`004`/`005` 的 `02-execution`）。
+- **跨区交付**：R4 三条低残余的通用能力修复由 `[workspace-010-design-implementation-conformance] GOAL-044-w32-r4-residual-seams`（`done · 4/4`）交付并回填 `fixed`；本区未因此扩渲染器能力，亦未重开任何既有 VP。

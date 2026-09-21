@@ -1,0 +1,17 @@
+
+> schema-ui-core-web@0.1.0 test
+> vitest run src/app/navigation.test.ts src/protocol/app-manifest.test.ts src/protocol/load-page.test.ts src/app/App.integration.test.tsx
+
+
+ RUN  v3.2.7 C:/Users/magicvr/Documents/Code/schema-ui-core/apps/web
+
+ ✓ src/protocol/app-manifest.test.ts (15 tests) 29ms
+ ✓ src/app/navigation.test.ts (7 tests) 20ms
+ ✓ src/protocol/load-page.test.ts (15 tests) 71ms
+ ✓ src/app/App.integration.test.tsx (11 tests) 601ms
+
+ Test Files  4 passed (4)
+      Tests  48 passed (48)
+   Start at  17:23:16
+   Duration  15.12s (transform 1.10s, setup 0ms, collect 3.36s, tests 720ms, environment 11.51s, prepare 2.93s)
+

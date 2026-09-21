@@ -3,11 +3,11 @@ doc_type: vision-plan
 id: VP-009-production-hardening
 title: 生产加固（共享基架持续安全与健壮性）
 status: active
-vision_ref: schema-ui-core-admin-foundation@0.3.0
+vision_ref: schema-ui-core-admin-foundation@0.4.0
 lead_workspace: workspace-009-production-hardening
 created: 2026-08-10
-updated: 2026-08-10
-version: 0.4.0
+updated: 2026-09-10
+version: 0.4.1
 parent: null
 ---
 
@@ -22,7 +22,7 @@ parent: null
 与 VP-008 的关系：
 
 - 命中「影响共享基架或共同风险语义」的问题（VP-008 §`go` 消费有效性）时，由本 VP 的工作区承接修复与重验证，并可按规则**暂挂**后续业务对 `go` 的消费，直至本波证据恢复有效性。
-- **不**重开 VP-001～008 的历史 status；**不**修改 Charter `@0.2.0` 的目的、成功边界或非目标。
+- **不**重开 VP-001～008 的历史 status；**不**修改 Charter `@0.4.0` 的目的、成功边界或非目标。
 - **不**承载订单/钱包/类目/通知等业务模块实现。
 
 具体 finding 清单属实现层（子目标 / 波次台账），不写入本 VP 正文；决策层只固定范围、节奏、与 `go` 的关系及退出条件。
@@ -88,3 +88,4 @@ parent: null
 | 2026-08-10 | 曾 `closed`（W1 完成后）；**理解偏差** |
 | 2026-08-10 | GOAL-003（W2）在区內完成；Root 曾随波次反复 done/active |
 | 2026-08-10 | **语义纠正（用户）**：修订为**持续安全与健壮性程序**；`status: active`；退出判据改为程序废弃/被 supersede；波次不等于 VP 关门；Root 改为长期能力容器 |
+| 2026-09-10 | `0.4.1` | Charter `@0.4.0` re-align：更新现行 `vision_ref` 与 Charter 复述；不改变持续程序意图、status、lead、退出条件或既有波次证据。workspace-009 与 Root 当前声明同步；VRev-091 `pass`，V-F120 → `fixed`。已关闭 VP/Goal 的历史引用保留。 |

@@ -47,6 +47,7 @@ const SCHEMA_FILES = [
   "wallet/schema/wallet.json",
   "wallet/schema/wallet-entries.json",
   "wallet/schema/my-wallet.json",
+  "jobs/schema/jobs.json",
 ];
 
 const TEXT_PROPS = ["label", "text", "content", "submitLabel", "confirm", "placeholder"];
@@ -148,6 +149,7 @@ describe("S2 · F-V029 denominator schema key completeness", () => {
       "apps/api/modules/datadictionary/manifest/fragment.json",
       "apps/api/modules/systemmonitoring/manifest/fragment.json",
       "apps/api/modules/scheduledtasks/manifest/fragment.json",
+      "apps/api/modules/jobs/manifest/fragment.json",
       "apps/api/modules/channel/telegram/manifest/fragment.json",
     ];
     const unknown: string[] = [];

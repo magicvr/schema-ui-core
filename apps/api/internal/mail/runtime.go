@@ -2,6 +2,7 @@ package mail
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -57,18 +58,27 @@ type RuntimeConfig struct {
 	SMTPUsername  string
 	SMTPPassword  string
 	SMTPFrom      string
-	UpdatedAt     int64
+	// UpdatedAt is the stored mail_config.updated_at instant. The column is
+	// nullable and R2 made NULL the only "uninitialized" marker (the legacy
+	// INTEGER 0 sentinel was converted to NULL, v73), so the runtime model
+	// carries sql.NullTime rather than a 0-means-unset int64.
+	UpdatedAt sql.NullTime
 }
 
 // PublicView is the read face of the runtime configuration: it carries NO
 // secret values — only whether each secret is set (D-007 write-only rule).
+//
+// UpdatedAt mirrors mail_config.updated_at, which workspace-040 R2 made
+// nullable: NULL means "never configured" and is projected as JSON null instead
+// of a fabricated instant (the web client already treats a non-string as
+// "no hint").
 type PublicView struct {
-	Channel       string          `json:"channel"`
-	MockRetention int             `json:"mockRetention"`
-	Resend        PublicResend    `json:"resend"`
-	SMTP          PublicSMTP      `json:"smtp"`
-	Secrets       PublicSecrets   `json:"secrets"`
-	UpdatedAt     time.Time       `json:"updated_at"`
+	Channel       string        `json:"channel"`
+	MockRetention int           `json:"mockRetention"`
+	Resend        PublicResend  `json:"resend"`
+	SMTP          PublicSMTP    `json:"smtp"`
+	Secrets       PublicSecrets `json:"secrets"`
+	UpdatedAt     *time.Time    `json:"updated_at"`
 }
 
 type PublicResend struct {
@@ -123,13 +133,29 @@ type Switcher struct {
 	// request, never the request shape or auth scheme.
 	resendBaseURL string
 
+	// now stamps mail_config.updated_at. Production keeps time.Now; the seam
+	// exists so a test can freeze a trailing-zero microsecond instant and make
+	// the wire-shape assertion deterministic (same shape as
+	// backup.Service.SetClock).
+	now func() time.Time
+
 	mu    sync.Mutex
 	cached *cachedAdapter
 }
 
 type cachedAdapter struct {
-	updatedAt int64
+	updatedAt sql.NullTime
 	sender    kernel.MailSender
+}
+
+// sameInstant compares two stored instants by value. A plain == would compare
+// the time.Time representation, and an in-memory time.Now() carries a monotonic
+// reading that a scanned value never has.
+func sameInstant(a, b sql.NullTime) bool {
+	if a.Valid != b.Valid {
+		return false
+	}
+	return !a.Valid || a.Time.Equal(b.Time)
 }
 
 // NewSwitcher seeds the runtime row on first boot (seed-once; DB wins after)
@@ -138,7 +164,8 @@ func NewSwitcher(store kernel.Store, masterKey []byte, seed SeedConfig, logger *
 	if logger == nil {
 		logger = slog.Default()
 	}
-	s := &Switcher{store: store, masterKey: masterKey, logger: logger}
+	s := &Switcher{store: store, masterKey: masterKey, logger: logger,
+		now: func() time.Time { return time.Now().UTC() }}
 	if err := s.ensureSeeded(seed); err != nil {
 		return nil, err
 	}
@@ -172,7 +199,7 @@ func (s *Switcher) ensureSeeded(seed SeedConfig) error {
 			 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			seed.Channel, retention, seed.ResendFrom, apiKeyEnc,
 			seed.SMTPHost, seed.SMTPPort, seed.SMTPUsername, passwordEnc, seed.SMTPFrom,
-			time.Now().UnixMilli(),
+			time.Now().UTC(),
 		)
 		return err
 	})
@@ -216,7 +243,7 @@ func (s *Switcher) currentSender() (*RuntimeConfig, kernel.MailSender, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.cached != nil && s.cached.updatedAt == cfg.UpdatedAt {
+	if s.cached != nil && sameInstant(s.cached.updatedAt, cfg.UpdatedAt) {
 		return cfg, s.cached.sender, nil
 	}
 	sender, err := s.buildAdapter(*cfg)
@@ -296,7 +323,7 @@ func (s *Switcher) PublicView() (*PublicView, error) {
 }
 
 func (s *Switcher) publicViewOf(cfg RuntimeConfig) *PublicView {
-	return &PublicView{
+	view := &PublicView{
 		Channel:       cfg.Channel,
 		MockRetention: cfg.MockRetention,
 		Resend:        PublicResend{From: cfg.ResendFrom},
@@ -305,8 +332,15 @@ func (s *Switcher) publicViewOf(cfg RuntimeConfig) *PublicView {
 			ResendAPIKeySet: cfg.ResendAPIKey != "",
 			SMTPPasswordSet: cfg.SMTPPassword != "",
 		},
-		UpdatedAt: time.UnixMilli(cfg.UpdatedAt).UTC(),
 	}
+	// NULL updated_at means "uninitialized" (v73 converted the legacy 0
+	// sentinel to NULL), so the read face reports null rather than a fabricated
+	// instant.
+	if cfg.UpdatedAt.Valid {
+		instant := cfg.UpdatedAt.Time.UTC()
+		view.UpdatedAt = &instant
+	}
+	return view
 }
 
 // Update merges the request into the stored row, validates the CANDIDATE
@@ -379,7 +413,7 @@ func (s *Switcher) Update(ctx context.Context, req UpdateRequest) (*PublicView, 
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UnixMilli()
+	now := s.now().UTC()
 	err = s.store.Run(context.Background(), func(tx kernel.Tx) error {
 		_, err := tx.Exec(context.Background(),
 			`UPDATE mail_config SET channel = ?, mock_retention = ?, resend_from = ?, resend_api_key_enc = ?,
@@ -393,10 +427,23 @@ func (s *Switcher) Update(ctx context.Context, req UpdateRequest) (*PublicView, 
 	if err != nil {
 		return nil, fmt.Errorf("mail: save runtime config: %w", err)
 	}
-	cfg.UpdatedAt = now
+	cfg.UpdatedAt = sql.NullTime{Time: now, Valid: true}
 	s.mu.Lock()
-	s.cached = &cachedAdapter{updatedAt: now, sender: candidate}
+	s.cached = &cachedAdapter{updatedAt: cfg.UpdatedAt, sender: candidate}
 	s.mu.Unlock()
 	s.logger.Info("outbound mail channel switched", "channel", cfg.Channel)
 	return s.publicViewOf(*cfg), nil
+}
+
+// SetClock replaces the timestamp source used when a switch stamps
+// mail_config.updated_at. It exists for tests that must pin a trailing-zero
+// microsecond instant; production never calls it (backup.Service.SetClock is
+// the same seam).
+func (s *Switcher) SetClock(now func() time.Time) {
+	if now == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.now = now
 }

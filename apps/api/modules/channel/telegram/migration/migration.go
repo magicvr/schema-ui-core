@@ -217,6 +217,10 @@ func Descriptors() ([]kernel.MigrationContribution, error) {
 	ingressChecksum := kernel.MigrationChecksum(telegramIngressDDL, "0068:telegram-ingress:v1")
 	outboundChecksum := kernel.MigrationChecksum(telegramOutboundDDL, "0069:telegram-outbound:v1")
 	return []kernel.MigrationContribution{
+		// workspace-040 R2 (GOAL-003 M2): v73–v87 timestamp conversions.
+		// The kernel orders the compiled catalog by Version; source order
+		// is not significant.
+		VP040TemporalDescriptor(),
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "telegram_config"},
 			Version:              66,

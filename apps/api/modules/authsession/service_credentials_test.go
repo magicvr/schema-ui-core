@@ -28,7 +28,7 @@ func TestServiceCredentialPersistenceContract(t *testing.T) {
 	if err := repository.CreateServiceCredential(credential, func(tx kernel.Tx) error {
 		audited = true
 		_, err := tx.Exec(context.Background(), `INSERT INTO operation_log (id, event, actor_id, actor_name, record_id, created_at)
-VALUES ('op-credential-create', 'service-credentials.create', 'user-admin', 'Admin', ?, ?)`, credential.ID, now.UnixMilli())
+VALUES ('op-credential-create', 'service-credentials.create', 'user-admin', 'Admin', ?, ?)`, credential.ID, now)
 		return err
 	}); err != nil {
 		t.Fatalf("CreateServiceCredential: %v", err)

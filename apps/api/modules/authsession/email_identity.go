@@ -18,6 +18,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -171,11 +172,11 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 		// EVERY dispatch now honors the per-account cooldown read from the
 		// existing challenge row regardless of address; the frozen rebind
 		// semantics (overwrite to pending) are unchanged.
-		var sentAt int64
+		var sentAt sql.NullTime
 		scanErr := tx.QueryRow(context.Background(),
 			`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
 		).Scan(&sentAt)
-		if scanErr == nil && now.Unix()-sentAt < int64(emailResendCooldown/time.Second) {
+		if scanErr == nil && sentAt.Valid && now.Sub(sentAt.Time) < emailResendCooldown {
 			return ErrEmailResendCooldown
 		}
 		var taken int
@@ -190,7 +191,7 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 		}
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET email = ?, email_status = 'pending', updated_at = ? WHERE id = ?`,
-			email, now.Unix(), userID,
+			email, now, userID,
 		); err != nil {
 			return fmt.Errorf("set pending email: %w", err)
 		}
@@ -200,7 +201,7 @@ func (r *Repository) BindEmail(userID, rawEmail string, sender kernel.MailSender
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO email_verification_challenges (user_id, code_hash, expires_at, sent_at, attempt_count)
 			 VALUES (?, ?, ?, ?, 0)`,
-			userID, hashCode(code), expires.Unix(), now.Unix(),
+			userID, hashCode(code), expires, now,
 		); err != nil {
 			return fmt.Errorf("store challenge: %w", err)
 		}
@@ -226,7 +227,7 @@ func (r *Repository) compensateBind(userID string, priorEmail, priorStatus *stri
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET email = ?, email_status = ?, updated_at = ? WHERE id = ?`,
-			nullIfNil(priorEmail), nullIfNil(priorStatus), time.Now().Unix(), userID,
+			nullIfNil(priorEmail), nullIfNil(priorStatus), time.Now().UTC(), userID,
 		); err != nil {
 			return err
 		}
@@ -257,7 +258,7 @@ func (r *Repository) VerifyEmail(userID, rawCode string, now time.Time) error {
 		_ = r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 			_, err := tx.Exec(context.Background(),
 				`DELETE FROM email_verification_challenges WHERE user_id = ? AND expires_at <= ?`,
-				userID, now.Unix())
+				userID, now)
 			return err
 		})
 		return ErrEmailCodeExpired
@@ -307,7 +308,7 @@ func (r *Repository) evaluateVerification(userID, code string, now time.Time) (v
 			return errNotSentinel
 		}
 		var codeHash string
-		var expiresAt int64
+		var expiresAt time.Time
 		err := tx.QueryRow(context.Background(),
 			`SELECT code_hash, expires_at FROM email_verification_challenges WHERE user_id = ?`,
 			userID,
@@ -317,7 +318,7 @@ func (r *Repository) evaluateVerification(userID, code string, now time.Time) (v
 			outcome = verificationNotPending
 			return errNotSentinel
 		}
-		if now.Unix() >= expiresAt {
+		if !now.Before(expiresAt) {
 			outcome = verificationExpired
 			return errNotSentinel
 		}
@@ -327,7 +328,7 @@ func (r *Repository) evaluateVerification(userID, code string, now time.Time) (v
 		}
 		result, err := tx.Exec(context.Background(),
 			`UPDATE users SET email_status = 'verified', updated_at = ? WHERE id = ? AND email IS NOT NULL AND email_status = 'pending'`,
-			now.Unix(), userID,
+			now, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("mark verified: %w", err)
@@ -406,7 +407,8 @@ func (r *Repository) ResendEmailCode(userID string, sender kernel.MailSender, no
 	var address string
 	var hadPrior bool
 	var priorHash string
-	var priorExpires, priorSent, priorAttempts int64
+	var priorExpires, priorSent time.Time
+	var priorAttempts int
 	err = r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		hadPrior = false
 		var status *string
@@ -415,13 +417,13 @@ func (r *Repository) ResendEmailCode(userID string, sender kernel.MailSender, no
 		).Scan(&status, &address); err != nil || status == nil || *status != "pending" || address == "" {
 			return ErrEmailNotPending
 		}
-		var sentAt int64
+		var sentAt sql.NullTime
 		scanErr := tx.QueryRow(context.Background(),
 			`SELECT sent_at FROM email_verification_challenges WHERE user_id = ?`, userID,
 		).Scan(&sentAt)
 		switch {
 		case scanErr == nil:
-			if now.Unix()-sentAt < int64(emailResendCooldown/time.Second) {
+			if sentAt.Valid && now.Sub(sentAt.Time) < emailResendCooldown {
 				return ErrEmailResendCooldown
 			}
 			// Snapshot the full prior row so compensation is verbatim.
@@ -441,7 +443,7 @@ func (r *Repository) ResendEmailCode(userID string, sender kernel.MailSender, no
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO email_verification_challenges (user_id, code_hash, expires_at, sent_at, attempt_count)
 			 VALUES (?, ?, ?, ?, 0)`,
-			userID, hashCode(code), expires.Unix(), now.Unix(),
+			userID, hashCode(code), expires, now,
 		); err != nil {
 			return fmt.Errorf("store refreshed challenge: %w", err)
 		}

@@ -3,9 +3,9 @@ doc_type: architecture-decision
 title: Cache 端口 Redis 接缝声明与共享轨道约定（VP-026/027 单一所有者）
 status: active
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-10
 parent: null
-version: 1.1.0
+version: 1.2.0
 vision_ref: schema-ui-core-admin-foundation@0.4.0
 serves: VP-026-cache-port / VP-027-rate-limiter-port
 ---
@@ -66,11 +66,12 @@ serves: VP-026-cache-port / VP-027-rate-limiter-port
 - Redis 级限流供应商实现**同一** `kernel.RateLimiter` / `kernel.RateLimiterProvider` 接口（workspace-027 GOAL-002 D-002 v0.1.1）；7 处使用点消费方零感知、零代码改动。
 - 供应商类型只活在 `internal/`（如 `internal/ratelimitredis`）；任何模块与 kernel 公共面不得 import 供应商类型（VP-003 薄内核）。
 - 端口语义保持：`Allow` **不注册**（只读检查）、失败才 `Record`、`Clear` 清桶、`RetryAfterSeconds` 语义分母 = `kernel.RateLimiterRetryAfterSeconds`（触发立项时按远端 TTL 细化）。
+- **现行端口的完整方法面（2026-09-10 VP-035 R4 补齐；此前本节只写了旧三元组）**：`kernel.RateLimiter` 声明 **7** 个方法——`Allow`、`Record`、**`AllowRecord`**（原子「检查+登记」，VP-032 引入，新调用点 SHOULD 使用）、**`Reserve`**（原子占位并返回本次 token）、**`Cancel`**（仅释放该 token，不是整桶重置）、`RetryAfterSeconds`、`Clear`；另有工厂 `kernel.RateLimiterProvider`（`NewRateLimiter(window, max, capacity)`）。锚点：`apps/api/kernel/ratelimit.go:40,44,52,65,71,76,79` 与 `:86`–`90`；内存实现 `internal/ratelimit/memory.go:158,174,187`。Redis 级供应商实现同一接口时，必须同时满足旧三元组与原子三元组语义（`AllowRecord`/`Reserve` 的原子性、`Cancel` 的精确释放）；具体原语映射（如 `Reserve` = 预占计数 + token 关联）**触发立项时裁决**。
 
 #### 2.6.2 key 映射与原子窗口
 
 - Redis key 沿用本轨道 **`<ns>:<key>`** 格式（§3.1）；限流命名空间段 = **`rl`**（本区登记，见 §3.3）。
-- **原子窗口原语（VP-027 冻结）**：`INCR` 计数 + `EXPIRE`（窗口）为最小原子原语——`Record` = `INCR` + 首次 `EXPIRE`；`Allow` = 读计数（`GET`，不写、不续期失败桶）；`Clear` = `DEL`。
+- **原子窗口原语（VP-027 冻结）**：`INCR` 计数 + `EXPIRE`（窗口）为最小原子原语——`Record` = `INCR` + 首次 `EXPIRE`；`Allow` = 读计数（`GET`，不写、不续期失败桶）；`Clear` = `DEL`。**原子三元组（VP-032）在同一原语上复合**：`AllowRecord` = 单次原子判定 + 登记；`Reserve`/`Cancel` 需要额外的 token 关联结构（具体 Lua/事务形态触发立项时裁决，本合同不预裁）。
 - **滑动窗口表达**：内存供应商为时间戳滑动窗口；Redis 级供应商的滑动实现（ZSET 时间戳 vs 固定窗口双桶近似）**触发立项时裁决**——本合同只冻结原子原语与端口语义，不预裁实现。
 - 桶 key 内仍携带使用点维度（`IP|identifier` / `op|IP|user` / 纯 IP——handler key 约定，D-002 §2）。
 

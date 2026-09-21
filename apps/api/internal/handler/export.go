@@ -8,6 +8,7 @@ package handler
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -63,6 +64,54 @@ type exportHandler struct {
 	operations operationlog.Recorder
 	now        func() time.Time
 }
+
+// exportHeaders returns the frozen per-resource column order (D-002 §3). It is
+// the single source of truth shared by the synchronous export and the async
+// batch export, so the two surfaces cannot drift apart.
+func exportHeaders(resource string) []string {
+	switch resource {
+	case "users":
+		return []string{"id", "username", "name", "roles", "enabled", "locked", "createdAt", "updatedAt"}
+	case "roles":
+		return []string{"id", "key", "name", "system", "permissions", "menuItems", "assignedUsers", "editable", "deletable", "createdAt", "updatedAt"}
+	default:
+		return nil
+	}
+}
+
+// ExportableResources lists the resources both export surfaces accept.
+var ExportableResources = []string{"users", "roles"}
+
+// SelectedExportRows renders the CSV rows for an explicit id selection
+// (GOAL-004 R3). It reuses exportHeaders/exportRow — the exact column sets and
+// formula neutralization of the synchronous export — so a batch download is
+// byte-compatible with a full export of the same rows.
+//
+// onRow, when non-nil, is called after each row with the number of rows read so
+// far; the caller uses it to report real job progress. Returning an error from
+// onRow aborts the export.
+func SelectedExportRows(entity ResourceEntity, resource string, ids []string, onRow func(done int) error) ([]string, [][]string, error) {
+	headers := exportHeaders(resource)
+	if headers == nil {
+		return nil, nil, errExportResourceUnsupported
+	}
+	rows := make([][]string, 0, len(ids))
+	for done, id := range ids {
+		row, err := entity.Get(id)
+		if err != nil {
+			return nil, nil, fmt.Errorf("read %s %s: %w", resource, id, err)
+		}
+		rows = append(rows, exportRow(resource, row))
+		if onRow != nil {
+			if err := onRow(done + 1); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+	return headers, rows, nil
+}
+
+var errExportResourceUnsupported = errors.New("no export for that resource")
 
 // exportRow renders one resource row as an ordered CSV record. Column order is
 // stable per resource (frozen in D-002 `3); array fields serialize as JSON.
@@ -161,7 +210,10 @@ func (h *exportHandler) export() http.Handler {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not export users")
 				return
 			}
-			headers = []string{"id", "username", "name", "roles", "enabled", "locked", "createdAt", "updatedAt"}
+			// Single source of truth (A-002 F-005): the header list comes from
+			// exportHeaders, the same helper the async batch export uses, so the
+			// two surfaces cannot drift apart.
+			headers = exportHeaders("users")
 			for _, u := range items {
 				rows = append(rows, exportRow("users", userToMap(u)))
 			}
@@ -182,7 +234,8 @@ func (h *exportHandler) export() http.Handler {
 				writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not export roles")
 				return
 			}
-			headers = []string{"id", "key", "name", "system", "permissions", "menuItems", "assignedUsers", "editable", "deletable", "createdAt", "updatedAt"}
+			// Single source of truth (A-002 F-005): see the users branch above.
+			headers = exportHeaders("roles")
 			for _, role := range items {
 				rows = append(rows, exportRow("roles", roleToMap(role)))
 			}

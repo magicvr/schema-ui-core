@@ -230,6 +230,46 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
     expect(container.textContent).toContain("0");
   });
 
+  it("offers one explicit retry for a failed statCard read and renders the recovered value", async () => {
+    let calls = 0;
+    const fetcher = vi.fn(async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response(JSON.stringify({ error: "SERVICE_DOWN", message: "temporarily down" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({ items: [{ id: "w1", balanceTotal: 42 }], total: 1, page: 1, pageSize: 100 }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as unknown as typeof fetch;
+    const pageDoc = displayDocument({
+      type: "statCard",
+      id: "wallet-total",
+      props: { label: "Total", format: "plain", valueField: "balanceTotal", dataSource: "/api/wallet/me" },
+    });
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "temporarily unavailable",
+    );
+    const retry = [...container.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Retry"),
+    ) as HTMLButtonElement | undefined;
+    expect(retry).not.toBeUndefined();
+    await act(async () => retry?.click());
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(calls).toBe(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.textContent).toContain("42");
+  });
+
   it("fails closed when statCard format rejects the value type", async () => {
     const pageDoc = displayDocument({
       type: "statCard",
@@ -266,6 +306,31 @@ describe("RenderPage display types (I-PROTO-FULL-001 · statCard/chart)", () => 
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(container.querySelector("svg[role='img']")).not.toBeNull();
+    expect(container.textContent).toContain("2026-08");
+    expect(container.textContent).toContain("12");
+  });
+
+  it("recovers a failed chart read with exactly one explicit retry", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "SERVICE_DOWN" }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      }))
+      .mockImplementation(fixtureListFetcher([{ id: "o1", month: "2026-08", count: 12 }]));
+    const container = await renderDocument(displayDocument({
+      type: "chart",
+      id: "orders-chart",
+      props: { chartType: "bar", xField: "month", yField: "count", dataSource: "/api/orders" },
+    }), {}, fetcher);
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("temporarily unavailable");
+    expect(container.querySelector("svg[role='img']")).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+    expect(retry).toBeDefined();
+    await act(async () => { retry!.click(); });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
     expect(container.querySelector("svg[role='img']")).not.toBeNull();
     expect(container.textContent).toContain("2026-08");
     expect(container.textContent).toContain("12");
@@ -973,6 +1038,24 @@ function recordFetcher(record: unknown): typeof fetch {
 }
 
 describe("RenderPage form.recordSource prefill (ADR-0021 · S6)", () => {
+  it.each([
+    [new DOMException("aborted", "AbortError"), "The request timed out"],
+    [new TypeError("Failed to fetch"), "network is unavailable"],
+  ])("classifies recordSource transport failure and retries only on explicit action: %s", async (error, message) => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ siteTitle: "Recovered" }), { status: 200 }));
+    const container = await renderDocument(recordSourceDocument(), {}, fetcher);
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(message);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+    expect(retry).toBeDefined();
+    await act(async () => { retry!.click(); });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector<HTMLInputElement>("#field-siteTitle")?.value).toBe("Recovered");
+  });
+
   it("prefills fields from the recordSource GET via responseMapping", async () => {
     const container = await renderDocument(
       recordSourceDocument(),
@@ -1152,6 +1235,25 @@ describe("RenderPage actionButton dispatch + permission gate (S6)", () => {
 // ---- A-002 F-005：GOAL-002 前端修复专项回归 ----
 
 describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
+  it("shows timeout for an aborted form action, preserves values and offers no retry", async () => {
+    const pageDoc = submitFormDocument([
+      { id: "name", label: "Name", type: "input" },
+    ], []);
+    const fetcher = vi.fn<typeof fetch>().mockRejectedValue(new DOMException("aborted", "AbortError"));
+    const container = await renderDocument(pageDoc, {}, fetcher);
+    await act(async () => {
+      const input = container.querySelector<HTMLInputElement>("#field-name")!;
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(input, "Keep this value");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => { submitButton(container).click(); });
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("The request timed out");
+    expect(container.querySelector<HTMLInputElement>("#field-name")?.value).toBe("Keep this value");
+    expect(submitButton(container).disabled).toBe(false);
+    expect([...container.querySelectorAll("button")].some((button) => button.textContent === "Retry")).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it("C5: a network-level fetch failure on submit shows an error and re-enables the button", async () => {
     const pageDoc = submitFormDocument([], [], {
       protocolVersion: "2.7",
@@ -1171,7 +1273,9 @@ describe("GOAL-002 前端修复专项回归（A-002 F-005）", () => {
       });
       const after = submitButton(container);
       expect(after.disabled).toBe(false);
-      expect(container.querySelector('[role="alert"]')?.textContent).toContain("Failed to fetch");
+      expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+        "network is unavailable",
+      );
     });
   });
 

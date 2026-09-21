@@ -121,7 +121,8 @@ func TestDeleteUserCleansRoleAndMfaLinks(t *testing.T) {
 	if err := repositoryExec(
 		t, st,
 		`INSERT INTO user_mfa (user_id, status, totp_secret_ciphertext, recovery_codes_hash, created_at, updated_at)
-		 VALUES ('user-carol', 'active', 'x', 'y', 1, 1)`,
+		 VALUES ('user-carol', 'active', 'x', 'y', ?, ?)`,
+		now, now,
 	); err != nil {
 		t.Fatalf("seed user_mfa: %v", err)
 	}
@@ -156,7 +157,8 @@ func TestDeleteUsersBatchCleansRoleAndMfaLinks(t *testing.T) {
 	if err := repositoryExec(
 		t, st,
 		`INSERT INTO user_mfa (user_id, status, totp_secret_ciphertext, recovery_codes_hash, created_at, updated_at)
-		 VALUES ('user-dave', 'active', 'x', 'y', 1, 1)`,
+		 VALUES ('user-dave', 'active', 'x', 'y', ?, ?)`,
+		now, now,
 	); err != nil {
 		t.Fatalf("seed user_mfa: %v", err)
 	}

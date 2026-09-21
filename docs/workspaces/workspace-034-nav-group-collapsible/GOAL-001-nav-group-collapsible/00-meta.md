@@ -4,7 +4,7 @@ title: Admin 导航分组折叠体验交付
 status: done
 parent: null
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-09
 version: 0.1.0
 progress: 100%
 plan_refs:
@@ -24,7 +24,7 @@ serves_summary: 在现行 Admin Shell 中交付与模块解耦的导航分组、
 ## 愿景对齐
 
 - Charter：`schema-ui-core-admin-foundation@0.4.0`
-- VP：`VP-034-nav-group-collapsible`（`active` · v0.3.0）
+- VP：`VP-034-nav-group-collapsible`（**`closed` · v0.4.0** · 2026-09-09 用户书面确认）
 - 工作区：`workspace-034-nav-group-collapsible`（`delivery`）
 - 依据：[VRev-083](../../../vision/reviews/VRev-083-vp034-nav-group-collapsible-activation.md) activation `pass`、[VRev-084](../../../vision/reviews/VRev-084-vp034-existing-navigation-scope-correction.md) scope correction `pass`
 

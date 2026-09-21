@@ -20,8 +20,17 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - name: Test npmjs package name mapping
+        working-directory: ${{ github.workspace }}
+        run: node --test scripts/npmjs-package-name.test.mjs
       - run: npm ci
       - run: npm test
+      # GOAL-008: an explicit type-check gate. `npm test` also runs the
+      # typecheck-convention guard, but that guard only asserts the *convention*;
+      # this step is what actually type-checks src/**. Note `tsc -b` — never a
+      # bare `tsc --noEmit`, which compiles nothing under the solution-style
+      # tsconfig.json and would pass vacuously.
+      - run: npm run typecheck
       - run: npm run build
 
   api:
@@ -103,6 +112,7 @@ jobs:
       PG_TEST_PASSWORD: postgres
       PG_TEST_DB: postgres
       PG_TEST_SSLMODE: disable
+      DB_CLIENT_DOCKER_NETWORK: host
     defaults:
       run:
         working-directory: apps/api
@@ -132,6 +142,9 @@ jobs:
       # The harness dialect contract (playwright.config.ts); explicit value so
       # the intended target is unambiguous in logs.
       DB_DIALECT: ${{ matrix.dialect }}
+      # pg_dump/pg_restore run in a helper container; the PG service is exposed
+      # on the runner's localhost in this Linux job.
+      DB_CLIENT_DOCKER_NETWORK: host
     services:
       postgres:
         image: postgres:15-alpine

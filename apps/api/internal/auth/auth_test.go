@@ -324,9 +324,12 @@ func TestRefreshRejectsLockedAccount(t *testing.T) {
 		t.Fatalf("Login: %v", err)
 	}
 
-	lockUntil := now().Add(time.Hour).Unix()
-	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(`UPDATE users SET locked_until = ? WHERE username = 'admin'`, lockUntil)
+	// workspace-040 R2: bind the domain instant through kernel.Tx so the store
+	// adapter writes the canonical fixed-6 form (the raw WithTx seam bypasses
+	// both adapters and would store a non-canonical value).
+	lockUntil := now().Add(time.Hour)
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), `UPDATE users SET locked_until = ? WHERE username = 'admin'`, lockUntil)
 		return err
 	}); err != nil {
 		t.Fatalf("lock user: %v", err)

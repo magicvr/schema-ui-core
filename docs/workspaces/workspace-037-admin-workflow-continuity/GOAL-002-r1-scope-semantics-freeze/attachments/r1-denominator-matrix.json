@@ -1,0 +1,169 @@
+{
+  "matrixVersion": "0.2.0",
+  "captured": "2026-09-16",
+  "revised": "2026-09-17",
+  "sources": [
+    "apps/web/src/app/searchable-profile-matrix.test.ts",
+    "apps/api/internal/manifest/manifest.go",
+    "apps/api/modules/*/schema/*.json",
+    "apps/web/src/renderer/render.tsx",
+    "apps/web/src/renderer/schema-table.tsx"
+  ],
+  "oracleIdContract": {
+    "pagePrefix": "page:",
+    "actionPrefix": "action:",
+    "source": "apps/web/src/app/searchable-profile-matrix.test.ts",
+    "profiles": {
+      "mvp": {
+        "discoverablePageIds": ["page:dashboard","page:users","page:roles","page:account","page:notifications"],
+        "discoverableActionIds": ["action:users:create","action:users:invites","action:users:export","action:users:import","action:roles:export","action:roles:create"]
+      },
+      "admin": {
+        "discoverablePageIds": ["page:dashboard","page:users","page:roles","page:file-library","page:data-dictionary","page:system-monitoring","page:scheduled-tasks","page:recycle-bin","page:data-permission","page:activity","page:mail","page:mail-outbox","page:wallet","page:wallet-vouchers","page:my-wallet","page:settings","page:account","page:notifications"],
+        "discoverableActionIds": ["action:users:create","action:users:invites","action:users:export","action:users:import","action:roles:export","action:roles:create","action:settings:reset","action:file-library:upload","action:data-dictionary:create","action:scheduled-tasks:create","action:recycle-bin:purgeAll","action:data-permission:register","action:my-wallet:redeem","action:wallet-vouchers:generate","action:wallet:create","action:wallet:reconcile"]
+      },
+      "demo": {
+        "discoverablePageIds": ["page:dashboard","page:users","page:roles","page:account","page:notifications","page:overview","page:data-table","page:admin-list-batch","page:data-display","page:search-form-table","page:form-controls","page:form-with-reactions","page:form-with-upload"],
+        "discoverableActionIds": ["action:users:create","action:users:invites","action:users:export","action:users:import","action:roles:export","action:roles:create"]
+      },
+      "custom": {
+        "discoverablePageIds": ["page:dashboard","page:users","page:roles","page:file-library","page:data-dictionary","page:system-monitoring","page:scheduled-tasks","page:recycle-bin","page:data-permission","page:activity","page:mail","page:mail-outbox","page:wallet","page:wallet-vouchers","page:my-wallet","page:settings","page:account","page:notifications","page:telegram-settings","page:digitaloffer-offers","page:digitaloffer-entitlements","page:digitaloffer-purchases"],
+        "discoverableActionIds": ["action:users:create","action:users:invites","action:users:export","action:users:import","action:roles:export","action:roles:create","action:settings:reset","action:file-library:upload","action:data-dictionary:create","action:scheduled-tasks:create","action:recycle-bin:purgeAll","action:data-permission:register","action:my-wallet:redeem","action:wallet-vouchers:generate","action:wallet:create","action:wallet:reconcile","action:telegram-settings:telegram-operator-entry-button","action:digitaloffer-offers:create"]
+      }
+    }
+  },
+  "formMatrix": "r1-form-matrix.json",
+  "derivedCounts": {
+    "profiles": {
+      "mvp": {"registeredPages": 6, "discoverablePages": 5, "hiddenRoutePages": 1, "discoverableActions": 6},
+      "admin": {"registeredPages": 22, "discoverablePages": 18, "hiddenRoutePages": 4, "discoverableActions": 16},
+      "demo": {"registeredPages": 14, "discoverablePages": 13, "hiddenRoutePages": 1, "discoverableActions": 6},
+      "custom": {"registeredPages": 27, "discoverablePages": 22, "hiddenRoutePages": 5, "discoverableActions": 18}
+    },
+    "listSurfaces": 24,
+    "forms": 58
+  },
+  "profileDenominator": [
+    {
+      "profile": "mvp",
+      "registeredPageIds": ["dashboard", "users", "roles", "account", "notifications", "users-invites"],
+      "discoverablePageIds": ["dashboard", "users", "roles", "account", "notifications"],
+      "hiddenRoutePageIds": ["users-invites"],
+      "discoverableActionIds": [
+        "users:create",
+        "users:invites",
+        "users:export",
+        "users:import",
+        "roles:export",
+        "roles:create"
+      ]
+    },
+    {
+      "profile": "admin",
+      "registeredPageIds": [
+        "dashboard", "users", "roles", "account", "notifications", "users-invites",
+        "settings", "mail", "mail-outbox", "activity", "file-library", "data-dictionary",
+        "dictionary-entries", "system-monitoring", "scheduled-tasks", "task-runs", "recycle-bin",
+        "data-permission", "wallet", "wallet-entries", "my-wallet", "wallet-vouchers"
+      ],
+      "discoverablePageIds": [
+        "dashboard", "users", "roles", "file-library", "data-dictionary", "system-monitoring",
+        "scheduled-tasks", "recycle-bin", "data-permission", "activity", "mail", "mail-outbox",
+        "wallet", "wallet-vouchers", "my-wallet", "settings", "account", "notifications"
+      ],
+      "hiddenRoutePageIds": ["users-invites", "dictionary-entries", "task-runs", "wallet-entries"],
+      "discoverableActionIds": [
+        "users:create", "users:invites", "users:export", "users:import",
+        "roles:export", "roles:create", "settings:reset", "file-library:upload",
+        "data-dictionary:create", "scheduled-tasks:create", "recycle-bin:purgeAll",
+        "data-permission:register", "my-wallet:redeem", "wallet-vouchers:generate",
+        "wallet:create", "wallet:reconcile"
+      ]
+    },
+    {
+      "profile": "demo",
+      "registeredPageIds": [
+        "dashboard", "users", "roles", "account", "notifications", "users-invites",
+        "overview", "data-table", "admin-list-batch", "data-display", "search-form-table",
+        "form-controls", "form-with-reactions", "form-with-upload"
+      ],
+      "discoverablePageIds": [
+        "dashboard", "users", "roles", "account", "notifications", "overview", "data-table",
+        "admin-list-batch", "data-display", "search-form-table", "form-controls",
+        "form-with-reactions", "form-with-upload"
+      ],
+      "hiddenRoutePageIds": ["users-invites"],
+      "discoverableActionIds": [
+        "users:create", "users:invites", "users:export", "users:import",
+        "roles:export", "roles:create"
+      ]
+    },
+    {
+      "profile": "custom",
+      "registeredPageIds": [
+        "dashboard", "users", "roles", "account", "notifications", "users-invites",
+        "settings", "mail", "mail-outbox", "activity", "file-library", "data-dictionary",
+        "dictionary-entries", "system-monitoring", "scheduled-tasks", "task-runs", "recycle-bin",
+        "data-permission", "wallet", "wallet-entries", "my-wallet", "wallet-vouchers",
+        "telegram-settings", "telegram-operator", "digitaloffer-offers",
+        "digitaloffer-entitlements", "digitaloffer-purchases"
+      ],
+      "discoverablePageIds": [
+        "dashboard", "users", "roles", "file-library", "data-dictionary", "system-monitoring",
+        "scheduled-tasks", "recycle-bin", "data-permission", "activity", "mail", "mail-outbox",
+        "wallet", "wallet-vouchers", "my-wallet", "settings", "account", "notifications",
+        "telegram-settings", "digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"
+      ],
+      "hiddenRoutePageIds": ["users-invites", "dictionary-entries", "task-runs", "wallet-entries", "telegram-operator"],
+      "discoverableActionIds": [
+        "users:create", "users:invites", "users:export", "users:import",
+        "roles:export", "roles:create", "settings:reset", "file-library:upload",
+        "data-dictionary:create", "scheduled-tasks:create", "recycle-bin:purgeAll",
+        "data-permission:register", "my-wallet:redeem", "wallet-vouchers:generate",
+        "wallet:create", "wallet:reconcile", "telegram-settings:telegram-operator-entry-button",
+        "digitaloffer-offers:create"
+      ]
+    }
+  ],
+  "listSurfaces": [
+    {"pageId":"account","tableId":"sessions-table","dataSource":"/api/account/sessions","rowKey":"id","columns":["createdAt","expiresAt","status","current","userAgent","ip"],"sortableFields":[],"tableFilterFields":["status"],"routeBindingParams":[]},
+    {"pageId":"activity","tableId":"operations-table","dataSource":"/api/operations","rowKey":"id","columns":["createdAt","event","actorName","recordId","detail"],"sortableFields":["createdAt","event","actorName"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"data-dictionary","tableId":"dict-types-table","dataSource":"/api/data-dictionary/types","rowKey":"id","columns":["key","name","enabled","sort","updatedAt"],"sortableFields":["key","name","sort","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"dictionary-entries","tableId":"dict-entries-table","dataSource":"/api/data-dictionary/entries","rowKey":"id","columns":["dictTypeName","entryKey","label","enabled","sort","updatedAt"],"sortableFields":["dictTypeName","entryKey","label","sort","updatedAt"],"tableFilterFields":[],"routeBindingParams":["dictKey"]},
+    {"pageId":"data-permission","tableId":"policies","dataSource":"/api/data-permission/policies","rowKey":"resource","columns":["resource","ownerColumn","defaultScope","enabled"],"sortableFields":[],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"admin-list-batch","tableId":"users-batch-table","dataSource":"/api/users","rowKey":"id","columns":["id","username","name"],"sortableFields":["username"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"data-table","tableId":"users-table","dataSource":"/api/users","rowKey":"id","columns":["id","username","name","updatedAt"],"sortableFields":["username","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"search-form-table","tableId":"search-results","dataSource":"/api/roles","rowKey":"id","columns":["id","key","name","updatedAt"],"sortableFields":["key","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"digitaloffer-entitlements","tableId":"digitaloffer-entitlements-table","dataSource":"/api/digitaloffer/entitlements","rowKey":"id","columns":["subjectId","offerId","purchaseId","form","remainingCount","expiresAt","status","createdAt"],"sortableFields":["subjectId","expiresAt","createdAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"digitaloffer-offers","tableId":"digitaloffer-offers-table","dataSource":"/api/digitaloffer/offers","rowKey":"id","columns":["name","priceAmount","currency","entitlementForm","status","updatedAt"],"sortableFields":["name","priceAmount","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"digitaloffer-purchases","tableId":"digitaloffer-purchases-table","dataSource":"/api/digitaloffer/purchases","rowKey":"id","columns":["subjectId","offerName","amount","currency","requestId","status","createdAt"],"sortableFields":["amount","createdAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"file-library","tableId":"file-library-table","dataSource":"/api/library/files","rowKey":"id","columns":["name","type","size","owner","created"],"sortableFields":["name","type","size","owner","created"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"recycle-bin","tableId":"recycle-bin-table","dataSource":"/api/recycle-bin","rowKey":"id","columns":["resource","resourceId","actorName","deletedAt","restored"],"sortableFields":["resource","actorName","deletedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"roles","tableId":"roles-table","dataSource":"/api/roles","rowKey":"id","columns":["id","key","name","permissions","menuItems","assignedUsers","system","updatedAt"],"sortableFields":["key","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"scheduled-tasks","tableId":"tasks-table","dataSource":"/api/scheduled-tasks","rowKey":"id","columns":["key","cron","name","enabled","updatedAt"],"sortableFields":["key","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"task-runs","tableId":"task-runs-table","dataSource":"/api/task-runs","rowKey":"id","columns":["taskId","status","startedAt","finishedAt","detail"],"sortableFields":["startedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"mail-outbox","tableId":"mail-outbox-table","dataSource":"/api/mail/outbox","rowKey":"id","columns":["id","to","subject","channel","delivery_status","created_at"],"sortableFields":["created_at"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"system-monitoring","tableId":"monitoring-events-table","dataSource":"/api/system-monitoring/errors","rowKey":"id","columns":["createdAt","event","actorName","detail"],"sortableFields":["createdAt","event","actorName"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"users-invites","tableId":"invites-table","dataSource":"/api/users/invites","rowKey":"id","columns":["id","roles","email","status","expiresAt","createdAt"],"sortableFields":["expiresAt","createdAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"users","tableId":"users-table","dataSource":"/api/users","rowKey":"id","columns":["id","username","name","email","roles","enabled","mfaEnabled","updatedAt"],"sortableFields":["username","name","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"my-wallet","tableId":"my-wallet-entries","dataSource":"/api/wallet/me/entries","rowKey":"id","columns":["entryType","amountDelta","balanceAfterTotal","memo","createdAt"],"sortableFields":["entryType","amountDelta","createdAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"wallet-entries","tableId":"wallet-entries-table","dataSource":"/api/wallet/entries","rowKey":"id","columns":["entryType","amountDelta","balanceAfterTotal","balanceAfterAvail","balanceAfterFrozen","memo","actorName","createdAt"],"sortableFields":["entryType","amountDelta","createdAt"],"tableFilterFields":[],"routeBindingParams":["accountId"]},
+    {"pageId":"wallet-vouchers","tableId":"wallet-vouchers-table","dataSource":"/api/wallet/vouchers","rowKey":"id","columns":["codePrefix","batchId","amount","currency","status","createdAt","expiresAt","redeemedAt"],"sortableFields":["batchId","amount","status","createdAt"],"tableFilterFields":[],"routeBindingParams":[]},
+    {"pageId":"wallet","tableId":"wallet-table","dataSource":"/api/wallet/accounts","rowKey":"id","columns":["ownerType","ownerId","currency","balanceTotal","balanceAvailable","balanceFrozen","status","updatedAt"],"sortableFields":["ownerType","ownerId","balanceTotal","updatedAt"],"tableFilterFields":[],"routeBindingParams":[]}
+  ],
+  "queryStateBaseline": {
+    "owner": "SchemaCrudProvider per mounted page",
+    "fields": ["q", "filters", "sort", "order", "page", "pageSize"],
+    "initial": {"page": 1, "pageSize": 10},
+    "selection": "separate per-table state; not part of the query",
+    "urlProjection": "table query changes do not currently push into App history or routeQuery",
+    "savedViewSupport": false,
+    "columnVisibilitySupport": false
+  },
+  "permissionBaseline": {
+    "pageAndActionGate": "manifest visibleWhen plus SchemaCrudProvider permission target evaluation",
+    "declaredTarget": "denied when the target is missing, malformed, or evaluates false",
+    "unmarkedTarget": "renderer default-allow when no permission target is declared",
+    "savedViewBoundary": "no saved-view permission target exists in the current Schema protocol"
+  }
+}

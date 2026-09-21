@@ -2,7 +2,7 @@
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "@/app/App";
 import { I18nProvider } from "@/i18n/runtime";
@@ -17,6 +17,7 @@ import {
   type NavigationContext,
   validateAppManifest,
 } from "@/protocol/app-manifest";
+import { registerDirtyStateSource, resetDirtyStateSources } from "@/renderer/dirty-state";
 
 function testManifest() {
   return validateAppManifest({
@@ -73,6 +74,29 @@ function schemaDocument(pageId: string, title: string, text: string) {
   };
 }
 
+function draftSchemaDocument() {
+  return {
+    meta: {
+      pageId: "home",
+      title: "Home",
+      protocolVersion: "2.7",
+      requiredCapabilities: ["app.manifest", "form.controls.advanced"],
+    },
+    actions: {
+      save: { type: "request", method: "POST", url: "/api/save" },
+    },
+    body: {
+      type: "form",
+      id: "profile-form",
+      props: {
+        fields: [{ id: "name", label: "Name", type: "input", defaultValue: "Alice" }],
+        submitAction: "save",
+        submitLabel: "Save",
+      },
+    },
+  };
+}
+
 // Keyed by resolved schemaUrl pathname; a missing key 404s (fail-closed).
 const DEFAULT_DOCUMENTS: Record<string, unknown> = {
   "/schema/home": schemaDocument("home", "Home", "Schema home body"),
@@ -95,6 +119,12 @@ function schemaFetcher(documents: Record<string, unknown>) {
       headers: { "Content-Type": "application/json" },
     });
   }) as typeof fetch;
+}
+
+function setInputValueForTest(input: HTMLInputElement, value: string): void {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  setter?.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
@@ -138,6 +168,8 @@ afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
   }
+  resetDirtyStateSources();
+  vi.restoreAllMocks();
   window.history.replaceState({}, "", "/");
 });
 
@@ -163,6 +195,114 @@ describe("App shell integration", () => {
     });
     expect(container.querySelector("h1")?.textContent).toBe("Home");
     expect(container.textContent).toContain("Schema home body");
+  });
+
+  it("blocks internal navigation while dirty and proceeds after confirmation", async () => {
+    const container = await renderApp("/home");
+    let dirty = true;
+    registerDirtyStateSource(() => dirty);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const catalogLink = container.querySelector('a[href="/catalog"]');
+    expect(catalogLink).not.toBeNull();
+
+    await act(async () => {
+      catalogLink?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
+      );
+    });
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(window.location.pathname).toBe("/home");
+    expect(container.querySelector("h1")?.textContent).toBe("Home");
+
+    confirm.mockReturnValue(true);
+    await act(async () => {
+      catalogLink?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
+      );
+    });
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(window.location.pathname).toBe("/catalog");
+    expect(container.querySelector("h1")?.textContent).toBe("Catalog");
+    dirty = false;
+  });
+
+  it("restores the committed URL when a dirty popstate is cancelled", async () => {
+    const container = await renderApp("/home");
+    let dirty = true;
+    registerDirtyStateSource(() => dirty);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    window.history.pushState({}, "", "/catalog");
+    await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(window.location.pathname).toBe("/home");
+    expect(container.querySelector("h1")?.textContent).toBe("Home");
+
+    confirm.mockReturnValue(true);
+    window.history.pushState({}, "", "/catalog");
+    await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
+    expect(window.location.pathname).toBe("/catalog");
+    expect(container.querySelector("h1")?.textContent).toBe("Catalog");
+    dirty = false;
+  });
+
+  it("protects a real schema form before App menu navigation", async () => {
+    const documents: Record<string, unknown> = {
+      "/schema/home": draftSchemaDocument(),
+      "/schema/catalog": schemaDocument("catalog", "Catalog", "Schema catalog body"),
+    };
+    const container = await renderApp("/home", undefined, documents);
+    const input = container.querySelector<HTMLInputElement>("#field-name");
+    const catalogLink = container.querySelector('a[href="/catalog"]');
+    expect(input?.value).toBe("Alice");
+    expect(catalogLink).not.toBeNull();
+    await act(async () => setInputValueForTest(input!, "Bob"));
+    expect(container.querySelector('form[data-form-dirty="true"]')).not.toBeNull();
+
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    await act(async () => {
+      catalogLink?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
+      );
+    });
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(window.location.pathname).toBe("/home");
+    expect(container.querySelector("h1")?.textContent).toBe("Home");
+  });
+
+  it("does not confirm or add history when selecting the exact current location", async () => {
+    const container = await renderApp("/home");
+    const currentLink = container.querySelector('a[href="/home"]');
+    expect(currentLink).not.toBeNull();
+    registerDirtyStateSource(() => true);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    await act(async () => {
+      currentLink?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
+      );
+    });
+    expect(confirm).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/home");
+    expect(container.querySelector("h1")?.textContent).toBe("Home");
+  });
+
+  it("uses the native beforeunload contract only while dirty", async () => {
+    await renderApp("/home");
+    let dirty = false;
+    registerDirtyStateSource(() => dirty);
+
+    const cleanEvent = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+    window.dispatchEvent(cleanEvent);
+    expect(cleanEvent.defaultPrevented).toBe(false);
+
+    dirty = true;
+    const dirtyEvent = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+    window.dispatchEvent(dirtyEvent);
+    expect(dirtyEvent.defaultPrevented).toBe(true);
+    // jsdom exposes Event.returnValue as a boolean and normalizes the empty
+    // string assigned by the browser contract to false; preventDefault is the
+    // observable part shared with real browser beforeunload handling.
+    expect(dirtyEvent.returnValue).toBe(false);
   });
 
 

@@ -10,6 +10,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -74,9 +75,9 @@ func scanInvite(row kernel.Row) (*Invite, error) {
 	var inv Invite
 	var rolesJSON string
 	var email *string
-	var consumed, revoked *int64
-	var expires, sent, created int64
-	err := row.Scan(&inv.ID, &rolesJSON, &inv.InvitedBy, &email, &expires, &consumed, &revoked, &sent, &created)
+	var consumed, revoked sql.NullTime
+	var lastSent time.Time
+	err := row.Scan(&inv.ID, &rolesJSON, &inv.InvitedBy, &email, &inv.ExpiresAt, &consumed, &revoked, &lastSent, &inv.CreatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return nil, ErrInviteNotFound
 	}
@@ -87,14 +88,12 @@ func scanInvite(row kernel.Row) (*Invite, error) {
 		return nil, fmt.Errorf("invite roles: %w", err)
 	}
 	inv.Email = email
-	inv.ExpiresAt = time.Unix(expires, 0)
-	inv.CreatedAt = time.Unix(created, 0)
-	if consumed != nil {
-		t := time.Unix(*consumed, 0)
+	if consumed.Valid {
+		t := consumed.Time
 		inv.ConsumedAt = &t
 	}
-	if revoked != nil {
-		t := time.Unix(*revoked, 0)
+	if revoked.Valid {
+		t := revoked.Time
 		inv.RevokedAt = &t
 	}
 	return &inv, nil
@@ -138,7 +137,7 @@ func (r *Repository) CreateInvite(invitedBy string, roles []string, email string
 			`INSERT INTO user_invites (id, token_hash, roles, invited_by, email, expires_at, last_sent_at, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			id, hash, string(rolesJSON), invitedBy, emailArg,
-			now.Add(ttl).Unix(), now.Unix(), now.Unix())
+			now.Add(ttl), now, now)
 		return err
 	})
 	if err != nil {
@@ -197,13 +196,13 @@ func ParseInviteStatus(raw string) InviteStatusFilter {
 func (f InviteStatusFilter) where(now time.Time) (string, []any) {
 	switch f {
 	case InviteStatusPending:
-		return `consumed_at IS NULL AND revoked_at IS NULL AND expires_at > ?`, []any{now.Unix()}
+		return `consumed_at IS NULL AND revoked_at IS NULL AND expires_at > ?`, []any{now}
 	case InviteStatusConsumed:
 		return `consumed_at IS NOT NULL`, nil
 	case InviteStatusRevoked:
 		return `revoked_at IS NOT NULL`, nil
 	case InviteStatusExpired:
-		return `consumed_at IS NULL AND revoked_at IS NULL AND expires_at <= ?`, []any{now.Unix()}
+		return `consumed_at IS NULL AND revoked_at IS NULL AND expires_at <= ?`, []any{now}
 	default:
 		return "", nil
 	}
@@ -295,7 +294,7 @@ func (r *Repository) RevokeInvite(id string, now time.Time) error {
 		}
 		result, err := tx.Exec(context.Background(),
 			`UPDATE user_invites SET revoked_at = ? WHERE id = ? AND consumed_at IS NULL AND revoked_at IS NULL`,
-			now.Unix(), id)
+			now, id)
 		if err != nil {
 			return fmt.Errorf("update: %w", err)
 		}
@@ -316,8 +315,8 @@ func (r *Repository) ResendInvite(id string, ttl time.Duration, now time.Time) (
 		return "", nil, err
 	}
 	err = r.withTx("resend invite", func(tx kernel.Tx) error {
-		var consumed, revoked *int64
-		var lastSent int64
+		var consumed, revoked sql.NullTime
+		var lastSent time.Time
 		err := tx.QueryRow(context.Background(),
 			`SELECT consumed_at, revoked_at, last_sent_at FROM user_invites WHERE id = ?`,
 			id).Scan(&consumed, &revoked, &lastSent)
@@ -327,18 +326,18 @@ func (r *Repository) ResendInvite(id string, ttl time.Duration, now time.Time) (
 		if err != nil {
 			return err
 		}
-		if consumed != nil {
+		if consumed.Valid {
 			return ErrInviteInvalid
 		}
-		if revoked != nil {
+		if revoked.Valid {
 			return ErrInviteInvalid
 		}
-		if now.Unix()-lastSent < int64(inviteResendCool/time.Second) {
+		if now.Sub(lastSent) < inviteResendCool {
 			return ErrInviteCooldown
 		}
 		_, uerr := tx.Exec(context.Background(),
 			`UPDATE user_invites SET token_hash = ?, expires_at = ?, last_sent_at = ? WHERE id = ?`,
-			hash, now.Add(ttl).Unix(), now.Unix(), id)
+			hash, now.Add(ttl), now, id)
 		return uerr
 	})
 	if err != nil {
@@ -448,7 +447,7 @@ func (r *Repository) AcceptInvite(rawToken, username, name, passwordHash string,
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO users (id, username, name, roles, password_hash, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			u.ID, u.Username, u.Name, string(rolesBytes), u.PasswordHash, now.Unix(), now.Unix()); err != nil {
+			u.ID, u.Username, u.Name, string(rolesBytes), u.PasswordHash, now, now); err != nil {
 			return fmt.Errorf("insert invited user: %w", err)
 		}
 		for key := range roleSet {
@@ -458,7 +457,7 @@ func (r *Repository) AcceptInvite(rawToken, username, name, passwordHash string,
 			}
 		}
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE user_invites SET consumed_at = ? WHERE id = ? AND consumed_at IS NULL`, now.Unix(), inv.ID); err != nil {
+			`UPDATE user_invites SET consumed_at = ? WHERE id = ? AND consumed_at IS NULL`, now, inv.ID); err != nil {
 			return fmt.Errorf("consume invite: %w", err)
 		}
 		created = &u

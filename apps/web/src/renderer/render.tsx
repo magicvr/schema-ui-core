@@ -13,12 +13,19 @@ import {
   type ReactNode,
 } from "react";
 
+import { createPortal } from "react-dom";
+
 import type { NavigationContext } from "@/protocol/app-manifest";
 import { applyComponentFormat } from "@/protocol/conformance/component-format";
 import { resolveAsyncDisplayState } from "@/components/ui/async-state";
 import { Card, CardContent } from "@/components/ui/card";
+import { FeedbackRegion, FeedbackNoticeView, type FeedbackNotice } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDisplayTime } from "@/lib/datetime";
+import {
+  downloadJobResultDocument,
+  triggerBlobDownload,
+} from "@/lib/job-result-download";
 import {
   constructRequest,
   normalizeSelection,
@@ -30,8 +37,13 @@ import {
   type UploadableFile,
 } from "@/protocol/conformance/upload-orchestration";
 import { ConfirmDialog } from "@/renderer/confirm";
+import { confirmDiscard, equalDirtyValues, registerDirtyStateSource } from "@/renderer/dirty-state";
+import { feedbackFromError } from "@/renderer/feedback-policy";
 import { FormControls } from "@/renderer/form-controls.tsx";
-import { getCustomComponent } from "@/renderer/custom-components";
+import {
+  getCustomComponent,
+  type CustomComponentProps,
+} from "@/renderer/custom-components";
 import {
   FORM_RECORD_LOAD_CAPABILITY,
   coerceFieldValue,
@@ -48,6 +60,7 @@ import {
   validatePermissions,
 } from "@/renderer/permissions";
 import {
+  DEFAULT_PAGE_SIZE,
   DISPLAY_LIST_QUERY,
   EMPTY_RESOURCE_LIST,
   fetchResourceList,
@@ -72,6 +85,7 @@ import {
   tableActionGate,
   type RenderActionButtonNode,
   type RenderChartNode,
+  type RenderCustomNode,
   type RenderFormNode,
   type RenderGridNode,
   type RenderNode,
@@ -122,6 +136,10 @@ export interface RendererComponentProps {
   dataRenderer?: (node: RenderStatCardNode | RenderChartNode) => ReactNode;
   /** Invoked when an actionButton node is activated. */
   onAction?: (node: RenderActionButtonNode) => void;
+  /** Host-triggered page-level command selected by the global palette. */
+  initialAction?: { id: string; pageId: string; trigger: Record<string, unknown> };
+  /** Clears a consumed page-level command. */
+  onInitialActionConsumed?: (id: string) => void;
   /**
    * Session-internal navigation hook (ADR-0021 navigate actions; GOAL-015
    * F-001): the host pushes the target onto its own history/visit stack so
@@ -137,6 +155,13 @@ export interface RendererComponentProps {
     onUpload?: (field: FormControlField, files: UploadableFile[]) => Promise<unknown>;
     /** W11 · U-01/U-02: auth-aware transport for dynamic option sources. */
     fetcher?: typeof fetch;
+    /** Submitted search-mode filter ids used for the collapsed hint. */
+    activeFilterIds?: string[];
+    /** Search-mode presentation props accepted by the default FormControls. */
+    searchMode?: boolean;
+    actionSlot?: ReactNode;
+    searchButtonSlot?: ReactNode;
+    columns?: number;
   }>;
 }
 
@@ -152,15 +177,7 @@ function stringOf(value: unknown): string {
 
 // --- Schema CRUD context (S4 · I-007-003 §9) ---
 
-export interface SchemaCrudFeedback {
-  kind: "success" | "error";
-  message: string;
-  code?: string;
-  /** VP-007 S4: catalog key for the frontend localization floor. */
-  messageKey?: string;
-  /** VP-007 S4: interpolation params for messageKey. */
-  params?: Record<string, unknown>;
-}
+export type SchemaCrudFeedback = FeedbackNotice;
 
 export interface SchemaCrudConfirm {
   actionRef: string;
@@ -188,11 +205,23 @@ export type ActionResult =
       message: string;
       messageKey?: string;
       params?: Record<string, unknown>;
+      status?: number;
+      correlationId?: string;
       /** GOAL-014 D-002 §2: server field-level validation failures. */
       fieldErrors?: Array<{ field: string; reason: string; rowNumber?: number }>;
     };
 
 export interface SchemaCrudValue {
+  /** Authenticated user boundary used by user-scoped browser state. */
+  userId: string | null;
+  /** Registry page id used in the Saved View storage namespace. */
+  pageId: string;
+  /** Search-form fields that may be serialized as table filters. */
+  tableFilterFields: (tableId: string) => string[];
+  /** Publishes a page-level message through the shared feedback region. */
+  notifyFeedback: (feedback: SchemaCrudFeedback) => void;
+  /** Registers a form/page dirty predicate for navigation and unload guards. */
+  registerDirtySource: (source: () => boolean) => () => void;
   selectedRow: Record<string, unknown> | null;
   selectRow: (row: Record<string, unknown> | null) => void;
   tableQuery: (id: string) => ResourceQuery | undefined;
@@ -226,6 +255,36 @@ export interface SchemaCrudValue {
   refreshList: (dataSource: string) => void;
   /** Current refresh token for a display dataSource (0 when untouched). */
   listRefreshToken: (dataSource: string) => number;
+  /**
+   * W32 (GOAL-044 D-001 §2): targeted TABLE refresh. Refetches one table node
+   * with its CURRENT query and — unlike `reloadList()` — leaves every table
+   * selection intact, so a polling control can refresh a list without deleting
+   * the selection the operator is working with (ADR-0022 D2 keeps its meaning
+   * for reloads; this seam is for read-only polling).
+   */
+  refreshTable: (tableId: string) => void;
+  /** Current refresh token for one table node (0 when untouched). */
+  tableRefreshToken: (tableId: string) => number;
+  /**
+   * W32 (GOAL-044 D-001 §3): the rows a table node currently renders. Published
+   * by SchemaTable into a ref-backed registry (no extra renders) so a control
+   * can decide whether a refresh is worth issuing at all — e.g. "only poll while
+   * a job is still running".
+   */
+  publishTableRows: (tableId: string, rows: ReadonlyArray<Record<string, unknown>>) => void;
+  tableRows: (tableId: string) => ReadonlyArray<Record<string, unknown>> | undefined;
+  /**
+   * W33 (GOAL-045 D-001 §2): the list page-actions slot. A custom node may
+   * declare `props.slot = "list-page-actions"` + `props.targetTable` to be
+   * rendered inside THAT table's page-actions row (left segment) instead of in
+   * document flow. Registration is what makes a table render that row at all —
+   * a table with no slot consumer gains no empty segment — and the host element
+   * is published by the table so the node can portal into it.
+   */
+  registerListActionsSlot: (tableId: string) => () => void;
+  hasListActionsSlot: (tableId: string) => boolean;
+  publishListActionsHost: (tableId: string, element: HTMLElement | null) => void;
+  listActionsHost: (tableId: string) => HTMLElement | null;
   activeModal: { actionRef: string; row: Record<string, unknown> | null; title: string } | null;
   modalRow: Record<string, unknown> | null;
   openModal: (actionRef: string, row: Record<string, unknown> | null, title: string) => void;
@@ -341,6 +400,12 @@ const CUSTOM_HANDLER_URLS: Record<string, string> = {
   // copyLink writes the URL to the clipboard.
   "library.preview": "/api/library/files/{id}/download",
   "library.copyLink": "/api/library/files/{id}/download",
+  // R4 (GOAL-005 D-001 §4): the result center's row download. The R2 result
+  // route is the shared address both the jobs page and the wallet surface
+  // advertise; the CSV envelope inside it is unpacked by the shared helper, so
+  // this handler and the R3 batch-export component cannot name or render the
+  // same result differently.
+  "jobs.downloadResult": "/api/jobs/{id}/result",
 };
 
 async function runCustomAction(
@@ -388,12 +453,20 @@ async function runCustomAction(
       if (!response.ok) {
         previewWindow?.close();
         const apiError = await readResourceApiError(response, handler);
-        return { ok: false, code: apiError.code, message: apiError.message };
+        return {
+          ok: false,
+          code: apiError.code,
+          message: apiError.message,
+          ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+          ...(apiError.params === undefined ? {} : { params: apiError.params }),
+          status: apiError.status,
+          ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
+        };
       }
       blob = await response.blob();
     } catch (error) {
       previewWindow?.close();
-      return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+      return transportFailureResult(error);
     }
     const objectUrl = URL.createObjectURL(blob);
     if (previewWindow === null || previewWindow.closed) {
@@ -422,11 +495,39 @@ async function runCustomAction(
   try {
     response = await fetcher(url, { method: "GET", headers: { "Content-Type": "application/json" } });
   } catch (error) {
-    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    return transportFailureResult(error);
   }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, handler);
-    return { ok: false, code: apiError.code, message: apiError.message };
+    return {
+      ok: false,
+      code: apiError.code,
+      message: apiError.message,
+      ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
+      ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      status: apiError.status,
+      ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
+    };
+  }
+  // R4 (GOAL-005 D-001 §4): a job result document is an envelope, not the file
+  // itself — hand it to the shared unpacker (CSV when present, JSON otherwise)
+  // instead of dumping the raw body. The 409 JOB_RESULT_NOT_READY / 410
+  // JOB_RESULT_EXPIRED cases never reach here: they are non-2xx and are mapped
+  // to their localized codes above.
+  if (handler === "jobs.downloadResult") {
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      return {
+        ok: false,
+        code: "JOB_RESULT_UNREADABLE",
+        message: "job result is not a JSON document",
+        messageKey: "error.internal",
+      };
+    }
+    downloadJobResultDocument(payload, "job-" + (typeof rowId === "string" && rowId !== "" ? rowId : "result") + ".json");
+    return { ok: true };
   }
   const blob = await response.blob();
   // The download filename prefers the row's stored name, scrubbed with the
@@ -460,18 +561,6 @@ function sanitizeClientFilename(name: string): string {
   return out;
 }
 
-/** Triggers a browser download from a fetched blob (F-02 local extension). */
-function triggerBlobDownload(blob: Blob, filename: string): void {
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = objectUrl;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(objectUrl);
-}
-
 async function runRequest(
   document: RenderPageDocument,
   context: Record<string, unknown>,
@@ -482,16 +571,6 @@ async function runRequest(
   const action = actionOf(document, actionRef);
   if (action === undefined) {
     return { ok: false, code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } };
-  }
-  // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
-  // CustomAction extension point (action.schema.json): a schema action may
-  // reference a whitelisted handler name; the renderer resolves it locally.
-  // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND).
-  if (action.type === "custom") {
-    return runCustomAction(action, fetcher, opts.row ?? null);
-  }
-  if (action.type !== "request") {
-    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
   if (opts.gateTargetId !== undefined) {
     // Absent target = no declared permission entry (engine default is allow):
@@ -522,6 +601,17 @@ async function runRequest(
         };
       }
     }
+  }
+  // F-02 (GOAL-004 D-002 §5): local custom-action dispatch — the protocol's
+  // CustomAction extension point (action.schema.json): a schema action may
+  // reference a whitelisted handler name; the renderer resolves it locally.
+  // Unknown handler names fail closed (CUSTOM_HANDLER_NOT_FOUND). Permission
+  // gating intentionally happens above, before this branch.
+  if (action.type === "custom") {
+    return runCustomAction(action, fetcher, opts.row ?? null);
+  }
+  if (action.type !== "request") {
+    return { ok: false, code: "ACTION_NOT_REQUEST", message: `action "${actionRef}" is not a request action`, messageKey: "error.actionNotRequest", params: { action: actionRef } };
   }
 
   const formProvided = opts.formValues !== undefined;
@@ -578,7 +668,7 @@ async function runRequest(
   } catch (error) {
     // Network-level failure (offline, server down, CORS): surface as an action
     // result so every caller shows feedback instead of an unhandled rejection.
-    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    return transportFailureResult(error);
   }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
@@ -588,6 +678,8 @@ async function runRequest(
       message: apiError.message,
       ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      status: apiError.status,
+      ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
       ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
     };
   }
@@ -628,11 +720,16 @@ async function runRequest(
     : { ok: true, data: parsedData };
 }
 
-function requestFailedMessage(error: unknown): string {
-  if (error instanceof Error && error.message !== "") {
-    return error.message;
-  }
-  return "request failed (network error)";
+function transportFailureResult(error: unknown): ActionResult {
+  // Classify the original transport signal before converting to ActionResult.
+  // No retry callback is supplied: action failures never offer write retries.
+  const feedback = feedbackFromError(error);
+  return {
+    ok: false,
+    code: feedback.code ?? "REQUEST_FAILED",
+    message: feedback.message,
+    messageKey: feedback.messageKey,
+  };
 }
 
 /**
@@ -717,7 +814,7 @@ async function runBatchRequest(
       ...(body === undefined ? {} : { body }),
     });
   } catch (error) {
-    return { ok: false, code: "REQUEST_FAILED", message: requestFailedMessage(error) };
+    return transportFailureResult(error);
   }
   if (!response.ok) {
     const apiError = await readResourceApiError(response, actionRef);
@@ -727,10 +824,33 @@ async function runBatchRequest(
       message: apiError.message,
       ...(apiError.messageKey === undefined ? {} : { messageKey: apiError.messageKey }),
       ...(apiError.params === undefined ? {} : { params: apiError.params }),
+      status: apiError.status,
+      ...(apiError.correlationId === undefined ? {} : { correlationId: apiError.correlationId }),
       ...(apiError.fieldErrors.length > 0 ? { fieldErrors: apiError.fieldErrors } : {}),
     };
   }
   return { ok: true };
+}
+
+function collectSearchFilterFields(
+  node: RenderNode,
+  byTable: Map<string, Set<string>>,
+): void {
+  if (node.type === "form" && node.props.mode === "search") {
+    const targetTable = typeof node.props.targetTable === "string" ? node.props.targetTable : "";
+    if (targetTable !== "") {
+      const fields = byTable.get(targetTable) ?? new Set<string>();
+      for (const field of node.props.fields) {
+        if (isRecord(field) && typeof field.id === "string" && field.id !== "" && field.id !== "q") {
+          fields.add(field.id);
+        }
+      }
+      byTable.set(targetTable, fields);
+    }
+  }
+  for (const child of node.children ?? []) {
+    collectSearchFilterFields(child, byTable);
+  }
 }
 
 function SchemaCrudProvider({
@@ -767,6 +887,33 @@ function SchemaCrudProvider({
   const [feedback, setFeedback] = useState<SchemaCrudFeedback | null>(null);
   const [fetcher, setFetcher] = useState<typeof fetch>(() => initialFetcher ?? globalThis.fetch);
   const t = useTranslate();
+
+  const userId = useMemo(() => {
+    const user = isRecord(context.user) ? context.user : undefined;
+    return typeof user?.id === "string" && user.id !== "" ? user.id : null;
+  }, [context]);
+  const pageId = useMemo(() => {
+    const meta = document.meta as unknown as JsonRecord;
+    const declared = stringOf(meta.pageId);
+    const contextual = stringOf(context.pageId);
+    return declared !== "" ? declared : contextual;
+  }, [document, context]);
+  const searchFilterFieldMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    collectSearchFilterFields(document.body, map);
+    return map;
+  }, [document]);
+  const tableFilterFields = useCallback(
+    (tableId: string) => [...(searchFilterFieldMap.get(tableId) ?? new Set<string>())],
+    [searchFilterFieldMap],
+  );
+  const notifyFeedback = useCallback((next: SchemaCrudFeedback) => {
+    setFeedback(next);
+  }, []);
+  const registerDirtySource = useCallback(
+    (source: () => boolean) => registerDirtyStateSource(source),
+    [],
+  );
 
   // Route snapshot from the render context (App injects route: {params, query});
   // hostless renderers (tests) fall back to an empty snapshot.
@@ -888,6 +1035,79 @@ function SchemaCrudProvider({
     [listRefreshTokens],
   );
 
+  // W32 (GOAL-044 D-001 §2/§3): per-table refresh tokens + a ref-backed row
+  // registry. The rows live in a ref (not state) because publishing them must
+  // not re-render the page: the table already renders those rows, and only the
+  // polling control reads them — inside a timer callback, never during render.
+  const [tableRefreshTokens, setTableRefreshTokens] = useState<Record<string, number>>({});
+  const tableRowsRegistry = useRef(new Map<string, ReadonlyArray<Record<string, unknown>>>());
+  const refreshTable = useCallback((tableId: string) => {
+    if (tableId === "") {
+      return;
+    }
+    // Deliberately does NOT drop the in-flight entry (D-001 §2): this is a
+    // read-only poll, so joining an in-flight identical request only saves a
+    // round trip and still yields server-current data. A refresh issued after a
+    // MUTATION must keep using reloadList(), which does drop the map.
+    setTableRefreshTokens((prev) => ({ ...prev, [tableId]: (prev[tableId] ?? 0) + 1 }));
+  }, []);
+  const tableRefreshToken = useCallback(
+    (tableId: string) => tableRefreshTokens[tableId] ?? 0,
+    [tableRefreshTokens],
+  );
+  const publishTableRows = useCallback(
+    (tableId: string, rows: ReadonlyArray<Record<string, unknown>>) => {
+      if (tableId === "") {
+        return;
+      }
+      tableRowsRegistry.current.set(tableId, rows);
+    },
+    [],
+  );
+  const tableRows = useCallback(
+    (tableId: string) => tableRowsRegistry.current.get(tableId),
+    [],
+  );
+
+  // W33 (GOAL-045 D-001 §2): list page-actions slot registry. Both maps are
+  // state-backed because they decide what renders: a slot consumer makes its
+  // target table render the left segment, and the table then publishes the host
+  // element the consumer portals into.
+  const [listActionsSlotConsumers, setListActionsSlotConsumers] = useState<Record<string, number>>({});
+  const registerListActionsSlot = useCallback((tableId: string) => {
+    if (tableId === "") {
+      return () => {};
+    }
+    setListActionsSlotConsumers((prev) => ({ ...prev, [tableId]: (prev[tableId] ?? 0) + 1 }));
+    return () => {
+      setListActionsSlotConsumers((prev) => {
+        const next = { ...prev };
+        const remaining = (next[tableId] ?? 0) - 1;
+        if (remaining > 0) {
+          next[tableId] = remaining;
+        } else {
+          delete next[tableId];
+        }
+        return next;
+      });
+    };
+  }, []);
+  const hasListActionsSlot = useCallback(
+    (tableId: string) => (listActionsSlotConsumers[tableId] ?? 0) > 0,
+    [listActionsSlotConsumers],
+  );
+  const [listActionsHosts, setListActionsHosts] = useState<Record<string, HTMLElement | null>>({});
+  const publishListActionsHost = useCallback((tableId: string, element: HTMLElement | null) => {
+    if (tableId === "") {
+      return;
+    }
+    setListActionsHosts((prev) => (prev[tableId] === element ? prev : { ...prev, [tableId]: element }));
+  }, []);
+  const listActionsHost = useCallback(
+    (tableId: string) => listActionsHosts[tableId] ?? null,
+    [listActionsHosts],
+  );
+
   const fetchList = useCallback(
     (
       dataSource: string,
@@ -919,7 +1139,12 @@ function SchemaCrudProvider({
     },
     [],
   );
-  const closeModal = useCallback(() => setActiveModal(null), []);
+  const closeModal = useCallback(() => {
+    if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
+      return;
+    }
+    setActiveModal(null);
+  }, [t]);
 
   const runRequestCallback = useCallback(
     (actionRef: string, opts: RunRequestOptions) =>
@@ -951,6 +1176,46 @@ function SchemaCrudProvider({
       if (actionRef === "" || action === undefined) {
         setFeedback({ kind: "error", code: "ACTION_NOT_FOUND", message: `action "${actionRef}" is not defined on this page`, messageKey: "error.actionNotFound", params: { action: actionRef } });
         return;
+      }
+      // Re-run permission and gate checks for every programmatic invocation,
+      // including modal/navigate/custom actions. A disabled HTML control is not
+      // an authorization boundary; the global palette enters here directly.
+      const targetId =
+        stringOf(item.key) || stringOf(item.actionRef) || stringOf(item.actionId) || actionRef;
+      const declaredPermission =
+        item.permissionIntent !== undefined ||
+        (isRecord(item.permissions) && Object.keys(item.permissions).length > 0);
+      const matchingTargets = permissionTargets.filter((target) => target.targetId === targetId);
+      const denyInvocation = (reason: string) => {
+        setFeedback({
+          kind: "error",
+          code: "ACTION_NOT_EXECUTED",
+          message: `action "${actionRef}" was not executed (${reason})`,
+          messageKey: "error.actionNotExecuted",
+          params: { action: actionRef, reason },
+        });
+      };
+      if (
+        (declaredPermission && (targetId === "" || matchingTargets.length === 0)) ||
+        matchingTargets.some((target) => !target.effectivePermission) ||
+        (permissionStructureInvalid && (declaredPermission || matchingTargets.length > 0))
+      ) {
+        denyInvocation("PERMISSION_DENIED");
+        return;
+      }
+      // Row actions have row-specific disabledWhen/visibleField semantics in
+      // SchemaTable. Rowless page commands use the generic $context gate here;
+      // selection-dependent/batch candidates are excluded by the provider.
+      if (row === null) {
+        const gate = tableActionGate(item, context);
+        if (gate.errors.length > 0 || !gate.visible) {
+          denyInvocation("NOT_VISIBLE");
+          return;
+        }
+        if (gate.disabled) {
+          denyInvocation("DISABLED");
+          return;
+        }
       }
       // Row actions carry the row in modal/confirm/request payloads. Do NOT call
       // setSelectedRow here — that opens the recordView Drawer and is wrong for
@@ -985,13 +1250,34 @@ function SchemaCrudProvider({
           return;
         }
         const navigateMapping = isRecord(item.navigateMapping) ? item.navigateMapping : undefined;
-        if (navigateMapping !== undefined) {
-          const constructed = constructRequest({
-            kind: "rowNavigate",
-            action: action as JsonRecord,
-            navigateMapping,
-            row: row ?? {},
+        if (navigateMapping === undefined && url.includes("{")) {
+          setFeedback({
+            kind: "error",
+            code: "INVALID_NAVIGATE_URL",
+            message: `${actionRef} has an unbound url template`,
+            messageKey: "error.invalidNavigateUrl",
+            params: { action: actionRef },
           });
+          return;
+        }
+        if (navigateMapping !== undefined) {
+          let constructed: RequestConstructionResult;
+          try {
+            constructed = constructRequest({
+              kind: "rowNavigate",
+              action: action as JsonRecord,
+              navigateMapping,
+              row: row ?? {},
+            });
+          } catch (error) {
+            setFeedback({
+              kind: "error",
+              code: "ROW_NAVIGATION_FAILED",
+              message: error instanceof Error ? error.message : "row navigation construction failed",
+              messageKey: "error.rowNavigationFailed",
+            });
+            return;
+          }
           if (!constructed.ok) {
             setFeedback({
               kind: "error",
@@ -1047,7 +1333,7 @@ function SchemaCrudProvider({
         setFeedback(errorFeedback({ code: "ROW_ACTION_FAILED", message: String(error) }));
       });
     },
-    [document, runRowAction],
+    [document, runRowAction, permissionTargets, permissionStructureInvalid, context, t, onNavigate],
   );
 
   // ADR-0022 D4: batch toolbar trigger — confirm first, then run the batch.
@@ -1295,7 +1581,7 @@ function SchemaCrudProvider({
       }
     }
     setQueries((prev) => {
-      const current = prev[targetTable] ?? { page: 1, pageSize: 10 };
+      const current = prev[targetTable] ?? { page: 1, pageSize: DEFAULT_PAGE_SIZE };
       const filters: Record<string, string> = { ...(current.filters ?? {}) };
       for (const id of owned) {
         delete filters[id];
@@ -1330,6 +1616,11 @@ function SchemaCrudProvider({
 
   const value = useMemo<SchemaCrudValue>(
     () => ({
+      userId,
+      pageId,
+      tableFilterFields,
+      notifyFeedback,
+      registerDirtySource,
       selectedRow,
       selectRow: setSelectedRow,
       tableQuery,
@@ -1342,6 +1633,14 @@ function SchemaCrudProvider({
       fetchList,
       refreshList,
       listRefreshToken,
+      refreshTable,
+      tableRefreshToken,
+      publishTableRows,
+      tableRows,
+      registerListActionsSlot,
+      hasListActionsSlot,
+      publishListActionsHost,
+      listActionsHost,
       activeModal,
       modalRow: activeModal?.row ?? null,
       openModal,
@@ -1362,6 +1661,11 @@ function SchemaCrudProvider({
       route,
     }),
     [
+      userId,
+      pageId,
+      tableFilterFields,
+      notifyFeedback,
+      registerDirtySource,
       selectedRow,
       tableQuery,
       setTableQuery,
@@ -1373,6 +1677,14 @@ function SchemaCrudProvider({
       fetchList,
       refreshList,
       listRefreshToken,
+      refreshTable,
+      tableRefreshToken,
+      publishTableRows,
+      tableRows,
+      registerListActionsSlot,
+      hasListActionsSlot,
+      publishListActionsHost,
+      listActionsHost,
       activeModal,
       openModal,
       closeModal,
@@ -1400,73 +1712,16 @@ function errorFeedback(result: {
   message: string;
   messageKey?: string;
   params?: Record<string, unknown>;
+  status?: number;
+  correlationId?: string;
 }): SchemaCrudFeedback {
-  return {
-    kind: "error",
-    code: result.code,
-    message: result.message,
-    ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
-    ...(result.params === undefined ? {} : { params: result.params }),
-  };
+  return feedbackFromError(result);
 }
-
-function FeedbackRegion({ feedback }: { feedback: SchemaCrudFeedback }) {
-  const t = useTranslate();
-  const [dismissed, setDismissed] = useState(false);
-  // W11 · U-03: toasts auto-dismiss; the parent remounts this component per
-  // feedback occurrence, so the timer always starts fresh.
-  useEffect(() => {
-    setDismissed(false);
-    if (feedback.kind === "error") {
-      return;
-    }
-    const timer = window.setTimeout(() => setDismissed(true), FEEDBACK_TOAST_MS);
-    return () => window.clearTimeout(timer);
-  }, [feedback]);
-  if (dismissed) {
-    return null;
-  }
-  // VP-007 S4 frontend floor: render the catalog entry by key/params when the
-  // catalog has it (current locale → en-US); otherwise the server message.
-  let text = feedback.message;
-  if (feedback.messageKey !== undefined && feedback.messageKey !== "") {
-    const localized = t(feedback.messageKey, feedback.params as MessageParams | undefined);
-    if (localized !== feedback.messageKey) {
-      text = localized;
-    }
-  }
-  return (
-    <div
-      role={feedback.kind === "error" ? "alert" : "status"}
-      data-feedback-toast={feedback.kind}
-      className={`fixed right-4 top-16 z-50 flex max-w-sm items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm shadow-lg ${
-        feedback.kind === "error"
-          ? "border-destructive/50 bg-destructive/10 text-destructive"
-          : "border-success/50 bg-success/10 text-success"
-      }`}
-    >
-      <span data-feedback-code={feedback.code ?? ""} title={feedback.code ?? undefined}>
-        {text}
-      </span>
-      <button
-        type="button"
-        aria-label={t("feedback.cancel")}
-        onClick={() => setDismissed(true)}
-        className="shrink-0 text-xs opacity-70 transition-opacity hover:opacity-100"
-      >
-        {"×"}
-      </button>
-    </div>
-  );
-}
-
-/** W11 · U-03: auto-dismiss window for operation feedback toasts (ms). */
-const FEEDBACK_TOAST_MS = 4000;
 
 type RecordSourcePrefillState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "error"; message: string }
+  | { status: "error"; feedback: FeedbackNotice }
   | { status: "ready"; values: Record<string, unknown> };
 
 function hasRequiredCapability(metaValue: unknown, capability: string): boolean {
@@ -1496,6 +1751,8 @@ function useRecordSourcePrefill(
   const [state, setState] = useState<RecordSourcePrefillState>(() =>
     recordSource !== undefined ? { status: "loading" } : { status: "idle" },
   );
+  const [retryNonce, setRetryNonce] = useState(0);
+  const retry = useCallback(() => setRetryNonce((current) => current + 1), []);
   // W11 F-012: the route is a prefill input (query/params flow into
   // recordSource construction). The route OBJECT identity is unstable (App
   // rebuilds the render context each render), so the effect depends on this
@@ -1508,13 +1765,20 @@ function useRecordSourcePrefill(
       return;
     }
     if (node.props.mode === "search") {
-      setState({ status: "error", message: "form.recordSource is forbidden on search-mode forms" });
+      setState({
+        status: "error",
+        feedback: { kind: "error", code: "RECORD_SOURCE_FORBIDDEN", message: "form.recordSource is forbidden on search-mode forms" },
+      });
       return;
     }
     if (!hasRequiredCapability(metaValue, FORM_RECORD_LOAD_CAPABILITY)) {
       setState({
         status: "error",
-        message: `form.recordSource requires capability "${FORM_RECORD_LOAD_CAPABILITY}" in meta.requiredCapabilities`,
+        feedback: {
+          kind: "error",
+          code: "RECORD_SOURCE_CAPABILITY_REQUIRED",
+          message: `form.recordSource requires capability "${FORM_RECORD_LOAD_CAPABILITY}" in meta.requiredCapabilities`,
+        },
       });
       return;
     }
@@ -1538,20 +1802,31 @@ function useRecordSourcePrefill(
     } catch (error) {
       setState({
         status: "error",
-        message: `recordSource construction failed: ${error instanceof Error ? error.message : "unknown error"}`,
+        feedback: {
+          kind: "error",
+          code: "RECORD_SOURCE_CONSTRUCTION_FAILED",
+          message: `recordSource construction failed: ${error instanceof Error ? error.message : "unknown error"}`,
+        },
       });
       return;
     }
     if (!constructed.ok) {
       setState({
         status: "error",
-        message: `recordSource construction failed (${constructed.path}): ${constructed.code}`,
+        feedback: {
+          kind: "error",
+          code: "RECORD_SOURCE_CONSTRUCTION_FAILED",
+          message: `recordSource construction failed (${constructed.path}): ${constructed.code}`,
+        },
       });
       return;
     }
     const url = constructed.request?.url;
     if (typeof url !== "string") {
-      setState({ status: "error", message: "recordSource produced no request URL" });
+      setState({
+        status: "error",
+        feedback: { kind: "error", code: "RECORD_SOURCE_NO_URL", message: "recordSource produced no request URL" },
+      });
       return;
     }
     let cancelled = false;
@@ -1565,7 +1840,10 @@ function useRecordSourcePrefill(
         if (!response.ok) {
           const apiError = await readResourceApiError(response, "recordSource");
           if (!cancelled) {
-            setState({ status: "error", message: `${apiError.code}: ${apiError.message}` });
+            setState({
+              status: "error",
+              feedback: feedbackFromError(apiError, { retry }),
+            });
           }
           return;
         }
@@ -1594,7 +1872,7 @@ function useRecordSourcePrefill(
         }
         setState({
           status: "error",
-          message: error instanceof Error ? error.message : String(error),
+          feedback: feedbackFromError(error, { retry }),
         });
       });
     return () => {
@@ -1606,7 +1884,7 @@ function useRecordSourcePrefill(
   // change, not on unrelated parent renders. The previous deps omitted the
   // route entirely: a same-page query change left the PREVIOUS record's
   // values pre-filled and a save could write to the wrong row.
-  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken, routeKey]);
+  }, [recordSource, node.props.mode, metaValue, crud?.fetcher, crud?.reloadToken, routeKey, retryNonce, retry]);
   return state;
 }
 
@@ -1639,11 +1917,7 @@ function FormView({
     );
   }
   if (prefill.status === "error") {
-    return (
-      <p role="alert" className="text-sm text-destructive">
-        {prefill.message}
-      </p>
-    );
+    return <FeedbackNoticeView feedback={prefill.feedback} surface="inline" dismissible={false} />;
   }
   return (
     <FormInner
@@ -1725,6 +1999,8 @@ function FormInner({
   // Baseline snapshot for the full $deps engine (02 §14: baseline = the
   // field's value at first mount unless explicitly overridden).
   const mountBaselines = useRef(values);
+  const latestValues = useRef(values);
+  latestValues.current = values;
   // Full engine (upstream per-field reactions) runs on every value change and
   // converges; the frozen $context engine remains the fallback.
   const fullReaction = useMemo(
@@ -1763,12 +2039,7 @@ function FormInner({
   }, [fullReaction]);
 
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<{
-    code: string;
-    message: string;
-    messageKey?: string;
-    params?: Record<string, unknown>;
-  } | null>(null);
+  const [formError, setFormError] = useState<FeedbackNotice | null>(null);
   // GOAL-014 D-002 §3: submit-time validation + server fieldErrors echo,
   // keyed by field id for inline display.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1778,6 +2049,17 @@ function FormInner({
   >([]);
 
   const isSearch = node.props.mode === "search";
+  const registerDirtySource = crud?.registerDirtySource;
+  const isDirty = !isSearch && !equalDirtyValues(latestValues.current, mountBaselines.current);
+  useEffect(() => {
+    // Search forms change list query state, not business data; they must not
+    // block navigation. Default-mode forms register only a predicate, so the
+    // shell never stores draft values in the global registry.
+    if (isSearch || registerDirtySource === undefined) {
+      return;
+    }
+    return registerDirtySource(() => !equalDirtyValues(latestValues.current, mountBaselines.current));
+  }, [isSearch, registerDirtySource]);
   const submitAction = node.props.submitAction;
   const canSubmit = isSearch || typeof submitAction === "string";
   const hasBlockingErrors = gate.errors.length > 0 || reactionErrors.length > 0;
@@ -1844,12 +2126,7 @@ function FormInner({
           byField[fe.field] = fe.reason;
         }
         setFieldErrors(byField);
-        setFormError({
-          code: result.code,
-          message: result.message,
-          ...(result.messageKey === undefined ? {} : { messageKey: result.messageKey }),
-          ...(result.params === undefined ? {} : { params: result.params }),
-        });
+        setFormError(feedbackFromError(result));
       } else if (result.ok && (result.fieldErrors ?? []).length > 0) {
         // W16-F03: a 200 import response with fieldErrors is a partial
         // failure — keep the modal open and show row-level errors.
@@ -1860,16 +2137,24 @@ function FormInner({
         }));
         setImportErrorRows(rows);
         setFormError({
+          kind: "error",
           code: "IMPORT_HAS_ERRORS",
           message: t("importErrors.title"),
         });
         return;
+      } else {
+        // A successful write establishes a new clean baseline. Keeping the
+        // baseline in the form instance also makes inline forms clear the
+        // global dirty guard without relying on an unmount/remount cycle.
+        mountBaselines.current = values;
       }
     } catch (error) {
       // Defensive: a throwing submit (unexpected fetch/transport failure) must
       // never leave the button stuck in its disabled Submitting state (C5).
       setFieldErrors({});
-      setFormError({ code: "REQUEST_FAILED", message: requestFailedMessage(error) });
+      setFormError(
+        feedbackFromError(error),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -1942,6 +2227,15 @@ function FormInner({
       crud.searchFormSubmit(node, cleared);
     }
   };
+  const resetToBaseline = () => {
+    // Native reset events can come from a custom form component. Keep React's
+    // controlled values and the dirty registry in the same state instead of
+    // letting the browser reset only the DOM controls.
+    setValues({ ...mountBaselines.current });
+    setFieldErrors({});
+    setImportErrorRows([]);
+    setFormError(null);
+  };
   const removeFilter = (field: FormControlField) => {
     const next = { ...values, [field.id]: "" };
     setValues(next);
@@ -1952,7 +2246,14 @@ function FormInner({
 
   return (
     <form
+      data-form-dirty={isDirty ? "true" : "false"}
       className={isSearch ? "space-y-3.5 rounded-xl border border-border/70 bg-card/85 p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.03),0_1px_2px_-1px_rgba(0,0,0,0.03)] dark:border-border/60 dark:bg-card/70 dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.2)]" : "space-y-3"}
+      onReset={(event) => {
+        if (!isSearch) {
+          event.preventDefault();
+          resetToBaseline();
+        }
+      }}
       onSubmit={(event) => {
         event.preventDefault();
         void handleSubmit();
@@ -1977,6 +2278,7 @@ function FormInner({
         fieldDisabled={fieldDisabled}
         onUpload={crud?.uploadFiles}
         fieldErrors={fieldErrors}
+        activeFilterIds={isSearch ? activeFilters.map(({ field }) => field.id) : undefined}
         // W11 · U-01/U-02: auth-aware transport for dynamic option sources.
         fetcher={crud?.fetcher}
         columns={
@@ -1985,8 +2287,12 @@ function FormInner({
             : undefined
         }
         searchMode={isSearch}
-        // A-003 pairing rule (user 2026-08-16): the search button belongs
-        // beside its keyword input — one button per text input, adjacent.
+        // A-003 pairing rule (user 2026-08-16, restored 2026-09-18 by R6 C7):
+        // the search submit button belongs to its keyword input — one button
+        // per text input, rendered inside the input's own grid cell and
+        // visually attached to it. The filter grid's action cell must NOT own
+        // the submit button: this control is not the reference page's single
+        // "query" button, it commits the keyword of the input it belongs to.
         searchButtonSlot={
           isSearch ? (
             <button
@@ -2005,6 +2311,9 @@ function FormInner({
             </button>
           ) : undefined
         }
+        // D-002 action-unit contract: reset keeps its place in the filter
+        // grid's final action cell, beside ListFilterPanel's expand/collapse
+        // toggle. Query/reset handlers are unchanged.
         actionSlot={
           isSearch ? (
             <div className="flex items-end">
@@ -2030,12 +2339,12 @@ function FormInner({
         </ul>
       ) : null}
       {formError !== null ? (
-        <p role="alert" className="text-sm text-destructive">
-          {formError.code}:{" "}
-          {formError.messageKey !== undefined && formError.messageKey !== ""
-            ? t(formError.messageKey, formError.params as MessageParams | undefined)
-            : formError.message}
-        </p>
+        <FeedbackNoticeView
+          feedback={formError}
+          surface="inline"
+          dismissible={false}
+          showDiagnosticCode
+        />
       ) : null}
       {importErrorRows.length > 0 ? (
         <ul role="alert" className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs" data-import-error-rows>
@@ -2549,7 +2858,7 @@ function useDisplayData(
   dataSource: string | null,
   fetcher: typeof fetch,
   params?: Record<string, unknown>,
-): { list: ResourceList | null; error: string | null } {
+): { list: ResourceList | null; error: unknown | null; retry: () => void } {
   const crud = useSchemaCrud();
   useEffect(() => {
     if (crud !== null && fetcher !== undefined) {
@@ -2557,7 +2866,9 @@ function useDisplayData(
     }
   }, [crud, fetcher]);
   const [list, setList] = useState<ResourceList | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const retry = useCallback(() => setRetryNonce((current) => current + 1), []);
   // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
   // provider's route context; hostless renders fall back to the location query.
   const routeSnapshot = useMemo(() => {
@@ -2607,14 +2918,14 @@ function useDisplayData(
             setError(null);
             return;
           }
-          setError(err instanceof Error ? err.message : String(err));
+          setError(err);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken, targetedRefreshToken]);
-  return { list, error };
+  }, [fetcher, dataSource, params, routeSnapshot, crud?.reloadToken, targetedRefreshToken, retryNonce]);
+  return { list, error, retry };
 }
 
 /** W16-F04: cent-valued integers as yuan with two decimals (table currency columns). */
@@ -2642,7 +2953,7 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
         ? node.props.dataSource
         : null;
-  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
+  const { list, error, retry } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   if (dataSource === null) {
     return (
@@ -2651,9 +2962,18 @@ function StatCardView({ node }: { node: RenderStatCardNode }) {
       </p>
     );
   }
-  const displayState = resolveAsyncDisplayState({ loading: list === null, error });
+  const displayState = resolveAsyncDisplayState({
+    loading: list === null,
+    error: error === null ? null : "error",
+  });
   if (displayState === "error") {
-    return <p role="alert" className="text-sm text-destructive">statCard data failed to load: {error}</p>;
+    return (
+      <FeedbackNoticeView
+        feedback={feedbackFromError(error, { retry })}
+        surface="inline"
+        dismissible={false}
+      />
+    );
   }
   if (displayState === "loading") {
     return (
@@ -2737,7 +3057,7 @@ function ChartView({ node }: { node: RenderChartNode }) {
       : typeof node.props?.dataSource === "string" && isValidDataSource(node.props.dataSource)
         ? node.props.dataSource
         : null;
-  const { list, error } = useDisplayData(dataSource, fetcher, node.data?.params);
+  const { list, error, retry } = useDisplayData(dataSource, fetcher, node.data?.params);
 
   const missingProps = chartType === undefined || xField === undefined || yField === undefined;
   if (dataSource === null || missingProps) {
@@ -2747,9 +3067,18 @@ function ChartView({ node }: { node: RenderChartNode }) {
       </p>
     );
   }
-  const chartDisplayState = resolveAsyncDisplayState({ loading: list === null, error });
+  const chartDisplayState = resolveAsyncDisplayState({
+    loading: list === null,
+    error: error === null ? null : "error",
+  });
   if (chartDisplayState === "error") {
-    return <p role="alert" className="text-sm text-destructive">chart data failed to load: {error}</p>;
+    return (
+      <FeedbackNoticeView
+        feedback={feedbackFromError(error, { retry })}
+        surface="inline"
+        dismissible={false}
+      />
+    );
   }
   if (chartDisplayState === "loading") {
     return (
@@ -2903,6 +3232,61 @@ function ActionButtonView({
   );
 }
 
+/** The one slot value this renderer understands (GOAL-045 D-001 §1). */
+const LIST_PAGE_ACTIONS_SLOT = "list-page-actions";
+
+/**
+ * Does this custom node ask to be placed in the list page-actions slot?
+ * Pure predicate: the dispatch path uses it to decide whether to take the
+ * hook-using slot branch at all, so ordinary custom nodes keep the exact
+ * pre-W33 render path (no extra context subscription, no extra re-renders).
+ */
+function declaresListPageActionsSlot(node: RenderCustomNode): boolean {
+  const props = isRecord(node.props) ? node.props : undefined;
+  return (
+    props?.slot === LIST_PAGE_ACTIONS_SLOT &&
+    typeof props.targetTable === "string" &&
+    props.targetTable !== ""
+  );
+}
+
+/**
+ * W33 (GOAL-045 D-001): renders a custom node inside its target table's
+ * page-actions row (left segment) instead of in document flow.
+ *
+ * The fallback is deliberately fail-OPEN (D-001 §3): this is a layout
+ * capability, not a gate, so a target table that does not exist degrades to the
+ * pre-W33 in-flow position and the control stays usable. Hiding it would turn a
+ * schema typo into a silently missing operation entry point.
+ */
+function ListActionsSlotNode({
+  node,
+  context,
+  component: Custom,
+}: {
+  node: RenderCustomNode;
+  context: Record<string, unknown>;
+  component: ComponentType<CustomComponentProps>;
+}) {
+  const crud = useSchemaCrud();
+  const target = typeof node.props?.targetTable === "string" ? node.props.targetTable : "";
+  // Registering is what makes the target table render its left segment at all,
+  // so a table nobody slots into gains no empty row. Depend on the STABLE
+  // register function, never on the context object: its identity changes on
+  // every provider state update, which would register/unregister in a loop.
+  const registerListActionsSlot = crud?.registerListActionsSlot;
+  useEffect(() => {
+    if (registerListActionsSlot === undefined) {
+      return;
+    }
+    return registerListActionsSlot(target);
+  }, [registerListActionsSlot, target]);
+
+  const content = <Custom node={node} context={context} children={node.children} />;
+  const host = crud?.listActionsHost(target) ?? null;
+  return host !== null ? createPortal(content, host) : content;
+}
+
 function dispatchNode({
   node,
   path,
@@ -3051,6 +3435,12 @@ function dispatchParsedNode({
           </div>
         );
       }
+      // W33 (GOAL-045 D-001): a node that declares the list page-actions slot
+      // takes the slot branch; every other custom node keeps the plain path
+      // (identical pre-W33 behaviour, no extra CRUD subscription).
+      if (declaresListPageActionsSlot(node)) {
+        return <ListActionsSlotNode node={node} context={context} component={Custom} />;
+      }
       return <Custom node={node} context={context} children={node.children} />;
     }
     case "recordView":
@@ -3074,6 +3464,13 @@ function dispatchParsedNode({
       if (node.type === "chart") {
         return <ChartView node={node} />;
       }
+      // W33 (GOAL-045): the table is rendered IN PLACE, without a key. Keying it
+      // by node id was tried first (to stop one SchemaTable instance carrying
+      // the previous table's visible columns across a navigation) but was
+      // withdrawn: the state bleed is fixed inside SchemaTable instead — by
+      // resetting table-scoped state when the table's identity changes — and
+      // adding a key to one element of an otherwise unkeyed children array is a
+      // reconciliation change with no benefit here.
       return (
         tableRenderer?.(node) ?? (
           <p className="text-sm text-muted-foreground">
@@ -3091,13 +3488,42 @@ function RenderPageSurface({
   tableRenderer,
   onAction,
   formComponent,
+  initialAction,
+  onInitialActionConsumed,
 }: RendererComponentProps) {
   const crud = useSchemaCrud()!;
+  const consumedInitialActionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialAction === undefined) {
+      consumedInitialActionRef.current = null;
+      return;
+    }
+    const documentPageId =
+      isRecord(document.meta) && typeof document.meta.pageId === "string"
+        ? document.meta.pageId
+        : undefined;
+    if (documentPageId !== initialAction.pageId) {
+      // Route transitions keep the previous page document for one render while
+      // the new Schema loads. Wait for the owner page instead of consuming the
+      // command against stale page actions.
+      return;
+    }
+    if (consumedInitialActionRef.current === initialAction.id) {
+      return;
+    }
+    consumedInitialActionRef.current = initialAction.id;
+    crud.invokeAction(initialAction.trigger, null);
+    onInitialActionConsumed?.(initialAction.id);
+  }, [initialAction?.id, initialAction?.pageId, document, crud, onInitialActionConsumed]);
   // VP-007 S3: actionButton nodes are first-class page actions in the default
   // app path — dispatch through the frozen Schema CRUD executor (gate →
   // confirm → request) unless the host overrides onAction.
   const resolvedOnAction = onAction ?? ((node: RenderActionButtonNode) => {
-    crud.invokeAction(node.props as unknown as Record<string, unknown>, null);
+    const trigger = { ...(node.props as unknown as Record<string, unknown>) };
+    if (typeof trigger.key !== "string" && typeof node.id === "string" && node.id !== "") {
+      trigger.key = node.id;
+    }
+    crud.invokeAction(trigger, null);
   });
   const modalAction =
     crud.activeModal !== null ? actionOf(document, crud.activeModal.actionRef) : undefined;
@@ -3159,6 +3585,8 @@ export function RenderPage({
   onAction,
   onNavigate,
   formComponent,
+  initialAction,
+  onInitialActionConsumed,
 }: RendererComponentProps & { dataFetcher?: typeof fetch }) {
   return (
     <SchemaCrudProvider
@@ -3173,6 +3601,8 @@ export function RenderPage({
         tableRenderer={tableRenderer}
         onAction={onAction}
         formComponent={formComponent}
+        initialAction={initialAction}
+        onInitialActionConsumed={onInitialActionConsumed}
       />
     </SchemaCrudProvider>
   );

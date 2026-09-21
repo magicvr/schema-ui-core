@@ -1,0 +1,3 @@
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram	4.736s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/config	1.349s
+ok  	github.com/magicvr/schema-ui-core/apps/api/internal/server	0.585s

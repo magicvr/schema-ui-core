@@ -13,8 +13,10 @@ import (
 // manifest route serves, so the declared manifest.sha256 always matches the
 // real response — the Host's integrity stage verifies production bytes.
 //
-// Runtime modes are projected onto the existing Host availability enum; the
-// read-only mode deliberately uses the existing degraded representation.
+// Runtime modes are projected onto the existing Host availability enum.
+// maintenance, degraded, and read-only all use the degraded representation so
+// the Admin Shell can still load (VP-039 R2 / GOAL-003 D-001). Precise mode
+// is carried by GET /api/accounts/me runtimeMode, not a new Host enum.
 
 type bootstrapDocument struct {
 	BootstrapVersion     string            `json:"bootstrapVersion"`
@@ -40,9 +42,9 @@ func RegisterBootstrap(mux *http.ServeMux, manifestBytes []byte) error {
 }
 
 // RegisterBootstrapWithAvailability projects the backend runtime mode onto
-// the existing Host availability enum. read-only intentionally uses the
-// existing degraded mode; its precise distinction is carried by the status
-// endpoint, not by a new protocol capability or mode.
+// the existing Host availability enum. maintenance / degraded / read-only
+// all use degraded so availability-gate does not terminal the Shell.
+// Precise distinction is GET /api/accounts/me runtimeMode.
 func RegisterBootstrapWithAvailability(mux routeRegistrar, manifestBytes []byte, runtimeMode string) error {
 	availability, err := bootstrapAvailability(runtimeMode)
 	if err != nil {
@@ -77,9 +79,7 @@ func bootstrapAvailability(runtimeMode string) (bootstrapMode, error) {
 	switch runtimeMode {
 	case "", "normal":
 		return bootstrapMode{Mode: "normal"}, nil
-	case "maintenance":
-		return bootstrapMode{Mode: "maintenance"}, nil
-	case "degraded", "read-only":
+	case "maintenance", "degraded", "read-only":
 		return bootstrapMode{Mode: "degraded"}, nil
 	default:
 		return bootstrapMode{}, fmt.Errorf("bootstrap: invalid runtime mode %q", runtimeMode)

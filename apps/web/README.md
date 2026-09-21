@@ -18,6 +18,7 @@ npm run dev
 # Override with WEB_PORT (dev web) and/or HTTP_ADDR (API) when another port is
 # needed, e.g. $env:WEB_PORT=3000; npm run dev
 npm test        # vitest run
+npm run typecheck  # tsc -b && tsc -p e2e/tsconfig.json — the ONLY valid type-check entrypoint (see below)
 npm run test:e2e        # Playwright Chromium, sqlite dialect (default)
 npm run test:e2e:postgres  # same suite against a dedicated scratch PostgreSQL
 # Bash: run the runtime profiles against the same Web code (demo = non-production)
@@ -26,6 +27,29 @@ npm run test:e2e:postgres  # same suite against a dedicated scratch PostgreSQL
 # ranges; override via HTTP_ADDR / WEB_PORT if a port is taken.
 npm run build   # tsc -b && vite build
 ```
+
+### 类型检查口径（GOAL-008 · 必读）
+
+**类型检查只用 `npm run typecheck`。**
+
+`tsconfig.json` 是 solution-style 配置（`{"files": [], "references": [...]}`），
+本身不含任何源文件——真正的编译选项在 `tsconfig.app.json` / `tsconfig.node.json`。
+因此**不带 `-b` 的 `tsc --noEmit` 不检查任何文件、恒返回 exit 0**，它看起来「通过」
+只是因为没有任何输入，**不构成类型检查证据**。
+
+同一陷阱还有第二层：`e2e/` 有自己的 `e2e/tsconfig.json`，且**不在**根配置的
+`references` 图里，所以单独的 `tsc -b` 也不检查 e2e 规格文件。`typecheck` 脚本
+因此显式追加 `-p e2e/tsconfig.json`。
+
+```bash
+npm run typecheck          # 正确：tsc -b（src/**）+ tsc -p e2e/tsconfig.json（e2e/**）
+npx tsc -b                 # 只覆盖 src/**，不含 e2e
+npx tsc -p e2e/tsconfig.json   # 只覆盖 e2e/**
+npm run build              # 含 tsc -b（不含 e2e）
+```
+
+`tsc -b` / `tsc -p` 在发现真实类型错误时返回非零（例如 `TS2322`），可用于门禁与 CI。
+`src/typecheck-convention.guard.test.ts` 会断言上述约定与覆盖范围不被改坏。
 
 ### 浏览器 E2E 双数据库方言（W24 / GOAL-035）
 

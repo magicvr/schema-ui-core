@@ -82,20 +82,27 @@ func voucherJSON(v voucher.Voucher) map[string]any {
 		"currency":   v.Currency,
 		"status":     string(v.Status),
 		"voidable":   v.Status == voucher.StatusUnused,
-		"createdAt":  v.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt":  v.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":  FormatWireTime(v.CreatedAt),
+		"updatedAt":  FormatWireTime(v.UpdatedAt),
 	}
 	if v.ExpiresAt != nil {
-		row["expiresAt"] = v.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["expiresAt"] = FormatWireTime(*v.ExpiresAt)
 	}
 	if v.RedeemedBy != nil {
 		row["redeemedBy"] = *v.RedeemedBy
 	}
 	if v.RedeemedAt != nil {
-		row["redeemedAt"] = v.RedeemedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["redeemedAt"] = FormatWireTime(*v.RedeemedAt)
 	}
 	return row
 }
+
+// WalletJobsBasePath is the admin.wallet job route prefix. It is declared here
+// (rather than inlined at the projection) so the result address is derived by
+// the shared jobs.ResultURL helper — the same mechanism admin.jobs uses — while
+// the emitted value stays byte-identical to the historical literal
+// (GOAL-003 R2 · D-001 §2.3).
+const WalletJobsBasePath = "/api/wallet/jobs"
 
 // WalletRoutes returns the admin.wallet HTTP surface.
 func WalletRoutes(a *auth.Authenticator, service WalletService, jobService WalletJobService, operations operationlog.Recorder, moduleID string, ownerExists OwnerExistsFunc) []kernel.RouteContribution {
@@ -565,10 +572,10 @@ func WalletRoutes(a *auth.Authenticator, service WalletService, jobService Walle
 				"currency":   g.Voucher.Currency,
 				"status":     string(g.Voucher.Status),
 				"code":       g.Code, // One-time plaintext returned only here
-				"createdAt":  g.Voucher.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+				"createdAt":  FormatWireTime(g.Voucher.CreatedAt),
 			}
 			if g.Voucher.ExpiresAt != nil {
-				item["expiresAt"] = g.Voucher.ExpiresAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+				item["expiresAt"] = FormatWireTime(*g.Voucher.ExpiresAt)
 			}
 			items[i] = item
 		}
@@ -752,12 +759,14 @@ const (
 )
 
 // parseVoucherExpiry normalizes an expiresAt payload to Unix seconds:
-//   - absent / "" / <=0 seconds → nil (no expiry, historical semantics)
+//   - absent / "" / 0 seconds → nil (no expiry, historical "absent" semantics)
 //   - numeric Unix seconds (JSON int, exponent form, or quoted digits)
 //   - a "YYYY-MM-DD" UTC date (E-009): converted to 23:59:59 UTC of that day,
 //     so the whole chosen day stays redeemable
 //
-// Out-of-window values and malformed input return ok=false (fail-closed).
+// Negative values are rejected (workspace-040 R2 / Root D-012: corruption, not
+// absence). Out-of-window values and malformed input return ok=false
+// (fail-closed).
 func parseVoucherExpiry(raw json.RawMessage) (*int64, bool) {
 	if len(raw) == 0 {
 		return nil, true
@@ -792,8 +801,13 @@ func parseVoucherExpiry(raw json.RawMessage) (*int64, bool) {
 		}
 		sec = int64(f)
 	}
-	if sec <= 0 {
-		return nil, true // historical "absent" semantics
+	if sec < 0 {
+		// workspace-040 R2 / Root D-012: a negative epoch is data corruption for
+		// a voucher instant, never an "absent" marker; the write fails closed.
+		return nil, false
+	}
+	if sec == 0 {
+		return nil, true // legacy "absent" spelling
 	}
 	if sec < voucherExpiryMinUnix || sec > voucherExpiryMaxUnix {
 		return nil, false
@@ -928,7 +942,7 @@ func accountToMap(a walletstore.Account) map[string]any {
 		"balanceFrozen":    a.BalanceFrozen,
 		"status":           a.Status,
 		"version":          a.Version,
-		"updatedAt":        a.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"updatedAt":        FormatWireTime(a.UpdatedAt),
 		"decimals":         2,
 	}
 }
@@ -970,7 +984,7 @@ func entryToMap(e walletstore.LedgerEntry) map[string]any {
 		"memo":               e.Memo,
 		"actorId":            e.ActorID,
 		"actorName":          e.ActorName,
-		"createdAt":          e.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":          FormatWireTime(e.CreatedAt),
 	}
 }
 
@@ -982,7 +996,7 @@ func reconcileRunToMap(r walletstore.ReconciliationRun) map[string]any {
 		"mismatchCount": r.MismatchCount,
 		"details":       r.Details,
 		"actorId":       r.ActorID,
-		"createdAt":     r.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt":     FormatWireTime(r.CreatedAt),
 	}
 }
 
@@ -990,17 +1004,22 @@ func walletJobToMap(job jobs.Job) map[string]any {
 	row := map[string]any{
 		"id": job.ID, "kind": job.Kind, "status": job.Status,
 		"progress": job.Progress, "attempt": job.Attempt, "maxAttempts": job.MaxAttempts,
-		"cancelRequested": job.CancelRequested, "createdAt": job.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
-		"updatedAt": job.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"cancelRequested": job.CancelRequested, "createdAt": FormatWireTime(job.CreatedAt),
+		"updatedAt": FormatWireTime(job.UpdatedAt),
 	}
 	if job.ErrorCode != "" {
 		row["error"] = map[string]any{"code": job.ErrorCode, "message": job.ErrorMessage}
 	}
 	if job.FinishedAt != nil {
-		row["finishedAt"] = job.FinishedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["finishedAt"] = FormatWireTime(*job.FinishedAt)
 	}
 	if job.Status == jobs.StatusSucceeded {
-		row["resultUrl"] = "/api/wallet/jobs/" + job.ID + "/result"
+		// GOAL-003 R2 (D-001 §2.3): the address now comes from the shared
+		// derivation with this module's declared base path instead of a
+		// hardcoded literal. The emitted string is byte-identical to the
+		// historical value, so the VP-012 D-002 projection contract and the
+		// wallet route/permission boundary are unchanged.
+		row["resultUrl"] = jobs.ResultURL(WalletJobsBasePath, job.ID)
 	}
 	return row
 }

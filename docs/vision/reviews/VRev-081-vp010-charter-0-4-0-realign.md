@@ -9,9 +9,9 @@ verdict: pass
 open_required: 0
 status: active
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-09-10
 parent: null
-version: 0.1.0
+version: 0.2.0
 ---
 
 # VRev-081 · VP-010 / workspace-010 / Root Charter 0.4.0 re-align
@@ -57,3 +57,9 @@ version: 0.1.0
 ## 声明
 
 本意见为 `/vision` self Review，不是独立鉴证；不修改 Charter / VP / Goal status。V-F120 为跨 scope 建议，不阻断本次 workspace-010 的 W29 立项，但在 workspace-009 再次推进前必须按 alignment 重新核对并处理。
+
+## `/vision` 响应（2026-09-10 · V-F120 → fixed）
+
+用户本轮书面要求集体 re-align 到现行 Charter `schema-ui-core-admin-foundation@0.4.0`。已完成对 `VP-009-production-hardening`、`workspace-009-production-hardening` 与其 active Root `GOAL-001-production-hardening` 的现行投影同步：VP `vision_ref`、workspace Charter 声明与 Root Charter 声明均已更新为 `@0.4.0`。
+
+本响应不改写原 verdict 或 V-F120 原文；只记录修正结果。VP-009 的 `status: active`、持续程序意图、lead、`plan_refs`/`primary_plan`、Root 的 `status: active`、parent、progress 语义、波次事实与历史证据均保持不变。已关闭 VP/Goal 的历史 Charter 语境仍按验收时点保留。完整核对见 [VRev-091](VRev-091-vp009-charter-0-4-0-realign.md)。

@@ -1,6 +1,15 @@
 import type { SortOrder } from "@/components/data-table";
 
-export const DEFAULT_PAGE_SIZE = 10;
+/**
+ * The list page size the UI shows as its default. It **must** equal the API's
+ * `handler.DefaultPageSize` (`apps/api/internal/handler/resources.go`), because
+ * `buildResourceQuery` omits the parameter when the value equals this constant
+ * and lets the server apply its own default. They disagreed once (10 here vs 20
+ * there), which made the "10" option a no-op and showed a default that was not
+ * in effect — GOAL-011. `pagination-size-contract.guard.test.ts` now pins the
+ * two constants together.
+ */
+export const DEFAULT_PAGE_SIZE = 20;
 
 /**
  * Frozen list-endpoint rule (I-010-001 v0.2.0 · A-001 F-001): `table.props.dataSource`

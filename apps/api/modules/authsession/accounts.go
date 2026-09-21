@@ -2,6 +2,7 @@ package authsession
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,11 +26,11 @@ func (r *Repository) CreateUser(user User) error {
 			`INSERT INTO users (id, username, name, roles, password_hash, must_change_password, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			user.ID, user.Username, user.Name, string(rolesJSON), user.PasswordHash,
-			boolInt(user.MustChangePassword), user.CreatedAt.Unix(), user.UpdatedAt.Unix(),
+			boolInt(user.MustChangePassword), user.CreatedAt, user.UpdatedAt,
 		); err != nil {
 			return fmt.Errorf("insert user: %w", err)
 		}
-		now := time.Now().UTC().Unix()
+		now := time.Now().UTC().Truncate(time.Microsecond)
 		for _, key := range roles {
 			if err := linkUserRole(tx, user.ID, key, now); err != nil {
 				return fmt.Errorf("create user %s role %s: %w", user.ID, key, err)
@@ -193,11 +194,11 @@ func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUnti
 	err := r.withTx("record login failure", func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE users SET failed_login_count =
-			   CASE WHEN last_login_failure_at < ? THEN 1 ELSE failed_login_count + 1 END,
+			   CASE WHEN last_login_failure_at IS NULL OR last_login_failure_at < ? THEN 1 ELSE failed_login_count + 1 END,
 			   last_login_failure_at = ?,
 			   updated_at = ?
 			 WHERE id = ?`,
-			now.Add(-globalFailureWindow).Unix(), now.Unix(), now.Unix(), userID,
+			now.Add(-globalFailureWindow), now, now, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("record login failure: %w", err)
@@ -218,7 +219,7 @@ func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUnti
 		locked = true
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET failed_login_count = 0, locked_until = ?, last_login_failure_at = ?, updated_at = ? WHERE id = ?`,
-			lockedUntil.Unix(), now.Unix(), now.Unix(), userID,
+			lockedUntil, now, now, userID,
 		); err != nil {
 			return fmt.Errorf("open lock window: %w", err)
 		}
@@ -232,8 +233,8 @@ func (r *Repository) RecordLoginFailure(userID string, threshold int, lockedUnti
 func (r *Repository) ResetLoginFailures(userID string, now time.Time) error {
 	return r.withTx("reset login failures", func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
-			`UPDATE users SET failed_login_count = 0, locked_until = 0, last_login_failure_at = 0, updated_at = ? WHERE id = ?`,
-			now.Unix(), userID,
+			`UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_failure_at = NULL, updated_at = ? WHERE id = ?`,
+			now, userID,
 		); err != nil {
 			return fmt.Errorf("reset login failures: %w", err)
 		}
@@ -249,13 +250,13 @@ func (r *Repository) BumpTokenVersionAndRevokeAll(userID string, now time.Time) 
 	return r.withTx("bump token version and revoke refresh tokens", func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE users SET token_version = token_version + 1, updated_at = ? WHERE id = ?`,
-			now.Unix(), userID,
+			now, userID,
 		); err != nil {
 			return fmt.Errorf("bump token version: %w", err)
 		}
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
-			now.Unix(), userID,
+			now, userID,
 		); err != nil {
 			return fmt.Errorf("revoke user refresh tokens: %w", err)
 		}
@@ -269,7 +270,7 @@ func (r *Repository) RevokeAllRefreshTokensForUser(userID string, now time.Time)
 	return r.withTx("revoke user refresh tokens", func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`,
-			now.Unix(), userID,
+			now, userID,
 		); err != nil {
 			return fmt.Errorf("revoke user refresh tokens: %w", err)
 		}
@@ -280,7 +281,7 @@ func (r *Repository) RevokeAllRefreshTokensForUser(userID string, now time.Time)
 func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var user User
 	var roles string
-	var createdAt, updatedAt int64
+	var createdAt, updatedAt time.Time
 	var mustChangePassword int
 	err := row.Scan(&user.ID, &user.Username, &user.Name, &roles, &user.PasswordHash, &user.TokenVersion, &user.FailedLoginCount, &user.LockedUntil, &user.Enabled, &user.AvatarURL, &mustChangePassword, &createdAt, &updatedAt, &user.Email, &user.EmailStatus)
 	if errors.Is(err, kernel.ErrNoRows) {
@@ -293,22 +294,21 @@ func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 		return nil, fmt.Errorf("unmarshal roles: %w", err)
 	}
 	user.MustChangePassword = mustChangePassword != 0
-	user.CreatedAt = time.Unix(createdAt, 0).UTC()
-	user.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+	user.CreatedAt = createdAt
+	user.UpdatedAt = updatedAt
 	return &user, nil
 }
 
 // CreateRefreshToken persists a hashed opaque refresh token.
 func (r *Repository) CreateRefreshToken(token RefreshToken) error {
 	return r.withTx("create refresh token", func(tx kernel.Tx) error {
-		var revokedAt any
-		if token.RevokedAt != nil {
-			revokedAt = token.RevokedAt.Unix()
-		}
+		// The store adapter maps a nil *time.Time to NULL and a present one to
+		// the canonical instant (D-001 §1), so the optional value is bound
+		// directly instead of being flattened to an int64 sentinel.
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, revoked_at, created_at)
 			 VALUES (?, ?, ?, ?, ?, ?)`,
-			token.ID, token.UserID, token.TokenHash, token.ExpiresAt.Unix(), revokedAt, token.CreatedAt.Unix(),
+			token.ID, token.UserID, token.TokenHash, token.ExpiresAt, token.RevokedAt, token.CreatedAt,
 		); err != nil {
 			return fmt.Errorf("insert refresh token: %w", err)
 		}
@@ -320,25 +320,21 @@ func (r *Repository) CreateRefreshToken(token RefreshToken) error {
 func (r *Repository) RefreshTokenByHash(hash string) (*RefreshToken, error) {
 	var token RefreshToken
 	err := r.withTx("get refresh token", func(tx kernel.Tx) error {
-		var expiresAt int64
-		var revokedAt *int64
-		var createdAt int64
+		var revokedAt sql.NullTime
 		err := tx.QueryRow(context.Background(),
 			`SELECT id, user_id, token_hash, expires_at, revoked_at, created_at
 			 FROM refresh_tokens WHERE token_hash = ?`, hash,
-		).Scan(&token.ID, &token.UserID, &token.TokenHash, &expiresAt, &revokedAt, &createdAt)
+		).Scan(&token.ID, &token.UserID, &token.TokenHash, &token.ExpiresAt, &revokedAt, &token.CreatedAt)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
 			return fmt.Errorf("scan refresh token: %w", err)
 		}
-		token.ExpiresAt = time.Unix(expiresAt, 0).UTC()
-		if revokedAt != nil {
-			value := time.Unix(*revokedAt, 0).UTC()
+		if revokedAt.Valid {
+			value := revokedAt.Time
 			token.RevokedAt = &value
 		}
-		token.CreatedAt = time.Unix(createdAt, 0).UTC()
 		return nil
 	})
 	if err != nil {
@@ -353,7 +349,7 @@ func (r *Repository) RefreshTokenByHash(hash string) (*RefreshToken, error) {
 // check-then-act window that would let two rotations both proceed.
 func (r *Repository) RevokeRefreshToken(id string, now time.Time) error {
 	return r.withTx("revoke refresh token", func(tx kernel.Tx) error {
-		res, err := tx.Exec(context.Background(), `UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL`, now.Unix(), id)
+		res, err := tx.Exec(context.Background(), `UPDATE refresh_tokens SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL`, now, id)
 		if err != nil {
 			return fmt.Errorf("update refresh token: %w", err)
 		}
@@ -375,7 +371,7 @@ func (r *Repository) RevokeRefreshToken(id string, now time.Time) error {
 	})
 }
 
-func ensureRole(tx kernel.Tx, key string, now int64) error {
+func ensureRole(tx kernel.Tx, key string, now time.Time) error {
 	if _, err := tx.Exec(context.Background(),
 		`INSERT INTO roles (id, key, name, system, created_at, updated_at)
 		 VALUES (?, ?, ?, 0, ?, ?)
@@ -387,7 +383,7 @@ func ensureRole(tx kernel.Tx, key string, now int64) error {
 	return nil
 }
 
-func linkUserRole(tx kernel.Tx, userID, key string, now int64) error {
+func linkUserRole(tx kernel.Tx, userID, key string, now time.Time) error {
 	if !roleKeyRe.MatchString(key) {
 		return fmt.Errorf("invalid role key %q", key)
 	}

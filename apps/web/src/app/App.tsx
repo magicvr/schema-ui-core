@@ -24,7 +24,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
 import {
   applyDocumentBranding,
@@ -39,6 +39,14 @@ import {
   projectNavigation,
   type ProjectedItem,
 } from "@/app/navigation";
+import { CommandPalette, commandPaletteShortcutLabel } from "@/app/CommandPalette";
+import {
+  createManifestSearchProvider,
+  createPageSchemaLoader,
+  type SearchableItem,
+  type SearchableProvider,
+  type SearchableProviderContext,
+} from "@/app/searchable";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TimezoneSwitcher } from "@/components/timezone-switcher";
@@ -55,10 +63,15 @@ import {
   stripPathQuery,
 } from "@/protocol/app-manifest";
 import { PageSchemaError, loadPageDocument } from "@/protocol/load-page";
+import { confirmDiscard, hasDirtyState } from "@/renderer/dirty-state";
 import type { RenderPageDocument } from "@/renderer/render.types";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
+import { PageListActionsProvider } from "@/renderer/list-surface";
 import { HostFailureScreen } from "@/app/HostFailureScreen";
+import { RuntimeBanner } from "@/app/runtime-banner";
+import { hasMonitoringRead, VersionChip } from "@/app/version-chip";
+import type { RuntimeMode } from "@/account/auth-client";
 import { NotificationBell } from "@/app/notification-bell";
 import { nextFailureId, type HostFailure } from "@/host/failure";
 
@@ -94,6 +107,12 @@ const iconRegistry: Record<string, LucideIcon> = {
   wallet: Wallet,
 };
 
+interface PendingPaletteAction {
+  id: string;
+  pageId: string;
+  trigger: Record<string, unknown>;
+}
+
 export interface AppProps {
   manifest: AppManifest;
   navigationContext?: NavigationContext;
@@ -104,11 +123,15 @@ export interface AppProps {
   /** Injectable fetch for table data sources such as `/api/users` (GOAL-011). */
   resourceFetcher?: typeof fetch;
   /** Authenticated user rendered in the header; present → show a sign-out button. */
-  currentUser?: { id: string; name?: string; avatarUrl?: string } | null;
+  currentUser?: { id: string; name?: string; avatarUrl?: string; permissions?: string[] } | null;
+  /** Process runtime.mode from /me (VP-039 R2). Never from Host availability.mode. */
+  runtimeMode?: RuntimeMode;
   /** Revokes the session (AuthProvider flips to the login page). */
   onLogout?: () => void;
   /** Optional branding override (tests); defaults to live GET /api/branding. */
   branding?: Branding;
+  /** Additional permission-safe SearchableProvider implementations. */
+  searchableProviders?: readonly SearchableProvider[];
 }
 
 function currentLocationPath() {
@@ -693,6 +716,7 @@ function PageSchemaErrorSurface({ error }: { error: PageSchemaError }) {
  */
 function SchemaPageSurface({
   page,
+  pageTitle,
   params,
   query,
   context,
@@ -700,8 +724,12 @@ function SchemaPageSurface({
   resourceFetcher,
   schemaDocumentCache,
   onNavigate,
+  initialAction,
+  onInitialActionConsumed,
 }: {
   page: PageEntry;
+  /** Localized title from the shell, used by list Saved View semantics. */
+  pageTitle: string;
   params: Record<string, string>;
   query: Record<string, string>;
   context: NavigationContext;
@@ -711,6 +739,10 @@ function SchemaPageSurface({
   schemaDocumentCache?: Map<string, unknown>;
   /** Session-internal navigation for schema navigate actions (GOAL-015 F-001). */
   onNavigate?: (url: string) => void;
+  /** Host-triggered page-level command selected from the global palette. */
+  initialAction?: { id: string; pageId: string; trigger: Record<string, unknown> };
+  /** Clears the host command after the page executor has consumed it. */
+  onInitialActionConsumed?: (id: string) => void;
 }) {
   const [state, setState] = useState<SchemaSurfaceState>({ status: "loading" });
   const t = useTranslate();
@@ -764,9 +796,13 @@ function SchemaPageSurface({
           route: { params, query },
         } as Record<string, unknown>
       }
-      tableRenderer={(node) => <SchemaTable node={node} fetcher={resourceFetcher} />}
+      tableRenderer={(node) => (
+        <SchemaTable node={node} fetcher={resourceFetcher} pageTitle={pageTitle} />
+      )}
       dataFetcher={resourceFetcher}
       onNavigate={onNavigate}
+      initialAction={initialAction}
+      onInitialActionConsumed={onInitialActionConsumed}
     />
   );
 }
@@ -780,6 +816,8 @@ function PageSurface({
   schemaFetcher,
   resourceFetcher,
   schemaDocumentCache,
+  pendingAction,
+  onInitialActionConsumed,
 }: {
   manifest: AppManifest;
   path: string;
@@ -790,8 +828,13 @@ function PageSurface({
   resourceFetcher?: typeof fetch;
   /** Shell-owned schema document cache (skips fetch + D-VAL on repeat visits). */
   schemaDocumentCache?: Map<string, unknown>;
+  /** Host-triggered page-level command selected from the global palette. */
+  pendingAction?: { id: string; pageId: string; trigger: Record<string, unknown> } | null;
+  /** Clears a consumed page-level command. */
+  onInitialActionConsumed?: (id: string) => void;
 }) {
   const route = useMemo(() => matchRoute(manifest.pages, path), [manifest, path]);
+  const [listActionsHost, setListActionsHost] = useState<HTMLDivElement | null>(null);
   const homePage = manifest.pages.find((page) => page.pageId === manifest.app.homePageRef);
   const t = useTranslate();
   const hostOwned = useMemo(() => HOST_OWNED_PATHS.includes(stripPathQuery(path)), [path]);
@@ -874,9 +917,9 @@ function PageSurface({
       aria-labelledby="page-title"
     >
       <div className={isTelegramOperatorPage
-        ? "flex w-full min-w-0 shrink-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6"
-        : "flex w-full min-w-0 flex-wrap items-start justify-between gap-6 border-b border-border pb-6"}>
-        <div className="min-w-0 flex-1">
+        ? "flex w-full min-w-0 shrink-0 flex-col items-start gap-6 border-b border-border pb-6 md:flex-row md:justify-between"
+        : "flex w-full min-w-0 flex-col items-start gap-6 border-b border-border pb-6 md:flex-row md:justify-between"}>
+        <div className="w-full min-w-0 md:flex-1">
           <Breadcrumbs
             entries={trail}
             onNavigate={onNavigate}
@@ -892,20 +935,32 @@ function PageSurface({
             {pageTitle}
           </h1>
         </div>
+        <div
+          ref={setListActionsHost}
+          data-page-list-actions-host="true"
+          className="flex w-full min-w-0 flex-wrap items-start justify-end gap-2 md:flex-1"
+        />
       </div>
       <div className={isTelegramOperatorPage
         ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
         : "w-full min-w-0"}>
-        <SchemaPageSurface
-          page={route.page}
-          params={route.params}
-          query={query}
-          context={navigationContext}
-          fetcher={schemaFetcher}
-          resourceFetcher={resourceFetcher}
-          schemaDocumentCache={schemaDocumentCache}
-          onNavigate={onNavigate}
-        />
+        <PageListActionsProvider host={listActionsHost}>
+          <SchemaPageSurface
+            page={route.page}
+            pageTitle={pageTitle}
+            params={route.params}
+            query={query}
+            context={navigationContext}
+            fetcher={schemaFetcher}
+            resourceFetcher={resourceFetcher}
+            schemaDocumentCache={schemaDocumentCache}
+            onNavigate={onNavigate}
+            initialAction={pendingAction?.pageId === route.page.pageId && pendingAction !== null
+              ? { id: pendingAction.id, pageId: pendingAction.pageId, trigger: pendingAction.trigger }
+              : undefined}
+            onInitialActionConsumed={onInitialActionConsumed}
+          />
+        </PageListActionsProvider>
       </div>
     </section>
   );
@@ -918,8 +973,10 @@ export function App({
   schemaFetcher,
   resourceFetcher,
   currentUser,
+  runtimeMode,
   onLogout,
   branding: brandingProp,
+  searchableProviders,
 }: AppProps) {
   const [path, setPath] = useState(() => {
     const requested = currentLocationPath();
@@ -932,13 +989,47 @@ export function App({
   const [routeQuery, setRouteQuery] = useState<Record<string, string>>(() =>
     parseLocationQuery(),
   );
+  const committedLocationRef = useRef(currentLocationPath());
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [pendingPaletteAction, setPendingPaletteAction] = useState<PendingPaletteAction | null>(null);
+  const paletteTriggerRef = useRef<HTMLButtonElement>(null);
+  const focusPageTitleAfterNavigationRef = useRef(false);
   // W19 perf (2026-08): page schema documents are static per (schemaUrl,
   // params) until a full reload. Holding them in memory (shell-instance
   // scope) skips one fetch + one D-VAL pass on every navigation; a re-login
   // remounts the shell and starts a fresh map.
   const [schemaDocumentCache] = useState(() => new Map<string, unknown>());
   const t = useTranslate();
+  const manifestSearchProvider = useMemo(() => createManifestSearchProvider(), []);
+  const searchProviders = useMemo(
+    () => [manifestSearchProvider, ...(searchableProviders ?? [])],
+    [manifestSearchProvider, searchableProviders],
+  );
+  const loadSearchablePage = useMemo(
+    () => createPageSchemaLoader({ schemaFetcher, cache: schemaDocumentCache }),
+    [schemaFetcher, schemaDocumentCache],
+  );
+  const searchableTranslate = useCallback(
+    (key: string, params?: Record<string, string | number>, literalFallback?: string) => {
+      const translated = t(key, params);
+      return translated === key && literalFallback !== undefined && literalFallback !== ""
+        ? literalFallback
+        : translated;
+    },
+    [t],
+  );
+  const searchableContext = useMemo<SearchableProviderContext>(
+    () => ({
+      manifest,
+      navigationContext,
+      currentPath: path,
+      t: searchableTranslate,
+      loadPage: loadSearchablePage,
+      includeShellNotifications: navigationContext.user !== undefined,
+    }),
+    [manifest, navigationContext, path, searchableTranslate, loadSearchablePage],
+  );
   const [branding, setBranding] = useState<Branding>(
     () => brandingProp ?? defaultBranding(),
   );
@@ -968,19 +1059,70 @@ export function App({
   }, [brandingProp]);
 
   useEffect(() => {
+    const handleCommandPaletteShortcut = (event: KeyboardEvent) => {
+      if (event.isComposing || (!event.metaKey && !event.ctrlKey) || event.key.toLowerCase() !== "k") {
+        return;
+      }
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      setCommandPaletteOpen((open) => !open);
+    };
+    document.addEventListener("keydown", handleCommandPaletteShortcut);
+    return () => document.removeEventListener("keydown", handleCommandPaletteShortcut);
+  }, []);
+
+  useEffect(() => {
     const handlePopState = () => {
       const requested = currentLocationPath();
+      if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
+        // popstate already moved the browser URL; restore the last committed
+        // route when the user keeps the draft. The current page remains
+        // mounted and its dirty source continues to protect the next attempt.
+        window.history.pushState({}, "", committedLocationRef.current);
+        return;
+      }
       const initial = resolveInitialRoute(manifest, requested);
       if (initial?.source === "home" && requested !== initial.path) {
         window.history.replaceState({}, "", initial.path);
       }
       const resolved = initial?.path ?? requested;
+      committedLocationRef.current = currentLocationPath();
       setPath(resolved);
       setRouteQuery(initial?.query ?? parseLocationQuery());
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [manifest]);
+  }, [manifest, t]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasDirtyState()) {
+        return;
+      }
+      event.preventDefault();
+      // Browsers intentionally replace custom text with their native warning;
+      // setting returnValue is still required for the unload prompt contract.
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    if (!focusPageTitleAfterNavigationRef.current) {
+      return;
+    }
+    focusPageTitleAfterNavigationRef.current = false;
+    document.getElementById("page-title")?.focus();
+  }, [path]);
 
   // Mobile navigation drawer focus management (S0 D-003 §8 · F-002)：抽屉打开时
   // 焦点进入首个可聚焦元素，Tab 在抽屉内循环，Escape 关闭，关闭后焦点恢复到
@@ -1032,18 +1174,27 @@ export function App({
     };
   }, [mobileDrawerOpen]);
 
-  const onNavigate = (href: string) => {
+  const onNavigate = useCallback((href: string) => {
     if (!href.startsWith("/")) {
       return;
     }
+    // Re-selecting the exact committed location is not a navigation and must
+    // not ask the user to discard a draft or create a duplicate history entry.
+    if (href === currentLocationPath()) {
+      return;
+    }
+    if (!confirmDiscard(t("feedback.unsavedChangesConfirm"))) {
+      return;
+    }
     window.history.pushState({}, "", href);
+    committedLocationRef.current = currentLocationPath();
     // Keep the path free of the query string (matchRoute expects a clean path);
     // the query lives in routeQuery and reaches the render context (C8).
     const nextPath = stripPathQuery(currentLocationPath());
     setPath(nextPath);
     setRouteQuery(parseLocationQuery());
     setMobileDrawerOpen(false);
-  };
+  }, [t]);
 
   const projection = useMemo(
     () => projectNavigation(manifest, path, navigationContext, t),
@@ -1054,7 +1205,51 @@ export function App({
     [manifest, path],
   );
   const isTelegramOperatorPage = activePageId === "telegram-operator";
+  useEffect(() => {
+    if (pendingPaletteAction !== null && activePageId !== pendingPaletteAction.pageId) {
+      // If the user navigates away before the owner Schema consumes the command,
+      // discard it. A later visit must never unexpectedly replay an old action.
+      setPendingPaletteAction(null);
+    }
+  }, [activePageId, pendingPaletteAction]);
   const appName = branding.siteTitle || DEFAULT_SITE_TITLE;
+  const handleCommandPaletteClose = useCallback(() => {
+    setCommandPaletteOpen(false);
+  }, []);
+  const handleInitialActionConsumed = useCallback((id: string) => {
+    setPendingPaletteAction((current) => (current?.id === id ? null : current));
+  }, []);
+  const handleCommandPaletteSelect = useCallback(
+    (item: SearchableItem) => {
+      if (item.href === undefined || item.href === "") {
+        return;
+      }
+      if (item.kind === "action" && item.action !== undefined) {
+        setPendingPaletteAction({
+          id: item.id,
+          pageId: item.action.pageId,
+          trigger: item.action.trigger,
+        });
+        if (item.action.actionType === "navigate") {
+          focusPageTitleAfterNavigationRef.current = true;
+        }
+        if (activePageId !== item.action.pageId) {
+          onNavigate(item.href);
+        }
+        return;
+      }
+      setPendingPaletteAction(null);
+      focusPageTitleAfterNavigationRef.current = true;
+      const targetPageId = matchRoute(manifest.pages, stripPathQuery(item.href))?.page.pageId;
+      onNavigate(item.href);
+      if (targetPageId !== undefined && targetPageId === activePageId) {
+        // A same-page selection does not change React's `path` state, so the
+        // normal path effect cannot move focus for us.
+        document.getElementById("page-title")?.focus();
+      }
+    },
+    [activePageId, onNavigate],
+  );
   // W13 T-02: shared brand-link handler for the mobile brand bar and the
   // desktop single-row header (home navigation when homePageRef is declared).
   const handleBrandClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -1079,6 +1274,7 @@ export function App({
           {t("shell.accountError")}
         </div>
       ) : null}
+      <RuntimeBanner runtimeMode={runtimeMode} />
       {/* D-004 §3: sticky top bar (desktop shell language) */}
       <header
         data-shell-region="topbar"
@@ -1132,8 +1328,31 @@ export function App({
 
           {/* T-01 (GOAL-013 D-002): user nav + signout folded into the user dropdown. */}
           <div className="ml-auto flex items-center gap-2 lg:ml-4">
+            <button
+              ref={paletteTriggerRef}
+              type="button"
+              aria-label={t("commandPalette.open")}
+              aria-haspopup="dialog"
+              aria-expanded={commandPaletteOpen}
+              data-command-palette-trigger
+              onClick={() => setCommandPaletteOpen(true)}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card/60 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Search aria-hidden="true" className="size-3.5" />
+              <span className="hidden sm:inline">{t("commandPalette.open")}</span>
+              <kbd className="hidden font-mono text-[10px] text-muted-foreground/70 md:inline">{commandPaletteShortcutLabel()}</kbd>
+            </button>
             {/* W13 T-04: theme toggle on the left, language switcher on the right;
                 workspace-020 R2: timezone switcher shares the header locale channel. */}
+            <VersionChip
+              canReadMonitoring={hasMonitoringRead(currentUser?.permissions)}
+              fetcher={resourceFetcher}
+              onOpenDiagnostics={
+                manifest.pages.some((page) => page.pageId === "system-monitoring")
+                  ? () => onNavigate("/system-monitoring")
+                  : undefined
+              }
+            />
             <ThemeToggle />
             <LocaleSwitcher className="inline-flex" />
             <TimezoneSwitcher className="inline-flex" />
@@ -1242,6 +1461,8 @@ export function App({
               schemaFetcher={schemaFetcher}
               resourceFetcher={resourceFetcher}
               schemaDocumentCache={schemaDocumentCache}
+              pendingAction={pendingPaletteAction}
+              onInitialActionConsumed={handleInitialActionConsumed}
             />
           </div>
         </main>
@@ -1255,6 +1476,13 @@ export function App({
           {branding.icpNumber !== "" ? <span>{branding.icpNumber}</span> : null}
         </footer>
       ) : null}
+      <CommandPalette
+        open={commandPaletteOpen}
+        providers={searchProviders}
+        context={searchableContext}
+        onClose={handleCommandPaletteClose}
+        onSelect={handleCommandPaletteSelect}
+      />
     </div>
   );
 }

@@ -92,6 +92,7 @@ function sessionFor(): { kind: "session"; session: AuthSession } {
     session: {
       user: { id: "user-admin", name: "Admin", roles: ["admin"], permissions: ["dashboard.view"] },
       features: { menu_dashboard: true },
+      runtimeMode: "normal",
     },
   };
 }

@@ -79,7 +79,7 @@ func TestServerProcessRestartPersistsUsers(t *testing.T) {
 		t.Fatalf("created role missing persisted identity/timestamps: %v", roleOut)
 	}
 	for field, value := range map[string]string{"createdAt": roleCreatedAt, "updatedAt": roleUpdatedAt} {
-		if _, err := time.Parse("2006-01-02T15:04:05.000Z", value); err != nil {
+		if _, err := time.Parse("2006-01-02T15:04:05.000000Z", value); err != nil {
 			t.Fatalf("created role %s = %q, want millisecond UTC timestamp: %v", field, value, err)
 		}
 	}

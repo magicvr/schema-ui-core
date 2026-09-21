@@ -64,7 +64,7 @@ buildId 逐字一致。
 
 - `claim-artifact.test.ts` 5/5、`upstream-fixtures.test.ts` 59/59、
   `upstream-host-fixtures.test.ts` **99/99 零排除**；
-- apps/web 全量 vitest：**46 文件 862 通过**；`tsc --noEmit` 无错误。
+- apps/web 全量 vitest：**46 文件 862 通过**；`tsc --noEmit` 无错误。**（勘误 2026-09-18：裸 `tsc --noEmit` 在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；vitest 与 claim/fixtures 门禁证据不受影响。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。）**
 - Go API 侧本轮无改动（pin 身份仅在 web 消费链路与 claim 生成脚本）。
 
 ## 阻塞 / 风险

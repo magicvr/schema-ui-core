@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/account"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/ratelimit"
 )
 
 // TestAccountsMeRequiresAuth asserts the request-level identity gate: without an
@@ -65,6 +66,29 @@ func TestAccountsMeReturnsIdentity(t *testing.T) {
 	// GOAL-006 S5 · the seeded admin holds the users menu grant.
 	if got := session.Features["menu_users"]; !got {
 		t.Fatalf("admin menu_users = %v, want true", got)
+	}
+	if session.RuntimeMode != "normal" {
+		t.Fatalf("runtimeMode = %q, want normal (RegisterWithReadiness default)", session.RuntimeMode)
+	}
+}
+
+func TestAccountsMeProjectsRuntimeMode(t *testing.T) {
+	env := newAuthTestEnv(t)
+	mux := http.NewServeMux()
+	RegisterWithMFAProbes(mux, env.a, env.st, env.operations, testAdminPlan(t), nil, ratelimit.NewProvider(), nil, nil, "maintenance")
+	token := env.login(t, testSeedUsername, testSeedPassword)
+	req := bearer(t, token, http.MethodGet, "/api/accounts/me", "")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rr.Code, rr.Body.String())
+	}
+	var session account.Session
+	if err := json.NewDecoder(rr.Body).Decode(&session); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if session.RuntimeMode != "maintenance" {
+		t.Fatalf("runtimeMode = %q, want maintenance", session.RuntimeMode)
 	}
 }
 

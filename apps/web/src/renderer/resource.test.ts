@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   buildResourceQuery,
+  DEFAULT_PAGE_SIZE,
   deleteResource,
   fetchResourceList,
   isValidDataSource,
@@ -32,8 +33,14 @@ describe("buildResourceQuery (query-serialization)", () => {
     );
   });
 
+  // GOAL-011: the omitted value must be the one the API applies by default
+  // (handler.DefaultPageSize), not a hard-coded 10 that the server disagrees with.
   it("omits default page and pageSize", () => {
-    expect(buildResourceQuery({ page: 1, pageSize: 10 })).toBe("");
+    expect(buildResourceQuery({ page: 1, pageSize: DEFAULT_PAGE_SIZE })).toBe("");
+  });
+
+  it("serializes pageSize=10, which is no longer the default", () => {
+    expect(buildResourceQuery({ page: 1, pageSize: 10 })).toBe("pageSize=10");
   });
 
   it("serializes non-default pagination", () => {

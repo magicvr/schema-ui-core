@@ -39,7 +39,7 @@ func operationToMap(op operationlog.Operation) map[string]any {
 		"event":     op.Event,
 		"actorId":   op.ActorID,
 		"actorName": op.ActorName,
-		"createdAt": op.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt": FormatWireTime(op.CreatedAt),
 	}
 	if op.RecordID != nil {
 		row["recordId"] = *op.RecordID
@@ -108,7 +108,7 @@ func parseOperationTime(raw string, endOfDay bool) (time.Time, error) {
 		}
 		return parsed.UTC(), nil
 	}
-	if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+	if parsed, err := ParseWireTime(raw); err == nil {
 		return parsed.UTC(), nil
 	}
 	return time.Time{}, &DomainError{Status: http.StatusBadRequest, Code: "INVALID_DATE_FILTER", Message: "from/to must be YYYY-MM-DD or RFC3339"}

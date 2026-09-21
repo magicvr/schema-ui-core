@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 
+import { Check, Columns3, Plus, Save, Trash2 } from "lucide-react";
+
 import { DataTable, type DataTableColumn, type SortState } from "@/components/data-table";
+import { ListFilterPanel } from "@/components/list-filter-panel";
 import { resolveTextProp } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
+import { cn } from "@/lib/utils";
+import { feedbackFromError } from "@/renderer/feedback-policy";
 import {
+  DEFAULT_PAGE_SIZE,
   EMPTY_RESOURCE_LIST,
   fetchResourceList,
   isValidDataSource,
@@ -16,6 +22,22 @@ import {
 } from "@/renderer/resource";
 import type { RenderTableNode } from "@/renderer/render.types";
 import { useSchemaCrud } from "@/renderer/render.tsx";
+import {
+  resolveListObjectLabel,
+  usePageListActionsHost,
+} from "@/renderer/list-surface";
+import {
+  createSavedViewRecord,
+  getBrowserSavedViewStorage,
+  normalizeSavedViewState,
+  readSavedViews,
+  savedViewStorageKey,
+  updateSavedViewRecord,
+  writeSavedViews,
+  type SavedViewRecord,
+  type SavedViewState,
+  type SavedViewTableConfig,
+} from "@/renderer/saved-views";
 
 /**
  * Default schema-driven table surface (R1 · GOAL-004 / D-004) + S4 CRUD wiring
@@ -48,6 +70,8 @@ export interface SchemaTableProps {
   node: RenderTableNode;
   /** Injectable fetch (defaults to `globalThis.fetch`). */
   fetcher?: typeof fetch;
+  /** Localized page title used only as a semantic fallback for Saved Views. */
+  pageTitle?: string;
 }
 
 export interface SchemaTableColumnSpec {
@@ -64,6 +88,39 @@ export interface SchemaTableColumnSpec {
   format?: "currency";
   /** W16-F09: render this cell as a colored badge using the row field value. */
   badgeStyleField?: string;
+  /**
+   * W32 (GOAL-044 D-001 §1): local extension mapping a cell's raw value to an
+   * i18n key, so an enum column can read in the operator's language instead of
+   * showing the stored code. Unmapped values (or a key missing from the
+   * catalogs) fall back to the RAW value — this is presentation, not a gate, so
+   * a missing translation must never blank the cell.
+   *
+   * NOT the pinned `format:"tag"`/`tagMap` pair (which maps a value to literal
+   * {text, tone} and is unimplemented here): this extension only answers "which
+   * catalog key names this value".
+   */
+  valueLabels?: Record<string, unknown>;
+}
+
+/** Resolves one cell's display text through the column's valueLabels mapping. */
+function labeledCellValue(
+  column: SchemaTableColumnSpec,
+  key: string,
+  translate: (key: string, params?: undefined, literalFallback?: string) => string,
+): string {
+  const rendered = key === "" ? "" : key;
+  if (rendered === "") {
+    return "";
+  }  if (column.valueLabels === undefined || typeof column.valueLabels !== "object" || column.valueLabels === null) {
+    return rendered;
+  }
+  const mapped = (column.valueLabels as Record<string, unknown>)[rendered];
+  if (typeof mapped !== "string" || mapped === "") {
+    return rendered;
+  }
+  // The raw value doubles as the literal fallback: a key that is missing from
+  // the catalogs degrades to today's behaviour instead of emptying the cell.
+  return translate(mapped, undefined, rendered);
 }
 
 function stringOf(value: unknown): string {
@@ -503,23 +560,123 @@ function RowActionsMenu({
   );
 }
 
-export function SchemaTable({ node, fetcher }: SchemaTableProps) {
-  const columns = schemaTableColumns(node);
+export function SchemaTable({ node, fetcher, pageTitle }: SchemaTableProps) {
+  const columns = useMemo(() => schemaTableColumns(node), [node]);
   const dataSource = schemaTableDataSource(node);
   const dataParams = schemaTableDataParams(node);
   const rowKeyField = schemaTableRowKey(node);
   const crud = useSchemaCrud();
   const t = useTranslate();
   const tableId = node.id ?? "default";
+  // W32 (GOAL-044 D-001 §2): targeted-refresh token for THIS table. Bumping it
+  // (crud.refreshTable) re-runs the fetch effect below with the same query while
+  // leaving every table selection untouched.
+  const tableRefreshToken = crud?.tableRefreshToken(tableId) ?? 0;
+  // W33 (GOAL-045 D-001 §2/§4): does a custom node claim this table's list
+  // page-actions SLOT? If so the row renders a left segment and this table
+  // publishes the host element the node portals into.
+  const listActionsSlotClaimed = crud?.hasListActionsSlot(tableId) ?? false;
+  // The host ref callback must be IDENTITY-STABLE: an inline arrow would make
+  // React detach (null) and reattach (element) on every commit, and that
+  // null↔element oscillation would drive publishListActionsHost in a loop. The
+  // CRUD value is read through a ref so the callback itself never changes.
+  // (Both hooks sit here, ABOVE the component's early returns — React requires
+  // a stable hook count on every render path.)
+  const crudRef = useRef(crud);
+  crudRef.current = crud;
+  const publishListActionsHostRef = useCallback(
+    (element: HTMLElement | null) => {
+      crudRef.current?.publishListActionsHost(tableId, element);
+    },
+    [tableId],
+  );
+  const pageListActionsHost = usePageListActionsHost();
+  const [pageActionsPortalReady, setPageActionsPortalReady] = useState(false);
   const rowActions = Array.isArray(node.props?.actions) ? node.props.actions : [];
   const toolbar = Array.isArray(node.props?.toolbar) ? node.props.toolbar : [];
-  const filters = schemaTableFilters(node);
+  const filters = useMemo(() => schemaTableFilters(node), [node]);
   const title = resolveTextProp(
     node.props as unknown as Record<string, unknown>,
     "titleKey",
     "title",
     t,
     "",
+  );
+  const tableTitleKey =
+    typeof node.props?.titleKey === "string" ? node.props.titleKey : undefined;
+  const listObjectLabel = resolveListObjectLabel({
+    pageId: crud?.pageId,
+    pageTitle,
+    tableTitle: title,
+    tableTitleKey,
+    translate: (key, params) => t(key, params),
+  });
+
+  // W33 (GOAL-045): claim the page-list-actions host ONCE per host element.
+  //
+  // The previous version listed `availabilityVersion` as a dependency, and that
+  // is a self-sustaining loop: the effect claims the host, its cleanup releases
+  // it, `release` bumps `availabilityVersion` to notify other tables, the bump
+  // changes this effect's dependencies, so it cleans up and re-claims — forever.
+  // React reported it as "Maximum update depth exceeded" hundreds of times on
+  // every list page (found while probing the running app for console errors; it
+  // predates this wave). Splitting the two concerns fixes it:
+  //   * the claim effect depends only on the host ELEMENT and the table id, so
+  //     provider state churn no longer re-runs it;
+  //   * a separate retry effect bumps `claimRetry` when the host is free again,
+  //     which is what `availabilityVersion` was for (a second table on the same
+  //     page claims the host after the first one releases it).
+  const hostElement = pageListActionsHost?.element ?? null;
+  const hostActiveOwner = pageListActionsHost?.activeOwner ?? null;
+  const hostRef = useRef(pageListActionsHost);
+  hostRef.current = pageListActionsHost;
+  const [claimRetry, setClaimRetry] = useState(0);
+
+  useEffect(() => {
+    if (hostElement === null || hostActiveOwner !== null) {
+      return;
+    }
+    setClaimRetry((current) => current + 1);
+  }, [hostElement, hostActiveOwner]);
+
+  useEffect(() => {
+    if (hostElement === null) {
+      setPageActionsPortalReady(false);
+      return;
+    }
+    const claimed = hostRef.current?.claim(tableId) ?? false;
+    setPageActionsPortalReady(claimed);
+    return () => {
+      hostRef.current?.release(tableId);
+    };
+  }, [claimRetry, hostElement, tableId]);
+
+  const formFilterFields = useMemo(
+    () => (crud?.tableFilterFields !== undefined ? crud.tableFilterFields(tableId) : []),
+    [crud?.tableFilterFields, tableId],
+  );
+  const savedViewConfig = useMemo<SavedViewTableConfig>(
+    () => ({
+      columnFields: columns.map((column) => column.field),
+      sortableFields: columns
+        .filter((column) => column.sortable === true)
+        .map((column) => column.field),
+      filterFields: [...new Set([...filters.map((filter) => filter.field), ...formFilterFields])],
+    }),
+    [columns, filters, formFilterFields],
+  );
+  const savedViewConfigSignature = useMemo(() => JSON.stringify(savedViewConfig), [savedViewConfig]);
+  const savedViewEnabled = crud !== null && crud.userId !== null && crud.pageId !== "";
+  const savedViewKey = useMemo(
+    () =>
+      savedViewEnabled && crud !== null && crud.userId !== null
+        ? savedViewStorageKey(crud.userId, crud.pageId, tableId)
+        : "",
+    [crud?.pageId, crud?.userId, savedViewEnabled, tableId],
+  );
+  const savedViewStorage = useMemo(
+    () => (savedViewEnabled ? getBrowserSavedViewStorage() : null),
+    [savedViewEnabled, savedViewKey],
   );
 
   // Register the injected transport with the page's Schema CRUD provider so
@@ -533,7 +690,10 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
   // W11 · U-06: go-to-page input ref (submit reads it; no controlled state).
   const goToPageRef = useRef<HTMLInputElement>(null);
   const providerQuery = crud?.tableQuery(tableId);
-  const [localQuery, setLocalQuery] = useState<ResourceQuery>({ page: 1, pageSize: 10 });
+  const [localQuery, setLocalQuery] = useState<ResourceQuery>({
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
   const query = providerQuery ?? localQuery;
   const setQuery = (next: ResourceQuery) => {
     if (crud !== null) {
@@ -543,9 +703,247 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     }
   };
 
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
+    columns.map((column) => column.field),
+  );
+  // W33 (GOAL-045): table-scoped state must not survive into a DIFFERENT table.
+  // Two page documents can align their table node at the same child index (the
+  // roles page gained a custom node, which put its table exactly where the users
+  // table sits), and React then reuses this mounted instance across the
+  // navigation. Without this reset the previous table's `visibleColumns` survive
+  // and the "narrow to the allowed fields" effect below intersects them with the
+  // new schema — the users table came back showing only the columns users and
+  // roles have in common (found in browser E2E). Adjusting state during render is
+  // React's documented pattern for "state derived from props changed": it
+  // re-renders immediately instead of committing the stale output.
+  const columnFields = columns.map((column) => column.field);
+  const tableIdentity = `${tableId}::${columnFields.join("|")}`;
+  const tableIdentityRef = useRef(tableIdentity);
+  if (tableIdentityRef.current !== tableIdentity) {
+    tableIdentityRef.current = tableIdentity;
+    setVisibleColumns(columnFields);
+  }
+  const [savedViewLoad, setSavedViewLoad] = useState<{
+    status: "disabled" | "loading" | "ready" | "error";
+    views: SavedViewRecord[];
+    activeViewId?: string;
+  }>({ status: savedViewEnabled ? "loading" : "disabled", views: [] });
+  const savedViewReportedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const allowed = new Set(columns.map((column) => column.field));
+    setVisibleColumns((current) => {
+      const next = current.filter((field) => allowed.has(field));
+      if (next.length > 0 || columns.length === 0) return next;
+      return columns.map((column) => column.field);
+    });
+  }, [columns]);
+
+  const reportSavedViewFailure = useCallback(
+    (failure: { code: string; message: string }) => {
+      crud?.notifyFeedback({
+        kind: "error",
+        code: failure.code,
+        message: failure.message,
+        messageKey: "feedback.savedViewError",
+      });
+    },
+    [crud?.notifyFeedback],
+  );
+
+  useEffect(() => {
+    if (!savedViewEnabled || savedViewKey === "") {
+      setSavedViewLoad({ status: "disabled", views: [] });
+      return;
+    }
+    setSavedViewLoad({ status: "loading", views: [] });
+    const result = readSavedViews(savedViewStorage, savedViewKey, savedViewConfig);
+    if (!result.ok) {
+      setSavedViewLoad({ status: "error", views: [] });
+      const reportKey = `${savedViewKey}:${result.code}`;
+      if (savedViewReportedRef.current !== reportKey) {
+        savedViewReportedRef.current = reportKey;
+        reportSavedViewFailure(result);
+      }
+      return;
+    }
+    setSavedViewLoad({
+      status: "ready",
+      views: result.views,
+      ...(result.activeViewId === undefined ? {} : { activeViewId: result.activeViewId }),
+    });
+    if (result.droppedCount > 0) {
+      const reportKey = `${savedViewKey}:dropped:${result.droppedCount}`;
+      if (savedViewReportedRef.current !== reportKey) {
+        savedViewReportedRef.current = reportKey;
+        reportSavedViewFailure({
+          code: "SAVED_VIEW_STORAGE_INVALID",
+          message: `${result.droppedCount} Saved View(s) were ignored because they no longer match the current Schema.`,
+        });
+      }
+    }
+    const active = result.activeViewId === undefined
+      ? undefined
+      : result.views.find((view) => view.id === result.activeViewId);
+    if (active !== undefined) {
+      const state = normalizeSavedViewState(active.query, active.visibleColumns, savedViewConfig);
+      if (state.ok) {
+        setVisibleColumns(state.state.visibleColumns);
+        setQuery({ ...state.state.query, page: 1 });
+      }
+    }
+  }, [
+    reportSavedViewFailure,
+    savedViewConfigSignature,
+    savedViewEnabled,
+    savedViewKey,
+  ]);
+
+  const currentSavedViewState = useMemo<SavedViewState>(
+    () => ({
+      query: {
+        ...(query.q === undefined ? {} : { q: query.q }),
+        ...(query.filters === undefined ? {} : { filters: { ...query.filters } }),
+        ...(query.sort === undefined ? {} : { sort: query.sort }),
+        ...(query.order === undefined ? {} : { order: query.order }),
+        ...(query.pageSize === undefined ? {} : { pageSize: query.pageSize }),
+      },
+      visibleColumns: [...visibleColumns],
+    }),
+    [query, visibleColumns],
+  );
+  const selectedSavedView = savedViewLoad.views.find((view) => view.id === savedViewLoad.activeViewId);
+  const persistSavedViews = useCallback(
+    (views: SavedViewRecord[], activeViewId?: string): boolean => {
+      if (!savedViewEnabled || savedViewKey === "") return false;
+      const result = writeSavedViews(
+        savedViewStorage,
+        savedViewKey,
+        views,
+        savedViewConfig,
+        activeViewId,
+      );
+      if (!result.ok) {
+        reportSavedViewFailure(result);
+        return false;
+      }
+      setSavedViewLoad({
+        status: "ready",
+        views,
+        ...(activeViewId === undefined ? {} : { activeViewId }),
+      });
+      return true;
+    },
+    [
+      reportSavedViewFailure,
+      savedViewConfig,
+      savedViewEnabled,
+      savedViewKey,
+      savedViewStorage,
+    ],
+  );
+  const [saveViewOpen, setSaveViewOpen] = useState(false);
+  const [saveViewName, setSaveViewName] = useState("");
+
+  const saveNewView = () => {
+    const result = createSavedViewRecord(
+      saveViewName,
+      currentSavedViewState.query,
+      currentSavedViewState.visibleColumns,
+      savedViewConfig,
+    );
+    if (!result.ok) {
+      reportSavedViewFailure(result);
+      return;
+    }
+    if (savedViewLoad.views.length >= 50) {
+      reportSavedViewFailure({
+        code: "SAVED_VIEW_LIMIT_REACHED",
+        message: "Saved View limit reached.",
+      });
+      return;
+    }
+    if (persistSavedViews([...savedViewLoad.views, result.view], result.view.id)) {
+      setSaveViewName("");
+      setSaveViewOpen(false);
+      crud?.notifyFeedback({
+        kind: "success",
+        code: "SAVED_VIEW_SAVED",
+        message: t("feedback.savedViewSaved"),
+        messageKey: "feedback.savedViewSaved",
+      });
+    }
+  };
+
+  const updateSelectedView = () => {
+    if (selectedSavedView === undefined) return;
+    const result = updateSavedViewRecord(
+      selectedSavedView,
+      currentSavedViewState.query,
+      currentSavedViewState.visibleColumns,
+      savedViewConfig,
+    );
+    if (!result.ok) {
+      reportSavedViewFailure(result);
+      return;
+    }
+    const next = savedViewLoad.views.map((view) =>
+      view.id === result.view.id ? result.view : view,
+    );
+    if (persistSavedViews(next, result.view.id)) {
+      crud?.notifyFeedback({
+        kind: "success",
+        code: "SAVED_VIEW_UPDATED",
+        message: t("feedback.savedViewUpdated"),
+        messageKey: "feedback.savedViewUpdated",
+      });
+    }
+  };
+
+  const selectSavedView = (viewId: string) => {
+    if (viewId === "") {
+      setSavedViewLoad((current) => ({ status: current.status, views: current.views }));
+      if (persistSavedViews(savedViewLoad.views)) {
+        setSavedViewLoad((current) => ({ status: current.status, views: current.views }));
+      }
+      return;
+    }
+    const view = savedViewLoad.views.find((entry) => entry.id === viewId);
+    if (view === undefined) return;
+    const state = normalizeSavedViewState(view.query, view.visibleColumns, savedViewConfig);
+    if (!state.ok) {
+      reportSavedViewFailure(state);
+      persistSavedViews(savedViewLoad.views.filter((entry) => entry.id !== viewId));
+      return;
+    }
+    setVisibleColumns(state.state.visibleColumns);
+    setQuery({ ...state.state.query, page: 1 });
+    crud?.clearSelection(tableId);
+    persistSavedViews(savedViewLoad.views, viewId);
+  };
+
+  const deleteSelectedView = () => {
+    if (selectedSavedView === undefined) return;
+    if (typeof window !== "undefined" && !window.confirm(t("feedback.savedViewDeleteConfirm"))) {
+      return;
+    }
+    const next = savedViewLoad.views.filter((view) => view.id !== selectedSavedView.id);
+    const activeViewId = savedViewLoad.activeViewId === selectedSavedView.id
+      ? undefined
+      : savedViewLoad.activeViewId;
+    if (persistSavedViews(next, activeViewId)) {
+      crud?.notifyFeedback({
+        kind: "success",
+        code: "SAVED_VIEW_DELETED",
+        message: t("feedback.savedViewDeleted"),
+        messageKey: "feedback.savedViewDeleted",
+      });
+    }
+  };
+
   const [list, setList] = useState<ResourceList | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
 
   // v2.9 ADR-0039: route snapshot for dataSource params bindings. Prefers the
@@ -609,14 +1007,24 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             setLoading(false);
             return;
           }
-          setError(err instanceof Error ? err.message : String(err));
+          setError(err);
           setLoading(false);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken, retryNonce]);
+  }, [fetcher, dataSource, dataParams, routeSnapshot, query, crud?.reloadToken, tableRefreshToken, retryNonce]);
+
+  // W32 (GOAL-044 D-001 §3): publish the rows this table currently renders so a
+  // polling control can decide whether a refresh is worth issuing ("only while a
+  // job is still running"). The registry is ref-backed, so this costs no render.
+  useEffect(() => {
+    if (crud === null || list === null) {
+      return;
+    }
+    crud.publishTableRows(tableId, list.items as ReadonlyArray<Record<string, unknown>>);
+  }, [crud, list, tableId]);
 
   // F-002: validate row keys on every fetched page; invalid → fail closed.
   const keyCheck = useMemo(
@@ -746,6 +1154,9 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
     crud.setSelection(tableId, [...next].map(selectionTokenOf));
   };
 
+  const visibleColumnSet = new Set(visibleColumns);
+  const displayColumns = columns.filter((column) => visibleColumnSet.has(column.field));
+
   const dataColumns: DataTableColumn<ResourceItem>[] = [
     ...(selectionEnabled
       ? [
@@ -776,7 +1187,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
           },
         ]
       : []),
-    ...columns.map((column) => ({
+    ...displayColumns.map((column) => ({
       key: column.field,
       label: resolveTextProp(
         column as unknown as Record<string, unknown>,
@@ -799,7 +1210,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               // email) renders the universal muted placeholder instead of an
               // empty pill — cellContent's fallback only applies when no
               // render fn exists.
-              const badgeText = stringOf(row[column.field]);
+              const badgeText = labeledCellValue(column, stringOf(row[column.field]), t);
               if (badgeText === "") {
                 return <span className="text-muted-foreground">—</span>;
               }
@@ -812,7 +1223,14 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               );
             },
           }
-        : {}),
+        : column.valueLabels !== undefined
+          ? {
+              // W32 (GOAL-044 D-001 §1): a plain (non-badge) column may still
+              // localize its values through valueLabels.
+              render: (row: ResourceItem) =>
+                labeledCellValue(column, stringOf(row[column.field]), t),
+            }
+          : {}),
     })),
     ...(rowActions.length > 0
       ? [
@@ -870,17 +1288,451 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             },
           },
         ]
-      : []),
+    : []),
   ];
+
+  const columnConfiguration =
+    savedViewEnabled && savedViewLoad.status !== "disabled" ? (
+      <details className="relative" data-list-page-action="columns">
+        <summary
+          data-saved-view-columns-trigger="true"
+          // R6 C8 (item 1): one shared control height for the whole page-actions
+          // row — the schema toolbar buttons use the same h-8/text-xs scale.
+          className="inline-flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent"
+        >
+          {/* Reference page (raw/new-table): the column-configuration trigger
+              carries a columns glyph as its visual emphasis. */}
+          <Columns3 aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          {t("feedback.savedViewColumns")}
+        </summary>
+        <div
+          role="group"
+          aria-label={t("feedback.savedViewColumns")}
+          className="absolute left-0 top-9 z-20 grid min-w-44 gap-2 rounded-md border border-border bg-card p-3 shadow-lg"
+        >
+          {columns.map((column) => {
+            const checked = visibleColumnSet.has(column.field);
+            const label = resolveTextProp(
+              column as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              column.field,
+            );
+            return (
+              <label key={column.field} className="flex items-center gap-2 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={checked && visibleColumns.length <= 1}
+                  onChange={() =>
+                    setVisibleColumns((current) => {
+                      if (current.includes(column.field)) {
+                        return current.length <= 1
+                          ? current
+                          : current.filter((field) => field !== column.field);
+                      }
+                      return [...current, column.field];
+                    })
+                  }
+                />
+                <span>{t("feedback.savedViewColumns")}: {label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </details>
+    ) : null;
+
+  const savedViewManagementSurface =
+    savedViewEnabled &&
+    savedViewLoad.status !== "disabled" &&
+    (selectedSavedView !== undefined || saveViewOpen || savedViewLoad.status === "error") ? (
+      // R6 C7 (item 3): the management actions and the new-view form belong to
+      // the view tab group they act on — they render directly beneath it, not
+      // in the page-level actions row.
+      <div
+        data-saved-view-management="true"
+        className="flex w-full max-w-full flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-1.5"
+      >
+        {selectedSavedView !== undefined ? (
+          <>
+            <button
+              type="button"
+              data-saved-view-action="update"
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={updateSelectedView}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              <Save aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              {t("feedback.savedViewUpdate")}
+            </button>
+            <button
+              type="button"
+              data-saved-view-action="delete"
+              disabled={savedViewLoad.status !== "ready"}
+              onClick={deleteSelectedView}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-destructive/40 bg-background px-3 text-xs font-medium text-destructive shadow-2xs transition-colors hover:bg-destructive/10 disabled:opacity-50"
+            >
+              <Trash2 aria-hidden="true" className="size-3.5" />
+              {t("feedback.savedViewDelete")}
+            </button>
+          </>
+        ) : null}
+        {saveViewOpen ? (
+          <form
+            className="flex w-full flex-wrap items-center justify-end gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveNewView();
+            }}
+          >
+            <label className="sr-only" htmlFor={`${tableId}-saved-view-name`}>
+              {t("feedback.savedViewName")}
+            </label>
+            <input
+              id={`${tableId}-saved-view-name`}
+              autoFocus
+              value={saveViewName}
+              onChange={(event) => setSaveViewName(event.target.value)}
+              placeholder={t("feedback.savedViewName")}
+              maxLength={80}
+              className="h-9 min-w-52 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-2xs"
+            />
+            <button
+              type="submit"
+              data-saved-view-action="confirm-save"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90"
+            >
+              <Check aria-hidden="true" className="size-3.5" />
+              {t("feedback.savedViewConfirmSave")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSaveViewOpen(false)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-xs font-medium text-muted-foreground shadow-2xs transition-colors hover:bg-accent"
+            >
+              {t("feedback.cancel")}
+            </button>
+          </form>
+        ) : null}
+        {savedViewLoad.status === "error" ? (
+          <span role="alert" className="w-full text-right text-xs text-destructive">
+            {t("feedback.savedViewUnavailable")}
+          </span>
+        ) : null}
+      </div>
+    ) : null;
+
+  // W33 (GOAL-045 D-001 §2/§4): this table renders the page-actions row when it
+  // has its own right-hand content OR when a custom node declares the
+  // `list-page-actions` slot for it. The left segment is then the slot HOST: it
+  // is published so that node can portal into it.
+  const pageToolbarSurface =
+    columnConfiguration !== null || toolbar.length > 0 || listActionsSlotClaimed ? (
+    <div
+      className="flex flex-wrap items-center justify-between gap-2"
+      data-list-page-actions
+      // Keep the legacy Saved View test scope able to discover column
+      // configuration after page actions move below the filter surface.
+      data-saved-views={savedViewEnabled ? "true" : undefined}
+    >
+      {listActionsSlotClaimed ? (
+        <div
+          ref={publishListActionsHostRef}
+          data-list-page-actions-left="true"
+          className="flex min-w-0 flex-wrap items-center gap-2"
+        />
+      ) : null}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {columnConfiguration}
+        {toolbar.map((trigger) => {
+        const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
+        const permitted = crud?.effectivePermission(key) ?? true;
+        const isBatch =
+          typeof trigger === "object" &&
+          trigger !== null &&
+          !Array.isArray(trigger) &&
+          ((trigger as Record<string, unknown>).batchMapping !== undefined ||
+            (trigger as Record<string, unknown>).requiresSelection === true);
+        const requiresSelection = trigger.requiresSelection === true;
+        const selectionDisabled =
+          requiresSelection && (currentSelection === undefined || currentSelection.count === 0);
+        const disabled = !permitted || selectionDisabled;
+        return (
+          <button
+            key={key}
+            type="button"
+            disabled={disabled}
+            title={
+              disabled
+                ? selectionDisabled
+                  ? t("feedback.selectRowFirst")
+                  : t("feedback.actionNotPermitted")
+                : undefined
+            }
+            onClick={() =>
+              isBatch && selectionEnabled
+                ? crud?.invokeBatchAction(trigger, tableId)
+                : crud?.invokeAction(trigger, null)
+            }
+            className="h-8 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-2xs transition-opacity hover:bg-primary/90 disabled:opacity-50"
+          >
+            {resolveTextProp(
+              trigger as unknown as Record<string, unknown>,
+              "labelKey",
+              "label",
+              t,
+              key,
+            )}
+          </button>
+        );
+      })}
+      </div>
+    </div>
+  ) : null;
+
+  const savedViewSurface = savedViewEnabled && savedViewLoad.status !== "disabled" ? (
+    <div
+      className="flex flex-col gap-1 rounded-lg border border-border/70 bg-card/85 p-1 shadow-2xs dark:border-border/60 dark:bg-card/70"
+      data-saved-views
+      data-saved-views-surface="true"
+    >
+      <div className="flex flex-wrap items-center justify-end gap-1">
+        <div
+          className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1"
+          role="group"
+          aria-label={t("feedback.savedViews")}
+          data-saved-view-tabs="true"
+        >
+          <button
+            type="button"
+            aria-pressed={savedViewLoad.activeViewId === undefined}
+            data-saved-view-option=""
+            disabled={savedViewLoad.status !== "ready"}
+            onClick={() => selectSavedView("")}
+            className={cn(
+              "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              savedViewLoad.activeViewId === undefined
+                ? "bg-muted text-foreground shadow-2xs"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+            )}
+          >
+            <span className="truncate">{t("feedback.savedViewCurrent", { object: listObjectLabel })}</span>
+          </button>
+          {savedViewLoad.views.map((view) => {
+            const selected = savedViewLoad.activeViewId === view.id;
+            return (
+              <button
+                key={view.id}
+                type="button"
+                aria-pressed={selected}
+                data-saved-view-option={view.id}
+                disabled={savedViewLoad.status !== "ready"}
+                onClick={() => selectSavedView(view.id)}
+                className={cn(
+                  "inline-flex min-w-0 max-w-52 items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  selected
+                    ? "bg-muted text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                )}
+              >
+                <span className="truncate">{view.name}</span>
+              </button>
+            );
+          })}
+        </div>
+        <select
+          data-saved-view-select
+          aria-label={t("feedback.savedViews")}
+          aria-hidden="true"
+          tabIndex={-1}
+          value={savedViewLoad.activeViewId ?? ""}
+          disabled={savedViewLoad.status !== "ready"}
+          onChange={(event) => selectSavedView(event.target.value)}
+          className="sr-only"
+        >
+          <option value="">
+            {t("feedback.savedViewCurrent", { object: listObjectLabel })}
+          </option>
+          {savedViewLoad.views.map((view) => (
+            <option key={view.id} value={view.id}>
+              {view.name}
+            </option>
+          ))}
+        </select>
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <button
+            type="button"
+            data-saved-view-action="save"
+            disabled={savedViewLoad.status !== "ready"}
+            onClick={() => {
+              setSaveViewName("");
+              setSaveViewOpen(true);
+            }}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground shadow-2xs transition-colors hover:bg-accent disabled:opacity-50"
+          >
+            {/* Reference page: "保存视图" pairs a plus glyph with its label. */}
+            <Plus aria-hidden="true" className="size-3.5" />
+            {t("feedback.savedViewSave")}
+          </button>
+        </div>
+      </div>
+      {savedViewManagementSurface}
+    </div>
+  ) : null;
+
+  const pageActionsPortalSurface =
+    savedViewSurface !== null &&
+    pageListActionsHost !== null &&
+    pageListActionsHost.element !== null &&
+    pageActionsPortalReady
+      ? createPortal(savedViewSurface, pageListActionsHost.element)
+      : null;
+  const inlineSavedViewHeader =
+    savedViewSurface !== null && pageListActionsHost === null ? (
+      <div
+        className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3"
+        data-saved-view-inline="true"
+      >
+        {title !== "" ? (
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+        ) : null}
+        {savedViewSurface}
+      </div>
+    ) : null;
+  const totalPages = list === null ? 1 : Math.max(1, Math.ceil(list.total / list.pageSize));
+  const paginationFooter = list === null ? undefined : (
+    <div
+      className="flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row"
+      data-pagination-footer="true"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+        <span className="pl-0.5">
+          {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")}
+        </span>
+        <span aria-hidden="true" className="text-muted-foreground/50">{" · "}</span>
+        <span>
+          {t("feedback.pageOf", {
+            page: String(list.page),
+            total: String(totalPages),
+          })}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-end">
+        {/* W11 · U-06: per-page size switcher (resets to page 1). */}
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span>{t("feedback.pageSize")}</span>
+          <select
+            aria-label={t("feedback.pageSize")}
+            data-pagination-page-size="true"
+            value={String(query.pageSize ?? DEFAULT_PAGE_SIZE)}
+            onChange={(event) =>
+              setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
+            }
+            className="h-7 rounded-md border border-input bg-background px-1.5 text-xs scheme-light dark:scheme-dark"
+          >
+            {[10, 20, 50, 100].map((size) => (
+              <option key={size} value={String(size)}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </label>
+        <nav
+          aria-label={t("feedback.pagination")}
+          data-pagination-navigation="true"
+          className="flex items-center gap-1"
+        >
+          <button
+            type="button"
+            disabled={list.page <= 1}
+            aria-label={t("feedback.previousPage")}
+            onClick={() => setQuery({ ...query, page: list.page - 1 })}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {"‹"}
+          </button>
+          {pagerPages(list.page, totalPages).map(
+            (page, index) =>
+              page === "gap" ? (
+                <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
+                  {"…"}
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  type="button"
+                  disabled={page === list.page}
+                  aria-current={page === list.page ? "page" : undefined}
+                  aria-label={t("feedback.pageNumber", { page: String(page) })}
+                  onClick={() => setQuery({ ...query, page })}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:border-primary/40 disabled:bg-primary/10 disabled:text-foreground"
+                >
+                  {page}
+                </button>
+              ),
+          )}
+          <button
+            type="button"
+            disabled={list.page >= totalPages}
+            aria-label={t("feedback.nextPage")}
+            onClick={() => setQuery({ ...query, page: list.page + 1 })}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {"›"}
+          </button>
+        </nav>
+        {/* W11 · U-06: quick jump to a specific page. */}
+        <form
+          aria-label={t("feedback.goToPage")}
+          data-pagination-jump="true"
+          className="flex items-center gap-1.5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const target = Number(goToPageRef.current?.value ?? "");
+            const pages = totalPages;
+            if (Number.isFinite(target) && target >= 1 && target <= pages) {
+              setQuery({ ...query, page: Math.floor(target) });
+            }
+          }}
+        >
+          <label className="text-xs text-muted-foreground">{t("feedback.goToPage")}</label>
+          <input
+            ref={goToPageRef}
+            type="number"
+            min={1}
+            max={totalPages}
+            defaultValue=""
+            placeholder={String(list.page)}
+            aria-label={t("feedback.goToPage")}
+            disabled={totalPages <= 1}
+            className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-center text-xs"
+          />
+          <button
+            type="submit"
+            disabled={totalPages <= 1}
+            className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-2xs transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {t("feedback.jumpToPage")}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full min-w-0 space-y-2">
-      {title !== "" ? (
+      {/* R6 C7 (item 3): the view tab group sits directly under the title row,
+          and its management form (new/update/delete) renders inside it. */}
+      {inlineSavedViewHeader}
+      {inlineSavedViewHeader === null && title !== "" ? (
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       ) : null}
+      {pageActionsPortalSurface}
       {filters.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-4" data-table-filters>
-          {filters.map((filter) => {
+        <ListFilterPanel
+          items={filters.map((filter) => {
             const label = resolveTextProp(
               filter as unknown as Record<string, unknown>,
               "labelKey",
@@ -890,11 +1742,8 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
             );
             const value = query.filters?.[filter.field] ?? "";
             return (
-              <label
-                key={filter.field}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-              >
-                <span>{label}</span>
+              <label key={filter.field} className="block min-w-0 space-y-1.5">
+                <span className="block text-xs font-medium text-muted-foreground/80">{label}</span>
                 <select
                   value={value}
                   onChange={(event) =>
@@ -904,7 +1753,7 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
                       page: 1,
                     })
                   }
-                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  className="h-9 w-full rounded-md border border-input/80 bg-background px-3 text-sm shadow-2xs outline-none transition-all hover:border-muted-foreground/30 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                 >
                   {filter.options.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -921,54 +1770,14 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
               </label>
             );
           })}
-        </div>
+          itemIds={filters.map((filter) => filter.field)}
+          activeItemIds={filters
+            .filter((filter) => (query.filters?.[filter.field] ?? "") !== "")
+            .map((filter) => filter.field)}
+          dataAttributes={{ "data-table-filters": "true" }}
+        />
       ) : null}
-      {toolbar.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {toolbar.map((trigger) => {
-            const key = stringOf(trigger.key) !== "" ? stringOf(trigger.key) : stringOf(trigger.actionRef);
-            const permitted = crud?.effectivePermission(key) ?? true;
-            const isBatch =
-              typeof trigger === "object" &&
-              trigger !== null &&
-              !Array.isArray(trigger) &&
-              ((trigger as Record<string, unknown>).batchMapping !== undefined ||
-                (trigger as Record<string, unknown>).requiresSelection === true);
-            const requiresSelection = trigger.requiresSelection === true;
-            const selectionDisabled =
-              requiresSelection && (currentSelection === undefined || currentSelection.count === 0);
-            const disabled = !permitted || selectionDisabled;
-            return (
-              <button
-                key={key}
-                type="button"
-                disabled={disabled}
-                title={
-                  disabled
-                    ? selectionDisabled
-                      ? t("feedback.selectRowFirst")
-                      : t("feedback.actionNotPermitted")
-                    : undefined
-                }
-                onClick={() =>
-                  isBatch && selectionEnabled
-                    ? crud?.invokeBatchAction(trigger, tableId)
-                    : crud?.invokeAction(trigger, null)
-                }
-                className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {resolveTextProp(
-                  trigger as unknown as Record<string, unknown>,
-                  "labelKey",
-                  "label",
-                  t,
-                  key,
-                )}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {pageToolbarSurface}
       <DataTable
         columns={dataColumns}
         rows={list?.items ?? []}
@@ -978,117 +1787,19 @@ export function SchemaTable({ node, fetcher }: SchemaTableProps) {
         onRowClick={crud !== null ? onRowClick : undefined}
         selectedKey={selectedKey}
         loading={loading}
-        error={error === null ? null : t("feedback.resourceFetchFailed")}
+        error={error === null ? null : "error"}
+        errorFeedback={
+          error === null
+            ? undefined
+            : feedbackFromError(error, {
+                retry: () => setRetryNonce((n) => n + 1),
+              })
+        }
         onRetry={() => setRetryNonce((n) => n + 1)}
         emptyMessage={query.q ? t("feedback.noItemsMatch") : t("feedback.listEmpty")}
         caption={t("feedback.schemaDrivenItems")}
+        footer={paginationFooter}
       />
-      {list !== null ? (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="pl-0.5 text-xs text-muted-foreground">
-              {list.total} {list.total === 1 ? t("feedback.item") : t("feedback.items")} ·{" "}
-              {t("feedback.pageOf", {
-                page: String(list.page),
-                total: String(Math.max(1, Math.ceil(list.total / list.pageSize))),
-              })}
-            </p>
-            {/* W11 · U-06: per-page size switcher (resets to page 1). */}
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{t("feedback.pageSize")}</span>
-              <select
-                aria-label={t("feedback.pageSize")}
-                value={String(query.pageSize ?? 10)}
-                onChange={(event) =>
-                  setQuery({ ...query, pageSize: Number(event.target.value), page: 1 })
-                }
-                className="h-7 rounded-md border border-input bg-background px-1.5 text-xs scheme-light dark:scheme-dark"
-              >
-                {[10, 20, 50, 100].map((size) => (
-                  <option key={size} value={String(size)}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
-            <nav aria-label={t("feedback.pagination")} className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={list.page <= 1}
-                aria-label={t("feedback.previousPage")}
-                onClick={() => setQuery({ ...query, page: list.page - 1 })}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
-              >
-                {"‹"}
-              </button>
-              {pagerPages(list.page, Math.max(1, Math.ceil(list.total / list.pageSize))).map(
-                (page, index) =>
-                  page === "gap" ? (
-                    <span key={"gap-" + String(index)} className="px-1 text-xs text-muted-foreground">
-                      {"…"}
-                    </span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      disabled={page === list.page}
-                      aria-current={page === list.page ? "page" : undefined}
-                      aria-label={t("feedback.pageNumber", { page: String(page) })}
-                      onClick={() => setQuery({ ...query, page })}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:border-primary/40 disabled:bg-primary/10 disabled:text-foreground"
-                    >
-                      {page}
-                    </button>
-                  ),
-              )}
-              <button
-                type="button"
-                disabled={list.page >= Math.max(1, Math.ceil(list.total / list.pageSize))}
-                aria-label={t("feedback.nextPage")}
-                onClick={() => setQuery({ ...query, page: list.page + 1 })}
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
-              >
-                {"›"}
-              </button>
-            </nav>
-          ) : null}
-          {/* W11 · U-06: quick jump to a specific page. */}
-          {Math.max(1, Math.ceil(list.total / list.pageSize)) > 1 ? (
-            <form
-              aria-label={t("feedback.goToPage")}
-              className="flex items-center gap-1.5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const target = Number(goToPageRef.current?.value ?? "");
-                const pages = Math.max(1, Math.ceil(list.total / list.pageSize));
-                if (Number.isFinite(target) && target >= 1 && target <= pages) {
-                  setQuery({ ...query, page: Math.floor(target) });
-                }
-              }}
-            >
-              <label className="text-xs text-muted-foreground">{t("feedback.goToPage")}</label>
-              <input
-                ref={goToPageRef}
-                type="number"
-                min={1}
-                max={Math.max(1, Math.ceil(list.total / list.pageSize))}
-                defaultValue=""
-                placeholder={String(list.page)}
-                aria-label={t("feedback.goToPage")}
-                className="h-7 w-16 rounded-md border border-input bg-background px-1.5 text-xs"
-              />
-              <button
-                type="submit"
-                className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {t("feedback.search")}
-              </button>
-            </form>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }

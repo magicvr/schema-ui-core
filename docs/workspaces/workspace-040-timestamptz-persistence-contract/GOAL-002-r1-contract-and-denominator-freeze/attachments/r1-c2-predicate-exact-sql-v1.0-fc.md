@@ -1,0 +1,155 @@
+---
+id: r1-c2-predicate-exact-sql-v1.0-fc
+doc_type: design-attachment
+title: R1 C2 谓词 exact old/new SQL 单表 v1.0（冻结候选）
+status: freeze-candidate
+created: 2026-09-20
+updated: 2026-09-20
+parent: GOAL-002-r1-contract-and-denominator-freeze
+version: 1.0.0
+---
+
+# R1 C2 谓词 exact old/new SQL 单表 v1.0（冻结候选）
+
+> **状态：`freeze-candidate`。** 本文件是 A-029（现行 independent head）**F-I-006** 关闭要求点名的「**一张** exact old/new SQL + 迁移顺序 + 负例/NULL/sentinel 测试 ID」单表；它收口 `r1-c2-predicate-index-matrix-v0.1.md`（dependency 清单）与 `r1-c2-readwrite-predicate-spec-v0.1.md`（family 级）两源，并把 **Root** `D-012`（voucher 异常值政策）与 **Root** `D-013`（单调 `updated_at`）写进同一张表。
+>
+> **D-012/D-013 编号一律 Root/child 限定**（A-029 **F-I-018** 关闭要求）：本文件中 `Root D-012` = `GOAL-001/01-decision/D-012-voucher-invalid-value-policy.md`；`Root D-013` = `GOAL-001/01-decision/D-013-monotonic-updated-at-policy.md`；child `D-011` = `GOAL-002/01-decision/D-011-voucher-monotonic-policies.md`；child `D-012` = `GOAL-002/01-decision/D-012-v73-allocation-negative-truncation.md`（v73/截断承接，**不是** voucher 政策）。
+>
+> **old 列引用的代码事实**在本次落盘时逐处核对（行号见每行 `callsite`）；`apps/` 代码**未修改**。
+
+## 0. 表结构
+
+- `disposition` 取值：`DB`（迁移改列，运行时 SQL 同步改类型参数）/ `RT`（仅运行时读写改，迁移不改列形状）/ `DB+RT`（两者都改）。
+- 迁移顺序列给出同一 owner descriptor 内的语句次序（同 descriptor 内按 `m0..mN` 递增执行）。
+- 测试 ID 沿用 `r1-c2-per-column-conversion-contract-v1.0-fc.md` §2 的 `T-<#>-<kind>`，并追加谓词专用 `P-<#>-<kind>`（`NEG` 负例 / `NULL` 空值 / `SENT` sentinel / `ORD` 序 / `ROLLBACK` 回滚）。
+
+## 1. Sentinel 0→NULL 列（5 列，**Root** `D-012` 政策；child `D-011` 承接）
+
+| # | 列 | owner | disposition | old SQL（现行，逐字） | new SQL（目标） | callsite | 测试 |
+|--:|----|-------|-------------|------------------------|-----------------|----------|------|
+| 5 | `users.locked_until` | v74 | DB+RT | 读：`if *locked { clauses = "u.locked_until > ?" } else { clauses = "u.locked_until <= ?" }`（整数秒参数，`users_repository.go:498,500`）；写：`UPDATE users SET locked_until = ?`，插入时 `DEFAULT 0` | **已锁定分支**（`locked==true`，对位现行 `> ?`）：`u.locked_until IS NOT NULL AND u.locked_until > ?`；**未锁定分支**（`locked==false`，对位现行 `<= ?`）：`u.locked_until IS NULL OR u.locked_until <= ?`；写：`time.Time` 绑定或 NULL（session 结束清锁写 NULL） | `apps/api/modules/authsession/users_repository.go:496-503`；DDL `authsession/migration/migration.go:126,435` | `P-5-SENT`,`P-5-NULL`,`P-5-ORD` |
+| 6 | `users.last_login_failure_at` | v74 | DB+RT | 衰减比较（现行 SQL 在 `accounts.go`，**不是** `users_repository.go`）：`UPDATE users SET failed_login_count = CASE WHEN last_login_failure_at < ? THEN 1 ELSE failed_login_count + 1 END, last_login_failure_at = ?, updated_at = ? WHERE id = ?`；DDL `last_login_failure_at INTEGER/BIGINT NOT NULL DEFAULT 0`；另见写 0：`accounts.go:235`、`account_operations.go:181` | 读：`(u.last_login_failure_at IS NULL OR u.last_login_failure_at < ?)`（NULL = 无近期失败）；写：NULL 或 `Truncate(µs)` 时刻；**去除 `last_login_failure_at = 0` 写 0 路径**（改为写 NULL） | `authsession/accounts.go:194-201,235`；`authsession/account_operations.go:181`；DDL `authsession/migration/migration.go:208,220` | `P-6-SENT`,`P-6-NULL` |
+| 20 | `login_failures.locked_until` | v74 | DB+RT | `UPDATE login_failures SET fail_count = CASE WHEN updated_at < ? THEN 1 ELSE fail_count + 1 END, updated_at = ? WHERE user_id = ? AND ip = ?`；插入 `INSERT INTO login_failures (user_id, ip, fail_count, locked_until, updated_at) VALUES (?, ?, 1, 0, ?)`；读 `SELECT locked_until … ` 后 Go 侧 `lockedUntil > now.Unix()`；开锁 `UPDATE login_failures SET locked_until = ?, fail_count = 0, updated_at = ? …` | 插入：`locked_until` 绑定 NULL；读：`SELECT locked_until` 扫入 `sql.NullTime` → `lockedUntil.Valid && lockedUntil.Time.After(nowUTC)`；开锁：绑定 `time.Time`；窗口比较参数改 `time.Time` | `authsession/accounts_lock_source.go:67-71,78-79,101-102,115-128`；DDL `authsession/migration/migration.go:204,216` | `P-20-SENT`,`P-20-NULL`,`P-20-ORD` |
+| 34 | `mail_config.updated_at` | v73 | DB+RT | DDL `updated_at INTEGER/BIGINT NOT NULL DEFAULT 0`；读模型把 `0` 当未初始化 | DDL 去 `DEFAULT 0` + 可空；读：`updated_at IS NULL` = 未初始化；写：NULL 或 `Truncate(µs)` | `corepersistence/migration/migration.go:105,123`；`apps/api/internal/mail/runtime.go:169-176,308,382-390` | `P-34-SENT`,`P-34-NULL` |
+| 78 | `telegram_config.updated_at` | v86 | DB+RT | DDL `updated_at INTEGER/BIGINT NOT NULL DEFAULT 0` | 同 #34 | `channel/telegram/migration/migration.go:15,24`；`apps/api/internal/channel/telegram/runtime.go:166-177,395-405` | `P-78-SENT`,`P-78-NULL` |
+
+> **Root** `D-012-voucher-invalid-value-policy.md` 的三桶预检要求（0 / 负值 / 正值分别计数）对 **#5/#6/#20/#34/#72/#73/#78** 强制；预检脚本计入 owner descriptor 的 `preflight` 步骤（§6 `m0`），计数不达标即 fail closed。**注意**：child `D-012-v73-allocation-negative-truncation.md` 是 v73 allocation / 负瞬间承接，与本节 voucher 政策无关（F-I-018）。
+>
+> **负值（`< 0`）路径唯一性 + 适用范围（响应 A-030 F-I-002.2；政策范围经 A-042 更正）**：`< 0` **不进**任何 USING 分支。但它**并非对所有列都是错误**：
+>
+> - **仅 Root `D-012` 点名的 voucher 两列**（`vouchers.expires_at` / `vouchers.redeemed_at`）把负值视为数据损坏 → 由 `m0` 预检 fail closed。
+> - **其余全部时间列**：**Root `D-015` 明确「负 epoch 不是 sentinel」**，负值是**合法 instant**（epoch 之前），必须**正常转换**、**不得** fail closed。对应可执行断言见 `apps/api/internal/wcontracttest`（`TestNegativeMustFailClosed/ordinary_negative_is_valid_instant`）。
+> - `USING`/rebuild 承担：正值转换 + `= 0 → NULL`（sentinel 列）/ `IS NULL OR = 0 → NULL`（voucher 列）。
+>
+> `m0` 的 exact 形态（每个 sentinel 列一条，PG 与 SQLite 共用同一仓内 Go 预检函数）：
+>
+> ```sql
+> -- m0（每 sentinel 列一条；计数非零即 ROLLBACK，报 table/column/row 证据）
+> SELECT
+>   SUM(CASE WHEN "<col>" = 0  THEN 1 ELSE 0 END) AS bucket_zero,
+>   SUM(CASE WHEN "<col>" < 0  THEN 1 ELSE 0 END) AS bucket_negative,
+>   SUM(CASE WHEN "<col>" > 0  THEN 1 ELSE 0 END) AS bucket_positive
+> FROM "<table>";
+> -- 判定（★ A-042 更正后的唯一政策）：
+> --   仅 voucher 两列：#72/#73 —— bucket_negative > 0 → fail closed（Root D-012）
+> --   其余时间列：     bucket_negative 仅记录，**不**阻断（Root D-015：负 epoch 合法）
+> --   sentinel 列：     bucket_zero 允许并全部映射 NULL
+> --   非 sentinel 列出现 0：记录并按 epoch instant 转换；是否异常由业务判定，不由时间合同阻断
+> ```
+>
+> 此后各列的 USING/rebuild 分支一律只写 `= 0`（或 `IS NULL`），**不再出现 `< 0` 条件**。
+
+## 2. voucher / entitlement 异常值（**Root** `D-012` + child `D-011`，负值 fail closed）
+
+| # | 列 | owner | disposition | old SQL（现行，逐字） | new SQL（目标） | callsite | 测试 |
+|--:|----|-------|-------------|------------------------|-----------------|----------|------|
+| 72 | `vouchers.expires_at` | v85 | DB+RT | `SELECT id, batch_id, code_prefix, amount, currency, status, expires_at, redeemed_by, redeemed_at, created_at, updated_at …` 后 Go 侧 `if exp.Valid && exp.Int64 > 0 {`（`<=0` 一律当缺失） | **`<0` 的唯一机制 = `m0` 预检 fail closed**（不进入 USING；负值即事务回滚，见 §6 与下方 SQL）。**`USING` 只处理 `= 0 → NULL` + 正值**：`CASE WHEN "expires_at" = 0 THEN NULL ELSE date_trunc('microseconds', to_timestamp("expires_at"::double precision)) END`。运行时：`if exp.Valid {`（不再用 `>0` 判存在），过期判定用 `exp.Time.Before(nowUTC)` | `wallet/voucher/service.go:330,340` | `P-72-SENT`,`P-72-NEG` |
+| 73 | `vouchers.redeemed_at` | v85 | DB+RT | 同上，`if redAt.Valid && redAt.Int64 > 0 {` | 同 #72 的唯一机制与 USING（列名换 `redeemed_at`）；运行时 `if redAt.Valid {` | `wallet/voucher/service.go:347` | `P-73-SENT`,`P-73-NEG` |
+| 88 | `digital_entitlements.expires_at` | v87 | DB+RT | form CHECK：duration 要求 `expires_at IS NOT NULL`、count 要求 `expires_at IS NULL` | CHECK 谓词逐字保留，仅列类型改 `TEXT`/`timestamptz(6)`；重建后重放两类 form 断言 | `digitaloffer/migration/migration.go:57-73`；`digitaloffer/store/store.go:440-601` | `P-88-NULL`,`P-88-ORD` |
+
+## 3. 单调 `updated_at`（**Root** `D-013` + child `D-011`）
+
+| # | 列 | owner | disposition | old SQL（现行，逐字） | new SQL（目标） | callsite | 测试 |
+|--:|----|-------|-------------|------------------------|-----------------|----------|------|
+| 4 | `users.updated_at` | v74 | DB+RT | `nextUpdatedAt := now.Unix()`；`if nextUpdatedAt <= current.UpdatedAt.Unix() { nextUpdatedAt = current.UpdatedAt.Unix() + 1 }`；随后 `UPDATE users SET … updated_at = ?` | `nextUpdatedAt := now.UTC().Truncate(time.Microsecond)`；`if !nextUpdatedAt.After(current.UpdatedAt) { nextUpdatedAt = current.UpdatedAt.Add(time.Microsecond) }`；绑定 `time.Time` | `authsession/users_repository.go:232-234,253` | `P-4-MONO`（墙钟回拨 + 快速连续写） |
+| 11 | `roles.updated_at` | v74 | DB+RT | 同上整数秒 `+1` 语义 | `max(Truncate(µs) now, old + 1µs)` | `authsession/roles_repository.go:132-137` | `P-11-MONO` |
+
+> 语义等价性要求：单调不变量、cache/ETag 行为、`ORDER BY updated_at` 次序在三组用例下必须与迁移前一致（`P-4-MONO`/`P-11-MONO` 各含 wall-clock rollback、同微秒并发写、跨秒边界三例）。
+
+## 4. 运行时空值/状态谓词（RT 为主）
+
+| # | 列 | owner | disposition | old SQL（现行，逐字） | new SQL（目标） | callsite | 测试 |
+|--:|----|-------|-------------|------------------------|-----------------|----------|------|
+| 8 | `refresh_tokens.revoked_at` | v74 | RT | `UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL`；`… WHERE id = ? AND revoked_at IS NULL` | 谓词逐字保留；参数改 `time.Time` | `authsession/accounts.go:257,271,356`；`account_operations.go:64` | `P-8-NULL` |
+| 24/25 | `user_invites.consumed_at` / `revoked_at` | v74 | DB+RT | `consumed_at IS NULL AND revoked_at IS NULL AND expires_at > ?`（过期分支 `<= ?`）；`UPDATE user_invites SET revoked_at = ? WHERE id = ? AND consumed_at IS NULL AND revoked_at IS NULL` | 谓词逐字保留；`expires_at` 参数改 `time.Time` | `authsession/invites.go:200,206,297` | `P-24-NULL`,`P-25-NULL` |
+| 29/30 | `service_credentials.revoked_at` / `last_used_at` | v74 | DB+RT | `UPDATE service_credentials SET revoked_at = ?, updated_at = ? WHERE id = ? AND revoked_at IS NULL`；`SET last_used_at = ?, updated_at = ? …` | 谓词逐字保留；参数改 `time.Time` | `authsession/service_credentials.go:165,185,198` | `P-29-NULL`,`P-30-NULL` |
+| 38 | `notifications.read_at` | v81 | DB+RT | `where += " AND read_at IS NULL"`；`SELECT id FROM notifications WHERE user_id = ? AND read_at IS NOT NULL ORDER BY created_at ASC LIMIT ?`；`UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL`；`SELECT COUNT(*) … WHERE user_id = ? AND read_at IS NULL` | 谓词逐字保留；`read_at` 参数改 `time.Time`；`ORDER BY created_at ASC` 在 fixed-6 TEXT 上等价 | `authsession/notifications_repository.go:106,150,156,164,220,240` | `P-38-NULL`,`P-38-ORD` |
+| 57 | `recycle_items.restored_at` | v82 | DB+RT | 部分唯一索引 `CREATE UNIQUE INDEX idx_recycle_items_active ON recycle_items(resource, resource_id) WHERE restored_at IS NULL`；`where := "WHERE restored_at IS NULL"`；`UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`；`DELETE FROM recycle_items WHERE restored_at IS NULL` | 部分索引与三条谓词**逐字保留**，重建表后按同名重建索引；`restored_at` 参数改 `time.Time` | `recyclebin/migration/migration.go:30,48`；`recyclebin/store/repository.go:100,215,230` | `P-57-ORD`,`P-57-NULL` |
+| 61 | `task_runs.finished_at` | v83 | DB+RT | `SELECT id, task_id, status, started_at, COALESCE(finished_at, 0), COALESCE(detail, ''), created_at FROM task_runs … ORDER BY started_at DESC`；运行时写 `0` | 去掉 `COALESCE(finished_at, 0)`，直接选 `finished_at` 扫入 `sql.NullTime`；运行时写 NULL；`ORDER BY started_at DESC` 保留 | `scheduledtasks/store/repository.go:289-290,343-344`；`259-309,343-362` | `P-61-NULL` |
+| 41/44/45 | `jobs.lease_expires_at` / `finished_at` / `expires_at` | v76 | DB+RT | 六态 CHECK（逐字见下）；`OR (status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt < max_attempts)`；`WHERE id=? AND status='succeeded' AND expires_at <= ?`；`… AND expires_at <= ?`（清扫）；`ORDER BY created_at, id` | **CHECK 谓词逐字保留**（NULL 分支在类型转换后语义不变）；时间参数由 `toMillis(now)` 改 `time.Time`；`ORDER BY created_at, id` 保留 | `jobs/migration/migration.go:36-43,75-82`；`apps/api/internal/jobs/repository.go:89,244,256,266,271,282,288,300-301` | `P-41-ORD`,`P-44-NULL`,`P-45-NULL`,`P-41-ROLLBACK` |
+| 65 | `mfa_proofs.expires_at` | v80 | DB+RT | `DELETE FROM mfa_proofs WHERE user_id = ? AND expires_at <= ?` | 参数改 `time.Time` | `mfa/store/repository.go:273` | `P-65-ORD` |
+| 52 | `captcha_challenges.expires_at` | v79 | DB+RT | `DELETE FROM captcha_challenges WHERE expires_at <= ?`；`DELETE FROM captcha_challenges WHERE id = ? AND expires_at > ? AND answer_hash = ?` | 参数改 `time.Time` | `logincaptcha/store/repository.go:40,69` | `P-52-ORD` |
+| 18 | `password_recovery_challenges.expires_at` | v74 | DB+RT | `DELETE FROM password_recovery_challenges WHERE user_id = ? AND expires_at <= ?` | 参数改 `time.Time` | `authsession/recovery.go:287` | `P-18-ORD` |
+| 16 | `email_verification_challenges.expires_at` | v74 | DB+RT | `DELETE FROM email_verification_challenges WHERE user_id = ? AND expires_at <= ?` | 参数改 `time.Time` | `authsession/email_identity.go:259` | `P-16-ORD` |
+
+六态 CHECK（`jobs`，迁移后逐字保留，列类型改 `TEXT`/`timestamptz(6)`）：
+
+```sql
+CHECK (
+  (status = 'queued'    AND lease_owner IS NULL     AND lease_expires_at IS NULL     AND result IS NULL     AND error_code IS NULL     AND finished_at IS NULL     AND expires_at IS NULL)
+  OR (status = 'running'   AND lease_owner IS NOT NULL AND lease_expires_at IS NOT NULL AND result IS NULL     AND error_code IS NULL     AND finished_at IS NULL     AND expires_at IS NULL)
+  OR (status = 'succeeded' AND lease_owner IS NULL     AND lease_expires_at IS NULL     AND result IS NOT NULL AND error_code IS NULL     AND progress = 100 AND finished_at IS NOT NULL AND expires_at IS NOT NULL)
+  OR (status = 'failed'    AND lease_owner IS NULL     AND lease_expires_at IS NULL     AND result IS NULL     AND error_code IS NOT NULL AND finished_at IS NOT NULL AND expires_at IS NULL)
+  OR (status = 'cancelled' AND lease_owner IS NULL     AND lease_expires_at IS NULL     AND result IS NULL     AND error_code IS NULL     AND finished_at IS NOT NULL AND expires_at IS NULL)
+  OR (status = 'expired'   AND lease_owner IS NULL     AND lease_expires_at IS NULL     AND result IS NULL     AND error_code IS NULL     AND progress = 100 AND finished_at IS NOT NULL AND expires_at IS NOT NULL)
+)
+```
+
+## 5. 全 90 列谓词/索引/CHECK 变更清单（无遗漏口径）
+
+下列列**当前没有任何时间谓词/索引/CHECK**（纯读写列），迁移后同样无谓词；本表以「none」显式登记，避免「未列出 = 未检查」：
+
+| 处置 | 列（`#N`） | 计数 |
+|------|------------|-----:|
+| Sentinel 0→NULL（§1） | #5, #6, #20, #34, #78 | 5 |
+| voucher/entitlement 异常值（§2） | #72, #73, #88 | 3 |
+| 单调 updated_at（§3） | #4, #11 | 2 |
+| 运行时空值/状态谓词（§4） | #8, #16, #18, #24, #25, #29, #30, #38, #41, #44, #45, #52, #57, #61, #65 | 15 |
+| 仅 `ORDER BY`（保留，无类型相关改写） | #1, #2, #22, #31, #33, #35, #36, #37, #39, #56, #60, #67, #69, #70, #74, #76, #79, #82, #83, #87, #89 | 21 |
+| **none**（无谓词/索引/CHECK） | #3, #7, #9, #10, #12, #13, #14, #15, #17, #19, #21, #23, #26, #27, #28, #32, #40, #42, #43, #46, #47, #48, #49, #50, #51, #53, #54, #55, #58, #59, #62, #63, #64, #66, #68, #71, #75, #77, #80, #81, #84, #85, #86, #90 | 44 |
+
+合计 **5 + 3 + 2 + 15 + 21 + 44 = 90**。**核对方式**：每列的 `ORDER BY` 归属取自现行 SQL 逐字引用（下方列表），曾在上一版本被误标 `none` 的 `#22 user_password_history.created_at`、`#31 service_credentials.created_at`、`#33 mail_outbox.created_at`、`#60 task_runs.started_at`、`#67 wallet_accounts.created_at`、`#74 vouchers.created_at`、`#79 telegram_sessions.last_message_at` 已上移到 ORDER BY 组；`#62 task_runs.created_at` 原在 ORDER BY 组但现行 SQL 排序键是 `started_at`，已下移到 `none`（响应 A-030 F-I-006.3）。
+
+`ORDER BY` 行清单（逐字现行）：`wallet_accounts … ORDER BY created_at DESC, id DESC`（`wallet/store/repository.go:200`）、`wallet_ledger_entries … ORDER BY created_at DESC, id DESC`（`:782`）与 `ORDER BY created_at ASC, id ASC`（`:922`）、`wallet_reconciliation_runs … ORDER BY created_at DESC, id DESC`（`:987`）、`vouchers … ORDER BY created_at DESC`（`voucher/service.go:391`）、`mail_outbox … ORDER BY created_at DESC, id DESC`（`internal/mail/outbox.go:107`）、`operation_log` retention/archive 序（`operationlog/repository.go:172-177,312-337`；`retention.go:21-42`）、`telegram_sessions … last_message_at DESC`（`channel/telegram/store/repository.go:161-284`）与 inbound/outbound 序（`:125-179,375-384,608-724`）、`digital_offers/purchases/entitlements` 序（`digitaloffer/store/store.go:233,292,419,480,573,651`）、`task_runs … ORDER BY started_at DESC`（`scheduledtasks/store/repository.go:289-290,343-344`）、`user_password_history … ORDER BY created_at DESC, id DESC`（`authsession/password_policy.go:148,184`）、`refresh_tokens` 序（`authsession/account_operations.go:29`）、`service_credentials … ORDER BY created_at DESC, id DESC`（`authsession/service_credentials.go:91`）、`notifications … ORDER BY created_at DESC, id DESC`（`authsession/notifications_repository.go:164`）、`refresh_tokens/roles/…` 身份序同族。
+
+**jobs 四索引 exact old/new（逐字，响应 A-030 F-I-006.4）**：
+
+| 索引 | old（现行，逐字） | new（目标，逐字） |
+|------|-------------------|-------------------|
+| `idx_jobs_runnable` | `CREATE INDEX idx_jobs_runnable ON jobs(status, cancel_requested, lease_expires_at, created_at)`（`jobs/migration/migration.go:45`，PG 变体 `:84`） | 同文字重建；列已为 `timestamptz(6)`/TEXT。**列序与表达式不变** |
+| `idx_jobs_actor` | `CREATE INDEX idx_jobs_actor ON jobs(actor_id, kind, updated_at DESC)`（`:46`，PG `:85`） | 同文字重建；**列序含 `DESC` 不变** |
+| `idx_jobs_expiry` | `CREATE INDEX idx_jobs_expiry ON jobs(status, expires_at)`（`:47`，PG `:86`） | 同文字重建 |
+| `idx_jobs_created_at` | `CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC, id DESC)`（`:127`，v72 追加索引） | 同文字重建；**`IF NOT EXISTS` 与 `DESC, id DESC` 不变** |
+
+六态 CHECK（`jobs/migration/migration.go:36-43` SQLite / `:75-82` PG）在 v76 重建中**逐字保留**，仅列类型由 `INTEGER`/`BIGINT` 变为 `TEXT`/`timestamptz(6)`；`lease_expires_at`/`finished_at`/`expires_at` 的 `IS NULL` 分支语义不变（`P-41-ORD` 覆盖六态 + 四索引）。
+
+**序语义前提**：SQLite 目标为定宽 fixed-6 UTC TEXT，其**词法序 = 时刻序**（`T-*-SORT` 用例族逐列验证）；PG 为原生 `timestamptz`。所有 `ORDER BY` 的 id tie-break 保持不变；`idx_jobs_runnable` / `idx_jobs_actor` / `idx_jobs_expiry` / `idx_jobs_created_at`、`idx_recycle_items_active` 重建后列序与部分谓词逐字不变（`P-41-ORD`/`P-57-ORD`）。
+
+## 6. 迁移顺序（每个 owner descriptor 内）
+
+```text
+m0  preflight：逐列 0 / 负值 / 正值分桶计数。**仅 voucher #72/#73 的 `bucket_negative > 0` 触发回滚（Root D-012）**；其余列的负值按 Root D-015 视为合法 instant 并继续；sentinel 列的 `bucket_zero` 映射 NULL；计数不符即 fail closed
+m1  放开受影响约束：DROP DEFAULT / DROP NOT NULL / DROP CHECK / DROP 部分索引（仅被本 descriptor 触及者）
+m2  逐列转换：PG 用 §1 E1/E2/E3 的 ALTER … TYPE … USING；SQLite 用 <t>_new 重建 + codec 拷贝
+m3  重建约束：CHECK / NOT NULL / 部分唯一索引 / 普通索引（列序与谓词逐字不变）
+m4  校验：information_schema 类型与精度（PG）/ fixed-6 TEXT 形状与词法序（SQLite）；FK/完整性检查
+m5  写 ledger：descriptor version/name/checksum 追加（append-only；v1–v72 不变）
+```
+
+- **不可逆点**（`m2` 内，回滚只能靠事务或 m0 的转换前 snapshot）：0→NULL、微秒截断、非规范 TEXT fail closed。
+- **owner 边界**：`core.persistence` 拥有 `schema_migrations.applied_at` 的转换，但 **Store runner 仍是该列的唯一写入者**（Root `D-011`）；v73 与 v74 的边界即 `schema_migrations`（v73）vs `system_data_reconcile` + auth 表（v74）。
+
+## 7. 声明
+
+- 本文件为冻结候选；**不**声称 `apps/` 下任何代码/迁移/测试已修改。A-029 点名「现行谓词仍为整数」在本文件中是 **old 列**的事实陈述，不是已修复声明。
+- 本文件闭合 F-I-006 的关闭要求中「一张 exact old/new SQL 表 + 迁移顺序 + 负例/NULL/sentinel 测试 ID + voucher/monotonic 两族」「Root D-012/D-013 进入该表」四项；并按其要求以 Root/child 限定 D-012/D-013（F-I-018 的冻结载体部分）。是否接受由 independent 复审判定。

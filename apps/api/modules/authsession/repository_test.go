@@ -2,7 +2,6 @@ package authsession
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/store"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/testsupport"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 func openRepository(t *testing.T, name string, seed bool) (*Repository, *store.Store) {
@@ -22,11 +22,15 @@ func openRepository(t *testing.T, name string, seed bool) (*Repository, *store.S
 	return NewRepository(st), st
 }
 
+// repositoryQueryInt and repositoryExec go through kernel.Tx (not the raw
+// WithTx sqlite seam) so test SQL sees the same binding/scanning adapters as
+// production: workspace-040 R2 made the time columns canonical TEXT, and a raw
+// *sql.Tx would store a bound time.Time in the driver's own layout.
 func repositoryQueryInt(t *testing.T, st *store.Store, query string, args ...any) int {
 	t.Helper()
 	var value int
-	if err := st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		return tx.QueryRow(query, args...).Scan(&value)
+	if err := st.Run(context.Background(), func(tx kernel.Tx) error {
+		return tx.QueryRow(context.Background(), query, args...).Scan(&value)
 	}); err != nil {
 		t.Fatalf("query %q: %v", query, err)
 	}
@@ -35,8 +39,8 @@ func repositoryQueryInt(t *testing.T, st *store.Store, query string, args ...any
 
 func repositoryExec(t *testing.T, st *store.Store, query string, args ...any) error {
 	t.Helper()
-	return st.WithTx(context.Background(), func(tx *sql.Tx) error {
-		_, err := tx.Exec(query, args...)
+	return st.Run(context.Background(), func(tx kernel.Tx) error {
+		_, err := tx.Exec(context.Background(), query, args...)
 		return err
 	})
 }

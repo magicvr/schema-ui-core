@@ -78,7 +78,7 @@ func TestRegisterBootstrapProjectsRuntimeAvailability(t *testing.T) {
 		want string
 	}{
 		{mode: "normal", want: "normal"},
-		{mode: "maintenance", want: "maintenance"},
+		{mode: "maintenance", want: "degraded"},
 		{mode: "degraded", want: "degraded"},
 		{mode: "read-only", want: "degraded"},
 	} {

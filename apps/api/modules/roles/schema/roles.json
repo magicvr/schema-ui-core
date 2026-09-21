@@ -202,6 +202,16 @@
         }
       },
       {
+        "type": "custom",
+        "id": "roles-batch-export",
+        "component": "jobs-batch-export",
+        "props": {
+          "targetTable": "roles-table",
+          "resource": "roles",
+          "slot": "list-page-actions"
+        }
+      },
+      {
         "type": "table",
         "id": "roles-table",
         "permissionCascade": {
@@ -215,6 +225,9 @@
           "delete": "$context.user.permissions contains \"roles.write\""
         },
         "props": {
+          "selection": {
+            "mode": "multiple"
+          },
           "columns": [
             {
               "field": "id",

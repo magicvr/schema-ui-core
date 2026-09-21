@@ -90,10 +90,10 @@ func (r *Repository) CreateRoleWithGrants(key, name string, permissions, menuIte
 		if exists {
 			return ErrRoleTaken
 		}
-		nowUnix := now.Unix()
+		nowAt := now.UTC().Truncate(time.Microsecond)
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO roles (id, key, name, system, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)`,
-			"role-"+key, key, name, nowUnix, nowUnix,
+			"role-"+key, key, name, nowAt, nowAt,
 		); err != nil {
 			return fmt.Errorf("insert role: %w", err)
 		}
@@ -129,9 +129,11 @@ func (r *Repository) UpdateRoleWithGrants(id string, patch RolePatch, now time.T
 		if patch.Name != nil {
 			name = strings.TrimSpace(*patch.Name)
 		}
-		updatedAt := now.Unix()
-		if updatedAt <= current.UpdatedAt.Unix() {
-			updatedAt = current.UpdatedAt.Unix() + 1
+		// Root D-013: roles.updated_at is monotonic per row at microsecond
+		// granularity (see users_repository.go for the same rule).
+		updatedAt := now.UTC().Truncate(time.Microsecond)
+		if !updatedAt.After(current.UpdatedAt) {
+			updatedAt = current.UpdatedAt.Add(time.Microsecond)
 		}
 		if _, err := tx.Exec(context.Background(), `UPDATE roles SET name = ?, updated_at = ? WHERE id = ?`, name, updatedAt, id); err != nil {
 			return fmt.Errorf("update role: %w", err)
@@ -403,8 +405,7 @@ func replaceRoleMenuItems(tx kernel.Tx, roleID string, ids []string) error {
 
 func scanRoleRow(row interface{ Scan(...any) error }, role *Role) error {
 	var system int
-	var createdAt, updatedAt int64
-	err := row.Scan(&role.ID, &role.Key, &role.Name, &system, &createdAt, &updatedAt)
+	err := row.Scan(&role.ID, &role.Key, &role.Name, &system, &role.CreatedAt, &role.UpdatedAt)
 	if errors.Is(err, kernel.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -412,8 +413,6 @@ func scanRoleRow(row interface{ Scan(...any) error }, role *Role) error {
 		return fmt.Errorf("scan role: %w", err)
 	}
 	role.System = system == 1
-	role.CreatedAt = time.Unix(createdAt, 0).UTC()
-	role.UpdatedAt = time.Unix(updatedAt, 0).UTC()
 	return nil
 }
 

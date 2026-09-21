@@ -2,9 +2,9 @@
 title: docs/vision · 规则面与本仓实例索引
 status: active
 created: 2026-07-29
-updated: 2026-08-26
+updated: 2026-09-21
 parent: null
-version: 0.12.0
+version: 0.13.2
 ---
 
 # docs/vision · 愿景层
@@ -33,7 +33,7 @@ version: 0.12.0
 
 | 路径 | 角色 |
 |------|------|
-| [reviews.md](reviews.md) | **稳定索引** + 当前 open required 投影 + 条目表 |
+| [reviews.md](reviews.md) | **稳定索引** + 当前 open required 投影（0） + 条目表（`VRev-001`～`VRev-105`） |
 | [reviews/](reviews/) | 平铺正式报告 `VRev-NNN-<slug>.md`（self / independent 共用编号序列） |
 | `docs/templates/vision/reviews-index.md` | 新索引复制源 |
 | `docs/templates/vision/review.md` | 单条 VRev 报告复制源 |
@@ -44,10 +44,12 @@ version: 0.12.0
 
 > 下列为本仓库**已落盘**的愿景实例，不是 core 预装模板。  
 > **权威组合状态**以 [roadmap.md](roadmap.md) / [reviews.md](reviews.md) / 各 `plans/VP-*.md` 为准；本表为发现入口（VRev-013 · F-V024）。
+>
+> **2026-09-21 发现快照**：当前无 active 交付 VP；最近关门 = [VP-040-timestamptz-persistence-contract](plans/VP-040-timestamptz-persistence-contract.md) `closed` v0.3.0，delivery workspace = `workspace-040-timestamptz-persistence-contract`，Root = `GOAL-001-timestamptz-persistence-contract` `done · 3/3`；VRev-105 `pass`，开放 required = 0。下方历史条目可能保留旧状态文字，不得覆盖权威组合索引。
 
 | 文件 | 状态 / 说明 |
 |------|-------------|
-| [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.2.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
+| [charter.md](charter.md) | **active** · `schema-ui-core-admin-foundation@0.4.0`；`primary_workspace` = workspace-001-mvp-admin-foundation |
 | [plans/VP-001-mvp-admin-foundation.md](plans/VP-001-mvp-admin-foundation.md) | **closed** · lead: workspace-001-mvp-admin-foundation |
 | [plans/VP-002-production-admin-foundation.md](plans/VP-002-production-admin-foundation.md) | **closed** · lead: workspace-002-production-admin-foundation |
 | [plans/VP-003-modular-admin-architecture.md](plans/VP-003-modular-admin-architecture.md) | **closed** · lead: workspace-003-modular-admin-architecture |
@@ -69,14 +71,15 @@ version: 0.12.0
 | [plans/VP-021-graceful-shutdown-and-connection-drain.md](plans/VP-021-graceful-shutdown-and-connection-drain.md) | **planned**（2026-08-26 立项 · 架构 RT-D02：优雅停机 / 连接排空合同） |
 | [plans/VP-009-production-hardening.md](plans/VP-009-production-hardening.md) | **active** · 共享基架**持续安全与健壮性程序** · lead: workspace-009-production-hardening（Root 长期容器） |
 | [plans/VP-010-design-implementation-conformance.md](plans/VP-010-design-implementation-conformance.md) | **active** · 设计意图—实现符合性**持续对齐程序** · lead: workspace-010-design-implementation-conformance（Root 长期容器；与 VP-009 正交） |
+| [plans/VP-040-timestamptz-persistence-contract.md](plans/VP-040-timestamptz-persistence-contract.md) | **closed**（2026-09-21 · v0.3.0 · VRev-105 `pass`）· 架构 C1 DB 时间列 timestamptz 持久化合同 · lead: workspace-040-timestamptz-persistence-contract · Root `GOAL-001-timestamptz-persistence-contract` `done · 3/3` |
 | [../architecture/module-architecture.md](../architecture/module-architecture.md) | VP-003 终态架构权威（Fx、Profile、Manifest、数据与生命周期边界） |
 | [../architecture/module-contribution-playbook.md](../architecture/module-contribution-playbook.md) | VP-004 一方模块贡献 playbook |
 | [dual-track-contract.md](dual-track-contract.md) | **done / historical** · Charter `@0.1.0` 双线意图记录；已由 VP-003 取代 |
 | [roadmap.md](roadmap.md) | 组合编排索引 |
 | [revisions.md](revisions.md) | Charter 修订台账（`VR-*`） |
-| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-043`；open required = 0） |
+| [reviews.md](reviews.md) | Vision Review 稳定索引（`VRev-001`～`VRev-105`；open required = 0） |
 | [reviews/](reviews/) | 正式报告目录 |
-| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + 17 delivery/lead） |
+| [workspaces.md](workspaces.md) | 工作区贡献图（1 primary + delivery/history workspaces；最近交付 workspace-040 已关门） |
 | [protocol-inventory-v2.7.0.md](protocol-inventory-v2.7.0.md) | 固定上游协议全量实施清单（`F-V001` 证据；整份契约收口见 VP-006） |
 | [../workspace-001-mvp-admin-foundation/](../workspaces/workspace-001-mvp-admin-foundation/) | primary · Root `GOAL-001-mvp-VP-006 lead（closed 历史绑定） |
 | [../workspace-006-design-system-and-ui-experience/](../workspaces/workspace-006-design-system-and-ui-experience/) | delivery · VP-005 lead（closed 历史绑定） |

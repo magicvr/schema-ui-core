@@ -18,6 +18,7 @@ import { readdirSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync, cpSyn
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { npmjsPackageName } from "./npmjs-package-name.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -71,9 +72,9 @@ try {
     execFileSync("tar", ["-xzf", path.join(stage, `${base}.tgz`), "-C", dir], { shell: process.platform === "win32" });
     const pkgPath = path.join(dir, "package/package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-    // 包名 = scope + 解包 json 的 name 尾段（兼容 pack 出的两种命名：schema-ui-* 与 magicvr-schema-ui-*）。
-    const namePart = (pkg.name || base).includes("/") ? (pkg.name || base).split("/").pop() : (pkg.name || base);
-    const pkgName = `${scope}/${namePart}`;
+    // 内部构建名（@schema-ui/<name>）与 pnpm tarball 名都映射到公开
+    // @magicvr/schema-ui-<name>；不能直接取 scope/name 的最后一段。
+    const pkgName = npmjsPackageName(pkg.name || base, scope);
     const version = pkg.version || (() => { const m = base.match(/-(\d+\.\d+\.\d+)$/); return m ? m[1] : ""; })();
     pkg.name = pkgName;
     // scoped 包默认 private：显式公开（免费账号私有包发布会被 E402 拒绝），

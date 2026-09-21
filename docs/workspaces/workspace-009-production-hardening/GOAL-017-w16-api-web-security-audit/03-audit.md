@@ -39,7 +39,7 @@ version: 0.2.0
 
 **S5 完成**：A-003 独立验证审计 verdict = pass，F-001/F-002 均为 genuine fixed。
 
-**F-003 处置**：D-002 用户裁决接受 accepted-residual 延期到后续波次。
+**F-003 处置**：D-002 用户裁决接受 accepted-residual 延期到后续波次；残余处置记录见 [F-003-residual-resolution.md](attachments/F-003-residual-resolution.md)。
 
 **当前状态**: S1-S5 完成，准备进入 S6 关门准备（文档更新、残余登记、Git checkpoint）。
 

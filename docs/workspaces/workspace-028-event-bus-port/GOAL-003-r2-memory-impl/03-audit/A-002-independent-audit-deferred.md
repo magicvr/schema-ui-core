@@ -3,7 +3,7 @@ id: A-002
 source: independent
 date: 2026-09-01
 scope: R2 全部（Memory 实现 + config + composition）
-verdict: deferred
+verdict: conditional
 status: blocked
 ---
 

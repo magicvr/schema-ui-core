@@ -12,6 +12,11 @@ import (
 	walletstore "github.com/magicvr/schema-ui-core/apps/api/modules/wallet/store"
 )
 
+// epoch is the Unix zero instant. Root D-012 makes a negative instant in
+// vouchers.expires_at / vouchers.redeemed_at data corruption; the write paths
+// fail closed instead of storing it.
+var epoch = time.Unix(0, 0).UTC()
+
 // SubjectVerifier checks whether a subject exists.
 type SubjectVerifier interface {
 	SubjectExists(ctx context.Context, id string) (bool, error)
@@ -46,6 +51,11 @@ func (s *Service) GenerateBatch(ctx context.Context, batchID string, count int, 
 	}
 	if currency == "" {
 		currency = walletstore.DefaultCurrency
+	}
+	// Root D-012: `0` was the legacy "absent" sentinel (now NULL); a negative
+	// instant in this column is data corruption and the write fails closed.
+	if expiresAt != nil && expiresAt.Before(epoch) {
+		return nil, fmt.Errorf("voucher: expires_at instant is data corruption: %w", ErrInvalidInput)
 	}
 
 	generated := make([]GeneratedVoucher, count)
@@ -83,7 +93,7 @@ func (s *Service) GenerateBatch(ctx context.Context, batchID string, count int, 
 		res, err := tx.Exec(ctx,
 			`INSERT INTO voucher_batches (batch_id, created_at, updated_at) VALUES (?, ?, ?)
 			 ON CONFLICT (batch_id) DO NOTHING`,
-			batchID, now.Unix(), now.Unix(),
+			batchID, now, now,
 		)
 		if err != nil {
 			return fmt.Errorf("register voucher batch: %w", err)
@@ -97,14 +107,14 @@ func (s *Service) GenerateBatch(ctx context.Context, batchID string, count int, 
 		}
 		for _, g := range generated {
 			v := g.Voucher
-			var exp sql.NullInt64
+			var exp sql.NullTime
 			if v.ExpiresAt != nil {
-				exp = sql.NullInt64{Int64: v.ExpiresAt.Unix(), Valid: true}
+				exp = sql.NullTime{Time: *v.ExpiresAt, Valid: true}
 			}
 			_, err := tx.Exec(ctx,
 				`INSERT INTO vouchers (id, batch_id, code_hash, code_prefix, amount, currency, status, expires_at, created_at, updated_at)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				v.ID, v.BatchID, v.CodeHash, v.CodePrefix, v.Amount, v.Currency, string(v.Status), exp, v.CreatedAt.Unix(), v.UpdatedAt.Unix(),
+				v.ID, v.BatchID, v.CodeHash, v.CodePrefix, v.Amount, v.Currency, string(v.Status), exp, v.CreatedAt, v.UpdatedAt,
 			)
 			if err != nil {
 				return fmt.Errorf("insert voucher: %w", err)
@@ -173,15 +183,20 @@ type accountOpener func(tx kernel.Tx) (*walletstore.Account, error)
 
 func (s *Service) redeemInto(ctx context.Context, code string, now time.Time, redeemedByID, actorName string, open accountOpener) (*RedeemResult, error) {
 	codeHash := HashCode(code)
+	// Root D-012: redeemed_at is one of the two corruption-guarded voucher
+	// columns; a negative instant must fail closed instead of being stored.
+	if now.Before(epoch) {
+		return nil, fmt.Errorf("voucher: redeemed_at instant is data corruption: %w", ErrInvalidInput)
+	}
 
 	var result RedeemResult
 	err := s.runner.Run(ctx, func(tx kernel.Tx) error {
 		var (
 			id, batchID, storedHash, prefix, currency, status string
 			amount                                            int64
-			expiresAt, redeemedAt                             sql.NullInt64
+			expiresAt, redeemedAt                             sql.NullTime
 			redeemedBy                                        sql.NullString
-			cr, up                                            int64
+			cr, up                                            time.Time
 		)
 		row := tx.QueryRow(ctx,
 			`SELECT id, batch_id, code_hash, code_prefix, amount, currency, status, expires_at, redeemed_by, redeemed_at, created_at, updated_at
@@ -212,14 +227,16 @@ func (s *Service) redeemInto(ctx context.Context, code string, now time.Time, re
 		if currency != "" && currency != walletstore.DefaultCurrency {
 			return ErrCurrencyMismatch
 		}
-		if expiresAt.Valid && expiresAt.Int64 > 0 && expiresAt.Int64 < now.Unix() {
+		// Root D-012: `Valid` alone means present (the legacy `> 0` absence test
+		// is gone); expiry is a time comparison against the redeem instant.
+		if expiresAt.Valid && expiresAt.Time.Before(now) {
 			return ErrVoucherExpired
 		}
 
 		// CAS: only transition from 'unused' to 'redeemed'.
 		res, err := tx.Exec(ctx,
 			`UPDATE vouchers SET status = ?, redeemed_by = ?, redeemed_at = ?, updated_at = ? WHERE id = ? AND status = ?`,
-			string(StatusRedeemed), redeemedByID, now.Unix(), now.Unix(), id, string(StatusUnused),
+			string(StatusRedeemed), redeemedByID, now, now, id, string(StatusUnused),
 		)
 		if err != nil {
 			return fmt.Errorf("update voucher status: %w", err)
@@ -299,7 +316,7 @@ func (s *Service) VoidVoucher(ctx context.Context, voucherID string, now time.Ti
 		}
 		res, err := tx.Exec(ctx,
 			`UPDATE vouchers SET status = ?, updated_at = ? WHERE id = ? AND status = ?`,
-			string(StatusVoid), now.Unix(), voucherID, string(StatusUnused),
+			string(StatusVoid), now, voucherID, string(StatusUnused),
 		)
 		if err != nil {
 			return err
@@ -322,9 +339,9 @@ func (s *Service) GetVoucher(ctx context.Context, voucherID string) (*Voucher, e
 		return nil, ErrNotFound
 	}
 	var v Voucher
-	var exp, redAt sql.NullInt64
+	var exp, redAt sql.NullTime
 	var redBy sql.NullString
-	var cr, up int64
+	var cr, up time.Time
 	err := s.runner.Run(ctx, func(tx kernel.Tx) error {
 		row := tx.QueryRow(ctx,
 			`SELECT id, batch_id, code_prefix, amount, currency, status, expires_at, redeemed_by, redeemed_at, created_at, updated_at
@@ -337,19 +354,20 @@ func (s *Service) GetVoucher(ctx context.Context, voucherID string) (*Voucher, e
 			}
 			return err
 		}
-		if exp.Valid && exp.Int64 > 0 {
-			t := time.Unix(exp.Int64, 0).UTC()
+		// Root D-012: `Valid` alone means present; `<= 0` is no longer absence.
+		if exp.Valid {
+			t := exp.Time.UTC()
 			v.ExpiresAt = &t
 		}
 		if redBy.Valid {
 			v.RedeemedBy = &redBy.String
 		}
-		if redAt.Valid && redAt.Int64 > 0 {
-			t := time.Unix(redAt.Int64, 0).UTC()
+		if redAt.Valid {
+			t := redAt.Time.UTC()
 			v.RedeemedAt = &t
 		}
-		v.CreatedAt = time.Unix(cr, 0).UTC()
-		v.UpdatedAt = time.Unix(up, 0).UTC()
+		v.CreatedAt = cr.UTC()
+		v.UpdatedAt = up.UTC()
 		return nil
 	})
 	if err != nil {
@@ -398,25 +416,26 @@ func (s *Service) ListVouchers(ctx context.Context, batchID string, status strin
 
 		for rows.Next() {
 			var v Voucher
-			var exp, redAt sql.NullInt64
+			var exp, redAt sql.NullTime
 			var redBy sql.NullString
-			var cr, up int64
+			var cr, up time.Time
 			if err := rows.Scan(&v.ID, &v.BatchID, &v.CodePrefix, &v.Amount, &v.Currency, &v.Status, &exp, &redBy, &redAt, &cr, &up); err != nil {
 				return err
 			}
-			if exp.Valid && exp.Int64 > 0 {
-				t := time.Unix(exp.Int64, 0).UTC()
+			// Root D-012: `Valid` alone means present; `<= 0` is no longer absence.
+			if exp.Valid {
+				t := exp.Time.UTC()
 				v.ExpiresAt = &t
 			}
 			if redBy.Valid {
 				v.RedeemedBy = &redBy.String
 			}
-			if redAt.Valid && redAt.Int64 > 0 {
-				t := time.Unix(redAt.Int64, 0).UTC()
+			if redAt.Valid {
+				t := redAt.Time.UTC()
 				v.RedeemedAt = &t
 			}
-			v.CreatedAt = time.Unix(cr, 0).UTC()
-			v.UpdatedAt = time.Unix(up, 0).UTC()
+			v.CreatedAt = cr.UTC()
+			v.UpdatedAt = up.UTC()
 			list = append(list, v)
 		}
 		return rows.Err()

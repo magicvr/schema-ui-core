@@ -154,7 +154,7 @@ describe("DataTable", () => {
     );
     const retry = container.querySelector("[data-table-retry]") as HTMLButtonElement | null;
     expect(retry).not.toBeNull();
-    retry?.click();
+    await act(async () => retry?.click());
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
@@ -234,6 +234,23 @@ describe("DataTable", () => {
     expect(mobile?.querySelectorAll("li").length).toBe(2);
     expect(mobile?.textContent).toContain("Acme Console");
     expect(mobile?.textContent).toContain("Northwind Sales");
+  });
+
+  it("renders a supplied footer inside the list surface", async () => {
+    const container = await renderTable(
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={rowKey}
+        footer={<span data-testid="table-footer-content">Footer</span>}
+      />,
+    );
+    const surface = container.querySelector('[data-table-surface="true"]');
+    const footer = container.querySelector('[data-table-footer="true"]');
+    expect(surface).not.toBeNull();
+    expect(footer).not.toBeNull();
+    expect(surface?.contains(footer)).toBe(true);
+    expect(footer?.querySelector('[data-testid="table-footer-content"]')).not.toBeNull();
   });
 
   it("truncates a truncate column with a full-text title affordance (W4 · GOAL-005)", async () => {

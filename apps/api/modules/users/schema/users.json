@@ -310,6 +310,16 @@
     "id": "users",
     "children": [
       {
+        "type": "custom",
+        "id": "users-batch-export",
+        "component": "jobs-batch-export",
+        "props": {
+          "targetTable": "users-table",
+          "resource": "users",
+          "slot": "list-page-actions"
+        }
+      },
+      {
         "type": "form",
         "id": "users-search",
         "props": {
@@ -378,6 +388,10 @@
           "delete": "$context.user.permissions contains \"users.write\""
         },
         "props": {
+          "rowKey": "id",
+          "selection": {
+            "mode": "multiple"
+          },
           "columns": [
             {
               "field": "id",

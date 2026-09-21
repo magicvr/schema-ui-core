@@ -38,8 +38,8 @@ func inviteToMap(inv *authsession.Invite) map[string]any {
 		"roles":     inv.Roles,
 		"invitedBy": inv.InvitedBy,
 		"email":     "",
-		"expiresAt": inv.ExpiresAt.UTC().Format(time.RFC3339),
-		"createdAt": inv.CreatedAt.UTC().Format(time.RFC3339),
+		"expiresAt": FormatWireTime(inv.ExpiresAt),
+		"createdAt": FormatWireTime(inv.CreatedAt),
 		"status":    "pending",
 	}
 	if inv.Email != nil {

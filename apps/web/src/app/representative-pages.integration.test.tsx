@@ -19,6 +19,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/app/App";
 import { I18nProvider } from "@/i18n/runtime";
 import { validateAppManifest, type AppManifest } from "@/protocol/app-manifest";
+// GOAL-004 R3: the users page declares the async batch-export trigger, so the
+// component must be registered or the page logs an unknown-custom placeholder.
+import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 
 const MANIFEST_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -404,7 +409,7 @@ describe("representative pages through the admin manifest fixture (GOAL-004)", (
 
   it("fails closed when the users data source is unreachable on a list page", async () => {
     const container = await renderApp("/data-table", {}, realFixtures(), 500);
-    expect(container.textContent).toContain("resource fetch failed");
+    expect(container.textContent).toContain("This service is temporarily unavailable");
   });
 
   it("renders the data-display page (statCard + chart over /api/roles)", async () => {

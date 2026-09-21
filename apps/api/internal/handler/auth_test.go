@@ -108,8 +108,8 @@ func TestAccountLockLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u2.FailedLoginCount != 0 || u2.LockedUntil != 0 {
-		t.Fatalf("counter not reset: failed=%d lockedUntil=%d", u2.FailedLoginCount, u2.LockedUntil)
+	if u2.FailedLoginCount != 0 || u2.LockedUntil.Valid {
+		t.Fatalf("counter not reset: failed=%d lockedUntil=%v", u2.FailedLoginCount, u2.LockedUntil)
 	}
 }
 

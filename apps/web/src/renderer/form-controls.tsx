@@ -5,6 +5,7 @@ import { ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ListFilterPanel } from "@/components/list-filter-panel";
 import { resolveTextProp, type MessageParams } from "@/i18n/catalog";
 import { useTranslate } from "@/i18n/runtime";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,8 @@ export interface FormControlsProps {
    * icon + clear affordance. Search schemas keep their exact JSON shape.
    */
   searchMode?: boolean;
+  /** Submitted search-mode filter ids used only for the collapsed hint. */
+  activeFilterIds?: string[];
   /** A-003: action cluster (Reset button) rendered inside the
    * search-mode grid so it aligns with the field row. */
   actionSlot?: ReactNode;
@@ -1128,6 +1131,7 @@ export function FormControls({
   columns,
   fetcher,
   searchMode: searchModeProp,
+  activeFilterIds,
   actionSlot,
   searchButtonSlot,
 }: FormControlsProps) {
@@ -1146,38 +1150,52 @@ export function FormControls({
     4: "sm:grid-cols-4",
   };
   const gridClass = cols !== undefined ? GRID_COL_CLASSES[cols] : undefined;
+  const fieldItems = fields.map((field) => (
+    <FieldControl
+      key={field.id}
+      field={field}
+      values={values}
+      onChange={onChange}
+      disabled={disabled || (fieldDisabled?.(field.id) ?? false)}
+      // ADR-0040: readOnly fields render non-editable; their values stay
+      // in the form state and the submit projection.
+      readOnly={field.readOnly === true}
+      idPrefix={idPrefix}
+      onUpload={onUpload}
+      t={t}
+      error={fieldErrors?.[field.id]}
+      fetcher={fetcher}
+      searchMode={searchMode}
+      searchButtonSlot={searchButtonSlot}
+      paired={searchMode === true && searchButtonSlot !== undefined}
+    />
+  ));
   return (
     <div
       data-form-controls="design-system"
-      data-form-columns={cols !== undefined ? String(cols) : "1"}
+      data-form-columns={searchMode ? "4" : cols !== undefined ? String(cols) : "1"}
       data-form-search-mode={searchMode ? "true" : undefined}
       className={
         searchMode
-          ? "grid grid-cols-1 items-end gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          ? "w-full min-w-0"
           : cn("grid gap-4 grid-cols-1", gridClass)
       }
     >
-      {fields.map((field) => (
-        <FieldControl
-          key={field.id}
-          field={field}
-          values={values}
-          onChange={onChange}
-          disabled={disabled || (fieldDisabled?.(field.id) ?? false)}
-          // ADR-0040: readOnly fields render non-editable; their values stay
-          // in the form state and the submit projection.
-          readOnly={field.readOnly === true}
-          idPrefix={idPrefix}
-          onUpload={onUpload}
-          t={t}
-          error={fieldErrors?.[field.id]}
-          fetcher={fetcher}
-          searchMode={searchMode}
-          searchButtonSlot={searchButtonSlot}
-          paired={searchMode === true && searchButtonSlot !== undefined}
+      {searchMode ? (
+        <ListFilterPanel
+          items={fieldItems}
+          itemIds={fields.map((field) => field.id)}
+          activeItemIds={activeFilterIds}
+          actionSlot={actionSlot}
+          surface="plain"
+          className="w-full"
         />
-      ))}
-      {actionSlot !== undefined ? actionSlot : null}
+      ) : (
+        <>
+          {fieldItems}
+          {actionSlot !== undefined ? actionSlot : null}
+        </>
+      )}
     </div>
   );
 }

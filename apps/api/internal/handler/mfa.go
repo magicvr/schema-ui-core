@@ -197,7 +197,16 @@ func MFARoutes(a *auth.Authenticator, service MFASelfService, operations operati
 			writeLocalizedError(w, r, http.StatusInternalServerError, "INTERNAL", "could not read MFA status")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"enabled": enabled, "enrolledAt": enrolledAt})
+		// workspace-040 R3-A: the instant goes through the shared fixed-6
+		// formatter, and "not enrolled" stays JSON null. Writing the raw
+		// time.Time let encoding/json emit a variable-width value ("...T12:00:00Z"
+		// / "...T12:00:00.9Z") and, on the zero value, the fabricated year-1
+		// instant "0001-01-01T00:00:00Z" — while the client type is `string | null`.
+		row := map[string]any{"enabled": enabled, "enrolledAt": nil}
+		if !enrolledAt.IsZero() {
+			row["enrolledAt"] = FormatWireTime(enrolledAt)
+		}
+		writeJSON(w, http.StatusOK, row)
 	})))
 
 	// Enroll: one-time secret + recovery codes (pending until confirm).

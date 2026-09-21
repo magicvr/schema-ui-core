@@ -28,8 +28,10 @@ author: govern orchestrator（S2 实施 + S3 回归）
 |------|------|
 | Go 全量 `go test ./...` | **0 FAIL** |
 | vitest 全量 | **81 文件 / 1116 用例全过** |
-| tsc --noEmit | **0** |
+| tsc --noEmit | **0**（勘误 2026-09-18：裸命令空转，非有效类型校验；本表 `npm run build` 的 `tsc -b` 已实质覆盖，见下注） |
 | npm run build | **成功**（chunk 警告既有） |
+
+> **勘误注记（事后追加 2026-09-18，不改本条结论）**：上表 `tsc --noEmit` 为裸命令，在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；同表 `npm run build` 走 `tsc -b && vite build`，类型检查实质由该步覆盖。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。
 
 ## go 消费判定（VP-010 接口）
 

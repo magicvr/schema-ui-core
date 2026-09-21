@@ -11,6 +11,7 @@ package authsession
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -62,22 +63,24 @@ func (r *Repository) recordLoginFailureForOnce(userID, ip string, threshold int,
 	source := normalizeLoginSource(ip)
 	locked := false
 	err := r.withTx("record login failure for source", func(tx kernel.Tx) error {
-		windowStart := now.Add(-lockCounterWindow).Unix()
+		windowStart := now.Add(-lockCounterWindow)
 		res, err := tx.Exec(context.Background(),
 			`UPDATE login_failures SET
 			   fail_count = CASE WHEN updated_at < ? THEN 1 ELSE fail_count + 1 END,
 			   updated_at = ?
 			 WHERE user_id = ? AND ip = ?`,
-			windowStart, now.Unix(), userID, source,
+			windowStart, now, userID, source,
 		)
 		if err != nil {
 			return fmt.Errorf("bump source failure: %w", err)
 		}
 		if affected, rerr := res.RowsAffected(); rerr == nil && affected == 0 {
+			// D-001 §2 #20: the legacy 0 sentinel became NULL, so a fresh row
+			// carries no lock window instead of "locked at epoch".
 			if _, ierr := tx.Exec(context.Background(),
 				`INSERT INTO login_failures (user_id, ip, fail_count, locked_until, updated_at)
-				 VALUES (?, ?, 1, 0, ?)`,
-				userID, source, now.Unix(),
+				 VALUES (?, ?, 1, NULL, ?)`,
+				userID, source, now,
 			); ierr != nil {
 				if kernel.IsUniqueViolation(ierr) {
 					return errSourceInsertRace
@@ -99,7 +102,7 @@ func (r *Repository) recordLoginFailureForOnce(userID, ip string, threshold int,
 		locked = true
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE login_failures SET locked_until = ?, fail_count = 0, updated_at = ? WHERE user_id = ? AND ip = ?`,
-			lockedUntil.Unix(), now.Unix(), userID, source,
+			lockedUntil, now, userID, source,
 		); err != nil {
 			return fmt.Errorf("open source lock window: %w", err)
 		}
@@ -112,7 +115,10 @@ func (r *Repository) recordLoginFailureForOnce(userID, ip string, threshold int,
 // lock window. A storage error returns fail-closed (the caller surfaces it
 // rather than treating the source as unlocked).
 func (r *Repository) LoginLockedFor(userID, ip string, now time.Time) (bool, error) {
-	var lockedUntil int64
+	// D-001 §2 #20: the column is nullable after v74 — NULL means no lock
+	// window was ever opened for the pair, so absence is "not locked" rather
+	// than an epoch instant.
+	var lockedUntil sql.NullTime
 	err := r.withTx("read source lock", func(tx kernel.Tx) error {
 		return tx.QueryRow(context.Background(),
 			`SELECT locked_until FROM login_failures WHERE user_id = ? AND ip = ?`,
@@ -125,7 +131,7 @@ func (r *Repository) LoginLockedFor(userID, ip string, now time.Time) (bool, err
 	if err != nil {
 		return false, fmt.Errorf("read source lock: %w", err)
 	}
-	return lockedUntil > now.Unix(), nil
+	return lockedUntil.Valid && lockedUntil.Time.After(now.UTC()), nil
 }
 
 // ResetLoginFailuresFor deletes every source-scoped counter/lock row for the

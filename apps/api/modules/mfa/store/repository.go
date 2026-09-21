@@ -59,20 +59,17 @@ type Proof struct {
 // GetState returns the MFA state for one user.
 func (r *Repository) GetState(userID string) (*State, error) {
 	var s State
-	var created, updated int64
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		err := tx.QueryRow(context.Background(),
 			`SELECT user_id, status, totp_secret_ciphertext, recovery_codes_hash, last_used_step, created_at, updated_at
 			 FROM user_mfa WHERE user_id = ?`, userID,
-		).Scan(&s.UserID, &s.Status, &s.SecretCiphertext, &s.RecoveryCodesHash, &s.LastUsedStep, &created, &updated)
+		).Scan(&s.UserID, &s.Status, &s.SecretCiphertext, &s.RecoveryCodesHash, &s.LastUsedStep, &s.CreatedAt, &s.UpdatedAt)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
 			return fmt.Errorf("get mfa state: %w", err)
 		}
-		s.CreatedAt = time.Unix(created, 0)
-		s.UpdatedAt = time.Unix(updated, 0)
 		return nil
 	})
 	if err != nil {
@@ -97,7 +94,7 @@ func (r *Repository) UpsertPending(userID, secretCiphertext, recoveryCodesHash s
 			   last_used_step = 0,
 			   updated_at = excluded.updated_at
 			 WHERE user_mfa.status = 'pending'`,
-			userID, secretCiphertext, recoveryCodesHash, now.Unix(), now.Unix(),
+			userID, secretCiphertext, recoveryCodesHash, now, now,
 		)
 		if err != nil {
 			return fmt.Errorf("upsert pending mfa: %w", err)
@@ -118,7 +115,7 @@ func (r *Repository) Activate(userID string, now time.Time) error {
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET status = 'active', updated_at = ? WHERE user_id = ? AND status = 'pending'`,
-			now.Unix(), userID,
+			now, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("activate mfa: %w", err)
@@ -145,7 +142,7 @@ func (r *Repository) UpdateRecoveryCodes(userID, recoveryCodesHash string, now t
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET recovery_codes_hash = ?, updated_at = ? WHERE user_id = ?`,
-			recoveryCodesHash, now.Unix(), userID,
+			recoveryCodesHash, now, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("update recovery codes: %w", err)
@@ -162,7 +159,7 @@ func (r *Repository) SetLastUsedStep(userID string, step int64, now time.Time) e
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET last_used_step = ?, updated_at = ? WHERE user_id = ?`,
-			step, now.Unix(), userID,
+			step, now, userID,
 		); err != nil {
 			return fmt.Errorf("set last used step: %w", err)
 		}
@@ -178,7 +175,7 @@ func (r *Repository) UpdateSecretCiphertext(userID, ciphertext string, now time.
 	return r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET totp_secret_ciphertext = ?, updated_at = ? WHERE user_id = ?`,
-			ciphertext, now.Unix(), userID,
+			ciphertext, now, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("update mfa secret ciphertext: %w", err)
@@ -201,7 +198,7 @@ func (r *Repository) AdvanceLastUsedStep(userID string, step int64, now time.Tim
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET last_used_step = ?, updated_at = ? WHERE user_id = ? AND last_used_step < ?`,
-			step, now.Unix(), userID, step,
+			step, now, userID, step,
 		)
 		if err != nil {
 			return fmt.Errorf("advance mfa last used step: %w", err)
@@ -234,7 +231,7 @@ func (r *Repository) UpdateRecoveryCodesIfUnchanged(userID, next, prev string, n
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		res, err := tx.Exec(context.Background(),
 			`UPDATE user_mfa SET recovery_codes_hash = ?, updated_at = ? WHERE user_id = ? AND recovery_codes_hash = ?`,
-			next, now.Unix(), userID, prev,
+			next, now, userID, prev,
 		)
 		if err != nil {
 			return fmt.Errorf("update mfa recovery codes guarded: %w", err)
@@ -270,13 +267,13 @@ func (r *Repository) CreateProof(userID string, expiresAt time.Time, now time.Ti
 	id := hex.EncodeToString(idBytes[:])
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		if _, err := tx.Exec(context.Background(),
-			`DELETE FROM mfa_proofs WHERE user_id = ? AND expires_at <= ?`, userID, now.Unix(),
+			`DELETE FROM mfa_proofs WHERE user_id = ? AND expires_at <= ?`, userID, now,
 		); err != nil {
 			return fmt.Errorf("purge expired mfa proofs: %w", err)
 		}
 		_, err := tx.Exec(context.Background(),
 			`INSERT INTO mfa_proofs (id, user_id, fail_count, expires_at, created_at) VALUES (?, ?, 0, ?, ?)`,
-			id, userID, expiresAt.Unix(), now.Unix(),
+			id, userID, expiresAt, now,
 		)
 		if err != nil {
 			return fmt.Errorf("create mfa proof: %w", err)
@@ -292,19 +289,16 @@ func (r *Repository) CreateProof(userID string, expiresAt time.Time, now time.Ti
 // GetProof returns one proof row (used by verify before consuming).
 func (r *Repository) GetProof(id string) (*Proof, error) {
 	var p Proof
-	var expires, created int64
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		err := tx.QueryRow(context.Background(),
 			`SELECT id, user_id, fail_count, expires_at, created_at FROM mfa_proofs WHERE id = ?`, id,
-		).Scan(&p.ID, &p.UserID, &p.FailCount, &expires, &created)
+		).Scan(&p.ID, &p.UserID, &p.FailCount, &p.ExpiresAt, &p.CreatedAt)
 		if errors.Is(err, kernel.ErrNoRows) {
 			return ErrNotFound
 		}
 		if err != nil {
 			return fmt.Errorf("get mfa proof: %w", err)
 		}
-		p.ExpiresAt = time.Unix(expires, 0)
-		p.CreatedAt = time.Unix(created, 0)
 		return nil
 	})
 	if err != nil {

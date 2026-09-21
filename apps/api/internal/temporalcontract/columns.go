@@ -1,0 +1,134 @@
+package temporalcontract
+
+// Columns is the frozen workspace-040 denominator: the 90 absolute-instant
+// columns across 44 tables from
+// GOAL-002/attachments/r1-time-column-inventory-v0.3.md (accepted as the A-006
+// denominator). It is the C3 restore/verify target set: a converted artifact must
+// carry every one of these columns in the target physical shape.
+//
+// Generated mechanically from that attachment; do not hand-edit.
+var columns = []Column{
+	{Table: "schema_migrations", Column: "applied_at", Unit: "sec"},
+	{Table: "system_data_reconcile", Column: "applied_at", Unit: "sec"},
+	{Table: "users", Column: "created_at", Unit: "sec"},
+	{Table: "users", Column: "updated_at", Unit: "sec"},
+	{Table: "users", Column: "locked_until", Unit: "sec"},
+	{Table: "users", Column: "last_login_failure_at", Unit: "sec"},
+	{Table: "refresh_tokens", Column: "expires_at", Unit: "sec"},
+	{Table: "refresh_tokens", Column: "revoked_at", Unit: "sec"},
+	{Table: "refresh_tokens", Column: "created_at", Unit: "sec"},
+	{Table: "roles", Column: "created_at", Unit: "sec"},
+	{Table: "roles", Column: "updated_at", Unit: "sec"},
+	{Table: "permissions", Column: "created_at", Unit: "sec"},
+	{Table: "permissions", Column: "updated_at", Unit: "sec"},
+	{Table: "menu_items", Column: "created_at", Unit: "sec"},
+	{Table: "menu_items", Column: "updated_at", Unit: "sec"},
+	{Table: "email_verification_challenges", Column: "expires_at", Unit: "sec"},
+	{Table: "email_verification_challenges", Column: "sent_at", Unit: "sec"},
+	{Table: "password_recovery_challenges", Column: "expires_at", Unit: "sec"},
+	{Table: "password_recovery_challenges", Column: "sent_at", Unit: "sec"},
+	{Table: "login_failures", Column: "locked_until", Unit: "sec"},
+	{Table: "login_failures", Column: "updated_at", Unit: "sec"},
+	{Table: "user_password_history", Column: "created_at", Unit: "sec"},
+	{Table: "user_invites", Column: "expires_at", Unit: "sec"},
+	{Table: "user_invites", Column: "consumed_at", Unit: "sec"},
+	{Table: "user_invites", Column: "revoked_at", Unit: "sec"},
+	{Table: "user_invites", Column: "last_sent_at", Unit: "sec"},
+	{Table: "user_invites", Column: "created_at", Unit: "sec"},
+	{Table: "service_credentials", Column: "expires_at", Unit: "sec"},
+	{Table: "service_credentials", Column: "revoked_at", Unit: "sec"},
+	{Table: "service_credentials", Column: "last_used_at", Unit: "sec"},
+	{Table: "service_credentials", Column: "created_at", Unit: "sec"},
+	{Table: "service_credentials", Column: "updated_at", Unit: "sec"},
+	{Table: "mail_outbox", Column: "created_at", Unit: "ms"},
+	{Table: "mail_config", Column: "updated_at", Unit: "ms"},
+	{Table: "operation_log", Column: "created_at", Unit: "ms"},
+	{Table: "operation_log_archive", Column: "created_at", Unit: "ms"},
+	{Table: "operation_log_archive", Column: "archived_at", Unit: "ms"},
+	{Table: "notifications", Column: "read_at", Unit: "sec"},
+	{Table: "notifications", Column: "created_at", Unit: "sec"},
+	{Table: "site_settings", Column: "updated_at", Unit: "sec"},
+	{Table: "jobs", Column: "lease_expires_at", Unit: "ms"},
+	{Table: "jobs", Column: "created_at", Unit: "ms"},
+	{Table: "jobs", Column: "updated_at", Unit: "ms"},
+	{Table: "jobs", Column: "finished_at", Unit: "ms"},
+	{Table: "jobs", Column: "expires_at", Unit: "ms"},
+	{Table: "dict_types", Column: "created_at", Unit: "sec"},
+	{Table: "dict_types", Column: "updated_at", Unit: "sec"},
+	{Table: "dict_entries", Column: "created_at", Unit: "sec"},
+	{Table: "dict_entries", Column: "updated_at", Unit: "sec"},
+	{Table: "data_scope_policies", Column: "updated_at", Unit: "sec"},
+	{Table: "user_data_scopes", Column: "updated_at", Unit: "sec"},
+	{Table: "captcha_challenges", Column: "expires_at", Unit: "sec"},
+	{Table: "captcha_challenges", Column: "created_at", Unit: "sec"},
+	{Table: "captcha_config", Column: "created_at", Unit: "sec"},
+	{Table: "captcha_config", Column: "updated_at", Unit: "sec"},
+	{Table: "recycle_items", Column: "deleted_at", Unit: "sec"},
+	{Table: "recycle_items", Column: "restored_at", Unit: "sec"},
+	{Table: "scheduled_tasks", Column: "created_at", Unit: "sec"},
+	{Table: "scheduled_tasks", Column: "updated_at", Unit: "sec"},
+	{Table: "task_runs", Column: "started_at", Unit: "sec"},
+	{Table: "task_runs", Column: "finished_at", Unit: "sec"},
+	{Table: "task_runs", Column: "created_at", Unit: "sec"},
+	{Table: "user_mfa", Column: "created_at", Unit: "sec"},
+	{Table: "user_mfa", Column: "updated_at", Unit: "sec"},
+	{Table: "mfa_proofs", Column: "expires_at", Unit: "sec"},
+	{Table: "mfa_proofs", Column: "created_at", Unit: "sec"},
+	{Table: "wallet_accounts", Column: "created_at", Unit: "sec"},
+	{Table: "wallet_accounts", Column: "updated_at", Unit: "sec"},
+	{Table: "wallet_ledger_entries", Column: "created_at", Unit: "sec"},
+	{Table: "wallet_reconciliation_runs", Column: "created_at", Unit: "sec"},
+	{Table: "subjects", Column: "created_at", Unit: "sec"},
+	{Table: "vouchers", Column: "expires_at", Unit: "sec"},
+	{Table: "vouchers", Column: "redeemed_at", Unit: "sec"},
+	{Table: "vouchers", Column: "created_at", Unit: "sec"},
+	{Table: "vouchers", Column: "updated_at", Unit: "sec"},
+	{Table: "voucher_batches", Column: "created_at", Unit: "sec"},
+	{Table: "voucher_batches", Column: "updated_at", Unit: "sec"},
+	{Table: "telegram_config", Column: "updated_at", Unit: "sec"},
+	{Table: "telegram_sessions", Column: "last_message_at", Unit: "sec"},
+	{Table: "telegram_sessions", Column: "created_at", Unit: "sec"},
+	{Table: "telegram_sessions", Column: "updated_at", Unit: "sec"},
+	{Table: "telegram_inbound_messages", Column: "received_at", Unit: "sec"},
+	{Table: "telegram_outbound_messages", Column: "created_at", Unit: "sec"},
+	{Table: "telegram_outbound_messages", Column: "updated_at", Unit: "sec"},
+	{Table: "digital_offers", Column: "created_at", Unit: "sec"},
+	{Table: "digital_offers", Column: "updated_at", Unit: "sec"},
+	{Table: "digital_purchases", Column: "created_at", Unit: "sec"},
+	{Table: "digital_entitlements", Column: "expires_at", Unit: "sec"},
+	{Table: "digital_entitlements", Column: "created_at", Unit: "sec"},
+	{Table: "digital_entitlements", Column: "updated_at", Unit: "sec"},
+}
+
+// Column is one entry of the frozen denominator.
+type Column struct {
+	Table  string
+	Column string
+	Unit   string // sec | ms (legacy unit the conversion read)
+}
+
+// Columns returns a copy of the frozen denominator.
+func Columns() []Column {
+	out := make([]Column, len(columns))
+	copy(out, columns)
+	return out
+}
+
+// Count is the frozen denominator size (90). Gate checks compare against it
+// instead of re-deriving it.
+const Count = 90
+
+// Tables returns the distinct table names of the denominator in first-seen
+// order.
+func Tables() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, column := range columns {
+		if seen[column.Table] {
+			continue
+		}
+		seen[column.Table] = true
+		out = append(out, column.Table)
+	}
+	return out
+}

@@ -8,6 +8,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -15,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	migrationcontract "github.com/magicvr/schema-ui-core/apps/api/internal/migration"
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 type appliedMigration struct {
@@ -50,7 +51,27 @@ func (s *Store) migrate(catalog []kernel.MigrationContribution) error {
 	case actionRefuse:
 		return fmt.Errorf("store: %s", plan.Reason)
 	case actionNoop:
-		return s.verifyIntegrity()
+		if err := s.verifyIntegrity(); err != nil {
+			return err
+		}
+		return nil
+	case actionVerifyRecoveryPoint:
+		// C3 §4.3: the catalog is at head but no verified class-B recovery point
+		// is recorded. Run the shape check and re-create B at most once per
+		// startup; never treat the absence as a satisfied gate.
+		if err := s.verifyIntegrity(); err != nil {
+			return err
+		}
+		state, err := s.probeRecoveryState(context.Background())
+		if err != nil {
+			return err
+		}
+		if !state.Converted {
+			return fmt.Errorf("store: recovery point missing and the schema is not converted (%s)", state.Detail)
+		}
+		s.recoveryNote = fmt.Sprintf("recovery point missing at catalog head (%s); attempting one re-create", state.Detail)
+		s.createRecoveryPoint(catalog)
+		return nil
 	case actionApplyPending:
 		if err := validateApplied(id.Applied, catalog); err != nil {
 			return err
@@ -79,17 +100,27 @@ func (s *Store) migrate(catalog []kernel.MigrationContribution) error {
 }
 
 func (s *Store) applyPending(catalog []kernel.MigrationContribution, applied []appliedMigration) error {
+	// C3 §4.2 call point 1: the class-A rollback artifact is taken once, before
+	// the batch starts. Failure stops the batch (a rollback point is the
+	// precondition for mutating an existing database).
+	pending := pendingMigrations(applied, catalog)
+	if len(pending) > 0 {
+		if err := s.snapshotBeforeBatch(); err != nil {
+			return err
+		}
+	}
 	// One recoverable snapshot per pending data-mutating migration (version >= 2,
 	// I-011-002 A-002 F-002): each upgrade step keeps an independent rollback
 	// point. Snapshot filenames carry millisecond precision so an immediate
-	// retry after a failed upgrade cannot collide (D5).
+	// retry after a failed upgrade cannot collide (D5). These are the C3 class-C
+	// artifacts: they must never be used as a RecoveryPoint source.
 	//
 	// A fresh database (no pre-existing tables/data at open) has nothing to
 	// recover, so snapshots are never taken — signal that in the loop and the
 	// snapshotBeforePending method itself (defense-in-depth). Fresh DBs are the
 	// hot path of every test that opens a store, so skipping the file copies
 	// keeps the full handler package comfortably under the go test timeout.
-	for _, migration := range pendingMigrations(applied, catalog) {
+	for _, migration := range pending {
 		if !s.fresh && migration.Version >= 2 {
 			if err := s.snapshotBeforePending(migration.Version); err != nil {
 				return err
@@ -99,7 +130,16 @@ func (s *Store) applyPending(catalog []kernel.MigrationContribution, applied []a
 			return err
 		}
 	}
-	return s.verifyIntegrity()
+	if err := s.verifyIntegrity(); err != nil {
+		return err
+	}
+	// C3 §4.2 call point 3: after the batch committed and verified, create the
+	// class-B recovery point. Never inside a migration transaction (call point
+	// 4) and never blocking startup on failure (§4.3 item 3).
+	if len(pending) > 0 {
+		s.createRecoveryPoint(catalog)
+	}
+	return nil
 }
 
 // applyMigration runs one module-owned Apply function and its ledger insert in
@@ -118,9 +158,13 @@ func (s *Store) applyMigration(migration kernel.MigrationContribution) error {
 			return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 		}
 	}
-	if _, err := tx.Exec(
-		`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
-		migration.Version, migration.Name, migration.Checksum, time.Now().UTC().Unix(),
+	write, err := sqliteLedgerWrite(context.Background(), sqlTx{tx: tx}, time.Now().UTC())
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if _, err := tx.Exec(write.statement,
+		migration.Version, migration.Name, migration.Checksum, write.value,
 	); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("record migration %d (%s): %w", migration.Version, migration.Name, err)

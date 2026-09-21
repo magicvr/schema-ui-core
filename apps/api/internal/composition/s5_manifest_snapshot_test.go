@@ -56,10 +56,11 @@ func s5SnapshotCases(t *testing.T) []manifestSnapshotCase {
 	}
 	return []manifestSnapshotCase{
 		{name: "mvp", profile: "mvp", wantPages: 6},
-		{name: "admin", profile: "admin", wantPages: 22},
+		// R2 (GOAL-003): admin.jobs adds the jobs page (+1) to the admin surface.
+		{name: "admin", profile: "admin", wantPages: 23},
 		{name: "demo", profile: "demo", wantPages: 14},
-		{name: "admin+digitaloffer", profile: "custom", extra: withExtra("biz.digital-offer"), wantPages: 25},
-		{name: "admin+telegram", profile: "custom", extra: withExtra("channel.telegram"), withTelegram: true, wantPages: 24},
+		{name: "admin+digitaloffer", profile: "custom", extra: withExtra("biz.digital-offer"), wantPages: 26},
+		{name: "admin+telegram", profile: "custom", extra: withExtra("channel.telegram"), withTelegram: true, wantPages: 25},
 	}
 }
 

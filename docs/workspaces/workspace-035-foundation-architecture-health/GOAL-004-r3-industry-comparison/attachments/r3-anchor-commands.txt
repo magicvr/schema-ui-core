@@ -1,0 +1,356 @@
+# R3 as-built 锚点取证命令与观察结果（只读）
+
+运行环境：`pwsh -Command`，工作目录 = 仓库根 `C:\Users\magicvr\Documents\Code\schema-ui-core`。
+格式：命令行一行，紧跟 `→` 开头的观察结果行。
+说明：
+- 带 `git grep` / `Select-String` / `Get-Content` 的行 = 在 pwsh 内直接执行。
+- 带 `rg` 的行 = 由 harness 的 ripgrep 引擎执行（等价 `rg -n <pattern> <path>`）；结果与命令一同回读。
+- 全文件通读由 read 工具完成；下面所有被引用的具体行都用 `Get-Content -Encoding UTF8` 行号转储复核过（见 §5）。
+- **未运行完整测试套件**；**未运行 build**；**未读 `apps/api/configs/.env`**（秘密未触碰）；未执行 `git add/commit/checkout/stash`。
+
+## 0 · 基线、可比性与工作树状态
+
+```
+git log -1 --format=%H
+→ 5230097570e4f4c1f245359f94c63e94e8c1a0bd
+
+git status --porcelain
+→ （空输出）取证开始时工作树干净
+
+git diff --name-only ebe6013c..HEAD -- apps | Measure-Object
+→ Count = 0　（R2 基线 ebe6013c → HEAD 之间 apps/** 零改动）
+
+git diff --name-only ebe6013c..HEAD
+→ 29 个路径，全部位于 docs/workspaces/workspace-035-foundation-architecture-health/ 下
+
+git log --oneline -12
+→ 52300975 docs(workspace-035): close R2 and start R3 industry comparison / ca5caa7e … / ebe6013c docs(vision): 设立VP-035…
+
+Get-ChildItem -Recurse -Filter go.mod -File | Where-Object { $_.FullName -notmatch 'node_modules' }
+→ 2 个：apps/api/go.mod（产品模块）、docs/workspaces/workspace-022-.../golden-consumer/go.mod（历史证据产物）；无 go.work
+```
+
+## 1 · B 节 · 缺席证明命令
+
+### 1.1 Redis
+
+```
+Select-String -Path apps/api/go.mod -Pattern 'redis' -SimpleMatch
+→ 0 命中
+
+(Select-String -Path apps/api/go.sum -Pattern 'redis' -SimpleMatch | Measure-Object).Count
+→ 0
+
+Get-ChildItem apps/api -Recurse -Directory -Filter '*redis*' | Select-Object -ExpandProperty FullName
+→ （空）无 redis 适配器目录
+
+git grep -n -i "redis" -- "apps/api/*.go"
+→ 8 命中，全部为注释：internal/composition/composition.go:426,427,842；internal/ratelimit/memory.go:32；kernel/cache.go:9,18,45；kernel/ratelimit.go:84（无实现代码）
+
+git grep -n -i "redis" -- "apps/api/internal/config" "apps/api/configs"
+→ 0 命中（连配置键都未预制）
+
+Select-String -Path apps/api/internal/config/config.default.yaml -Pattern 'cache|eventbus|metrics|traces|objects|ratelimit'
+→ cache 段在 :215（只有 max_entries，:220 Env override: CACHE_MAX_ENTRIES）；eventbus 段在 :223；observability.metrics :152；observability.traces :165
+```
+
+### 1.2 外部消息 broker / 事务 outbox
+
+```
+Select-String -Path apps/api/go.mod -Pattern 'kafka|rabbit|amqp|nats|nsq|pubsub|sarama'
+→ 0 命中
+
+Get-ChildItem apps/api/internal/eventbus -File | Select-Object -ExpandProperty Name
+→ memory.go / memory_test.go（仅进程内实现）
+
+git grep -n -i "outbox" -- "apps/api/**/*.go"
+→ 全部为站内出站邮件记录语义（mail.NewOutboxSink / RegisterMailOutbox / mail-outbox 页面名），非事件 outbox：assembly/assembly.go:43；internal/composition/composition.go:437,1024；internal/handler/mail_outbox.go:4,19,20 等
+```
+
+### 1.3 搜索引擎
+
+```
+Select-String -Path apps/api/go.mod -Pattern 'elastic|meilisearch|typesense|bleve|opensearch|solr|tantivy'
+→ 0 命中
+
+Get-ChildItem apps/api/kernel -File | Select-Object -ExpandProperty Name
+→ 无 search 端口文件（cache.go / eventbus.go / mail.go / objectstore.go / ratelimit.go / store.go / telegram.go / lifecycle.go / module.go / provider.go / profile.go 等）
+
+Get-ChildItem apps/api/internal -Directory | Select-Object -ExpandProperty Name
+→ 无 search 目录（account/auth/cache/channel/composition/concurrency/config/docscheck/errorcatalog/eventbus/handler/jobs/mail/manifest/migration/objectstore/obs/pagination/pgtest/ratelimit/requestid/server/store/testsupport）
+```
+
+### 1.4 多实例 / K8s
+
+```
+Select-String -Path apps/api/go.mod -Pattern 'k8s.io|client-go|operator-framework'
+→ 0 命中
+
+Get-ChildItem -Path . -Recurse -Directory | Where-Object { $_.Name -match '^(helm|k8s|kubernetes|charts|manifests|deploy)$' -and $_.FullName -notmatch 'node_modules|\\\.git\\' }
+→ （空）无 K8s/Helm 目录
+
+Get-ChildItem -Path . -Recurse -File -Include '*.yaml','*.yml' | Where-Object { $_.Name -match 'deploy|k8s|helm|values|ingress|chart' -and $_.FullName -notmatch 'node_modules|\\\.git\\' }
+→ （空）
+
+Get-ChildItem -Path . -Recurse -File | Where-Object { $_.Name -match 'docker-compose|compose\.ya?ml' -and $_.FullName -notmatch 'node_modules|\\\.git\\' }
+→ 仅 compose.yaml（仓库根）
+
+Select-String -Path compose.yaml -Pattern 'stop_grace|restart|deploy|replicas|container_name'
+→ :67 stop_grace_period: 15s；:68 restart: on-failure；:89 restart: on-failure；无 deploy/replicas（单实例）
+
+Get-Content compose.yaml -Encoding UTF8 -TotalCount 25
+→ :17 "# Non-goal: full production ops / CI-CD pipeline, TLS termination, multi-instance"；:18 "# scaling (see I-008-001 §8)."
+
+git grep -n -i -E "multi-instance|多实例|replica" -- "apps/api" "docs/architecture"
+→ 3 命中，均为注释/文档：composition wallet_owner_gate_subject_test.go:34（Replicate 注释）；docs/architecture/cache-redis-seam-and-track.md:25,88（多实例 = RT-Q03 触发条件）
+
+Get-ChildItem .github/workflows -File
+→ 仅 r6-basic-matrix.yml
+```
+
+### 1.5 ORM
+
+```
+Select-String -Path apps/api/go.mod -Pattern 'gorm|ent.io|jmoiron|uptrace/bun|sqlboiler|xorm'
+→ 0 命中
+
+git grep -ln "database/sql" -- "apps/api/**/*.go"
+→ 仅内核 store 面与测试（kernel/store.go、internal/store/*、cmd/dbgdump）等；模块无 ORM 层
+
+git grep -n -E "^func Open\(|^func NewLocal|^func NewMemory|^func NewSwitcher|^func NewProvider|^func NewObserver|^func NewInstrumentedMux" -- apps/api/internal apps/api/kernel
+→ internal/cache/memory.go:64 NewMemory；internal/eventbus/memory.go:53 NewMemory；internal/mail/runtime.go:137 NewSwitcher；internal/objectstore/local.go:41 NewLocal；internal/obs/instrumented_mux.go:21 NewInstrumentedMux；internal/obs/observer.go:70 NewObserver；internal/ratelimit/memory.go:37 NewProvider；internal/store/open.go:18 Open
+```
+
+## 2 · B/C 节 · 数据搬运器与迁移面缺席
+
+```
+Get-ChildItem apps/api/internal/migration -Recurse -File
+→ collector.go / collector_test.go（迁移**收集**器，非数据搬运器）
+
+Get-Content apps/api/cmd/schema-ui/migrate.go -TotalCount 60
+→ migrate-fork：fork 包迁移辅助（VP-024），非数据库数据搬运
+
+git grep -n -E "搬运|migrator|local-to-|对象存储搬运" -- "apps/api"
+→ 0 命中（exit code 1）
+
+git grep -n -E "COPY |pg_dump|VACUUM INTO" -- apps/api
+→ 仅备份/恢复与容器 Dockerfile COPY：internal/store/migrate.go:294（VACUUM INTO）；internal/composition/post_rotation_recovery_test.go（pg_dump/pg_restore 证据）；apps/api/Dockerfile:10,13,31
+
+Get-ChildItem apps/api/internal/objectstore -File
+→ local.go / local_test.go / s3.go / s3_live_test.go / s3_test.go（无搬运/复制实现）
+
+Get-ChildItem apps/api/internal/store -File -Filter '*.go' | Where-Object { $_.Name -notmatch '_test' }
+→ identity.go / migrate.go / open.go / options.go / postgres.go / rebind.go / runmarker.go / store.go
+```
+
+## 3 · C 节 · residual 现状核对命令
+
+```
+Get-Content apps/api/cmd/otlp-sink/main.go   （harness read，全文 47 行）
+→ :4 "It is NOT a collector: no parsing,"；:5 "no semantics, no storage. Do not use in production."；:32 n, err := io.Copy(io.Discard, r.Body)
+
+git grep -n -E 'suc_[a-z_]+|Desc|Name:' -- apps/api/internal/obs/*.go
+→ 仅 4 个指标族：observer.go:74 suc_build_info；:87 suc_http_requests_total；:94 suc_http_request_duration_seconds；:102 suc_kernel_modules_enabled（无 Store/对象/Job 指标）
+
+git grep -c -i "timestamptz" -- apps
+→ 0（全仓 0 命中）
+
+git grep -n -i -E "TIMESTAMP" -- apps/api/internal/store
+→ 0 命中（exit code 1）
+
+git grep -n -E "created_at (TEXT|INTEGER|DATETIME)" -- apps/api/modules apps/api/internal/store
+→ 时间列为 INTEGER（epoch）形状，例：modules/authsession/migration/migration.go:41,52；modules/corepersistence/migration/migration.go:58；modules/mfa/migration/migration.go:35
+
+Select-String -Path apps/api/cmd/server/*_test.go -Pattern '^//go:build|^// \+build'
+→ shutdown_harness_test.go:1: //go:build !windows
+
+Get-Content .github/workflows/r6-basic-matrix.yml
+→ :12 runs-on: ubuntu-latest（web job）；:28 name: api (Linux, Go 1.26)；:29 runs-on: ubuntu-latest；:74 - run: go test ./...（!windows harness 由 linux CI 覆盖）
+
+git grep -n -E "I-016-005" -- docs
+→ docs/vision/plans/VP-016-key-rotation-and-backup.md:84,103,115；docs/vision/charter.md:73（长行）
+
+git grep -n -E "revoke|Revoke|previous|Previous" -- apps/api/internal/auth
+→ auth.go:39 ErrTokenRevoked；:431 verifyAccess；:433 if err == nil || len(a.previousSecret) == 0；:436 return ParseAccessToken(a.previousSecret, raw)；:630 if parsed.TokenVersion != u.TokenVersion
+
+git grep -n -E "previous|Previous|Wrap|Unwrap|GCM|Seal|Open" -- apps/api/modules/mfa
+→ service.go:57-60 prevKey 字段；:72 NewService(repo, serverSecret, previousSecret)；:79-86 派生 prevKey；:151 decryptSecret 调用；:165 s.maybeRewrap(...)；:450 decryptSecret 定义；:466 maybeRewrap 定义
+
+Get-Content apps/api/internal/composition/composition.go（行号转储）
+→ :395 mfaService = mfamodule.NewService(mfastore.NewRepository(st), []byte(secret), []byte(cfg.AuthJWTSecretPrevious))
+→ :930 masterKeyPath = filepath.Join(filepath.Dir(cfg.DBPath), "telegram-master.key")
+→ :1016 masterKeyPath = filepath.Join(filepath.Dir(cfg.DBPath), "mail-master.key")
+```
+
+## 4 · D 节 · G-001～G-004 复核命令
+
+```
+git grep -n "MaxOpenConns" -- docs
+→ docs/vision/roadmap.md:104（现状锚点 + 多实例非目标）；docs/vision/roadmap.md:138（RT-P04 行）；其余为历史工作区记录
+
+git grep -n "RT-P04" -- docs
+→ docs/vision/roadmap.md:138；docs/vision/plans/VP-021-...:53；workspace-035 R1/R3 记录
+
+git grep -n "RT-T03" -- docs
+→ docs/vision/roadmap.md:252（RT-T03 行，registered）；docs/vision/plans/VP-020-...:25,36,49,57,72,92,106,112；docs/vision/reviews/VRev-044:24、VRev-045:30,40
+
+Get-Content docs/architecture/overview.md（行号转储 60..80）
+→ :64 "| `web/` | FastAPI Web 应用（有界受控写入，默认门闩关闭） |"
+→ :71 愿景 = schema-ui-core-admin-foundation@0.2.0
+→ :72-73 组合编排停在 VP-001～004 / 当前交付 VP = VP-005 active
+→ :74-79 工作区清单只到 workspace-006
+
+Get-Content docs/vision/roadmap.md（行号转储）
+→ :104 现状锚点 MaxOpenConns=1；:137 RT-P03（无 ORM，delivered）；:138 RT-P04；:149 RT-Q02；:150 RT-Q03；:152 RT-Q05；:153 RT-Q06；:209 RT-D02（同行「无明确 drain 合同」+ delivered）；:211 RT-D04；:252 RT-T03；:306 刻意后置清单；:51 VP-032 行
+
+Select-String -Path docs/architecture/cache-redis-seam-and-track.md -Pattern 'AllowRecord|Reserve|Cancel'
+→ 0 命中（G-003 核心证据：文档从未出现这三个 API 名）
+
+Select-String -Path docs/architecture/cache-redis-seam-and-track.md -Pattern '`Allow`|`Record`|`Clear`|`RetryAfterSeconds`'
+→ 仅 :68、:73 两行
+
+git grep -n -E "^func New|^func NewWithRepository|previousSecret" -- apps/api/internal/auth/auth.go
+→ :131 previousSecret []byte；:151 func New(...)；:157 func NewWithRepository(...)；:167 func NewWithRepositoryAndPrevious(current, previous []byte, ...)；:433,:436 verifyAccess 回退
+
+Get-Content apps/api/internal/mail/runtime.go（行号转储 228..267）
+→ :237 return NewOutboxSink(s.store, cfg.MockRetention), nil（mock 渠道现行实现）
+
+Get-Content apps/api/internal/mail/capture.go -TotalCount 32
+→ :12 "// CaptureSink is the embedded default kernel.MailSender for unconfigured SMTP"（注释与现行接线不一致，见 §E.2.2）
+```
+
+## 5 · 行号精确复核（每条被引用锚点都过了一遍行号转储）
+
+```
+function Show($f,$nums){ $l=Get-Content $f -Encoding UTF8; foreach($n in $nums){ "{0}:{1}: {2}" -f $f,$n,$l[$n-1] } }
+
+Show 'apps/api/kernel/module.go' 11,265
+→ 11 const KernelAPIVersion = "2.0.0" ; 265 func (r *Registry) Resolve(enabled []string) (Plan, error) {
+
+Show 'apps/api/kernel/provider.go' 19,28,29,34,70
+→ 19 type Provider interface { ; 28 type Registrar interface { ; 29 HTTP(RouteContribution) error ; 34 Configuration(ConfigurationContribution) error ; 70 func RegisterContributions(...)
+
+Show 'apps/api/kernel/store.go' 24,25,30,43
+→ 24 注释行 ; 25 var ErrNoRows = sql.ErrNoRows ; 30 type Store interface { ; 43 type Tx interface {
+
+Show 'apps/api/kernel/cache.go' 35,107,117,124,138
+→ 35 type CacheNamespace string ; 107 func ValidateCacheSet(key string, value []byte, policy ExpiryPolicy) error { ; 117 return nil ; 124 type ExpiryPolicy interface { ; 138 type Cache interface {
+
+Show 'apps/api/kernel/ratelimit.go' 35,36,40,44,52,65,71,76,79,86
+→ 35 注释行 ; 36 type RateLimiter interface { ; 40 Allow / 44 Record / 52 AllowRecord / 65 Reserve / 71 Cancel / 76 RetryAfterSeconds / 79 Clear ; 86 type RateLimiterProvider interface {
+
+Show 'apps/api/kernel/eventbus.go' 43,87
+→ 43 注释行（DefaultEventBusBuffer） ; 87 type EventBus interface {
+
+Show 'apps/api/kernel/mail.go' 33,35,73
+→ 33 注释行 ; 35 type MailMessage struct { ; 73 type MailSender interface {
+
+Show 'apps/api/kernel/telegram.go' 45,65,76,103,123
+→ 45 var ( ; 65 type TelegramMessage struct { ; 76 func (m TelegramMessage) Validate() error { ; 103 type TelegramSender interface { ; 123 type TelegramDispatcher interface {
+
+Show 'apps/api/kernel/lifecycle.go' 18,62,67,68,70
+→ 18 func (r *Runtime) Start… ; 62 func (r *Runtime) Stop… ; 67 （空行） ; 68 func (r *Runtime) stopModules… ; 70 for i := len(modules) - 1; i >= 0; i-- {
+
+Show 'apps/api/internal/store/store.go' 29,104,107,113,141,145
+→ 29 const sqlitePoolDefault = 4 ; 104 if memory { ; 107 db.SetMaxOpenConns(1) ; 113 db.SetMaxOpenConns(pool) ; 141 注释行 ; 145 func (s *Store) Run(ctx context.Context, fn func(kernel.Tx) error) error {
+
+Show 'apps/api/internal/composition/composition.go' 80,83,87,88,89,121,127,130,158,199,203,255,259,262,264,289,291,395,509,611,617,641,677,678,746,771,816,836,844,853,854,871,909,926,930,1005,1016,1024,1073,1151,1152,1164,1170
+→ 83 } ; 87-89 modules/if len(modules)==0/kernel.ResolveProfile ; 127 logger = slog.Default() ; 130 fx.Provide( ; 158 return fx.New(opts...), nil ; 199 func openStore… ; 203 catalog, err := compiledmodules.PersistenceCatalog() ; 255 注释行 ; 259 return auth.NewWithRepositoryAndPrevious(...) ; 262/289 注释行 ; 264 func newTracing… ; 291 func newMetricsServer… ; 509 var providers []kernel.Provider ; 611 var tgDispatcher kernel.TelegramDispatcher ; 617 tgDispatcher = telegraminternal.NewDisabledDispatcher() ; 641 if plan.HasModule("channel.telegram") && tr != nil && tr.Webhook != nil { ; 677 providers = append(providers, extra...) ; 678 set, err := kernel.RegisterContributions(context.Background(), plan, providers) ; 746 data, err := manifest.ForModulesWithFragmentsAndGroups( ; 771 } ; 816 func newObjectStore… ; 836 return objectstore.NewLocal(root), nil, nil ; 844 func newRateLimiters… ; 853 注释行 ; 854 func newCache… ; 871 func newEventBus… ; 1005 func newMailRuntime… ; 1024 MockRetention: mail.DefaultOutboxCap, ; 1073 func registerLifecycle… ; 1151 OnStop: func(ctx context.Context) error { ; 1152 shutdownErr := srv.Shutdown(ctx) ; 1164 eventBusErr := eventBusPort.Stop(ctx) ; 1170 return errors.Join(shutdownErr, metricsErr, jobsErr, eventBusErr, runtimeErr, closeErr, tracingErr)
+
+Show 'apps/api/internal/config/config.go' 493,495,498
+→ 493 CacheMaxEntries: DefaultCacheMaxEntries, ; 495 MetricsEnabled: false, ; 498 TracesEnabled: false,　（R2 行 10 错锚证据）
+
+Show 'apps/api/internal/obs/server.go' 21,26,37
+→ 21 注释行 ; 26 type Server struct { ; 37 func NewServer(opts ServerOptions, observer *Observer, logger *slog.Logger) *Server {
+
+Show 'apps/api/internal/obs/tracing.go' 48
+→ 48 func NewTracing(opts TracingOptions, logger *slog.Logger) *Tracing {
+
+Show 'apps/api/internal/server/server.go' 17,35
+→ 17 func New(cfg *config.Config, handler http.Handler, logger *slog.Logger) *http.Server { ; 35 func WrapSecurity(cfg *config.Config, next http.Handler) http.Handler {
+
+Show 'apps/api/internal/objectstore/local.go' 41,119 ; 'apps/api/internal/objectstore/s3.go' 47,50,117
+→ local.go:41 func NewLocal(root string) *LocalStore { ; local.go:119 func (s *LocalStore) Put(...) ; s3.go:47 注释行 ; s3.go:50 func NewS3(...) ; s3.go:117 func notFound(op, key string, err error) error {
+
+Show 'apps/api/internal/cache/memory.go' 64,227,232 ; 'apps/api/internal/ratelimit/memory.go' 37,83,89,132,158,174,187
+→ cache/memory.go:64 func NewMemory… ; :227 注释行 ; :232 func copyBytes(src []byte) []byte { ; ratelimit/memory.go:37 func NewProvider… ; :83 Allow ; :89 allowLocked ; :132 Record ; :158 AllowRecord ; :174 Reserve ; :187 Cancel
+
+Show 'apps/api/internal/eventbus/memory.go' 53,254,256
+→ 53 func NewMemory(buffer int, logger *slog.Logger) *Memory { ; 254 func (s *subscription) run(payload []byte) { ; 256 if rec := recover(); rec != nil {
+
+Show 'apps/api/internal/mail/runtime.go' 105,137,234,237,316,363,370
+→ 105 var ErrUnknownChannel… ; 137 func NewSwitcher… ; 234 func (s *Switcher) buildAdapter… ; 237 return NewOutboxSink(s.store, cfg.MockRetention), nil ; 316 func (s *Switcher) Update… ; 363 if err != nil { ; 370 return nil, fmt.Errorf("mail: new SMTP endpoint is unreachable, keeping the previous channel: %w", err)
+
+Show 'apps/api/internal/jobs/model.go' 19 ; 'apps/api/internal/jobs/runner.go' 121,125,185,214
+→ model.go:19 StatusQueued Status = "queued" ; runner.go:121 go r.loop() ; :125 func (r *Runner) Stop(ctx context.Context) error { ; :185 func (r *Runner) ScanOnce(ctx context.Context) error { ; :214 func (r *Runner) loop() {
+
+Show 'apps/api/internal/manifest/manifest.go' 40,43,213,457
+→ 40 注释行 ; 43 func NavigationPresentationsFromContributions(...) ; 213 func NormalizeSidebarGroups(...) ; 457 func Aggregate(fragments []Fragment) ([]byte, error) {
+
+Show 'apps/api/internal/auth/auth.go' 131,147,151,152,158,167,424,431,433,436,630
+→ 131 previousSecret []byte ; 147/151 New ; 152 return NewWithRepository(...) ; 158 return &Authenticator{secret: secret, ...} ; 167 NewWithRepositoryAndPrevious ; 424 注释行 ; 431 func (a *Authenticator) verifyAccess… ; 433 if err == nil || len(a.previousSecret) == 0 { ; 436 return ParseAccessToken(a.previousSecret, raw) ; 630 if parsed.TokenVersion != u.TokenVersion {
+
+Show 'apps/api/internal/channel/telegram/disabled.go' 9,10,21,35,36 ; 'apps/api/internal/channel/telegram/runtime.go' 90,91,97,99
+→ disabled.go:9 注释行 ; :10 type DisabledSender struct{} ; :21 return kernel.ErrTelegramDisabled ; :35 func (d *DisabledDispatcher) RegisterCommand… ; :36 return nil ; runtime.go:90 注释行 ; :91 func NewRuntimeManager… ; :97 func NewRuntimeManagerWithSettings… ; :99 return nil, fmt.Errorf("telegram: master key is required")
+
+Show 'apps/api/modules/users/provider.go' 65,66 ; 'apps/api/modules/digitaloffer/provider.go' 25,26,30,31,68
+→ users/provider.go:65 func (p *Provider) CompiledPersistence() ([]kernel.MigrationContribution, error) { ; :66 return nil, nil // account/RBAC migrations are owned by core.auth-session ; digitaloffer/provider.go:25 注释行 ; :26 type Provider struct { ; :30 dispatcher kernel.TelegramDispatcher ; :31 sender kernel.TelegramSender ; :68 func (p *Provider) Register(ctx context.Context, reg kernel.Registrar) error {
+
+Show 'apps/api/assembly/assembly.go' 5,26,34,37,38,42,43 ; 'apps/api/server/serve.go' 62,85,215 ; 'apps/api/cmd/server/main.go' 22,50,56,74 ; 'apps/api/cmd/schema-ui/main.go' 76
+→ assembly.go:5 // ——Go 类型推断对 *auth.Authenticator、kernel.Store 等返回值直接消费。 ; :26 func OpenStore… ; :34 // NewAuthenticator 构造 JWT 认证器（current 单密钥形态）。 ; :37 func NewAuthenticator(secret []byte, accessTTL, refreshTTL time.Duration, runner authsession.TxRunner) *auth.Authenticator { ; :38 return auth.New(secret, accessTTL, refreshTTL, runner, false) ; :42 func NewMailSender(st kernel.Store, retentionCap int) kernel.MailSender { ; :43 return mail.NewOutboxSink(st, retentionCap) ; serve.go:62 func Serve(opts Options) error { ; :85 func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, error) { ; :215 runtime := kernel.NewRuntime(plan) ; main.go:22 func main() { ; :50 app, err := composition.NewApp(cfg, secret, seedHash, logger) ; :56 if err := app.Start(startCtx); err != nil { ; :74 if err := app.Stop(shutdownCtx); err != nil { ; schema-ui/main.go:76 switch flag.Arg(0) {
+
+Show 'apps/api/internal/store/open.go' 18 ; 'apps/api/internal/store/rebind.go' 13 ; 'apps/api/internal/store/postgres.go' 20,30
+→ open.go:18 func Open(ctx context.Context, opts OpenOptions, catalog []kernel.MigrationContribution) (kernel.Store, error) { ; rebind.go:13 func rebindPostgres(query string) string { ; postgres.go:20 type postgres struct { ; :30 func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.MigrationContribution) (*postgres, error) {
+
+Show 'apps/web/src/main.tsx' 76,79 ; 'apps/web/src/app/App.tsx' 1049 ; 'apps/web/src/app/navigation.ts' 224 ; 'apps/web/src/protocol/load-page.ts' 81,90 ; 'apps/web/src/protocol/app-manifest.ts' 894
+→ main.tsx:76 bootHost({ ; :79 manifestLoader: async () => loadAppManifestBytes(), ; App.tsx:1049 () => projectNavigation(manifest, path, navigationContext, t), ; navigation.ts:224 export function projectNavigation( ; load-page.ts:81 export async function loadPageDocument( ; :90 const url = resolveSchemaUrl(baseURL, page.schemaUrl, params); ; app-manifest.ts:894 export async function loadAppManifestBytes(options: {
+
+git grep -n -E "NormalizeSidebarGroups|ForModulesWithFragmentsAndGroups"        （ripgrep，路径缺省 = 全仓）
+→ internal/manifest/manifest.go:168,180,213；internal/composition/composition.go:746；apps/api/server/serve.go:164；测试 3 处
+
+git grep -n -E "^func RegisterSchemas|^func RegisterManifest\(|^func RegisterBootstrapWithAvailability" -- apps/api/internal/handler
+→ handler/schema.go:22 RegisterSchemas ; handler/manifest.go:16 RegisterManifest ; handler/bootstrap.go:46 RegisterBootstrapWithAvailability
+
+git grep -n -E "loadAppManifestBytes|projectNavigation|bootHost" -- apps/web/src
+→ main.tsx:34,76,79 ; App.tsx:1049 ; protocol/app-manifest.ts:889,894 ; navigation.ts:224 等
+
+git grep -n -E "menu_items|menuItems|navRegistry|centralNavigation" -- apps/web/src
+→ 仅测试/mock 中的 menuItems 数据字段（无中央业务导航注册表）
+```
+
+## 6 · 文档侧锚点转储（D 节）
+
+```
+Get-Content docs/vision/roadmap.md（102..105、137..139、208..211、252、306、149、150、152、153、51）
+→ 逐行原文已写入 r3-asbuilt-anchors.md §B/§C/§D
+
+Get-Content docs/architecture/module-architecture.md -TotalCount 12
+→ :9 vision_ref: schema-ui-core-admin-foundation@0.2.0（旧架构记录，与 A-002 判断一致）
+
+Get-Content docs/architecture/monorepo-layout.md -TotalCount 10
+→ :5 updated: 2026-07-31 / :7 version: 0.1.0（初建阶段记录）
+
+git grep -n -E "apps/api|apps/web" -- docs/architecture/directory-layout.md
+→ :12 指向 monorepo-layout.md（directory-layout 指 apps）
+
+git grep -n -E "^## " -- docs/architecture/module-contribution-playbook.md
+→ §1(33) §2(94) §3(117) §4(160) §5(172) §6(182) §7(211)
+
+Get-ChildItem docs/workspaces/.../GOAL-004-r3-industry-comparison/attachments
+→ 取证开始时为 4 项（industry-conventions-draft.md / industry-conventions-sources.txt / r4-doc-hygiene-anchors.md / README.md）；本次新增 2 项（r3-asbuilt-anchors.md / r3-anchor-commands.txt）。同期并行 R3 兄弟产物（industry-comparison.md / r3-gap-classification.md）由其他会话写入，本会话未读写其内容、未改动
+```
+
+## 7 · 只读与约束声明
+
+```
+git status --porcelain   （取证完成后）
+→ 本会话写入仅 2 个未跟踪文件：
+   ?? docs/workspaces/.../GOAL-004-r3-industry-comparison/attachments/r3-asbuilt-anchors.md
+   ?? docs/workspaces/.../GOAL-004-r3-industry-comparison/attachments/r3-anchor-commands.txt
+→ 同一工作树另有并行兄弟产物（未跟踪）：attachments/industry-comparison.md、attachments/r3-gap-classification.md、03-audit/ —— 非本会话写入，未修改
+→ 无 apps/**、docs/vision/**、docs/architecture/**、任何 goal 治理文件的改动（git status 中无 M/A/D 项）
+
+未运行：go test / go build / npm test / npm run build（约束「不跑完整测试套件」）
+未读取：apps/api/configs/.env（秘密）
+未执行：git add / git commit / git checkout / git stash
+```

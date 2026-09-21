@@ -126,6 +126,40 @@ func TestMutateAdjustFreezeUnfreeze(t *testing.T) {
 	}
 }
 
+// Canonical fixed-6 TEXT sorts lexically = chronologically: entries written in
+// the same second but one microsecond apart must order by instant, and
+// same-instant entries must keep the pre-existing `id DESC` tie-break
+// (workspace-040 R2 · D-001 §1: no ORDER BY clause changed).
+func TestListEntriesCanonicalInstantOrderAndTieBreak(t *testing.T) {
+	repo := newRepo(t)
+	createAccount(t, repo, "u1")
+	base := now()
+	mutate := func(entryID string, at time.Time) {
+		t.Helper()
+		if _, _, err := repo.Mutate("acct-u1", store.LedgerEntryInput{EntryType: store.EntryAdjust, AmountDelta: 1, Memo: "m", ActorID: "a1", ActorName: "Admin"}, entryID, at); err != nil {
+			t.Fatalf("mutate %s: %v", entryID, err)
+		}
+	}
+	mutate("entry-a2", base)
+	mutate("entry-a1", base)
+	mutate("entry-later", base.Add(time.Microsecond))
+
+	entries, total, err := repo.ListEntries("acct-u1", "", "", 1, 20)
+	if err != nil || total != 3 || len(entries) != 3 {
+		t.Fatalf("entries = %d/%d err %v", len(entries), total, err)
+	}
+	// Newest instant first; the same-instant pair falls back to id DESC.
+	want := []string{"entry-later", "entry-a2", "entry-a1"}
+	for i, id := range want {
+		if entries[i].ID != id {
+			t.Fatalf("entry order = %s, want %s", []string{entries[0].ID, entries[1].ID, entries[2].ID}, want)
+		}
+	}
+	if got := entries[0].CreatedAt; !got.Equal(base.Add(time.Microsecond)) {
+		t.Fatalf("newest created_at = %v, want %v", got, base.Add(time.Microsecond))
+	}
+}
+
 func TestMutateIdempotency(t *testing.T) {
 	repo := newRepo(t)
 	createAccount(t, repo, "u1")

@@ -40,6 +40,41 @@ go run ./cmd/server
 - dev 缺省 `ADMIN_INITIAL_PASSWORD=admin`；生产必须显式设置。
 - 生产缺少 `AUTH_JWT_SECRET` → 启动失败（fail-closed）；dev 使用开发密钥并打警告。
 
+### 初始化数据库（PostgreSQL 必做一次 · W35 / GOAL-047）
+
+**SQLite 无需初始化**：文件（`DB_PATH`）在首次启动时自动创建。
+
+**PostgreSQL 需要先建库**：应用**从不**执行 `CREATE DATABASE` —— 启动只对配置的库做
+`Ping`，随后应用迁移链。因此全新或**被重置过**的服务器上，直接启动会失败：
+
+```text
+LIFECYCLE_START_FAILED [core.auth-session]: open store: postgres ping:
+FATAL: database "schema_ui_dev" does not exist (SQLSTATE 3D000)
+  the target database does not exist yet and the API never creates it;
+  provision it first:  dev.cmd init-db   (or: cd apps/api && go run ./cmd/dbsetup)
+```
+
+建库（幂等，**不会**删除或覆盖既有库）：
+
+```bash
+# 仓库根（推荐：同时建 dev 与 test 库）
+dev.cmd init-db
+
+# 或直接调工具
+cd apps/api
+go run ./cmd/dbsetup              # DB_NAME（dev）+ PG_TEST_DB（test）
+go run ./cmd/dbsetup --dev-only   # 只建 dev
+go run ./cmd/dbsetup --test-only  # 只建 test
+go run ./cmd/dbsetup my_extra_db  # 追加建库（dev 角色）
+```
+
+- 库名与凭据来源：dev 用 `DB_*`，test 用 `PG_TEST_*`（进程 env 优先，其次
+  `configs/.env`）；两者可指向不同服务器。
+- 需要该角色具备 `CREATEDB` 权限。
+- 迁移链由**服务/测试自身**在启动时应用，`dbsetup` 不做迁移。
+- e2e 专用库（`schema_ui_e2e_*`）由 e2e 挂具用 `go run ./cmd/e2e-pgset create|drop` 自管，
+  生命周期与 dev/test 库无关；`e2e-pgset` 自 W35 起同样能在空实例上自举。
+
 ## 配置键（R2 · GOAL-005 D-004）
 
 | 键 | 默认 | 说明 |

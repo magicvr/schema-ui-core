@@ -238,7 +238,7 @@ describe("SchemaTable (R1 list-data injection)", () => {
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       rowsFetcher(500),
     );
-    expect(container.textContent).toContain("resource fetch failed");
+    expect(container.textContent).toContain("This service is temporarily unavailable");
   });
 
   it("retries the resource fetch from the table error state (W15-F02)", async () => {
@@ -263,6 +263,44 @@ describe("SchemaTable (R1 list-data injection)", () => {
     });
     expect(calls).toBe(2);
     expect(container.textContent).toContain("Acme Console");
+  });
+
+  it("shows maintenance feedback and recovers after one explicit retry", async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "SERVICE_MAINTENANCE" }), {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      }))
+      .mockImplementation(rowsFetcher());
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      fetcher,
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "This service is under maintenance. Try again shortly.",
+    );
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const retry = container.querySelector<HTMLButtonElement>("[data-table-retry]");
+    expect(retry).not.toBeNull();
+    await act(async () => { retry!.click(); });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector("[data-table-retry]")).toBeNull();
+    expect(container.textContent).toContain("Acme Console");
+  });
+
+  it.each([
+    [403, "You don't have permission to perform this action."],
+    [401, "Your session has expired. Sign in again."],
+  ])("does not offer a list retry for HTTP %s", async (status, message) => {
+    const fetcher = vi.fn(rowsFetcher(status));
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      fetcher,
+    );
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(message);
+    expect(container.querySelector("[data-table-retry]")).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it("toggles column sort and marks the active column", async () => {
@@ -426,6 +464,63 @@ describe("SchemaTable title / filters / pager", () => {
     expect(heading?.textContent).toBe("Signed-in sessions");
   });
 
+  it("renders page actions after the filter panel and keeps filter actions in the grid", async () => {
+    const container = await renderTable(
+      tableNode({
+        columns: COLUMNS,
+        dataSource: "/api/users",
+        // R6 C8: the filter action cell only exists when something needs it —
+        // either host actions or filters that overflow the collapsed row. Five
+        // selects exceed the lg capacity of four, so the cell is present.
+        filters: [
+          { field: "status", type: "select", options: [{ value: "" }, { value: "active" }] },
+          { field: "owner", type: "select", options: [{ value: "" }, { value: "alice" }] },
+          { field: "region", type: "select", options: [{ value: "" }, { value: "eu" }] },
+          { field: "tier", type: "select", options: [{ value: "" }, { value: "gold" }] },
+          { field: "channel", type: "select", options: [{ value: "" }, { value: "web" }] },
+        ],
+        toolbar: [{ key: "create", label: "Create" }],
+      }),
+      rowsFetcher(),
+    );
+    const filterPanel = container.querySelector('[data-list-filter-panel="true"]');
+    const pageActions = container.querySelector('[data-list-page-actions]');
+    const filterGrid = container.querySelector('[data-list-filter-grid="true"]');
+    const filterActions = container.querySelector('[data-filter-actions="true"]');
+    expect(filterPanel).not.toBeNull();
+    expect(pageActions).not.toBeNull();
+    expect(filterGrid?.contains(filterActions)).toBe(true);
+    expect(filterPanel?.compareDocumentPosition(pageActions!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(
+      filterPanel?.querySelector('[data-list-page-actions]'),
+    ).toBeNull();
+  });
+
+  // R6 C8 (user 2026-09-18, item 3): a single-row filter set has nothing to
+  // expand, so neither the toggle nor the action cell it would occupy renders.
+  it("omits the expand toggle and its action cell when no filter is hidden", async () => {
+    const container = await renderTable(
+      tableNode({
+        columns: COLUMNS,
+        dataSource: "/api/users",
+        filters: [
+          { field: "status", type: "select", options: [{ value: "" }, { value: "active" }] },
+          { field: "owner", type: "select", options: [{ value: "" }, { value: "alice" }] },
+        ],
+        toolbar: [{ key: "create", label: "Create" }],
+      }),
+      rowsFetcher(),
+    );
+    const filterPanel = container.querySelector('[data-list-filter-panel="true"]');
+    expect(filterPanel).not.toBeNull();
+    expect(container.querySelector('[data-filter-toggle="true"]')).toBeNull();
+    expect(container.querySelector('[data-filter-actions="true"]')).toBeNull();
+    // The page actions row is unaffected by the filter panel's own actions.
+    expect(container.querySelector('[data-list-page-actions]')).not.toBeNull();
+  });
+
   it("parses only well-formed select filters (fail-closed on malformed entries)", () => {
     const node = tableNode({
       columns: COLUMNS,
@@ -570,12 +665,19 @@ describe("SchemaTable title / filters / pager", () => {
     expect(calls.some((query) => query.includes("page=2"))).toBe(true);
   });
 
-  it("hides the pager when everything fits on one page", async () => {
+  it("keeps a disabled pager visible when everything fits on one page", async () => {
     const container = await renderTable(
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       rowsFetcher(),
     );
-    expect(container.querySelector("nav")).toBeNull();
+    const nav = container.querySelector("nav");
+    expect(nav).not.toBeNull();
+    expect(nav?.querySelector('[aria-label="Previous page"]')).toHaveProperty("disabled", true);
+    expect(nav?.querySelector('[aria-label="Page 1"]')).toHaveProperty("disabled", true);
+    expect(nav?.querySelector('[aria-label="Next page"]')).toHaveProperty("disabled", true);
+    const jump = container.querySelector<HTMLFormElement>('[aria-label="Go to page"]');
+    expect(jump?.querySelector("input")).toHaveProperty("disabled", true);
+    expect(jump?.querySelector("button")).toHaveProperty("disabled", true);
   });
 
   // W11 · U-06: pageSize switcher + go-to-page control.
@@ -584,7 +686,10 @@ describe("SchemaTable title / filters / pager", () => {
     const controlled = (async (input: RequestInfo | URL) => {
       const url = new URL(String(input), "http://test.local");
       calls.push(url.search);
-      const pageSize = Number(url.searchParams.get("pageSize") ?? "10");
+      // GOAL-011: the server's own default is 20 (handler.DefaultPageSize), so an
+      // omitted pageSize means 20 per page — not 10. Modelling the real contract
+      // here is what makes the "10 must take effect" assertion below meaningful.
+      const pageSize = Number(url.searchParams.get("pageSize") ?? "20");
       const page = Number(url.searchParams.get("page") ?? "1");
       return new Response(
         JSON.stringify({
@@ -601,10 +706,15 @@ describe("SchemaTable title / filters / pager", () => {
       tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
       controlled,
     );
-    // Page-size switch → page=1 + pageSize=20.
     const sizeSelect = container.querySelector<HTMLSelectElement>('[aria-label="Rows per page"]');
-    // Go-to-page jump first: page 3 is valid at the default pageSize of 10
-    // (25 items → 3 pages); after switching to 20 per page only 2 pages exist.
+    expect(sizeSelect).not.toBeNull();
+    // GOAL-011: the control shows the size that is actually in effect, and the
+    // default is 20 on both sides of the wire.
+    expect(sizeSelect!.value).toBe("20");
+    expect(calls[0] ?? "").not.toContain("pageSize=");
+
+    // Go-to-page jump first: page 3 is valid at the default pageSize of 20
+    // (25 items → 2 pages) is NOT the case any more, so jump to page 2 at 20.
     const goToForm = container.querySelector<HTMLFormElement>('[aria-label="Go to page"]');
     expect(goToForm).not.toBeNull();
     const input = goToForm!.querySelector<HTMLInputElement>('input[type="number"]');
@@ -612,7 +722,7 @@ describe("SchemaTable title / filters / pager", () => {
     await act(async () => {
       Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set?.call(
         input,
-        "3",
+        "2",
       );
       input!.dispatchEvent(new Event("input", { bubbles: true }));
       goToForm!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -620,22 +730,41 @@ describe("SchemaTable title / filters / pager", () => {
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(calls.some((query) => query.includes("page=3"))).toBe(true);
+    expect(calls.some((query) => query.includes("page=2"))).toBe(true);
 
-    // Page-size switch → page=1 (default, omitted) + pageSize=20; the jump to
-    // page 3 is no longer valid at 20 per page (2 pages), so no page=3+20 call.
+    // Page-size switch to 10 → page=1 + an explicit pageSize=10 (GOAL-011: this
+    // is the request the user could not get the app to send).
     await act(async () => {
       Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value")?.set?.call(
         sizeSelect,
-        "20",
+        "10",
       );
       sizeSelect!.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(calls.some((query) => query.includes("pageSize=20"))).toBe(true);
-    expect(calls.some((query) => query.includes("page=2") && query.includes("pageSize=20"))).toBe(false);
+    expect(calls.some((query) => query.includes("pageSize=10"))).toBe(true);
+    const lastRows = container.querySelectorAll('[data-table-surface] tbody tr');
+    expect(lastRows.length).toBe(10);
+  });
+
+  // GOAL-011: switching back to the default size keeps sending no pageSize (the
+  // server applies its own 20) — the optimisation must not turn into a silent
+  // "10" or a duplicate parameter.
+  it("keeps the jump confirm button labelled as a jump, not a search", async () => {
+    const container = await renderTable(
+      tableNode({ columns: COLUMNS, dataSource: "/api/users" }),
+      rowsFetcher(),
+    );
+    const goToForm = container.querySelector<HTMLFormElement>('[aria-label="Go to page"]');
+    expect(goToForm).not.toBeNull();
+    const confirm = goToForm!.querySelector<HTMLButtonElement>('button[type="submit"]');
+    expect(confirm).not.toBeNull();
+    expect(confirm!.textContent?.trim()).toBe("Go");
+    // The form label still describes the target page, and the input keeps its
+    // own accessible name.
+    expect(goToForm!.querySelector("label")?.textContent?.trim()).toBe("Go to page");
   });
 
   // W11 · U-05 fix: the overflow menu is portaled to document.body and fixed to

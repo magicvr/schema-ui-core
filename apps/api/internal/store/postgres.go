@@ -2,17 +2,41 @@ package store
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/url"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib" // registers driver name "pgx"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
+
+// missingDatabaseHint turns the bare "database does not exist" ping failure into
+// an actionable message (W35 / GOAL-047): the application never runs CREATE
+// DATABASE, so on a fresh or reset server the operator must provision the
+// database first. The hint only adds text — the error chain and its
+// classification are unchanged, and the DSN (with its password) is never echoed.
+func missingDatabaseHint(err error) error {
+	if err == nil {
+		return nil
+	}
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "3D000" {
+		return err
+	}
+	return fmt.Errorf("%w\n  the target database does not exist yet and the API never creates it;"+
+		"\n  provision it first:  dev.cmd init-db   (or: cd apps/api && go run ./cmd/dbsetup)"+
+		"\n  see README/QUICKSTART \"initialize the databases\"", err)
+}
 
 // postgres implements kernel.Store for the postgres dialect. R2 delivers
 // connect + Ping + WasFresh (probe open); the compiled catalog is NOT applied
@@ -21,6 +45,14 @@ type postgres struct {
 	db              *sql.DB
 	fresh           bool
 	systemDataReady atomic.Bool
+	// dsn / database identify the store for recovery-point metadata.
+	dsn      string
+	database string
+	// recoveryPoints / rollbackArtifacts are the C3 §4.2 anchors (optional).
+	recoveryPoints    kernel.RecoveryPointPort
+	rollbackArtifacts RollbackArtifactCreator
+	artifactDir       string
+	recoveryNote      string
 }
 
 // openPostgres opens a postgres connection: DSN connect, Ping, WasFresh, and —
@@ -45,14 +77,27 @@ func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.Migrat
 	defer cancel()
 	if err := db.PingContext(probeCtx); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("postgres ping: %w", err)
+		return nil, fmt.Errorf("postgres ping: %w", missingDatabaseHint(err))
 	}
 	fresh, err := postgresWasFresh(probeCtx, db)
 	if err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("postgres WasFresh: %w", err)
 	}
-	st := &postgres{db: db, fresh: fresh}
+	dsnDB, dbErr := url.Parse(opts.DSN)
+	database := ""
+	if dbErr == nil {
+		database = strings.TrimPrefix(dsnDB.Path, "/")
+	}
+	st := &postgres{
+		db:                db,
+		fresh:             fresh,
+		dsn:               opts.DSN,
+		database:          database,
+		recoveryPoints:    opts.RecoveryPoints,
+		rollbackArtifacts: opts.RollbackArtifacts,
+		artifactDir:       opts.ArtifactDir,
+	}
 	if len(catalog) > 0 {
 		if err := st.migrate(catalog); err != nil {
 			_ = db.Close()
@@ -92,6 +137,22 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 	case actionRefuse:
 		return fmt.Errorf("store: %s", plan.Reason)
 	case actionNoop:
+		return p.verifyIntegrityPG(ctx, conversionCompletionVersion(normalized))
+	case actionVerifyRecoveryPoint:
+		// C3 §4.3 (postgres anchor): catalog at head without a class-B recovery
+		// point is an explicit action, re-created at most once per startup.
+		if err := p.verifyIntegrityPG(ctx, conversionCompletionVersion(normalized)); err != nil {
+			return err
+		}
+		state, err := p.probeRecoveryState(ctx)
+		if err != nil {
+			return err
+		}
+		if !state.Converted {
+			return fmt.Errorf("store: recovery point missing and the schema is not converted (%s)", state.Detail)
+		}
+		p.recoveryNote = fmt.Sprintf("recovery point missing at catalog head (%s); attempting one re-create", state.Detail)
+		p.createRecoveryPoint(ctx, normalized)
 		return nil
 	case actionApplyPending:
 		if err := validateApplied(id.Applied, normalized); err != nil {
@@ -118,12 +179,101 @@ func (p *postgres) migrate(catalog []kernel.MigrationContribution) error {
 }
 
 func (p *postgres) applyPendingPG(ctx context.Context, catalog []kernel.MigrationContribution, applied []appliedMigration) error {
-	for _, migration := range pendingMigrations(applied, catalog) {
+	pending := pendingMigrations(applied, catalog)
+	// C3 §4.2 call point 1 (postgres anchor): class-A rollback artifact before
+	// the batch. A failure stops the batch, exactly like the sqlite anchor.
+	if len(pending) > 0 && !p.fresh {
+		if err := p.snapshotBeforeBatchPG(ctx); err != nil {
+			return err
+		}
+	}
+	for _, migration := range pending {
+		// C3 §4.2 call point 2 (postgres anchor): the per-migration class-C
+		// artifact. A fresh database has nothing to recover, so it is skipped.
+		if !p.fresh {
+			if err := p.snapshotBeforePendingPG(ctx, migration.Version); err != nil {
+				return err
+			}
+		}
 		if err := p.applyMigrationPG(ctx, migration); err != nil {
 			return err
 		}
 	}
+	// The postgres runner had no integrity check at all (C3 §4.2 gap): the
+	// converted-shape probe is its symmetric entry.
+	if err := p.verifyIntegrityPG(ctx, conversionCompletionVersion(catalog)); err != nil {
+		return err
+	}
+	// C3 §4.2 call point 3: class-B recovery point after a committed batch.
+	if len(pending) > 0 {
+		p.createRecoveryPoint(ctx, catalog)
+	}
 	return nil
+}
+
+// verifyIntegrityPG is the postgres counterpart of the sqlite runner's
+// verifyIntegrity: when the catalog head is reached the live schema must carry
+// the converted temporal contract.
+// verifyIntegrityPG is the postgres counterpart of the sqlite runner's
+// verifyIntegrity. needConverted is the catalog version at which the temporal
+// contract must hold (the catalog head), so the check is derived from the
+// catalog instead of a hardcoded version (GOAL-005 A-002 F-I-005).
+func (p *postgres) verifyIntegrityPG(ctx context.Context, needConverted int) error {
+	converted, detail, err := postgresConvertedShape(ctx, p.db)
+	if err != nil {
+		return fmt.Errorf("store: postgres shape check: %w", err)
+	}
+	if converted {
+		return nil
+	}
+	var head int
+	if err := p.db.QueryRowContext(ctx,
+		`SELECT COALESCE(MAX(version), 0) FROM schema_migrations`).Scan(&head); err != nil {
+		return fmt.Errorf("store: postgres ledger head: %w", err)
+	}
+	// A partially migrated database is a legitimate intermediate state while a
+	// batch is in flight (D-001: resumable), but a ledger at the catalog head
+	// that is not converted is a contract violation.
+	if needConverted > 0 && head >= needConverted {
+		return fmt.Errorf("store: postgres ledger is at v%d (head %d) but the temporal contract is not converted (%s)",
+			head, needConverted, detail)
+	}
+	return nil
+}
+
+// snapshotBeforeBatchPG writes the pre-batch class-A rollback artifact through
+// the injected creator (pg_dump lives in internal/backup; the store keeps no
+// provider dependency).
+// randomSuffix returns 4 hex characters for artifact-name uniqueness.
+func randomSuffix() string {
+	buf := make([]byte, 2)
+	if _, err := rand.Read(buf); err != nil {
+		return "0000"
+	}
+	return hex.EncodeToString(buf)
+}
+
+func (p *postgres) snapshotBeforeBatchPG(ctx context.Context) error {
+	if p.rollbackArtifacts == nil || strings.TrimSpace(p.dsn) == "" || strings.TrimSpace(p.artifactDir) == "" {
+		p.recoveryNote = "postgres rollback anchors disabled (no artifact creator or directory configured)"
+		return nil
+	}
+	target := filepath.Join(p.artifactDir, fmt.Sprintf("%s.batch-rollback-%s.dump",
+		p.database, time.Now().UTC().Format("20060102T150405.000Z")))
+	return p.rollbackArtifacts.CreateRollbackArtifact(ctx, p.dsn, target)
+}
+
+// snapshotBeforePendingPG writes the per-migration class-C artifact.
+func (p *postgres) snapshotBeforePendingPG(ctx context.Context, version int) error {
+	if p.rollbackArtifacts == nil || strings.TrimSpace(p.dsn) == "" || strings.TrimSpace(p.artifactDir) == "" {
+		return nil
+	}
+	// The name carries a timestamp AND a random suffix: PgProvider.Create refuses
+	// to overwrite an existing artifact, so a fixed per-version name would make a
+	// retry after a failed batch fail the whole open (GOAL-005 A-002 F-I-001).
+	target := filepath.Join(p.artifactDir, fmt.Sprintf("%s.pre-v%04d-%s-%s.dump",
+		p.database, version, time.Now().UTC().Format("20060102T150405.000"), randomSuffix()))
+	return p.rollbackArtifacts.CreateRollbackArtifact(ctx, p.dsn, target)
 }
 
 func (p *postgres) currentSchemaTables(ctx context.Context) ([]string, error) {
@@ -162,9 +312,12 @@ func (p *postgres) applyMigrationPG(ctx context.Context, migration kernel.Migrat
 				return fmt.Errorf("migration %d (%s): %w", migration.Version, migration.Name, err)
 			}
 		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
-			migration.Version, migration.Name, migration.Checksum, time.Now().UTC().Unix(),
+		write, err := postgresLedgerWrite(ctx, tx, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, write.statement,
+			migration.Version, migration.Name, migration.Checksum, write.value,
 		); err != nil {
 			return fmt.Errorf("record migration %d (%s): %w", migration.Version, migration.Name, err)
 		}
@@ -271,19 +424,72 @@ func (p *postgres) SystemDataReady() error {
 	return nil
 }
 
-// pgTx adapts *sql.Tx to kernel.Tx with postgres placeholder rebinding.
+// pgTx adapts *sql.Tx to kernel.Tx with postgres placeholder rebinding. Domain
+// time arguments are normalized to the types the postgres timestamptz(6) codec
+// accepts, so repositories bind time.Time / sql.NullTime identically on both
+// dialects (workspace-040 R2).
 type pgTx struct{ tx *sql.Tx }
 
 func (t pgTx) Exec(ctx context.Context, query string, args ...any) (kernel.Result, error) {
-	return t.tx.ExecContext(ctx, rebindPostgres(query), args...)
+	return t.tx.ExecContext(ctx, rebindPostgres(query), bindPostgresArgs(args)...)
 }
 
 func (t pgTx) Query(ctx context.Context, query string, args ...any) (kernel.Rows, error) {
-	return t.tx.QueryContext(ctx, rebindPostgres(query), args...)
+	rows, err := t.tx.QueryContext(ctx, rebindPostgres(query), bindPostgresArgs(args)...)
+	if err != nil {
+		return nil, err
+	}
+	return scanRows{rows: rows}, nil
 }
 
 func (t pgTx) QueryRow(ctx context.Context, query string, args ...any) kernel.Row {
-	return t.tx.QueryRowContext(ctx, rebindPostgres(query), args...)
+	return scanRow{row: t.tx.QueryRowContext(ctx, rebindPostgres(query), bindPostgresArgs(args)...)}
+}
+
+func bindPostgresArgs(args []any) []any {
+	if len(args) == 0 {
+		return args
+	}
+	out := make([]any, len(args))
+	for i, arg := range args {
+		out[i] = bindPostgresArg(arg)
+	}
+	return out
+}
+
+// bindPostgresArg maps dialect-neutral domain time values onto what the
+// postgres timestamptz(6) codec accepts, truncating toward zero to microseconds
+// exactly like the SQLite side.
+//
+// The truncation is load-bearing (Root D-008 / workspace-040 GOAL-004 A-002
+// F-I-001): timestamptz(6)'s typmod ROUNDs, so passing a raw time.Now() through
+// would store a different instant than the SQLite canonical text would
+// (123456789 ns -> ...123457 on postgres vs ...123456 on sqlite).
+func bindPostgresArg(arg any) any {
+	switch v := arg.(type) {
+	case time.Time:
+		return temporal.Truncate(v)
+	case *time.Time:
+		if v == nil {
+			return nil
+		}
+		instant := temporal.Truncate(*v)
+		return &instant
+	case sql.NullTime:
+		if !v.Valid {
+			return nil
+		}
+		return temporal.Truncate(v.Time)
+	case temporal.Value:
+		return v.Time()
+	case temporal.NullValue:
+		if !v.Valid() {
+			return nil
+		}
+		return v.Time()
+	default:
+		return arg
+	}
 }
 
 // postgresWasFresh reports whether the database has zero user base tables in

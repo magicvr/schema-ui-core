@@ -13,6 +13,7 @@ package authsession
 import (
 	"context"
 	"crypto/subtle"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -153,11 +154,11 @@ func (r *Repository) StartRecovery(identifier string, sender kernel.MailSender, 
 
 	// Cooldown + idempotent replace in ONE transaction (0056 PK on user_id).
 	if err := r.withTx("stage recovery challenge", func(tx kernel.Tx) error {
-		var sentAt int64
+		var sentAt sql.NullTime
 		scanErr := tx.QueryRow(context.Background(),
 			`SELECT sent_at FROM password_recovery_challenges WHERE user_id = ?`, target.UserID,
 		).Scan(&sentAt)
-		if scanErr == nil && now.Unix()-sentAt < int64(recoveryResendCooldown/time.Second) {
+		if scanErr == nil && sentAt.Valid && now.Sub(sentAt.Time) < recoveryResendCooldown {
 			return ErrRecoveryCooldown
 		}
 		if scanErr != nil && !errors.Is(scanErr, kernel.ErrNoRows) {
@@ -169,7 +170,7 @@ func (r *Repository) StartRecovery(identifier string, sender kernel.MailSender, 
 		if _, err := tx.Exec(context.Background(),
 			`INSERT INTO password_recovery_challenges (user_id, code_hash, expires_at, sent_at, attempt_count)
 			 VALUES (?, ?, ?, ?, 0)`,
-			target.UserID, hashCode(code), expires.Unix(), now.Unix(),
+			target.UserID, hashCode(code), expires, now,
 		); err != nil {
 			return fmt.Errorf("store recovery challenge: %w", err)
 		}
@@ -210,7 +211,7 @@ func (r *Repository) EvaluateRecoveryCode(userID, rawCode string, now time.Time)
 	outcome := RecoveryNotPending
 	err := r.withTx("evaluate recovery code", func(tx kernel.Tx) error {
 		var codeHash string
-		var expiresAt int64
+		var expiresAt time.Time
 		err := tx.QueryRow(context.Background(),
 			`SELECT code_hash, expires_at FROM password_recovery_challenges WHERE user_id = ?`,
 			userID,
@@ -229,7 +230,7 @@ func (r *Repository) EvaluateRecoveryCode(userID, rawCode string, now time.Time)
 		// requested a reset. Expiry is only surfaced when the code hash
 		// MATCHES (the legitimate holder gets the helpful message); every
 		// other value falls through to the uniform invalid classification.
-		if now.Unix() >= expiresAt {
+		if !now.Before(expiresAt) {
 			if subtle.ConstantTimeCompare([]byte(hashCode(code)), []byte(codeHash)) == 1 {
 				outcome = RecoveryExpired
 			} else {
@@ -285,7 +286,7 @@ func (r *Repository) DropStaleRecoveryChallenge(userID string, now time.Time) {
 	_ = r.withTx("drop stale recovery challenge", func(tx kernel.Tx) error {
 		_, err := tx.Exec(context.Background(),
 			`DELETE FROM password_recovery_challenges WHERE user_id = ? AND expires_at <= ?`,
-			userID, now.Unix())
+			userID, now)
 		return err
 	})
 }

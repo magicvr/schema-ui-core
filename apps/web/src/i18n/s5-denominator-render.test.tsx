@@ -41,6 +41,10 @@ import "@/components/notification-center";
 import "@/components/password-policy-tab";
 import "@/components/telegram-admin-tab";
 import "@/components/wallet-ensure";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ADMIN_MANIFEST = resolve(__dir, "../test-fixtures/app-manifest.admin-dogfood.json");
@@ -280,8 +284,15 @@ describe("S5 · denominator runtime bilingual render (F-002)", () => {
     expect(enText).toContain("New role");
     expect(enText).toContain("Name");
     expect(enText).toContain("Key");
-  });
+  }, 20_000);
 
+  // W33 (GOAL-045): explicit timeouts on the App-rendering cases. Each one boots
+  // the REAL shell (manifest + schema fetch + render), and the 18-render case
+  // routinely needs >3s; against vitest's 5s default they tipped over into
+  // timeouts under full-suite load. Evidence: the same two cases failed on a
+  // CLEAN tree (no W33 changes) with collect ≈230s, and the whole suite passes
+  // with `--testTimeout=20000`. This is load sensitivity, not a product defect —
+  // pinning a budget keeps the signal instead of the flake.
   it("resolves titleKey for remaining union pages under both locales", async () => {
     const documents = allDocuments();
     const manifest = loadManifest(ADMIN_MANIFEST);
@@ -328,7 +339,7 @@ describe("S5 · denominator runtime bilingual render (F-002)", () => {
       );
       expect(zh.querySelector("h1")?.textContent ?? "", `zh ${entry.route}`).toContain(entry.zh);
     }
-  });
+  }, 30_000);
 
   it("renders activity intro/columns under zh-CN (schema body, not only titleKey)", async () => {
     const documents = allDocuments();
@@ -402,5 +413,5 @@ describe("S5 · mvp Profile boundary (F-003)", () => {
     );
     expect(admin.querySelector("h1")?.textContent).toContain("设置");
     expect(admin.textContent ?? "").toMatch(/常规|站点标题/);
-  });
+  }, 20_000);
 });

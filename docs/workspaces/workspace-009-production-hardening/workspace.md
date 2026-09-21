@@ -10,8 +10,8 @@ plan_refs:
   - VP-009-production-hardening
 primary_plan: VP-009-production-hardening
 created: 2026-08-10
-updated: 2026-08-30
-version: 0.17.0
+updated: 2026-09-10
+version: 0.18.0
 parent: null
 ---
 
@@ -36,7 +36,10 @@ parent: null
 
 ## 愿景对齐
 
-Charter：`schema-ui-core-admin-foundation@0.3.0`。  
+Charter：`schema-ui-core-admin-foundation@0.4.0`。
+
+本次 re-align（2026-09-10）仅刷新现行 Charter 声明；`status`、Root、`vision_role`、`plan_refs` 与 `primary_plan` 均保持不变，依据 [VRev-091](../../vision/reviews/VRev-091-vp009-charter-0-4-0-realign.md)。
+
 VP-009 为共享基架持续安全程序；与 VP-008 `go` 消费有效性接口见该 VP。  
 independent provider（沿用 workspace-008 D-002）：**grok build · grok-4.6 · high · `audit`**；波次 security 高影响默认 `cross`。
 

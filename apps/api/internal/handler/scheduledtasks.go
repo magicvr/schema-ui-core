@@ -266,9 +266,9 @@ func (e *taskEntity) Update(id string, body map[string]any, now time.Time, actor
 }
 
 // DeleteTrashTx implements handler.TrashTxDeleter (W11 F-002): the task
-	// delete and the recycle snapshot commit in ONE transaction — a snapshot
-	// failure rolls the delete back. The audit event is recorded only after
-	// the transaction committed.
+// delete and the recycle snapshot commit in ONE transaction — a snapshot
+// failure rolls the delete back. The audit event is recorded only after
+// the transaction committed.
 func (e *taskEntity) DeleteTrashTx(ctx context.Context, id string, actor account.User, now time.Time, record func(context.Context, kernel.Tx) error) error {
 	txrepo, ok := e.repository.(interface {
 		DeleteTaskTx(ctx context.Context, id string, record func(context.Context, kernel.Tx) error) error
@@ -415,7 +415,7 @@ func ScheduledTaskRoutes(a *auth.Authenticator, repository TasksRepository, runn
 				if !ok {
 					break
 				}
-				nextRuns = append(nextRuns, next.Format(time.RFC3339))
+				nextRuns = append(nextRuns, FormatWireTime(next))
 				cursor = next.Add(time.Minute)
 			}
 			writeJSON(w, http.StatusOK, map[string]any{
@@ -503,17 +503,17 @@ func taskToMap(t tasksstore.Task) map[string]any {
 	return map[string]any{
 		"id": t.ID, "key": t.Key, "cron": t.Cron, "name": t.Name,
 		"enabled": t.Enabled, "description": t.Description, "handler": t.Handler,
-		"createdAt": formatRFC3339Milli(t.CreatedAt), "updatedAt": formatRFC3339Milli(t.UpdatedAt),
+		"createdAt": FormatWireTime(t.CreatedAt), "updatedAt": FormatWireTime(t.UpdatedAt),
 	}
 }
 
 func taskRunToMap(rn tasksstore.TaskRun) map[string]any {
 	row := map[string]any{
 		"id": rn.ID, "taskId": rn.TaskID, "status": rn.Status,
-		"startedAt": formatRFC3339Milli(rn.StartedAt), "detail": rn.Detail,
+		"startedAt": FormatWireTime(rn.StartedAt), "detail": rn.Detail,
 	}
 	if rn.FinishedAt != nil {
-		row["finishedAt"] = formatRFC3339Milli(*rn.FinishedAt)
+		row["finishedAt"] = FormatWireTime(*rn.FinishedAt)
 	} else {
 		row["finishedAt"] = nil
 	}

@@ -105,6 +105,21 @@ describe("auth-client", () => {
     );
     const session = await fetchMe();
     expect(session.user.permissions).toEqual(["users.read", "roles.assign"]);
+    expect(session.runtimeMode).toBe("normal");
+  });
+
+  it("fetchMe projects additive runtimeMode for the Shell banner (VP-039 R2)", async () => {
+    setAccessToken("a1");
+    setRefreshToken("r1");
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        user: { id: "user-admin", name: "Admin", roles: ["admin"] },
+        features: {},
+        runtimeMode: "maintenance",
+      }),
+    );
+    const session = await fetchMe();
+    expect(session.runtimeMode).toBe("maintenance");
   });
 
   it("login maps a 401 to INVALID_CREDENTIALS", async () => {

@@ -34,5 +34,5 @@ version: 1.0.0
 ## 验证（S3 · E-004 见下）
 
 - go build ./... 全绿；`go test -count=1 ./...` 全绿（34 包 ok）。
-- vitest 全量 **65 文件 / 1038 测试全绿**；tsc --noEmit 无错。
+- vitest 全量 **65 文件 / 1038 测试全绿**；tsc --noEmit 无错。**（勘误 2026-09-18：裸 `tsc --noEmit` 在 solution-style `apps/web/tsconfig.json` 下不编译任何文件、恒 exit 0，属空转证据、不构成类型校验；vitest 与实机冒烟证据不受影响。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。）**
 - **实机冒烟**（临时 admin profile 实例，端口 25099，临时 DB）：manifest 发布 my-wallet 页 + user-nav 顺序 `account → my-wallet → settings`；/api/schema/my-wallet 200；admin 登录后 /api/wallet/me 返回信封（ownerId=user-admin、余额 0、active）+ 恰好 1 条 auto 审计；/me/entries 空列表；admin /api/wallet/accounts 回归正常；editor（无 wallet.* 权限）可读 /me 但 /api/wallet/accounts 403。

@@ -12,11 +12,35 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { I18nProvider } from "@/i18n/runtime";
 import { RenderPage } from "@/renderer/render.tsx";
 import { SchemaTable } from "@/renderer/schema-table.tsx";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 
 const activeRoots: Array<{ root: Root; container: HTMLDivElement }> = [];
 
+/**
+ * R6 C8: the filter panel is responsive — it renders the expand/collapse
+ * toggle only when the collapsed first row hides a control at the current
+ * width. This suite exercises that toggle, so it pins a narrow (mobile) tier
+ * where the second filter is genuinely hidden.
+ */
+function pinNarrowViewport(): void {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+}
+
 beforeEach(() => {
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, value: true });
+  pinNarrowViewport();
 });
 
 afterEach(async () => {
@@ -117,6 +141,28 @@ describe("T-02 search form filter binding (GOAL-013 D-003 / T-07 GOAL-014)", () 
     expect(form).not.toBeNull();
     const qInput = form!.querySelector('input');
     const select = form!.querySelector('select');
+    const collapsedSelectItem = form!.querySelector('[data-filter-item-index="1"]');
+    expect(collapsedSelectItem?.className).toContain("hidden");
+    const filterToggle = form!.querySelector<HTMLButtonElement>('[data-filter-toggle="true"]');
+    expect(filterToggle).not.toBeNull();
+    const filterActions = form!.querySelector('[data-filter-actions="true"]');
+    expect(filterActions).not.toBeNull();
+    expect(filterActions?.parentElement?.getAttribute("data-list-filter-grid")).toBe("true");
+    const filterGrid = filterActions?.parentElement;
+    expect(filterGrid?.lastElementChild).toBe(filterActions);
+    expect(filterActions?.className).toContain("sm:col-start-2");
+    expect(filterActions?.className).toContain("md:col-start-3");
+    expect(filterActions?.className).toContain("lg:col-start-4");
+    expect(filterActions?.contains(filterToggle)).toBe(true);
+    // R6 C7 (user 2026-09-18): the search submit button belongs to the keyword
+    // input's own cell — the action cell owns reset + expand/collapse only.
+    expect(filterActions?.querySelector('button[type="submit"]')).toBeNull();
+    expect(filterToggle?.getAttribute("aria-expanded")).toBe("false");
+    await act(async () => filterToggle?.click());
+    expect(filterToggle?.getAttribute("aria-expanded")).toBe("true");
+    expect(collapsedSelectItem?.className).not.toContain("hidden");
+    await act(async () => filterToggle?.click());
+    expect(filterToggle?.getAttribute("aria-expanded")).toBe("false");
 
     // T-07: changing the SELECT applies the filter IMMEDIATELY — the list
     // refetches without pressing Search, and the chip appears at once.
@@ -160,9 +206,25 @@ describe("T-02 search form filter binding (GOAL-013 D-003 / T-07 GOAL-014)", () 
     expect(chips).not.toBeNull();
     expect(chips!.textContent).not.toContain("ali");
 
-    // Press the paired Search button → keyword joins the applied query.
+    // A-003 pairing rule (user 2026-08-16, restored by R6 C7 on 2026-09-18):
+    // the search submit button is adjacent to the keyword input — same grid
+    // cell, side by side.
+    const searchButton = form!.querySelector<HTMLButtonElement>('button[type="submit"]');
+    expect(searchButton).not.toBeNull();
+    const keywordCell = searchButton!.closest('[data-filter-item]');
+    expect(keywordCell).not.toBeNull();
+    expect(keywordCell?.contains(qInput as Node)).toBe(true);
+    expect(filterActions?.contains(searchButton as Node)).toBe(false);
+    // W13 T-03 (user 2026-08-16): the pair is ONE attached component — the
+    // button overlaps the input's right border (-ml-px) and the inner
+    // corners are squared off, so they read as a single control and can
+    // never wrap onto separate rows.
+    expect(searchButton!.className).toContain("-ml-px");
+    expect(searchButton!.className).toContain("rounded-l-none");
+    const searchInput = qInput as HTMLInputElement;
+    expect(searchInput.className).toContain("rounded-r-none");
     await act(async () => {
-      form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      searchButton!.click();
     });
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -173,23 +235,6 @@ describe("T-02 search form filter binding (GOAL-013 D-003 / T-07 GOAL-014)", () 
     chips = container.querySelector('[data-filter-chips]');
     expect(chips!.textContent).toContain("ali");
     expect(chips!.textContent).toContain("Enabled");
-
-    // A-003 pairing rule (user 2026-08-16): the search submit button is
-    // adjacent to the keyword input — same grid cell, side by side.
-    const searchButton = Array.from(container.querySelectorAll('button[type="submit"]')).find(
-      (el) => el.textContent?.includes("Search"),
-    );
-    expect(searchButton).not.toBeUndefined();
-    const cell = (searchButton as HTMLButtonElement).parentElement!;
-    expect(cell.contains(container.querySelector('input') as Node)).toBe(true);
-    // W13 T-03 (user 2026-08-16): the pair is ONE attached component — the
-    // button overlaps the input's right border (-ml-px) and the inner
-    // corners are squared off, so they read as a single control and can
-    // never wrap onto separate rows.
-    expect((searchButton as HTMLButtonElement).className).toContain("-ml-px");
-    expect((searchButton as HTMLButtonElement).className).toContain("rounded-l-none");
-    const searchInput = container.querySelector("input") as HTMLInputElement;
-    expect(searchInput.className).toContain("rounded-r-none");
 
     // T-07: removing a chip (click ×) drops the condition and re-filters at once.
     // The chip remove aria-label is removeFilter + the field label; the
@@ -211,10 +256,10 @@ describe("T-02 search form filter binding (GOAL-013 D-003 / T-07 GOAL-014)", () 
 
     // A-003: the reset button clears every condition and re-runs the search
     // (the request drops q and enabled).
-    const resetButton = Array.from(container.querySelectorAll("button")).find((el) =>
+    const resetButton = Array.from(filterActions!.querySelectorAll("button")).find((el) =>
       el.textContent?.includes("Reset"),
-    );
-    expect(resetButton).not.toBeUndefined();
+    );    expect(resetButton).not.toBeUndefined();
+    expect(filterActions?.contains(resetButton as Node)).toBe(true);
     const before = calls.length;
     await act(async () => {
       (resetButton as HTMLButtonElement).click();

@@ -39,9 +39,13 @@ export interface AuthUser {
   permissions?: string[];
 }
 
+export type RuntimeMode = "normal" | "maintenance" | "degraded" | "read-only";
+
 export interface AuthSession {
   user: AuthUser;
   features: Record<string, boolean>;
+  /** Process runtime.mode from GET /api/accounts/me (VP-039 R2). */
+  runtimeMode: RuntimeMode;
 }
 
 /** Error with a stable code so the UI can branch (e.g. INVALID_CREDENTIALS). */
@@ -551,12 +555,23 @@ export async function fetchMe(): Promise<AuthSession> {
   if (!response.ok) {
     throw new AuthError("ME_FAILED", `session fetch failed: HTTP ${response.status}`);
   }
-  const body = (await response.json()) as { user?: unknown; features?: Record<string, boolean> };
+  const body = (await response.json()) as {
+    user?: unknown;
+    features?: Record<string, boolean>;
+    runtimeMode?: unknown;
+  };
   const user = parseAuthUser(body.user);
   if (user === null) {
     throw new AuthError("ME_MALFORMED", "session response was malformed");
   }
-  return { user, features: body.features ?? {} };
+  return { user, features: body.features ?? {}, runtimeMode: parseRuntimeMode(body.runtimeMode) };
+}
+
+export function parseRuntimeMode(value: unknown): RuntimeMode {
+  if (value === "maintenance" || value === "degraded" || value === "read-only" || value === "normal") {
+    return value;
+  }
+  return "normal";
 }
 
 // --- workspace-019 R3 (GOAL-004 D-001 §3): invitation acceptance ---

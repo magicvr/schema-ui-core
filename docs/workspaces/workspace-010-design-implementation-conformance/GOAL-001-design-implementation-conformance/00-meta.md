@@ -64,6 +64,7 @@ serves_summary: 长期符合性程序容器——周期对照 as-designed 与 as
 | W14-批A | GOAL-016-w14-rectification-batch-a（**GOAL-015 下级**） | **active**（0/4 · 2026-08-17 立项） | 整改批 A：F-01 定时任务 handler / F-02 数据权限范围设置 / F-03 审计结构化过滤与导出 / F-04 通知本地化 messageKey；由 W14 用户裁决（D-003）+ GOAL-015 路线图立项；批 C/D/B 渐进添加 |
 | W26 | GOAL-038-w26-email-display-and-mail-pages | **active**（0/4 · 2026-08-26 立项） | 邮箱身份展示与邮件面页面化对齐：用户邮箱绑定列表/详情读面补全 / 邮件控制台+出站记录独立页并注册左侧导航（出站记录覆盖全部渠道、权限沿用 settings.read 不新设）/ 邀请撤销 requestMapping.path.id 修复；用户点名 |
 | W29 | GOAL-041-w29-api-web-protocol-conformance | **active**（1/6 · S1 完成） | 已冻结 v2.9 协议分母与 35 页面/控件/custom 完整目录；C-001～C-014 待 S2 分类与 cross 审视，协议先行与 custom 门禁继续生效 |
+| W35 | GOAL-047-w35-dev-db-init-and-bootstrap | **done**（3/3 · 2026-09-21 关门） | 用户报告 PG 实例重置后 `.\dev.cmd start` 失败；已交付 dev/test 初始化快捷方式、`e2e-pgset` 自举修复、3D000 actionable hint、README/QUICKSTART 初始化章节；A-002 independent conditional/3 required → 修复 → A-003 independent pass/0 required → A-004 关门记录 |
 
 ## 整改路线图（由 W14 用户裁决 D-003 派生 · 子目标挂 GOAL-015 下）
 

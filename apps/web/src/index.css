@@ -25,6 +25,13 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
 
+  /* Interactive control surface (R6 C8): the filled chip worn by a toggle-like
+     control (e.g. expand/collapse filters). Distinct from `background` so it
+     never reads as a plain bordered action (e.g. Reset), and distinct from
+     `muted`/`accent` so a fork can retarget it on its own. */
+  --control: oklch(0.955 0 0);
+  --control-foreground: oklch(0.205 0 0);
+
   /* Semantic state */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
@@ -68,6 +75,12 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+
+  /* Interactive control surface (R6 C8): on dark surfaces the reference page
+     recesses the chip *below* the card (#121215 vs the #141414 container), so
+     the dark value is darker than --card rather than lighter. */
+  --control: oklch(0.17 0 0);
+  --control-foreground: oklch(0.87 0 0);
 
   /* Semantic state — softer opacity for dark surfaces */
   --destructive: oklch(0.704 0.191 22.216);
@@ -135,6 +148,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-control: var(--control);
+  --color-control-foreground: var(--control-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);

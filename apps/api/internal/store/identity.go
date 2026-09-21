@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
@@ -36,6 +37,9 @@ type dbIdentity struct {
 	Tables    []string
 	Applied   []appliedMigration
 	OursUsers bool
+	// RecoveryPointMissing reports that the catalog is at head while no verified
+	// class-B recovery point is recorded (C3 §4.3).
+	RecoveryPointMissing bool
 }
 
 type startupAction string
@@ -48,6 +52,9 @@ const (
 	actionAdoptThenPending startupAction = "adopt-then-pending"
 	actionRestoreLedger    startupAction = "restore-ledger"
 	actionApplyPending     startupAction = "apply-pending"
+	// actionVerifyRecoveryPoint is the C3 §4.3 action for "converted catalog at
+	// head, but no verified class-B recovery point recorded".
+	actionVerifyRecoveryPoint startupAction = "verify-recovery-point"
 )
 
 type startupPlan struct {
@@ -55,18 +62,23 @@ type startupPlan struct {
 	Reason string
 }
 
+// sqliteLedgerDDL is the restore-path ledger literal. applied_at is TEXT holding
+// the canonical fixed-6 UTC form (workspace-040 v73 / Root D-008); v73 rebuilds
+// every pre-existing ledger onto this shape.
 const sqliteLedgerDDL = `CREATE TABLE IF NOT EXISTS schema_migrations (
   version    INTEGER PRIMARY KEY,
   name       TEXT NOT NULL UNIQUE,
   checksum   TEXT NOT NULL CHECK (length(checksum) = 64),
-  applied_at INTEGER NOT NULL
+  applied_at TEXT NOT NULL
 )`
 
+// postgresLedgerDDL is the postgres restore-path ledger literal:
+// applied_at is timestamptz(6) (workspace-040 v73).
 const postgresLedgerDDL = `CREATE TABLE IF NOT EXISTS schema_migrations (
   version    INTEGER PRIMARY KEY,
   name       TEXT NOT NULL UNIQUE,
   checksum   TEXT NOT NULL CHECK (length(checksum) = 64),
-  applied_at BIGINT NOT NULL
+  applied_at timestamptz(6) NOT NULL
 )`
 
 func contentTables(tables []string) []string {
@@ -90,7 +102,10 @@ func tableNameSet(tables []string) map[string]bool {
 // completeFingerprintCatalogHead is the compiled catalog max version the
 // restore-ledger object set was reviewed against. TestCompleteFingerprintTracksCatalogHead
 // fails when the catalog grows past this so the table list is updated.
-const completeFingerprintCatalogHead = 71
+//
+// 87 = the workspace-040 R2 v73–v87 timestamp conversions, which rebuild
+// existing tables and create no new objects (lockedHeadExtraTables[87] = {}).
+const completeFingerprintCatalogHead = 87
 
 // completeLostLedgerTables must include a table created at/after the catalog
 // head (v44 service_credentials, v48 operation_log_session, v51 mail_outbox, v52 mail_config, v64 subjects/vouchers, v65 voucher_batches, v66 telegram_config, v67 telegram_config_connection, v68 telegram ingress tables, v69 telegram outbound table, v70 digital-offer tables)
@@ -207,6 +222,14 @@ func planStartup(id dbIdentity, catalog []kernel.MigrationContribution) (startup
 	case identityOursLedger:
 		pending := pendingMigrations(id.Applied, catalog)
 		if len(pending) == 0 {
+			// C3 §4.3: "catalog at head but no class-B recovery point" must be an
+			// explicit action, never a silent noop.
+			if id.RecoveryPointMissing {
+				return startupPlan{
+					Action: actionVerifyRecoveryPoint,
+					Reason: "schema_migrations matches catalog but no verified recovery point is recorded",
+				}, nil
+			}
 			return startupPlan{Action: actionNoop, Reason: "schema_migrations matches catalog: no migrate"}, nil
 		}
 		return startupPlan{Action: actionApplyPending, Reason: fmt.Sprintf("schema_migrations prefix ok: apply %d pending", len(pending))}, nil
@@ -313,12 +336,84 @@ func usersLooksLikePostgres(db *sql.DB) (bool, error) {
 	return true, nil
 }
 
-func stampCatalog(tx kernel.Tx, catalog []kernel.MigrationContribution) error {
-	now := time.Now().UTC().Unix()
+// ledgerWrite is one prepared ledger row write: the statement to run and the
+// value bound to applied_at.
+type ledgerWrite struct {
+	statement string
+	value     any
+}
+
+// sqliteLedgerWrite binds a ledger timestamp in the shape of the live
+// schema_migrations.applied_at column.
+//
+// The column is INTEGER unix seconds until v73 converts it (workspace-040 R2)
+// and canonical fixed-6 UTC TEXT afterwards, and that conversion happens inside
+// the same migration batch — so the shape is probed on the transaction that
+// performs the insert (store is the ledger's sole writer, Root D-011) instead of
+// assumed. Binding the wrong shape either violates the column contract or
+// silently stores a non-canonical value (the exact hazard the v73 design names).
+//
+// SQLite is dynamically typed, so one statement text serves both shapes.
+func sqliteLedgerWrite(ctx context.Context, tx kernel.Tx, now time.Time) (ledgerWrite, error) {
+	legacy, err := ledgerAppliedAtIsInteger(ctx, tx,
+		`SELECT type FROM pragma_table_info('schema_migrations') WHERE name = 'applied_at'`)
+	if err != nil {
+		return ledgerWrite{}, err
+	}
+	write := ledgerWrite{
+		statement: `INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
+		value:     temporal.NewValue(now).String(),
+	}
+	if legacy {
+		write.value = now.Unix()
+	}
+	return write, nil
+}
+
+// postgresLedgerWrite is the postgres counterpart: BIGINT unix seconds before
+// v73, timestamptz(6) afterwards.
+//
+// The postgres statements differ per shape on purpose. pgx caches a prepared
+// statement per SQL text, so reusing one text across the v73 boundary keeps the
+// parameter typed BIGINT (measured: 22P02 "invalid input syntax for type bigint:
+// 2026-09-20 12:57:15.914522 +0000 UTC" once the column had become timestamptz).
+// Naming the parameter type explicitly in two distinct texts removes the
+// dependence on the cached description.
+func postgresLedgerWrite(ctx context.Context, tx kernel.Tx, now time.Time) (ledgerWrite, error) {
+	legacy, err := ledgerAppliedAtIsInteger(ctx, tx, `
+		SELECT data_type FROM information_schema.columns
+		WHERE table_schema = current_schema()
+		  AND table_name = 'schema_migrations'
+		  AND column_name = 'applied_at'`)
+	if err != nil {
+		return ledgerWrite{}, err
+	}
+	if legacy {
+		return ledgerWrite{
+			statement: `INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, CAST(? AS bigint))`,
+			value:     now.Unix(),
+		}, nil
+	}
+	return ledgerWrite{
+		statement: `INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, CAST(? AS timestamptz))`,
+		value:     now.Truncate(time.Microsecond),
+	}, nil
+}
+
+// ledgerAppliedAtIsInteger reports whether the probed declared type is an
+// integer family type (the pre-v73 ledger shape).
+func ledgerAppliedAtIsInteger(ctx context.Context, tx kernel.Tx, query string) (bool, error) {
+	var declared sql.NullString
+	if err := tx.QueryRow(ctx, query).Scan(&declared); err != nil {
+		return false, fmt.Errorf("probe schema_migrations.applied_at: %w", err)
+	}
+	return strings.Contains(strings.ToUpper(declared.String), "INT"), nil
+}
+
+func stampCatalog(tx kernel.Tx, catalog []kernel.MigrationContribution, write ledgerWrite) error {
 	for _, migration := range catalog {
-		if _, err := tx.Exec(context.Background(),
-			`INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)`,
-			migration.Version, migration.Name, migration.Checksum, now,
+		if _, err := tx.Exec(context.Background(), write.statement,
+			migration.Version, migration.Name, migration.Checksum, write.value,
 		); err != nil {
 			return fmt.Errorf("restore migration ledger %d (%s): %w", migration.Version, migration.Name, err)
 		}
@@ -339,7 +434,15 @@ func (s *Store) probeIdentity() (dbIdentity, error) {
 	if err != nil {
 		return dbIdentity{}, err
 	}
-	return classifyIdentity(tables, applied, ours), nil
+	id := classifyIdentity(tables, applied, ours)
+	if s.recoveryPoints != nil {
+		state, stateErr := s.probeRecoveryState(context.Background())
+		if stateErr != nil {
+			return dbIdentity{}, stateErr
+		}
+		id.RecoveryPointMissing = !state.HasPoint
+	}
+	return id, nil
 }
 
 func (s *Store) listUserTables() ([]string, error) {
@@ -367,7 +470,11 @@ func (s *Store) restoreLedger(catalog []kernel.MigrationContribution) error {
 		if _, err := tx.Exec(context.Background(), sqliteLedgerDDL); err != nil {
 			return fmt.Errorf("create schema_migrations: %w", err)
 		}
-		return stampCatalog(tx, catalog)
+		write, err := sqliteLedgerWrite(context.Background(), tx, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+		return stampCatalog(tx, catalog, write)
 	})
 }
 
@@ -384,7 +491,15 @@ func (p *postgres) probeIdentity(ctx context.Context) (dbIdentity, error) {
 	if err != nil {
 		return dbIdentity{}, err
 	}
-	return classifyIdentity(tables, applied, ours), nil
+	id := classifyIdentity(tables, applied, ours)
+	if p.recoveryPoints != nil {
+		state, stateErr := p.probeRecoveryState(ctx)
+		if stateErr != nil {
+			return dbIdentity{}, stateErr
+		}
+		id.RecoveryPointMissing = !state.HasPoint
+	}
+	return id, nil
 }
 
 func (p *postgres) restoreLedger(ctx context.Context, catalog []kernel.MigrationContribution) error {
@@ -392,6 +507,10 @@ func (p *postgres) restoreLedger(ctx context.Context, catalog []kernel.Migration
 		if _, err := tx.Exec(ctx, postgresLedgerDDL); err != nil {
 			return fmt.Errorf("create schema_migrations: %w", err)
 		}
-		return stampCatalog(tx, catalog)
+		write, err := postgresLedgerWrite(ctx, tx, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+		return stampCatalog(tx, catalog, write)
 	})
 }

@@ -1,4 +1,4 @@
-package composition
+﻿package composition
 
 import (
 	"encoding/json"
@@ -48,7 +48,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles", "data-permission"},
 				"manifest.nav.group.contentData":    {"file-library", "data-dictionary"},
-				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin"},
+				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin", "jobs"},
 				"manifest.nav.group.communications": {"mail", "mail-outbox"},
 				"manifest.nav.group.commerce":       {"wallet", "wallet-vouchers"},
 			},
@@ -74,7 +74,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles", "data-permission"},
 				"manifest.nav.group.contentData":    {"file-library", "data-dictionary"},
-				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin"},
+				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin", "jobs"},
 				"manifest.nav.group.communications": {"mail", "mail-outbox", "telegram-settings"},
 				"manifest.nav.group.commerce":       {"wallet", "wallet-vouchers"},
 			},
@@ -89,7 +89,7 @@ func r4NavigationCases(t *testing.T) []r4NavigationCase {
 				"manifest.nav.group.workspace":      {"dashboard"},
 				"manifest.nav.group.identityAccess": {"users", "roles", "data-permission"},
 				"manifest.nav.group.contentData":    {"file-library", "data-dictionary"},
-				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin"},
+				"manifest.nav.group.operations":     {"activity", "system-monitoring", "scheduled-tasks", "recycle-bin", "jobs"},
 				"manifest.nav.group.communications": {"mail", "mail-outbox", "telegram-settings"},
 				"manifest.nav.group.commerce":       {"wallet", "wallet-vouchers", "digitaloffer-offers", "digitaloffer-entitlements", "digitaloffer-purchases"},
 			},

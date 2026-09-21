@@ -1,0 +1,31 @@
+---
+doc_type: goal-execution-index
+id: GOAL-001-admin-command-palette-execution
+status: active
+created: 2026-09-14
+updated: 2026-09-14
+parent: null
+version: 0.2.0
+---
+
+# 执行台账 · GOAL-001-admin-command-palette
+
+本索引与 `02-execution/E-NNN-*.md` 平铺条目共同构成 Root 的事实时间线。当前已记录工作区/Root scaffold、R1 盘点冻结、R2 provider、R3 Palette、R4 回归与 Root 关门事实；R1～R4 全部完成，Root 已为 `done · 4/4`，VP-036 愿景层已由 VRev-093 关门。
+
+## 条目索引
+
+| id | date | title | entry |
+|----|------|-------|-------|
+| E-001 | 2026-09-14 | 工作区与 Root scaffold 完成 | [E-001-workspace-root-scaffold.md](02-execution/E-001-workspace-root-scaffold.md) |
+| E-002 | 2026-09-14 | R1 分母盘点与冻结 | [E-002-r1-inventory-and-freeze.md](02-execution/E-002-r1-inventory-and-freeze.md) |
+| E-003 | 2026-09-14 | R2 provider v1 与聚合实现 | [E-003-r2-provider-v1.md](02-execution/E-003-r2-provider-v1.md) |
+| E-004 | 2026-09-14 | R3 Command Palette 实现与验证 | [E-004-r3-palette-implementation.md](02-execution/E-004-r3-palette-implementation.md) |
+| E-005 | 2026-09-14 | R4 Profile×permission×route 回归与关门准备 | [E-005-r4-profile-route-validation.md](02-execution/E-005-r4-profile-route-validation.md) |
+| E-006 | 2026-09-14 | Root 关门（用户确认 done） | [E-006-root-closeout.md](02-execution/E-006-root-closeout.md) |
+
+## 当前投影
+
+- 已发生：`workspace.md`、`goal-tree.md`、Root 五件套与三个 ledger 目录已创建并完成愿景挂接；R1 矩阵/D-002 已落盘；R2 provider v1、测试与 programmatic gate 修正已实现并验证；R3 Palette、App handoff、双语/主题与 mvp/admin SQLite/Postgres browser smoke 已实现并 self 审。
+- 已发生：R4 四 Profile 分母/权限/路由矩阵（ID oracle 已钉死 §2.1）、mvp/admin SQLite/Postgres browser smoke、Web/Go 全量测试与 Vite build 已通过，证据汇总于 `attachments/r4-profile-route-evidence.md`；A-008 self `pass` + A-009 grok independent `pass`，A-010 已闭合 2 条 recommended。
+- 已发生：用户 2026-09-14 书面确认关门，Root `GOAL-001-admin-command-palette` 已标为 `done`（E-006）。
+- 已完成：`/vision` 已创建 VRev-093 self close-out Review，并将 VP-036 `active → closed` v0.3.0；愿景组合与工作区投影已同步。

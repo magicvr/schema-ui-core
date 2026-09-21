@@ -1,7 +1,7 @@
 /**
  * Display-time formatting (GOAL-011 table style): ISO-8601 timestamps are
  * rendered in a human-readable local-time form ("2026-08-01 18:02") instead
- * of the raw wire value ("2026-08-01T18:02:44.000Z").
+ * of the raw wire value ("2026-08-01T18:02:44.000000Z").
  *
  * Returns null when the value is not a renderable timestamp so callers fall
  * back to the raw text (numbers, booleans, plain strings, arbitrary dates

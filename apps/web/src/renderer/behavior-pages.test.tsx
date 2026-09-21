@@ -32,6 +32,10 @@ import { SchemaTable } from "@/renderer/schema-table";
 import "@/components/mail-admin-tab";
 import "@/components/telegram-admin-tab";
 import "@/components/wallet-ensure";
+// GOAL-004 R3: the users page declares the async batch-export trigger.
+import "@/components/jobs-batch-export";
+// GOAL-005 R4: the jobs page declares the result-center auto-refresh control.
+import "@/components/jobs-auto-refresh";
 
 const MODULES = resolve(dirname(fileURLToPath(import.meta.url)), "../../../api/modules");
 

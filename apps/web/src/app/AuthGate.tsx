@@ -97,6 +97,7 @@ export function AuthGate({ manifest }: { manifest: AppManifest }) {
       resourceFetcher={resourceFetcher}
       onLogout={logout}
       currentUser={user}
+      runtimeMode={session?.runtimeMode}
     />
   );
 }

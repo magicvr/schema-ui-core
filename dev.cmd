@@ -23,6 +23,7 @@ rem   console windows (Claude Code, other CLIs) are never touched.
 rem
 rem Usage:
 rem   dev.cmd start [profile] [options]   start API+Web (default profile: config)
+rem   dev.cmd init-db                     create the dev+test PostgreSQL databases
 rem   dev.cmd stop                        stop API+Web
 rem   dev.cmd status                      show listening state
 rem   dev.cmd help                        this help
@@ -68,6 +69,7 @@ if /i "%CMD%"=="help"   goto :usage
 if /i "%CMD%"=="status" goto :status
 if /i "%CMD%"=="stop"   goto :stop
 if /i "%CMD%"=="start"  goto :parse_start
+if /i "%CMD%"=="init-db" goto :init_db
 
 echo ERROR: unknown command '%CMD%'
 goto :usage
@@ -296,6 +298,36 @@ timeout /t 1 /nobreak >nul 2>&1 || ping -n 2 127.0.0.1 >nul 2>&1
 goto :wait_ready_loop
 
 rem =====================================================================
+rem init-db - create the PostgreSQL databases this checkout needs.
+rem
+rem The application never runs CREATE DATABASE (startup only pings the
+rem configured database and then applies the migration catalog), so on a
+rem fresh or reset server `start` fails with
+rem   FATAL: database "<name>" does not exist (SQLSTATE 3D000)
+rem This subcommand provisions them once, idempotently, and never drops
+rem anything. SQLite needs no provisioning (the file is created on first
+rem start), so this is a no-op-shaped command there.
+rem =====================================================================
+:init_db
+echo.
+echo == schema-ui-core init-db ^(PostgreSQL^) ==
+where go >nul 2>&1 || ( echo ERROR: missing required tool: go & exit /b 2 )
+pushd "%API_DIR%"
+go run ./cmd/dbsetup %1 %2 %3 %4 %5 %6 %7 %8 %9
+set "INIT_RC=%ERRORLEVEL%"
+popd
+if not "%INIT_RC%"=="0" (
+  echo.
+  echo ERROR: database initialization failed ^(exit %INIT_RC%^).
+  echo   Check DB_HOST / DB_PORT / DB_USER / DB_PASSWORD in apps\api\configs\.env,
+  echo   and that the role may CREATE DATABASE.
+  exit /b %INIT_RC%
+)
+echo.
+echo Databases ready. Next:  %SELF% start
+exit /b 0
+
+rem =====================================================================
 rem stop - kill only this script's own windows via recorded PID files,
 rem then fall back to the two dev-port listeners (idempotent).
 rem Window-title matching is deliberately NOT used: it can kill unrelated
@@ -364,6 +396,7 @@ echo schema-ui-core dev launcher (local two-process)
 echo.
 echo Usage:
 echo   dev.cmd start [profile] [options]   Start API+Web locally (default profile: config)
+echo   dev.cmd init-db                     Create the dev+test PostgreSQL databases
 echo   dev.cmd stop                        Stop API+Web
 echo   dev.cmd status                      Show listening state
 echo   dev.cmd help                        This help
@@ -381,7 +414,16 @@ echo env:
 echo   API_PORT / WEB_PORT     port overrides (defaults 25080 / 25173)
 echo   ADMIN_INITIAL_PASSWORD  dev seed password default "admin"
 echo.
+echo init-db:
+echo   The API never runs CREATE DATABASE. On a fresh or reset PostgreSQL
+echo   server, "start" fails with FATAL: database "..." does not exist
+echo   (SQLSTATE 3D000) until the databases exist. Run once:
+echo     dev.cmd init-db
+echo   It creates DB_NAME (dev) and PG_TEST_DB (test) idempotently and never
+echo   drops anything; SQLite needs no provisioning.
+echo.
 echo examples:
+echo   dev.cmd init-db
 echo   dev.cmd start
 echo   dev.cmd start --profile demo --no-browser
 echo   dev.cmd start custom --modules core.server-registration,users

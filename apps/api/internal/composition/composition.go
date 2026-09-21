@@ -16,6 +16,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/auth"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/backup"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/cache"
 	telegraminternal "github.com/magicvr/schema-ui-core/apps/api/internal/channel/telegram"
 	"github.com/magicvr/schema-ui-core/apps/api/internal/config"
@@ -51,6 +52,10 @@ import (
 	filelibrarymodule "github.com/magicvr/schema-ui-core/apps/api/modules/filelibrary"
 	logincaptchamodule "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha"
 	logincaptchastore "github.com/magicvr/schema-ui-core/apps/api/modules/logincaptcha/store"
+	// jobsmodule is the R2 admin.jobs read surface (GOAL-003). Note the
+	// migration-only core.jobs provider is imported separately by
+	// modules/compiled; this alias is the runtime module.
+	jobsmodule "github.com/magicvr/schema-ui-core/apps/api/modules/jobs"
 	mfamodule "github.com/magicvr/schema-ui-core/apps/api/modules/mfa"
 	mfastore "github.com/magicvr/schema-ui-core/apps/api/modules/mfa/store"
 	notificationsmodule "github.com/magicvr/schema-ui-core/apps/api/modules/notifications"
@@ -212,6 +217,7 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 	if cfg.DBDialect != "" {
 		dialect = kernel.Dialect(cfg.DBDialect)
 	}
+	recoveryPoints, rollbackArtifacts, recoveryArtifactDir := recoveryWiring(dialect, cfg)
 	st, err := store.Open(context.Background(), store.OpenOptions{
 		Dialect:          dialect,
 		Path:             cfg.DBPath,
@@ -219,6 +225,13 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 		PoolMaxOpenConns: cfg.DBPoolMaxOpen,
 		PoolMaxIdleConns: cfg.DBPoolMaxIdle,
 		ConnMaxLifetime:  cfg.DBConnLifetime,
+		// workspace-040 R2 M4 / C3 §4.2: the composition root owns provider
+		// selection and the artifact directory, so the production startup path
+		// actually takes the class-A/class-B anchors instead of silently
+		// skipping them (GOAL-005 A-002 F-I-002).
+		RecoveryPoints:    recoveryPoints,
+		RollbackArtifacts: rollbackArtifacts,
+		ArtifactDir:       recoveryArtifactDir,
 	}, catalog)
 	if err != nil {
 		return nil, &kernel.Error{Code: kernel.CodeLifecycleStartFailed, ModuleID: "core.auth-session", Detail: fmt.Sprintf("open store: %v", err)}
@@ -239,6 +252,92 @@ func openStore(cfg *config.Config, seedHash seedPasswordHash) (kernel.Store, err
 	return st, nil
 }
 
+// recoveryWiring builds the C3 §4.2 anchors for the configured dialect: the
+// recovery-point port, the class-A/class-C artifact creator and the directory
+// both use. Returning nil values disables the anchors, and the store records
+// that fact instead of pretending a recovery point exists.
+func recoveryWiring(dialect kernel.Dialect, cfg *config.Config) (kernel.RecoveryPointPort, store.RollbackArtifactCreator, string) {
+	artifactDir := recoveryArtifactsDir(cfg)
+	if artifactDir == "" {
+		return nil, nil, ""
+	}
+	service := backup.NewService(artifactDir)
+	if dialect == kernel.DialectPostgres {
+		if strings.TrimSpace(cfg.DBDSN) == "" {
+			return nil, nil, ""
+		}
+		provider := backup.PgProvider{
+			AdminDSN:            cfg.DBDSN,
+			ClientImage:         backup.DefaultPgClientImage,
+			WorkDir:             artifactDir,
+			ClientDockerNetwork: cfg.DBClientDockerNetwork,
+		}
+		service.RegisterProvider(provider)
+		return service, provider, artifactDir
+	}
+	// SQLite needs no rollback creator: the runner writes its own VACUUM INTO
+	// artifacts next to the database file.
+	return service, nil, artifactDir
+}
+
+// recoveryArtifactsDir is where recovery/rollback artifacts live: beside the
+// configured database file when db.path is set (the shipped config always sets
+// it, and for postgres db.path is the file-storage root), otherwise under the
+// user cache directory keyed by the DSN host/database.
+//
+// The result is ALWAYS absolute or empty: the postgres provider bind-mounts this
+// directory into the pg_dump/pg_restore container, and docker rejects a relative
+// source path ("includes invalid characters for a local volume name ... use
+// absolute path"). A relative db.path such as "./data/schema-ui.db" used to reach
+// the provider as "data\recovery" and aborted startup (dev launcher 2026-09-21).
+// An unresolvable path returns "" so recoveryWiring disables the anchors and the
+// store records that fact, rather than handing a relative path to docker.
+func recoveryArtifactsDir(cfg *config.Config) string {
+	if strings.TrimSpace(cfg.DBPath) != "" {
+		return absoluteArtifactDir(filepath.Join(filepath.Dir(cfg.DBPath), "recovery"))
+	}
+	if strings.TrimSpace(cfg.DBDSN) == "" {
+		return ""
+	}
+	key := sanitizeArtifactKey(cfg.DBDSN)
+	if key == "" {
+		return ""
+	}
+	base, err := os.UserCacheDir()
+	if err != nil || base == "" {
+		base = os.TempDir()
+	}
+	return absoluteArtifactDir(filepath.Join(base, "schema-ui-core", "recovery", key))
+}
+
+// absoluteArtifactDir resolves a configured artifact directory against the
+// process working directory. A path that cannot be resolved fails closed (empty
+// result = anchors disabled) instead of being passed on as a relative value.
+func absoluteArtifactDir(dir string) string {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return ""
+	}
+	return abs
+}
+
+// sanitizeArtifactKey turns a DSN into a filesystem-safe directory name.
+func sanitizeArtifactKey(dsn string) string {
+	var b strings.Builder
+	for _, r := range dsn {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('-')
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if len(out) > 80 {
+		out = out[:80]
+	}
+	return out
+}
 func newAuthSessionRepository(st kernel.Store) *authsession.Repository {
 	return authsession.NewRepository(st)
 }
@@ -436,7 +535,7 @@ func newMuxWithExtraProviders(
 	logger.Info("kernel event-bus port ready", "provider", "memory", "buffer_size", cfg.EventBusBufferSize)
 	handler.RegisterMailOutbox(mux, a, mail.NewOutboxSink(st, mail.DefaultOutboxCap))
 	handler.RegisterMailAdmin(mux, a, mailSender, operations)
-	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, objectProbe, mailProbe)
+	handler.RegisterWithMFAProbes(mux, a, st, operations, plan, gate.Ready, rateLimiters, []handler.CaptchaVerifier{captchaVerifier}, mfaVerifier, string(cfg.RuntimeMode), objectProbe, mailProbe)
 	// workspace-019 R2 (GOAL-003 D-001 §2): the self-recovery start/complete
 	// pair is a CENTRAL pre-auth surface (same layer as login) so every
 	// profile with core.auth-session gets it. The completion second-factor
@@ -597,6 +696,41 @@ func newMuxWithExtraProviders(
 			return err == nil
 		})
 		providers = append(providers, walletmodule.New(a, walletService, walletJobs, operations, walletOwnerExists, rateLimiters))
+	}
+	// R2 (GOAL-003 D-001 §4): admin.jobs — management-scope read surface over
+	// the same durable Job runtime. It reads the shared repository directly and
+	// registers no job kind, so it composes independently of admin.wallet.
+	// R-1 (GOAL-002 matrix §6): the runtime is enabled when EITHER module is
+	// present — previously only admin.wallet flipped this flag, which left a
+	// profile containing admin.jobs but not admin.wallet with a runner that
+	// silently never started.
+	//
+	// R3 (GOAL-004): the same module also carries the first real batch
+	// operation. The batch-export kind is registered here, BEFORE the runner
+	// starts (R1 D-001 §1.2 K-5). The row source reuses the users/roles
+	// resource entities, so the async export shares the synchronous export's
+	// exact column sets; it is wired only for resources the plan enabled, so a
+	// batch export can never read a resource whose module is absent.
+	if plan.HasModule("admin.jobs") {
+		jobRuntime.enabled.Store(true)
+		var exportUsers, exportRoles handler.ResourceEntity
+		if plan.HasModule("admin.users") {
+			exportUsers = handler.UsersResourceWithNotifier(authRepository, operations, authRepository).Entity
+		}
+		if plan.HasModule("admin.roles") {
+			exportRoles = handler.RolesResource(authRepository, operations).Entity
+		}
+		rowSource := handler.NewBatchExportRowSource(exportUsers, exportRoles)
+		exportService, err := jobsmodule.NewBatchExportService(jobRuntime.runner, rowSource, nil)
+		if err != nil {
+			return nil, &kernel.Error{Code: kernel.CodeModuleInvalid, ModuleID: jobsmodule.ModuleID, Detail: fmt.Sprintf("register batch export: %v", err)}
+		}
+		// R4 (GOAL-005 D-001 §2): the result center's cancel/retry actions. The
+		// runner's CancelAny/RetryAny already satisfy handler.JobActions — they
+		// are the management-scope twins of Cancel/Retry in internal/jobs
+		// (same state sets, same error codes, no actor predicate), so binding
+		// the runner directly here adds no second implementation to audit.
+		providers = append(providers, jobsmodule.New(a, jobRuntime.repository, handler.NewBatchExportSubmitter(exportService, jobRuntime.runner), jobRuntime.runner))
 	}
 	// VP-031 (workspace-031 GOAL-003 · GOAL-002 D-002 v1.0.0): biz.digital-offer —
 	// digital offers + thin purchases over the wallet money primitives +

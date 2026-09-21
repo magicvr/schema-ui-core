@@ -130,6 +130,10 @@ var mailConfigPGDDL = []string{
 // capability.
 func Descriptors() []kernel.MigrationContribution {
 	return []kernel.MigrationContribution{
+		// workspace-040 R2 (GOAL-003 M2): v73–v87 timestamp conversions.
+		// The kernel orders the compiled catalog by Version; source order
+		// is not significant.
+		VP040TemporalDescriptor(),
 		{
 			ContributionIdentity: kernel.ContributionIdentity{ModuleID: ModuleID, Key: "records_persist"},
 			Version:              3,

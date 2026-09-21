@@ -30,7 +30,7 @@ version: 1.0.0
 - **本轮复跑**（2026-08-15）：
   - 独立 Ajv（`allErrors` / `strict:false` / `validateSchema:false`，与 `runtime-schema-validate.ts` 一致）对**真实** `apps/api/internal/modules/account/schema/account.json`：未叠加 overlay → `ok:false`，`instancePath=/body/children/3`，`additionalProperty=component`；叠加与运行时相同的 `component` overlay → **`ok:true`，0 errors**。
   - `apps/web` `vitest run` → **56 文件 976/976 绿**（相对 A-003 记录的 974 增 2：custom D-VAL + disable/rotate 用例）。
-  - `apps/web` `tsc --noEmit -p tsconfig.json` → **0**。
+  - `apps/web` `tsc --noEmit -p tsconfig.json` → **0**。**（勘误 2026-09-18：`-p tsconfig.json` 指向的是 solution-style 根配置（`files: []`、仅 `references`），非 build 模式下同样只编译空程序、恒 exit 0，属空转证据；`-p` 只有指向自身含 `include` 的项目配置（如 `tsconfig.app.json` / `e2e/tsconfig.json`）才构成类型校验。本轮 audit 的 D-VAL/Ajv 复核与 vitest 976/976 证据不受影响。原记录保留不改。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。）**
   - `apps/api` `go test -p 1 ./...` → **全绿**。
 - **covered**：A-003 F-001/F-002 关闭证据是否真实、充分、可重复核对；真实 account.json D-VAL；splitMFAInput 与 handler/service 二选一一致；契约测试是否钉住；本地扩展是否改 pin；F-003/F-004；GOAL-017 回归依赖。
 - **excluded**：不改 `status` / `progress` / goal-tree / `00-meta` / D-001 / D-002 正文。
@@ -52,7 +52,7 @@ version: 1.0.0
 | F-002：i18n 仍为「动态码或恢复码」 | `zh-CN.json` / `en-US.json` L510、L512 |
 | F-002：恢复码停用用例存在 | `mfa-manager.test.tsx` L110–121：输入 `ABCDEFGH`（非 6 位）后 UI 回到 Enable MFA；本轮 3/3 绿 |
 | F-004：`01-decision.md` I-001 | L17 现为 **verified**（与 `00-meta` / D-001 §1 一致） |
-| 回归 | web 976/976；`tsc --noEmit` 0；go `./...` 全绿 |
+| 回归 | web 976/976；`tsc --noEmit` 0 **（勘误 2026-09-18：此处简写所指的 `-p tsconfig.json` 口径空转，见上方复跑小节勘误；web 976/976 不受影响）**；go `./...` 全绿 |
 | D-002 go 不暂挂 / pin 不变 | 成立：无新 capability、无 pin 文件改动；扩展在运行时校验层 |
 
 ## 对照 A-003 required 闭合标准
@@ -108,6 +108,8 @@ A-003 F-004（recommended）已随 `01-decision.md` I-001=`verified` 闭合。A-
 ## 结论 + 建议给编排器/用户的下一步
 
 **verdict: pass**。A-003 required 已合法闭合：真实 `account.json` 经与运行时相同的 Ajv 选项 + 本地 `component` overlay 为 `ok:true`；disable/rotate 均按 6 位/`recoveryCode` 分流，与 `requireActiveSecondFactor` 一致。web 976/976、`tsc --noEmit`、go 全量本轮全绿。
+
+> **勘误注记（事后追加 2026-09-18，不改本 verdict 与结论）**：本句中的 `tsc --noEmit` 指上方 `-p tsconfig.json` 口径，属空转证据（见该小节勘误）；本条 verdict 依据的 Ajv/D-VAL 复核、web 976/976 与 go 全量证据不受影响。详见 `docs/workspaces/workspace-037-admin-workflow-continuity/GOAL-008-typecheck-evidence-convention/`（D-001、E-006、A-002）。
 
 **可关门。** 无未合法闭合的 required findings。无到期 required 信息项。
 

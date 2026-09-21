@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 	"golang.org/x/crypto/bcrypt"
@@ -170,7 +171,7 @@ func (r *Repository) passwordInHistory(userID, plain string, depth int) (bool, e
 // and trims the per-user list to the configured depth. Called from UpdateUser
 // INSIDE its transaction whenever a PasswordHash patch is applied; a missing
 // row (policy table absent) is tolerated so legacy stores keep working.
-func (r *Repository) capturePasswordHistory(tx kernel.Tx, userID, oldHash string, depth int, now int64) {
+func (r *Repository) capturePasswordHistory(tx kernel.Tx, userID, oldHash string, depth int, now time.Time) {
 	if oldHash == "" || depth <= 0 {
 		return
 	}

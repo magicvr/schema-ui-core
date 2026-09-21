@@ -77,7 +77,7 @@ func notificationRow(n authsession.Notification) map[string]any {
 		"title":     n.Title,
 		"body":      n.Body,
 		"read":      false,
-		"createdAt": n.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z07:00"),
+		"createdAt": FormatWireTime(n.CreatedAt),
 	}
 	if n.TitleKey != nil {
 		row["titleKey"] = *n.TitleKey
@@ -87,7 +87,7 @@ func notificationRow(n authsession.Notification) map[string]any {
 	}
 	if n.ReadAt != nil {
 		row["read"] = true
-		row["readAt"] = n.ReadAt.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+		row["readAt"] = FormatWireTime(*n.ReadAt)
 	}
 	return row
 }

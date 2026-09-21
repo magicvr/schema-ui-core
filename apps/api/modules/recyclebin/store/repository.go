@@ -85,7 +85,7 @@ func (r *Repository) RecordTx(ctx context.Context, tx kernel.Tx, item Item) erro
 	}
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO recycle_items (id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
-		item.ID, item.Resource, item.ResourceID, string(payload), item.ActorID, item.ActorName, item.DeletedAt.Unix(),
+		item.ID, item.Resource, item.ResourceID, string(payload), item.ActorID, item.ActorName, item.DeletedAt,
 	); err != nil {
 		return fmt.Errorf("insert recycle item: %w", err)
 	}
@@ -148,14 +148,12 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 		for rows.Next() {
 			var item Item
 			var payload string
-			var deletedAt int64
-			var restoredAt sql.NullInt64
-			if err := rows.Scan(&item.ID, &item.Resource, &item.ResourceID, &payload, &item.ActorID, &item.ActorName, &deletedAt, &restoredAt); err != nil {
+			var restoredAt sql.NullTime
+			if err := rows.Scan(&item.ID, &item.Resource, &item.ResourceID, &payload, &item.ActorID, &item.ActorName, &item.DeletedAt, &restoredAt); err != nil {
 				return fmt.Errorf("scan recycle item: %w", err)
 			}
-			item.DeletedAt = time.Unix(deletedAt, 0).UTC()
 			if restoredAt.Valid {
-				t := time.Unix(restoredAt.Int64, 0).UTC()
+				t := restoredAt.Time
 				item.RestoredAt = &t
 			}
 			if err := json.Unmarshal([]byte(payload), &item.Payload); err != nil {
@@ -175,11 +173,10 @@ func (r *Repository) List(filter ListFilter) ([]Item, int, error) {
 func (r *Repository) Get(id string) (*Item, error) {
 	var item Item
 	var payload string
-	var deletedAt int64
-	var restoredAt sql.NullInt64
+	var restoredAt sql.NullTime
 	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
 		row := tx.QueryRow(context.Background(), `SELECT id, resource, resource_id, payload, actor_id, actor_name, deleted_at, restored_at FROM recycle_items WHERE id = ?`, id)
-		if err := row.Scan(&item.ID, &item.Resource, &item.ResourceID, &payload, &item.ActorID, &item.ActorName, &deletedAt, &restoredAt); err != nil {
+		if err := row.Scan(&item.ID, &item.Resource, &item.ResourceID, &payload, &item.ActorID, &item.ActorName, &item.DeletedAt, &restoredAt); err != nil {
 			if errors.Is(err, kernel.ErrNoRows) {
 				return ErrItemNotFound
 			}
@@ -190,9 +187,8 @@ func (r *Repository) Get(id string) (*Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	item.DeletedAt = time.Unix(deletedAt, 0).UTC()
 	if restoredAt.Valid {
-		t := time.Unix(restoredAt.Int64, 0).UTC()
+		t := restoredAt.Time
 		item.RestoredAt = &t
 	}
 	if err := json.Unmarshal([]byte(payload), &item.Payload); err != nil {
@@ -212,7 +208,7 @@ func (r *Repository) MarkRestored(id string, now time.Time) error {
 // (W11 F-008: restore + mark commit atomically; a failed mark rolls the
 // restored row back so the snapshot stays restorable).
 func (r *Repository) MarkRestoredTx(ctx context.Context, tx kernel.Tx, id string, now time.Time) error {
-	res, err := tx.Exec(ctx, `UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`, now.Unix(), id)
+	res, err := tx.Exec(ctx, `UPDATE recycle_items SET restored_at = ? WHERE id = ? AND restored_at IS NULL`, now, id)
 	if err != nil {
 		return fmt.Errorf("mark restored: %w", err)
 	}

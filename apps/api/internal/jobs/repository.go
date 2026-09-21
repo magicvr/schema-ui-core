@@ -42,7 +42,7 @@ id, kind, status, payload, progress, cancel_requested, attempt, max_attempts,
 lease_version, actor_id, correlation_id, created_at, updated_at
 ) VALUES (?,?, 'queued', ?,0,0,0,?,0,?,?,?,?)`,
 			input.ID, input.Kind, string(input.Payload), input.MaxAttempts,
-			input.ActorID, input.CorrelationID, toMillis(now), toMillis(now),
+			input.ActorID, input.CorrelationID, now, now,
 		); err != nil {
 			return fmt.Errorf("create job: %w", err)
 		}
@@ -87,7 +87,7 @@ error_code=NULL, error_message=NULL
 WHERE id=? AND (
   (status='queued' AND attempt < max_attempts)
   OR (status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt < max_attempts)
-)`, owner, toMillis(now.Add(leaseDuration)), toMillis(now), id, toMillis(now))
+)`, owner, now.Add(leaseDuration), now, id, now)
 		if err != nil {
 			return fmt.Errorf("claim job: %w", err)
 		}
@@ -109,7 +109,7 @@ func (r *Repository) Heartbeat(ctx context.Context, lease Lease, now time.Time, 
 	}
 	return r.updateLease(ctx, lease, `UPDATE jobs SET lease_expires_at=?, updated_at=?
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
-		toMillis(now.Add(leaseDuration)), toMillis(now), lease.JobID, lease.Owner, lease.Version)
+		now.Add(leaseDuration), now, lease.JobID, lease.Owner, lease.Version)
 }
 
 func (r *Repository) UpdateProgress(ctx context.Context, lease Lease, progress int, now time.Time) error {
@@ -118,7 +118,7 @@ func (r *Repository) UpdateProgress(ctx context.Context, lease Lease, progress i
 	}
 	return r.updateGuardedLease(ctx, lease, ErrTransition, `UPDATE jobs SET progress=?, updated_at=?
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=? AND progress <= ?`,
-		progress, toMillis(now), lease.JobID, lease.Owner, lease.Version, progress)
+		progress, now, lease.JobID, lease.Owner, lease.Version, progress)
 }
 
 func (r *Repository) RequestCancel(ctx context.Context, id, actorID string, now time.Time) (*Job, error) {
@@ -132,10 +132,10 @@ func (r *Repository) RequestCancel(ctx context.Context, id, actorID string, now 
 		case StatusQueued:
 			_, err = tx.Exec(ctx, `UPDATE jobs SET status='cancelled', cancel_requested=0,
 updated_at=?, finished_at=? WHERE id=? AND status='queued' AND actor_id=?`,
-				toMillis(now), toMillis(now), id, actorID)
+				now, now, id, actorID)
 		case StatusRunning:
 			_, err = tx.Exec(ctx, `UPDATE jobs SET cancel_requested=1, updated_at=?
-WHERE id=? AND status='running' AND actor_id=?`, toMillis(now), id, actorID)
+WHERE id=? AND status='running' AND actor_id=?`, now, id, actorID)
 		default:
 			return ErrNotCancellable
 		}
@@ -156,7 +156,7 @@ func (r *Repository) FinalizeCancel(ctx context.Context, lease Lease, now time.T
 lease_owner=NULL, lease_expires_at=NULL, result=NULL, error_code=NULL, error_message=NULL,
 updated_at=?, finished_at=?, expires_at=NULL
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=? AND cancel_requested=1`,
-		toMillis(now), toMillis(now), lease.JobID, lease.Owner, lease.Version)
+		now, now, lease.JobID, lease.Owner, lease.Version)
 }
 
 func (r *Repository) Fail(ctx context.Context, lease Lease, code, message string, now time.Time) error {
@@ -167,7 +167,7 @@ func (r *Repository) Fail(ctx context.Context, lease Lease, code, message string
 lease_owner=NULL, lease_expires_at=NULL, result=NULL, error_code=?, error_message=?,
 updated_at=?, finished_at=?, expires_at=NULL
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=? AND cancel_requested=0`,
-		code, message, toMillis(now), toMillis(now), lease.JobID, lease.Owner, lease.Version)
+		code, message, now, now, lease.JobID, lease.Owner, lease.Version)
 }
 
 // CompleteWithCommit atomically commits the consumer's durable result and the
@@ -203,7 +203,7 @@ func (r *Repository) CompleteWithCommit(
 cancel_requested=0, lease_owner=NULL, lease_expires_at=NULL, result=?,
 error_code=NULL, error_message=NULL, updated_at=?, finished_at=?, expires_at=?
 WHERE id=? AND status='running' AND lease_owner=? AND lease_version=?`,
-			string(payload), toMillis(now), toMillis(now), toMillis(now.Add(resultTTL)),
+			string(payload), now, now, now.Add(resultTTL),
 			lease.JobID, lease.Owner, lease.Version)
 		if err != nil {
 			return fmt.Errorf("complete job: %w", err)
@@ -224,7 +224,7 @@ func (r *Repository) Retry(ctx context.Context, id, actorID string, now time.Tim
 cancel_requested=0, lease_owner=NULL, lease_expires_at=NULL, result=NULL,
 error_code=NULL, error_message=NULL, updated_at=?, finished_at=NULL, expires_at=NULL
 WHERE id=? AND actor_id=? AND status='failed' AND attempt < max_attempts`,
-			toMillis(now), id, actorID)
+			now, id, actorID)
 		if err != nil {
 			return fmt.Errorf("retry job: %w", err)
 		}
@@ -241,7 +241,7 @@ func (r *Repository) ExpireIfDue(ctx context.Context, id string, now time.Time) 
 	var job *Job
 	err := r.runner.Run(ctx, func(tx kernel.Tx) error {
 		if _, err := tx.Exec(ctx, `UPDATE jobs SET status='expired', result=NULL, updated_at=?
-WHERE id=? AND status='succeeded' AND expires_at <= ?`, toMillis(now), id, toMillis(now)); err != nil {
+WHERE id=? AND status='succeeded' AND expires_at <= ?`, now, id, now); err != nil {
 			return fmt.Errorf("expire job result: %w", err)
 		}
 		var err error
@@ -253,7 +253,7 @@ WHERE id=? AND status='succeeded' AND expires_at <= ?`, toMillis(now), id, toMil
 
 func (r *Repository) ExpireDue(ctx context.Context, now time.Time) (int64, error) {
 	return r.bulkTransition(ctx, `UPDATE jobs SET status='expired', result=NULL, updated_at=?
-WHERE status='succeeded' AND expires_at <= ?`, toMillis(now), toMillis(now))
+WHERE status='succeeded' AND expires_at <= ?`, now, now)
 }
 
 func (r *Repository) RecoverCancelledDue(ctx context.Context, now time.Time) (int64, error) {
@@ -264,12 +264,12 @@ func (r *Repository) RecoverCancelledDue(ctx context.Context, now time.Time) (in
 func (r *Repository) RecoverCancelledDueJobs(ctx context.Context, now time.Time) ([]Job, error) {
 	return r.transitionJobs(ctx,
 		`SELECT id FROM jobs WHERE status='running' AND cancel_requested=1 AND lease_expires_at <= ?`,
-		[]any{toMillis(now)},
+		[]any{now},
 		`UPDATE jobs SET status='cancelled', cancel_requested=0,
 lease_owner=NULL, lease_expires_at=NULL, result=NULL, error_code=NULL, error_message=NULL,
 updated_at=?, finished_at=?, expires_at=NULL
 WHERE status='running' AND cancel_requested=1 AND lease_expires_at <= ?`,
-		toMillis(now), toMillis(now), toMillis(now))
+		now, now, now)
 }
 
 func (r *Repository) ExhaustExpired(ctx context.Context, now time.Time) (int64, error) {
@@ -280,13 +280,13 @@ func (r *Repository) ExhaustExpired(ctx context.Context, now time.Time) (int64, 
 func (r *Repository) ExhaustExpiredJobs(ctx context.Context, now time.Time) ([]Job, error) {
 	return r.transitionJobs(ctx,
 		`SELECT id FROM jobs WHERE status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt >= max_attempts`,
-		[]any{toMillis(now)},
+		[]any{now},
 		`UPDATE jobs SET status='failed',
 lease_owner=NULL, lease_expires_at=NULL, result=NULL,
 error_code='JOB_ATTEMPTS_EXHAUSTED', error_message='job attempts exhausted',
 updated_at=?, finished_at=?, expires_at=NULL
 WHERE status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt >= max_attempts`,
-		toMillis(now), toMillis(now), toMillis(now))
+		now, now, now)
 }
 
 func (r *Repository) ListRunnable(ctx context.Context, now time.Time, limit int) ([]Job, error) {
@@ -298,7 +298,7 @@ func (r *Repository) ListRunnable(ctx context.Context, now time.Time, limit int)
 		rows, err := tx.Query(ctx, `SELECT `+jobColumns+` FROM jobs
 WHERE (status='queued' AND attempt < max_attempts)
    OR (status='running' AND cancel_requested=0 AND lease_expires_at <= ? AND attempt < max_attempts)
-ORDER BY created_at, id LIMIT ?`, toMillis(now), limit)
+ORDER BY created_at, id LIMIT ?`, now, limit)
 		if err != nil {
 			return err
 		}
