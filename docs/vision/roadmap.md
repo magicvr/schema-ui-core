@@ -5,7 +5,7 @@ status: active
 created: 2026-07-31
 updated: 2026-09-21
 parent: null
-version: 0.97.0
+version: 0.98.0
 ---
 
 # 组合编排 · Schema UI Core Admin 基架
@@ -421,7 +421,7 @@ Admin 功能最近一拍：**[VP-039-version-maintenance-diagnostics](plans/VP-0
 
 > **用途**：本区是"已交付范围之外的未决事项"的**统一登记处**——不是待办清单、不是承诺、也不代表已验证。目的只有一个：日后任何人对某个未实现或有界接受的能力有疑问时，能在这里一眼看到**它是什么、为什么不现在做、什么条件下做、谁负责、证据在哪**，而不必翻遍各工作区台账。
 > **维护约定**：新增或闭合任何残余/悬置/触发项时**必须同步本节**（与 goal-tree、`03-audit` 台账同级要求）。登记只描述现状与触发条件，禁止把 deferred/recommended 写成已验证或已承诺。
-> **最近更新**：2026-09-21（⑭ VP-040 **`active → closed` v0.3.0**：Root `GOAL-001-timestamptz-persistence-contract` `done · 3/3`；R1/R2/R3 与六条方向级退出判据均完成；VRev-105 self `pass`，开放 required = 0；当前无 active 交付 VP。⑬ 用户确认 Root 关门与 dev 库指向裁决；⑫ 新增登记「dev/test PG 数据库初始化快捷方式」；⑪ VP-040 `planned → active` + workspace scaffold；⑩ VP-039 关门。①–⑨ 见同日旧记录）。
+> **最近更新**：2026-09-21（⑮ workspace-010 W35 / GOAL-047 `done · 3/3`：dev/test PG 初始化快捷方式、自举修复、启动提示与文档完成；A-003 independent `pass` / open required = 0；本节登记同步为 `fixed`。⑭ VP-040 **`active → closed` v0.3.0**：Root `GOAL-001-timestamptz-persistence-contract` `done · 3/3`；R1/R2/R3 与六条方向级退出判据均完成；VRev-105 self `pass`，开放 required = 0；当前无 active 交付 VP。⑬ 用户确认 Root 关门与 dev 库指向裁决；⑫ 新增登记「dev/test PG 数据库初始化快捷方式」；⑪ VP-040 `planned → active` + workspace scaffold；⑩ VP-039 关门。①–⑨ 见同日旧记录）。
 
 ### 一、有界残余（B 类：实现已交付并验证，剩覆盖/文档加固）
 
@@ -436,7 +436,7 @@ Admin 功能最近一拍：**[VP-039-version-maintenance-diagnostics](plans/VP-0
 | 本地扩展登记（`valueLabels`/`badgeStyleField`/`truncate`/`width`/`minWidth` 等列级与节点级本地扩展缺少**单一清单**） | **登记（部分补齐）**：`[workspace-010] GOAL-045` 已把「列表页 actions 左侧插槽」加入本清单并记录其取值与约定；其余扩展仍分散在各波次决策里 | 出现「这是 pinned 还是本地扩展」的实际争议，或后续协议波次需要一次性核对时 | workspace-010（后续符合性波次） | `GOAL-044 A-001 F-003`；`GOAL-045 D-001` §1/§4；`GOAL-045 A-002` |
 | `[workspace-038]` roles 页导出触发面（R3 冻结分母含 `users`/`roles`，但页面 UI 只接到 users） | **2026-09-19 `fixed`**：`roles-table` 增多选、页面增 `roles-batch-export` 节点（`resource: roles`，与 users 同一组件与同一插槽）；**后端零改动**（分母本就含 roles） | 已闭合；后续新资源接入导出时按同一形态扩展 | workspace-010 GOAL-045 | `[workspace-010] GOAL-045 E-001` §2；`apps/api/modules/roles/schema/roles.json` |
 | `[workspace-038]` 「导出所选」在 operator config 下**必定 404**（`configs/config.yaml` 的 custom 内联列表自称镜像 admin preset，却漏了 VP-038 新加的 `admin.jobs` → 路由未挂载；而节点属于 `admin.users`/`admin.roles`，在所有 profile 照常渲染）；`mvp`/`demo` 为同类形态（既无 `jobs.write` 也无 `data.export`）；另发现 e2e harness 的 `customE2EModules` 同源漂移 | **2026-09-19 `fixed`**（用户报告 → 原样复现定位）：operator config 补 `admin.jobs`；触发面按路由真实的两道门禁渲染为**可见 + disabled + 说明**（隐藏会留下高度 0 的空插槽宿主、破坏 page-actions 高度契约）；提交命中 404 改报「未启用批量导出」而非裸 `NOT_FOUND`；新增 **config 超集守卫**（`internal/config` `TestOperatorConfigCoversAdminPreset`）+ **双 profile e2e 可用性契约**（`apps/web/e2e/batch-export-availability.spec.ts`，并同步修正 harness `customE2EModules`）；6 处变异验证（含双向判别性）。独立审计 `A-002`（grok build）`conditional` 指出「XOR 单测不具判别性 + e2e 未入仓」，经 `A-003` 响应两条 `fixed`，开放 required = 0 | — | workspace-010 GOAL-046 | `[workspace-010] GOAL-046 D-001/E-001/A-001/A-002/A-003` |
-| 待立项 · **dev/test PG 数据库初始化快捷方式**（`dev.cmd` 无 init 子命令；既有 helper 无法自举） | **登记（未实现）**：PG 路径要求目标库**已存在**——`openStore` 只做 ping 后应用 catalog，**不** `CREATE DATABASE`（SQLite 无需初始化，文件自动创建）。实例重置后 `dev.cmd start` 以 `FATAL: database "schema_ui_dev" does not exist (SQLSTATE 3D000)` 启动失败。仓内既有 `apps/api/cmd/e2e-pgset create\|drop\|verify\|list`，但**仅面向 `schema_ui_e2e_*`**，且其 `maintenanceDSN()` 连接的是 `DB_NAME` —— 当 `DB_NAME` 本身不存在时该工具同样 3D000，**无法自举**（须以 `DB_NAME=postgres` 覆盖才能创建）。README / QUICKSTART 无 PG 初始化步骤；启动错误也未提示如何初始化。 | **已触发**（用户 2026-09-21 报告并要求登记到总路线图） | `/vision` 先定结构（新 VP 波次 / 新工作区 / 其他），再由 `/govern` 立项 | 本轮实测：API 启动 `FATAL: database "schema_ui_dev" does not exist`；`go run ./cmd/e2e-pgset list` 同源 3D000；`DB_NAME=postgres go run ./cmd/e2e-pgset create schema_ui_dev` 成功；创建后 `dev.cmd start` 恢复通过（API `/readyz 200` + Web `200`） |
+| dev/test PG 数据库初始化快捷方式（原已触发登记） | **2026-09-21 `fixed`**：workspace-010 W35 / [GOAL-047](../workspaces/workspace-010-design-implementation-conformance/GOAL-047-w35-dev-db-init-and-bootstrap/00-meta.md) `done · 3/3`；`dev.cmd init-db` / `go run ./cmd/dbsetup` 幂等初始化 dev + test 库；`e2e-pgset` 可在 `DB_NAME` 不存在时自举；PG 3D000 错误提供可操作提示；README / QUICKSTART 已补初始化章节。A-002 的 3 条 required 经 A-003 independent `pass` 全部 fixed，open required = 0；关门记录见 [A-004](../workspaces/workspace-010-design-implementation-conformance/GOAL-047-w35-dev-db-init-and-bootstrap/03-audit/A-004-response-to-a003-and-closeout.md)。API 启动不自动 `CREATE DATABASE`，e2e 专用库仍独立管理。 | 已闭合 | workspace-010 GOAL-047（VP-010 持续符合性程序） | GOAL-047 E-002、A-003、A-004 |
 
 **本地扩展清单（截至 2026-09-19，供「pinned vs 本地扩展」判断）**：
 
