@@ -19,7 +19,7 @@ version: 0.1.0
 
 ## 当前事实
 
-> E-002 的实现、文档与实测已完成：`dev.cmd init-db` 可在目标库缺失时回退 maintenance DB 并一次创建 dev/test；再次执行幂等；`dev.cmd start`/`stop` 已实测。尚未完成：self + grok independent 审计与 GOAL-047 关门。`progress: 0/3` 仍由 `00-meta.md` A/B/C 派生。
+> E-002 的实现、文档与实测已完成：`dev.cmd init-db` 可在目标库缺失时回退 maintenance DB 并一次创建 dev/test；再次执行幂等；`dev.cmd start`/`stop` 已实测；`e2e-pgset` 自举与 PG namespace 分离由 `internal/pgsetup` 测试锁定；全仓 Go 回归 **65/65 包 ok**。检查点 A/B 完成，`progress: 2/3`；尚未完成：self + grok independent 审计与 GOAL-047 关门。
 
 ## 事实边界
 

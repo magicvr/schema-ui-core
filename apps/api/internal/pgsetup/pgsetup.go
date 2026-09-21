@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"gopkg.in/yaml.v3"
 )
 
 // Roles name the database a caller wants to provision. They select which
@@ -147,6 +148,16 @@ func ServerForRole(role string) Server {
 			Database: envOr("PG_TEST_DB", "postgres"),
 		}
 	}
+	name := strings.TrimSpace(os.Getenv("DB_NAME"))
+	if name == "" {
+		name = yamlDBName()
+	}
+	if name == "" {
+		// This is the default in configs/config.yaml and in the embedded config
+		// schema. Do not silently fall back to the maintenance database postgres:
+		// init-db must create the same database the API will actually open.
+		name = "schema_ui"
+	}
 	return Server{
 		Role:     RoleDev,
 		Host:     envOr("DB_HOST", "127.0.0.1"),
@@ -154,8 +165,35 @@ func ServerForRole(role string) Server {
 		User:     envOr("DB_USER", ""),
 		Password: os.Getenv("DB_PASSWORD"),
 		SSLMode:  envOr("DB_SSLMODE", "disable"),
-		Database: envOr("DB_NAME", "postgres"),
+		Database: name,
 	}
+}
+
+// yamlDBName reads the API's authoritative db.name when DB_NAME is not set.
+// This keeps `dbsetup` aligned with config.Load: an .env without DB_NAME must
+// provision the same database the API will use, not the maintenance database.
+func yamlDBName() string {
+	path := strings.TrimSpace(os.Getenv("CONFIG_FILE"))
+	if path == "" {
+		envFile := repoConfigsEnvFile()
+		if envFile == "" {
+			return ""
+		}
+		path = filepath.Join(filepath.Dir(envFile), "config.yaml")
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var doc struct {
+		DB struct {
+			Name string `yaml:"name"`
+		} `yaml:"db"`
+	}
+	if err := yaml.Unmarshal(raw, &doc); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(doc.DB.Name)
 }
 
 // DatabaseName returns the configured database name for a role.

@@ -3,6 +3,8 @@ package pgsetup
 import (
 	"context"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -90,16 +92,31 @@ func TestServerForRoleDefaults(t *testing.T) {
 	for _, key := range []string{"PG_TEST_HOST", "PG_TEST_PORT", "PG_TEST_USER", "PG_TEST_PASSWORD", "PG_TEST_DB", "PG_TEST_SSLMODE"} {
 		t.Setenv(key, "")
 	}
-	// Unset/empty must still resolve to something a server can answer on, and to
-	// a database every server has.
+	t.Setenv("CONFIG_FILE", filepath.Join(t.TempDir(), "missing-config.yaml"))
+	// With no env and no readable YAML, dev falls back to the committed config
+	// schema's default name (schema_ui), NOT to postgres: init-db must not quietly
+	// provision the maintenance database when the API will open schema_ui.
 	for _, role := range []string{RoleDev, RoleTest} {
 		server := ServerForRole(role)
 		if server.Host != "127.0.0.1" || server.Port != "5432" || server.SSLMode != "disable" {
 			t.Fatalf("%s defaults = %+v, want 127.0.0.1:5432 sslmode=disable", role, server)
 		}
-		if server.Database != "postgres" {
-			t.Fatalf("%s default database = %q, want postgres", role, server.Database)
+		want := "schema_ui"
+		if role == RoleTest {
+			want = "postgres"
 		}
+		if server.Database != want {
+			t.Fatalf("%s default database = %q, want %q", role, server.Database, want)
+		}
+	}
+	// An explicit config file wins when DB_NAME is absent.
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(configPath, []byte("db:\n  name: yaml_dev\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CONFIG_FILE", configPath)
+	if got := ServerForRole(RoleDev).Database; got != "yaml_dev" {
+		t.Fatalf("yaml DB name = %q, want yaml_dev", got)
 	}
 	// Unknown roles fall back to the dev namespace rather than inventing one.
 	if got := ServerForRole("whatever"); got.Role != RoleDev {

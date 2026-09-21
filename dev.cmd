@@ -313,7 +313,7 @@ echo.
 echo == schema-ui-core init-db ^(PostgreSQL^) ==
 where go >nul 2>&1 || ( echo ERROR: missing required tool: go & exit /b 2 )
 pushd "%API_DIR%"
-go run ./cmd/dbsetup %2 %3 %4 %5 %6 %7 %8 %9
+go run ./cmd/dbsetup %1 %2 %3 %4 %5 %6 %7 %8 %9
 set "INIT_RC=%ERRORLEVEL%"
 popd
 if not "%INIT_RC%"=="0" (
