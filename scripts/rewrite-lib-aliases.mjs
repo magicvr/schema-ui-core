@@ -11,6 +11,7 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizePackageEsmImports } from "./package-esm-compat.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -33,10 +34,10 @@ const faces = {
 // npmjs package face for apps/api/v0.7.0. Only packages whose shipped
 // source/runtime changed in this release advance; shell and theme stay stable.
 const versions = {
-  renderer: "0.3.14",
-  protocol: "0.2.16",
-  lib: "0.1.15",
-  ui: "0.1.12",
+  renderer: "0.3.15",
+  protocol: "0.2.17",
+  lib: "0.1.16",
+  ui: "0.1.13",
   theme: "0.1.4",
   shell: "0.1.6",
 };
@@ -54,9 +55,10 @@ const dependencies = {
 };
 
 const peers = {
+  protocol: { "@magicvr/schema-ui-lib": "^0.1.16" },
   lib: { react: "^19.0.0" },
-  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.16", "@magicvr/schema-ui-lib": "^0.1.15", "@magicvr/schema-ui-ui": "^0.1.12" },
-  ui: { react: "^19.0.0", "react-dom": "^19.0.0" },
+  renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.17", "@magicvr/schema-ui-lib": "^0.1.16", "@magicvr/schema-ui-ui": "^0.1.13" },
+  ui: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-lib": "^0.1.16" },
   // shell@0.1.6 is already published with a compatible ^0.2.12 peer range;
   // keep its metadata stable while protocol receives the asset fix.
   shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12" },
@@ -94,6 +96,10 @@ for (const pkg of readdirSync(distRoot)) {
           if (/\.(js|json|css|svg|png|mjs|cjs|woff2?)$/.test(p)) return m;
           return `from "${p}.js"`;
         });
+        // Vite renderer output may retain @schema-ui/* aliases, while tsc package
+        // output may contain @magicvr/* subpaths without extensions. Normalize
+        // emitted JavaScript only; app source imports remain untouched.
+        if (ent.name.endsWith(".js")) out = normalizePackageEsmImports(out);
         if (out !== text) {
           writeFileSync(full, out);
           rewritten.push(path.relative(dir, full));
@@ -137,3 +143,7 @@ for (const pkg of readdirSync(distRoot)) {
 }
 
 console.log(`alias 重写完成；无法映射引用总数（残余登记）= ${unmapTotal}`);
+
+// Complete the publishable package face in the same command: copy protocol
+// schema assets and normalize all emitted imports before packing.
+await import("./finalize-lib-dist.mjs");

@@ -20,10 +20,16 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - name: Test npmjs package name mapping
+      - name: Test npm package metadata and ESM compatibility
         working-directory: ${{ github.workspace }}
-        run: node --test scripts/npmjs-package-name.test.mjs
+        run: node --test scripts/npmjs-package-name.test.mjs scripts/package-esm-compat.test.mjs
       - run: npm ci
+      - name: Build and import npm packages from a clean consumer
+        working-directory: ${{ github.workspace }}
+        run: |
+          node scripts/build-lib-packages.mjs
+          node scripts/rewrite-lib-aliases.mjs
+          node scripts/npm-package-consumer-smoke.mjs
       - run: npm test
       # GOAL-008: an explicit type-check gate. `npm test` also runs the
       # typecheck-convention guard, but that guard only asserts the *convention*;
