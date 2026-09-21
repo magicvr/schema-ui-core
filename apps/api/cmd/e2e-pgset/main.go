@@ -8,30 +8,31 @@
 // (gitignored), exactly like the API server's own loading so local developers
 // get the same behavior with zero extra configuration. CI passes process env.
 //
+// Since W35 (GOAL-047) the maintenance connection falls back to the standard
+// maintenance databases when the configured DB_NAME does not exist yet, so this
+// tool can bootstrap the very first database on a fresh or reset server.
+//
 // Usage:
 //
-//	go run ./cmd/e2e-pgset create <name>   # CREATE DATABASE name
+//	go run ./cmd/e2e-pgset create <name>   # CREATE DATABASE name (idempotent)
 //	go run ./cmd/e2e-pgset drop <name>     # DROP DATABASE name (no active conns)
 //	go run ./cmd/e2e-pgset verify <name>   # exit 0 once schema_migrations exists
 //	go run ./cmd/e2e-pgset list            # list schema_ui_e2e_* databases (leftovers)
+//
+// For the dev/test databases use `go run ./cmd/dbsetup` (or `dev.cmd init-db`).
 package main
 
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/magicvr/schema-ui-core/apps/api/internal/pgsetup"
 )
 
 func main() {
-	loadDBEnvFile()
+	pgsetup.LoadEnvFile()
 	if len(os.Args) == 2 && os.Args[1] == "list" {
 		listExisting()
 		return
@@ -41,58 +42,41 @@ func main() {
 		os.Exit(2)
 	}
 	action, name := os.Args[1], os.Args[2]
-	if !identRe.MatchString(name) {
+	if !pgsetup.ValidName(name) {
 		fmt.Fprintln(os.Stderr, "invalid database name:", name)
 		os.Exit(2)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	server := pgsetup.ServerForRole(pgsetup.RoleDev)
 
 	switch action {
 	case "create":
-		conn, err := pgx.Connect(ctx, maintenanceDSN())
+		made, err := server.Ensure(ctx, name)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "connect:", err)
-			os.Exit(1)
-		}
-		defer conn.Close(ctx)
-		if _, err := conn.Exec(ctx, "CREATE DATABASE "+name); err != nil {
 			fmt.Fprintln(os.Stderr, "create:", err)
 			os.Exit(1)
 		}
-		fmt.Println("created", name)
+		if made {
+			fmt.Println("created", name)
+			return
+		}
+		fmt.Println("exists", name)
 	case "drop":
-		conn, err := pgx.Connect(ctx, maintenanceDSN())
+		dropped, err := server.Drop(ctx, name)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "connect:", err)
+			fmt.Fprintln(os.Stderr, "drop:", err)
 			os.Exit(1)
 		}
-		defer conn.Close(ctx)
-		_, err = conn.Exec(ctx, "DROP DATABASE "+name+" WITH (FORCE)")
-		if err != nil {
-			// PG < 13 fallback (and any server that rejects the FORCE clause).
-			if _, err2 := conn.Exec(ctx, "DROP DATABASE "+name); err2 != nil {
-				fmt.Fprintln(os.Stderr, "drop:", err)
-				fmt.Fprintln(os.Stderr, "drop (no force):", err2)
-				os.Exit(1)
-			}
+		if dropped {
+			fmt.Println("dropped", name)
+			return
 		}
-		fmt.Println("dropped", name)
+		fmt.Println("absent", name)
 	case "verify":
-		conn, err := pgx.Connect(ctx, dbDSN(name))
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "verify: connect:", err)
-			os.Exit(1)
-		}
-		defer conn.Close(ctx)
-		var table any
-		if err := conn.QueryRow(ctx, "SELECT to_regclass('public.schema_migrations')").Scan(&table); err != nil {
+		if err := server.VerifyMigrated(ctx, name); err != nil {
 			fmt.Fprintln(os.Stderr, "verify:", err)
-			os.Exit(1)
-		}
-		if table == nil {
-			fmt.Fprintln(os.Stderr, "verify: schema_migrations not present yet in", name)
 			os.Exit(1)
 		}
 		fmt.Println("verified", name)
@@ -105,108 +89,13 @@ func main() {
 func listExisting() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	conn, err := pgx.Connect(ctx, maintenanceDSN())
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "connect:", err)
-		os.Exit(1)
-	}
-	defer conn.Close(ctx)
-	rows, err := conn.Query(ctx,
-		"SELECT datname FROM pg_database WHERE datname LIKE 'schema_ui_e2e_%' ORDER BY datname")
+	names, err := pgsetup.ServerForRole(pgsetup.RoleDev).ListE2EDatabases(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "list:", err)
 		os.Exit(1)
 	}
-	defer rows.Close()
-	count := 0
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			fmt.Fprintln(os.Stderr, "list:", err)
-			os.Exit(1)
-		}
+	for _, name := range names {
 		fmt.Println(name)
-		count++
 	}
-	fmt.Fprintf(os.Stderr, "%d schema_ui_e2e_* database(s)\n", count)
-}
-
-var identRe = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
-
-// loadDBEnvFile loads DB_* keys from apps/api/configs/.env without overriding
-// already-set process env (mirrors config.Load and internal/pgtest).
-func loadDBEnvFile() {
-	envFile := repoConfigsEnvFile()
-	if envFile == "" {
-		return
-	}
-	raw, err := os.ReadFile(envFile)
-	if err != nil {
-		return
-	}
-	for _, line := range strings.Split(string(raw), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		eq := strings.IndexByte(line, '=')
-		if eq <= 0 {
-			continue
-		}
-		k := strings.TrimSpace(line[:eq])
-		if !strings.HasPrefix(k, "DB_") {
-			continue
-		}
-		if _, set := os.LookupEnv(k); !set {
-			v := strings.TrimSpace(line[eq+1:])
-			_ = os.Setenv(k, strings.Trim(v, `"'`))
-		}
-	}
-}
-
-func repoConfigsEnvFile() string {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		return ""
-	}
-	dir := filepath.Dir(file) // apps/api/cmd/e2e-pgset
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "AGENTS.md")); err == nil {
-			return filepath.Join(dir, "apps", "api", "configs", ".env")
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return ""
-		}
-		dir = parent
-	}
-}
-
-func dbDSN(name string) string {
-	host := envOr("DB_HOST", "127.0.0.1")
-	port := envOr("DB_PORT", "5432")
-	user := envOr("DB_USER", "")
-	pass := os.Getenv("DB_PASSWORD")
-	sslmode := envOr("DB_SSLMODE", "disable")
-	u := url.URL{
-		Scheme: "postgres",
-		User:   url.UserPassword(user, pass),
-		Host:   host + ":" + port,
-		Path:   "/" + name,
-	}
-	q := u.Query()
-	q.Set("sslmode", sslmode)
-	u.RawQuery = q.Encode()
-	return u.String()
-}
-
-func maintenanceDSN() string {
-	return dbDSN(envOr("DB_NAME", "postgres"))
-}
-
-func envOr(key, fallback string) string {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-		return v
-	}
-	return fallback
+	fmt.Fprintf(os.Stderr, "%d schema_ui_e2e_* database(s)\n", len(names))
 }

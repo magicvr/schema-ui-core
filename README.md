@@ -35,6 +35,23 @@ skills/    # 治理 Skills 包
 `config.Load` 默认读取该文件（`CONFIG_ENV_FILE`）；已设置的进程 env 优先。
 Compose 使用仓库根 `.env` 插值，不读 API 这份文件。
 
+### PostgreSQL 数据库初始化（W35 / GOAL-047）
+
+SQLite 无需预创建数据库文件；PostgreSQL 则不同：API 启动时只连接配置目标库并应用迁移，**不会自动 `CREATE DATABASE`**。实例重置后请先运行：
+
+```powershell
+.\dev.cmd init-db
+```
+
+该命令幂等地创建 `DB_NAME`（dev）与 `PG_TEST_DB`（test），不会删除已有库。等价入口：
+
+```powershell
+cd apps/api
+go run ./cmd/dbsetup
+```
+
+若已看到 `FATAL: database "..." does not exist (SQLSTATE 3D000)`，就是该初始化步骤尚未完成。需要 `CREATEDB` 权限；e2e 专用库仍由 `go run ./cmd/e2e-pgset create|drop` 独立管理。
+
 ### API · `apps/api`（GOAL-003）
 
 ```bash

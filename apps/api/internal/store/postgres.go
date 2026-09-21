@@ -13,11 +13,30 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib" // registers driver name "pgx"
 
 	"github.com/magicvr/schema-ui-core/apps/api/internal/temporal"
 	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
+
+// missingDatabaseHint turns the bare "database does not exist" ping failure into
+// an actionable message (W35 / GOAL-047): the application never runs CREATE
+// DATABASE, so on a fresh or reset server the operator must provision the
+// database first. The hint only adds text — the error chain and its
+// classification are unchanged, and the DSN (with its password) is never echoed.
+func missingDatabaseHint(err error) error {
+	if err == nil {
+		return nil
+	}
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "3D000" {
+		return err
+	}
+	return fmt.Errorf("%w\n  the target database does not exist yet and the API never creates it;"+
+		"\n  provision it first:  dev.cmd init-db   (or: cd apps/api && go run ./cmd/dbsetup)"+
+		"\n  see README/QUICKSTART \"initialize the databases\"", err)
+}
 
 // postgres implements kernel.Store for the postgres dialect. R2 delivers
 // connect + Ping + WasFresh (probe open); the compiled catalog is NOT applied
@@ -58,7 +77,7 @@ func openPostgres(ctx context.Context, opts OpenOptions, catalog []kernel.Migrat
 	defer cancel()
 	if err := db.PingContext(probeCtx); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("postgres ping: %w", err)
+		return nil, fmt.Errorf("postgres ping: %w", missingDatabaseHint(err))
 	}
 	fresh, err := postgresWasFresh(probeCtx, db)
 	if err != nil {

@@ -85,6 +85,7 @@ git checkout <待测 ref>        # 记录实际 ref；工作树保持 clean
 - 开发（`APP_ENV=development` 显式设置）不要求显式密钥；生产（compose）必须提供 `AUTH_JWT_SECRET` 与 `ADMIN_INITIAL_PASSWORD`（缺省 fail-closed 启动失败）。**`APP_ENV` 必须显式设置**——未设置时启动失败（C3：不静默回退到公开开发密钥/密码）。
 - 模块启用集只来自 `apps/api/configs/config.yaml`（T-06）：`app.profile` 接受 `mvp`、`admin`、`demo`（内置预设），`app.modules` 可指向预设文件或内联 `list`。`mvp` = core + `users`/`roles`/`account`/`notifications`（首页 = Dashboard）；`admin` = `mvp` + `settings`/`activity`/`data-transfer`；`demo`（W2）为**非生产向演示 Profile** = mvp 集 + `dev.examples`；生产只应使用 `mvp` / `admin`。`app.modules` 覆盖 Profile 默认集合。
 - 每个本地 API/Web 进程共用同一份 `configs/config.yaml`，无需再设置 Profile 环境变量。
+- **PostgreSQL 初始化（W35 / GOAL-047）**：SQLite 会自动创建数据库文件；PostgreSQL 不会自动 `CREATE DATABASE`。实例重置后先在仓库根执行 `dev.cmd init-db`（幂等创建 `DB_NAME` 与 `PG_TEST_DB`），或 `cd apps/api && go run ./cmd/dbsetup`。需要 `CREATEDB` 权限；看到 `SQLSTATE 3D000` 时重复该步骤即可。e2e 专用库仍由 `go run ./cmd/e2e-pgset create|drop` 独立管理。
 - 首次启动自动建表并种子 `admin` 用户与系统角色（GOAL-011：users/roles 语义资源；records 已按版本化迁移 `0006` 退场）。
 - **连已有库的 admin 凭据**：首次登录后 `admin` 会被强制改密（`must_change_password`），`ADMIN_INITIAL_PASSWORD`（仅 fresh bootstrap）不再有效。维护者在本地 gitignored 的 `apps/api/configs/.env` 里设置 `ADMIN_PASSWD=<当前 admin 密码>` 作为**声明**，自动化测试 / AI 助手 / smoke 连现有库时从该文件或环境变量读取即可登录。API 不读取、不据此重置密码（约定键，见 `apps/api/configs/.env.example`）。
 
