@@ -25,11 +25,11 @@ var templateFS embed.FS
 
 const (
 	apiModule  = "github.com/magicvr/schema-ui-core/apps/api"
-	apiVersion = "v0.7.0" // 模板钉 = 本次发布（apps/api/v0.7.0 tag）
+	apiVersion = "v0.7.1" // 模板钉 = 本次发布（apps/api/v0.7.1 tag）
 	// 六包终值（R5 · A-002 F-002 响应）：create 骨架生成即装终值；upgrade 拉 npm/Go latest 保对齐
 	protocolVer  = "0.2.17"
 	libVersion   = "0.1.16"
-	shellVersion = "0.1.6"
+	shellVersion = "0.1.7"
 	themeVersion = "0.1.4"
 	uiVersion    = "0.1.13"
 	rendererVer  = "0.3.15"
