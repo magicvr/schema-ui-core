@@ -26,6 +26,7 @@ import (
 	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/authsession/systemdata"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/compiled"
+	mfastore "github.com/magicvr/schema-ui-core/apps/api/modules/mfa/store"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/operationlog"
 	"github.com/magicvr/schema-ui-core/apps/api/modules/users"
 )
@@ -87,6 +88,12 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 	if cfg == nil {
 		return "", errors.New("server: config is required")
 	}
+	// Options can be constructed directly, bypassing LoadConfig. Re-run the
+	// complete fail-closed validation before opening a store or assembling any
+	// authentication/listener state.
+	if err := cfg.validate(); err != nil {
+		return "", fmt.Errorf("server: validate config: %w", err)
+	}
 	logger := opts.Logger
 	if logger == nil {
 		logger = slog.Default()
@@ -108,6 +115,16 @@ func Run(ctx context.Context, opts Options, signals <-chan os.Signal) (string, e
 			_ = st.Close()
 			return "", err
 		}
+	}
+
+	activeMFA, err := mfastore.NewRepository(st).HasActiveEnrollment()
+	if err != nil {
+		_ = st.Close()
+		return "", fmt.Errorf("server: serve did not assemble an MFA verifier; active enrollment check failed: %w", err)
+	}
+	if activeMFA {
+		_ = st.Close()
+		return "", errors.New("server: serve did not assemble an MFA verifier; active MFA enrollment exists")
 	}
 
 	// 2. 仓库 / 认证 / 邮件（下游形态：站内 outbox sink）。
@@ -305,13 +322,17 @@ func bootstrapAdmin(ctx context.Context, st kernel.Store, cfg *Config) error {
 	return nil
 }
 
-// resolveSecret 返回签名密钥；非 dev 缺空已由 validate fail-closed（dev 缺省
-// 与主仓 cmd/server 一致的开发密钥）。
+// resolveSecret 返回签名密钥；只有 development 才允许显式开发 fallback。
+// Run 在调用前已执行 Config.validate，因此非 development 缺失时这里的空
+// 返回值只表示无效配置，不会被当成可用的固定密钥。
 func resolveSecret(cfg *Config) string {
 	if cfg.AuthJWTSecret != "" {
 		return cfg.AuthJWTSecret
 	}
-	return "dev-only-insecure-jwt-secret-change-me"
+	if cfg.AppEnv == "development" {
+		return "dev-only-insecure-jwt-secret-change-me"
+	}
+	return ""
 }
 
 // deriveHomePageRef 镜像主仓 composition 决策表（D-003 §2）：

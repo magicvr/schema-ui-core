@@ -2,9 +2,9 @@
 title: 目标树 · workspace-009-production-hardening
 status: active
 created: 2026-08-10
-updated: 2026-09-06
+updated: 2026-09-22
 parent: null
-version: 0.31.0
+version: 0.34.0
 workspace_id: workspace-009-production-hardening
 ---
 
@@ -33,7 +33,8 @@ GOAL-001-production-hardening [active]  · 持续安全程序
 ├── GOAL-015-w14-schema-auth-wiring-lock [done] (4/4)     · W14 · 页面 Schema 鉴权装配修复与生产装配回归锁
 ├── GOAL-016-w15-api-web-audit-remediation [done] (6/6)  · W15 · api/web 独立审计问题修正（关门）
 ├── GOAL-017-w16-api-web-security-audit [done] (8/8) · W16 · api/web 安全审计发现修复（S1–S6 完成：报告归档 + 修复 + 独立审计通过 + 关门）
-└── GOAL-018-w17-refresh-token-httponly [done] (17/17) · W17 · Refresh Token httpOnly Cookie 双模式架构（承接 W16 F-003 残余）
+├── GOAL-018-w17-refresh-token-httponly [done] (17/17) · W17 · Refresh Token httpOnly Cookie 双模式架构（承接 W16 F-003 残余）
+└── GOAL-019-w18-api-web-security-hardening [done] (6/6) · W18 · api/web 多迭代安全与架构加固（S6 pass；用户已关门）
 ```
 
 **W14（2026-08-26 开波，2026-08-26 关门 · done 4/4）**：用户报障「所有页面都显示无法显示此页面」→ 定位为 GOAL-013 F-010（`/api/schema` 挂认证，checkpoint `b7954235`）之后**生产入口缺 `schemaFetcher` 认证传输**——页面文档请求全部匿名 401，全站渲染 PageSchemaErrorSurface；30+ 测试均显式注入 fetcher，测试全绿与生产断裂并存（「测试装配 ≠ 生产装配」）。hotfix `schemaFetcher={authFetch}` 经用户确认先行落地；用户追加指令补防回归锁并在本区立项承载。**S2** 冻结双措施：hotfix 追认 + AuthGate 提取为可测模块与生产装配回归锁（[D-001](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-001-w14-scope-and-freeze.md)；三项替代方案有据否决）。**S3** 实施落地：`AuthGate.tsx` 提取 + `auth-gate.wiring.test.tsx` ×2，全量 vitest **1130/1130**（84 文件）+ `tsc -b` 0。**S4 复核关门**：self [A-001](GOAL-015-w14-schema-auth-wiring-lock/03-audit/A-001-w14-self-closeout.md) `pass`（含变异验证红→绿）；用户指令「把 R-001 并入本波。处理完再关门」→ **R-001 fixed**：新增 `e2e/schema-auth-transport.spec.ts` 真实网络层 Bearer 冒烟（[E-003](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-003-w14-r001-e2e-bearer-smoke.md)）；关门验证附带修复 shell.spec 匿名 schema 探测陈旧契约（F-010 后匿名恒 401；定性非本波回归，[E-004](GOAL-015-w14-schema-auth-wiring-lock/02-execution/E-004-w14-shell-spec-contract-fix.md)；根因=e2e 自 F-010 起未再完整运行）；最终全量绿：vitest 1130/1130 + Playwright chromium **10 passed / 1 skipped · exit 0**。**[D-002](GOAL-015-w14-schema-auth-wiring-lock/01-decision/D-002-w14-closeout.md) 用户书面关门：done (4/4)**。Root 保持 active。见 [GOAL-015](GOAL-015-w14-schema-auth-wiring-lock/00-meta.md)。
@@ -70,6 +71,7 @@ Root **保持 active**。W1–W4 为已关门波次档案；W4 承接 2026-08-11
 | GOAL-016-w15-api-web-audit-remediation | W15 api/web 独立审计问题修正 | GOAL-001-production-hardening | done | 6/6 | 2026-08-30 |
 | GOAL-017-w16-api-web-security-audit | W16 api/web 安全审计发现修复 | GOAL-001-production-hardening | done | 8/8 | 2026-09-01 |
 | GOAL-018-w17-refresh-token-httponly | W17 Refresh Token httpOnly Cookie 双模式架构 | GOAL-001-production-hardening | done | 17/17 | 2026-09-06 |
+| GOAL-019-w18-api-web-security-hardening | W18 api/web 多迭代安全与架构加固 | GOAL-001-production-hardening | done | 6/6 | 2026-09-22 |
 | — | W5 scan（0 中高危；低危就地修补，未开子目标） | GOAL-001-production-hardening | — | — | 2026-08-14 |
 
 **W17（2026-09-01 开波 · 2026-09-06 关门 · done 17/17）**：承接 W16 (GOAL-017) F-003 accepted-residual（refresh token localStorage XSS 风险）→ 开设 GOAL-018 承载双模式架构改造。**目标范围**：将 refresh token 从 localStorage 迁移到 httpOnly cookie（防 XSS），同时保留 `X-Refresh-Token` header 回退模式以支持向后兼容和非浏览器环境。**阶段计划**（S1–S5，共 17 检查点）：S1 方案冻结（cookie 属性、兼容性策略、测试计划）→ S2 API 端实施（3 端点改造）→ S3 Web 端实施 → S4 集成验证 → S5 审计与关门。**实施**：I-001～I-004 全部 verified；S1 冻结（D-001）+ S2 实施（E-001 · Commit `59da02a1`）完成；S3 跳过（N/A · 浏览器自动携带 cookie，CLOSURE.md 决策登记）；S4 集成验证完成（完整流程 + header 回退 + 回归全绿）；A-001 self `PASS` + A-002 independent `PASS`（开放 required = 0）。**关门**：2026-09-06 用户书面授权（D-002）→ `done (17/17)`。Root 保持 active。残余（无交付义务）：S3 可选项（localStorage 清理 + cookie 可用性检测）；A-002 生产部署前建议。见 [GOAL-018](GOAL-018-w17-refresh-token-httponly/00-meta.md)。

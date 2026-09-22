@@ -204,28 +204,46 @@ function withAuth(input: RequestInfo | URL, init?: RequestInit): RequestInit {
   return { ...init, headers };
 }
 
-function isSameOrigin(input: RequestInfo | URL): boolean {
+function resolveTargetUrl(input: RequestInfo | URL): URL | null {
   try {
-    return new URL(String(input), window.location.origin).origin === window.location.origin;
+    if (typeof input === "string") {
+      return new URL(input, window.location.origin);
+    }
+
+    // Request and URL instances can come from another realm, so `instanceof`
+    // against this window's constructors is not reliable. Read only their
+    // structured URL properties instead; never stringify an arbitrary object
+    // into a URL, because that can turn `[object Request]` into this origin.
+    if (typeof input !== "object" || input === null) {
+      return null;
+    }
+
+    const candidate = input as { url?: unknown; href?: unknown };
+    if (typeof candidate.url === "string") {
+      return new URL(candidate.url, window.location.origin);
+    }
+    if (typeof candidate.href === "string") {
+      return new URL(candidate.href, window.location.origin);
+    }
   } catch {
-    return false;
+    // A hostile or revoked cross-realm object can throw while its property is
+    // read. Treat it like any other unresolvable target and fail closed.
   }
+  return null;
+}
+
+function isSameOrigin(input: RequestInfo | URL): boolean {
+  const targetUrl = resolveTargetUrl(input);
+  return targetUrl !== null && targetUrl.origin === window.location.origin;
 }
 
 function isSessionListRequest(input: RequestInfo | URL): boolean {
-  try {
-    return new URL(String(input), window.location.origin).pathname === "/api/account/sessions";
-  } catch {
-    return false;
-  }
+  return resolveTargetUrl(input)?.pathname === "/api/account/sessions";
 }
 
 function isAuthEndpoint(input: RequestInfo | URL): boolean {
-  try {
-    return AUTH_ENDPOINTS.has(new URL(String(input), window.location.origin).pathname);
-  } catch {
-    return false;
-  }
+  const pathname = resolveTargetUrl(input)?.pathname;
+  return pathname !== undefined && AUTH_ENDPOINTS.has(pathname);
 }
 
 /**
@@ -236,7 +254,12 @@ function isAuthEndpoint(input: RequestInfo | URL): boolean {
  */
 export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   let response = await timeoutFetch(input, withAuth(input, init));
-  if (response.ok && String(input).includes("/api/account/password")) {
+  const targetUrl = resolveTargetUrl(input);
+  if (
+    response.ok &&
+    targetUrl?.origin === window.location.origin &&
+    targetUrl.pathname === "/api/account/password"
+  ) {
     try {
       sessionStorage.setItem("password.changedNotice", "1");
     } catch {

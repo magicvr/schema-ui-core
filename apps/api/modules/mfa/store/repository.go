@@ -30,6 +30,25 @@ func NewRepository(runner TxRunner) *Repository {
 	return &Repository{runner: runner}
 }
 
+// HasActiveEnrollment reports whether any user has an active MFA enrollment.
+// Serve uses this narrow startup probe to fail closed when its MFA verifier is
+// not assembled but the persisted database still contains active enrollments.
+func (r *Repository) HasActiveEnrollment() (bool, error) {
+	var active bool
+	err := r.runner.Run(context.Background(), func(tx kernel.Tx) error {
+		if err := tx.QueryRow(context.Background(),
+			`SELECT EXISTS(SELECT 1 FROM user_mfa WHERE status = 'active')`,
+		).Scan(&active); err != nil {
+			return fmt.Errorf("check active mfa enrollment: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return active, nil
+}
+
 // Domain sentinels mapped by the handler to frozen error codes.
 var (
 	ErrNotFound       = errors.New("mfa row not found")
