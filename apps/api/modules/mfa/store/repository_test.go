@@ -18,6 +18,41 @@ func newRepo(t *testing.T) *Repository {
 	return NewRepository(st)
 }
 
+func TestHasActiveEnrollment(t *testing.T) {
+	repo := newRepo(t)
+	now := time.Now().UTC()
+
+	active, err := repo.HasActiveEnrollment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if active {
+		t.Fatal("empty MFA table must not report an active enrollment")
+	}
+
+	if err := repo.UpsertPending("user-admin", "cipher", "[]", now); err != nil {
+		t.Fatal(err)
+	}
+	active, err = repo.HasActiveEnrollment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if active {
+		t.Fatal("pending enrollment must not report as active")
+	}
+
+	if err := repo.Activate("user-admin", now); err != nil {
+		t.Fatal(err)
+	}
+	active, err = repo.HasActiveEnrollment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !active {
+		t.Fatal("active enrollment must be reported")
+	}
+}
+
 // W11 F-003: CreateProof lazily purges the user's EXPIRED proof rows in the
 // same transaction (captcha precedent) — proof issuances cannot grow
 // mfa_proofs unboundedly across challenges.

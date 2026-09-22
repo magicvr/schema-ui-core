@@ -31,15 +31,16 @@ const faces = {
 };
 
 // 包终名 = 发布实态全名（@magicvr/schema-ui-<pkg>）；versions/peers 以包短名为键
-// npmjs package face for apps/api/v0.7.0. Only packages whose shipped
-// source/runtime changed in this release advance; shell and theme stay stable.
+// npmjs package face for apps/api/v0.7.1. Only packages whose shipped
+// source/runtime changed in this release advance; shell carries the auth
+// client hardening and theme stays stable.
 const versions = {
   renderer: "0.3.15",
   protocol: "0.2.17",
   lib: "0.1.16",
   ui: "0.1.13",
   theme: "0.1.4",
-  shell: "0.1.6",
+  shell: "0.1.7",
 };
 
 const dependencies = {
@@ -59,8 +60,7 @@ const peers = {
   lib: { react: "^19.0.0" },
   renderer: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.17", "@magicvr/schema-ui-lib": "^0.1.16", "@magicvr/schema-ui-ui": "^0.1.13" },
   ui: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-lib": "^0.1.16" },
-  // shell@0.1.6 is already published with a compatible ^0.2.12 peer range;
-  // keep its metadata stable while protocol receives the asset fix.
+  // shell@0.1.7 keeps the existing compatible protocol peer range.
   shell: { react: "^19.0.0", "react-dom": "^19.0.0", "@magicvr/schema-ui-protocol": "^0.2.12" },
 };
 

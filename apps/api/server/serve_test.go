@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -11,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/magicvr/schema-ui-core/apps/api/kernel"
 )
 
 // startTestServer 绑定一个临时端口并把 serve 面跑在 goroutine 中。
@@ -119,6 +122,242 @@ func TestRunRejectsBadConfig(t *testing.T) {
 	// server.Serve / Run 对 nil Config fail-closed。
 	if _, err := Run(context.Background(), Options{}, nil); err == nil {
 		t.Error("Run(nil Config) should fail")
+	}
+}
+
+// runStartGuardStore makes a regression that reaches store assembly fail
+// immediately without opening a database or starting a server.
+type runStartGuardStore struct {
+	used bool
+}
+
+func (s *runStartGuardStore) markUsed() { s.used = true }
+
+func (s *runStartGuardStore) Dialect() kernel.Dialect {
+	s.markUsed()
+	return kernel.DialectSQLite
+}
+
+func (s *runStartGuardStore) Run(context.Context, func(kernel.Tx) error) error {
+	s.markUsed()
+	return errors.New("run start guard store was used")
+}
+
+func (s *runStartGuardStore) Ping(context.Context) error {
+	s.markUsed()
+	return errors.New("run start guard store was used")
+}
+
+func (s *runStartGuardStore) Close() error {
+	s.markUsed()
+	return errors.New("run start guard store was used")
+}
+
+func (s *runStartGuardStore) WasFresh() bool {
+	s.markUsed()
+	return false
+}
+
+func (s *runStartGuardStore) MarkSystemDataReady() { s.markUsed() }
+
+func (s *runStartGuardStore) SystemDataReady() error {
+	s.markUsed()
+	return errors.New("run start guard store was used")
+}
+
+type serveMFAProbeStore struct {
+	active     bool
+	queryErr   error
+	runCalls   int
+	closeCalls int
+	pingCalls  int
+	readyMarks int
+}
+
+func (s *serveMFAProbeStore) Dialect() kernel.Dialect { return kernel.DialectSQLite }
+
+func (s *serveMFAProbeStore) Run(_ context.Context, fn func(kernel.Tx) error) error {
+	s.runCalls++
+	return fn(serveMFAProbeTx{active: s.active, queryErr: s.queryErr})
+}
+
+func (s *serveMFAProbeStore) Ping(context.Context) error {
+	s.pingCalls++
+	return errors.New("serve MFA probe store was pinged")
+}
+
+func (s *serveMFAProbeStore) Close() error {
+	s.closeCalls++
+	return nil
+}
+
+func (s *serveMFAProbeStore) WasFresh() bool { return false }
+
+func (s *serveMFAProbeStore) MarkSystemDataReady() { s.readyMarks++ }
+
+func (s *serveMFAProbeStore) SystemDataReady() error {
+	return errors.New("serve MFA probe store reached runtime startup")
+}
+
+type serveMFAProbeTx struct {
+	active   bool
+	queryErr error
+}
+
+func (serveMFAProbeTx) Exec(context.Context, string, ...any) (kernel.Result, error) {
+	return nil, errors.New("serve MFA probe transaction executed an unexpected write")
+}
+
+func (serveMFAProbeTx) Query(context.Context, string, ...any) (kernel.Rows, error) {
+	return nil, errors.New("serve MFA probe transaction executed an unexpected query")
+}
+
+func (tx serveMFAProbeTx) QueryRow(context.Context, string, ...any) kernel.Row {
+	return serveMFAProbeRow{active: tx.active, err: tx.queryErr}
+}
+
+type serveMFAProbeRow struct {
+	active bool
+	err    error
+}
+
+func (row serveMFAProbeRow) Scan(dest ...any) error {
+	if row.err != nil {
+		return row.err
+	}
+	if len(dest) != 1 {
+		return errors.New("serve MFA probe row received an unexpected scan shape")
+	}
+	active, ok := dest[0].(*bool)
+	if !ok {
+		return errors.New("serve MFA probe row received a non-bool destination")
+	}
+	*active = row.active
+	return nil
+}
+
+func newMFAProbeConfig(t *testing.T) (*Config, net.Listener) {
+	t.Helper()
+	reserved, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &Config{
+		AppEnv:          "development",
+		HTTPAddr:        reserved.Addr().String(),
+		ShutdownTimeout: time.Second,
+		DBDialect:       "sqlite",
+		DBPath:          filepath.Join(t.TempDir(), "must-not-open.db"),
+		AuthAccessTTL:   15 * time.Minute,
+		AuthRefreshTTL:  30 * 24 * time.Hour,
+	}, reserved
+}
+
+func TestRunRejectsActiveMFAEnrollmentBeforeStartup(t *testing.T) {
+	store := &serveMFAProbeStore{active: true}
+	cfg, reserved := newMFAProbeConfig(t)
+	defer reserved.Close()
+
+	_, err := Run(context.Background(), Options{Config: cfg, Store: store}, nil)
+	if err == nil {
+		t.Fatal("Run should reject active MFA enrollment without an assembled verifier")
+	}
+	if !strings.Contains(err.Error(), "serve did not assemble an MFA verifier") {
+		t.Fatalf("error = %v, want missing MFA verifier detail", err)
+	}
+	if !strings.Contains(err.Error(), "active MFA enrollment exists") {
+		t.Fatalf("error = %v, want active enrollment detail", err)
+	}
+	if store.runCalls != 1 {
+		t.Fatalf("MFA probe Run calls = %d, want 1", store.runCalls)
+	}
+	if store.closeCalls != 1 {
+		t.Fatalf("store Close calls = %d, want 1", store.closeCalls)
+	}
+	if store.pingCalls != 0 || store.readyMarks != 0 {
+		t.Fatalf("startup continued after active enrollment: ping=%d readyMarks=%d", store.pingCalls, store.readyMarks)
+	}
+}
+
+func TestRunRejectsMFAEnrollmentProbeFailureBeforeStartup(t *testing.T) {
+	probeErr := errors.New("simulated active enrollment lookup failure")
+	store := &serveMFAProbeStore{queryErr: probeErr}
+	cfg, reserved := newMFAProbeConfig(t)
+	defer reserved.Close()
+
+	_, err := Run(context.Background(), Options{Config: cfg, Store: store}, nil)
+	if err == nil {
+		t.Fatal("Run should reject an MFA enrollment probe failure")
+	}
+	if !strings.Contains(err.Error(), "serve did not assemble an MFA verifier") {
+		t.Fatalf("error = %v, want missing MFA verifier detail", err)
+	}
+	if !strings.Contains(err.Error(), probeErr.Error()) {
+		t.Fatalf("error = %v, want probe failure detail", err)
+	}
+	if store.runCalls != 1 {
+		t.Fatalf("MFA probe Run calls = %d, want 1", store.runCalls)
+	}
+	if store.closeCalls != 1 {
+		t.Fatalf("store Close calls = %d, want 1", store.closeCalls)
+	}
+	if store.pingCalls != 0 || store.readyMarks != 0 {
+		t.Fatalf("startup continued after probe failure: ping=%d readyMarks=%d", store.pingCalls, store.readyMarks)
+	}
+}
+
+func TestRunRejectsNonDevelopmentJWTSecretBeforeStartup(t *testing.T) {
+	for name, secret := range map[string]string{
+		"missing": "",
+		"weak":    "short",
+	} {
+		t.Run(name, func(t *testing.T) {
+			guard := &runStartGuardStore{}
+			cfg := &Config{
+				AppEnv:               "production",
+				HTTPAddr:             "127.0.0.1:0",
+				ShutdownTimeout:      time.Second,
+				DBDialect:            "sqlite",
+				DBPath:               filepath.Join(t.TempDir(), "must-not-open.db"),
+				AuthJWTSecret:        secret,
+				AuthAccessTTL:        15 * time.Minute,
+				AuthRefreshTTL:       30 * 24 * time.Hour,
+				AdminInitialPassword: "seed-password-ok",
+			}
+
+			// Keep the target occupied so a regression that gets past config
+			// validation cannot accidentally start a listener in this test.
+			reserved, err := net.Listen("tcp", cfg.HTTPAddr)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer reserved.Close()
+			cfg.HTTPAddr = reserved.Addr().String()
+
+			if _, err := Run(context.Background(), Options{Config: cfg, Store: guard}, nil); err == nil {
+				t.Fatal("Run should reject invalid non-development JWT configuration")
+			} else {
+				if !strings.Contains(err.Error(), "server: validate config") {
+					t.Fatalf("error = %v, want config validation failure", err)
+				}
+				if !strings.Contains(err.Error(), "AUTH_JWT_SECRET") {
+					t.Fatalf("error = %v, want AUTH_JWT_SECRET validation detail", err)
+				}
+			}
+			if guard.used {
+				t.Fatal("invalid JWT configuration must fail before store startup")
+			}
+		})
+	}
+}
+
+func TestResolveSecretKeepsDevelopmentFallbackOnly(t *testing.T) {
+	const devFallback = "dev-only-insecure-jwt-secret-change-me"
+	if got := resolveSecret(&Config{AppEnv: "development"}); got != devFallback {
+		t.Fatalf("development fallback = %q, want %q", got, devFallback)
+	}
+	if got := resolveSecret(&Config{AppEnv: "production"}); got != "" {
+		t.Fatalf("non-development missing secret = %q, want empty", got)
 	}
 }
 

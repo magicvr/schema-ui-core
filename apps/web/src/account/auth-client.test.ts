@@ -151,8 +151,25 @@ describe("auth-client", () => {
     expect((init.headers as Headers).get("Authorization")).toBe("Bearer access-1");
   });
 
-  // W13 F-014 (GOAL-013 A-001): credentials attach ONLY to same-origin
-  // targets — an absolute cross-origin URL must stay token-free.
+  it("authFetch attaches both tokens to a same-origin Request for the session list", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await authFetch(new Request(`${window.location.origin}/api/account/sessions`));
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Headers;
+    expect(headers.get("Authorization")).toBe("Bearer access-1");
+    expect(headers.get("X-Refresh-Token")).toBe("refresh-1");
+  });
+
+  it("authFetch attaches the Bearer token to a same-origin URL", async () => {
+    setAccessToken("access-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await authFetch(new URL(`${window.location.origin}/api/users`));
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(requireAuthorization(init)).toBe("Bearer access-1");
+  });
+
   it("authFetch does not attach tokens to a cross-origin URL", async () => {
     setAccessToken("access-1");
     setRefreshToken("refresh-1");
@@ -162,7 +179,82 @@ describe("auth-client", () => {
     const headers = init.headers as Headers;
     expect(headers.get("Authorization")).toBeNull();
     expect(headers.get("X-Refresh-Token")).toBeNull();
+  });
+
+  // W13 F-014 (GOAL-013 A-001): credentials attach ONLY to same-origin
+  // targets — an absolute cross-origin URL must stay token-free.
+  it("authFetch does not attach tokens to a cross-origin Request", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await authFetch(new Request("https://evil.example.com/api/account/sessions"));
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Headers;
+    expect(headers.get("Authorization")).toBeNull();
+    expect(headers.get("X-Refresh-Token")).toBeNull();
     expect(headers.get("Accept-Language")).not.toBeNull(); // locale still flows
+  });
+
+  it("authFetch does not attach tokens to a cross-realm cross-origin Request", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await authFetch(createCrossRealmRequest("https://evil.example.com/api/account/sessions"));
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Headers;
+    expect(headers.get("Authorization")).toBeNull();
+    expect(headers.get("X-Refresh-Token")).toBeNull();
+  });
+
+  it("authFetch keeps tokens for a cross-realm same-origin Request", async () => {
+    setAccessToken("access-1");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await authFetch(createCrossRealmRequest(`${window.location.origin}/api/account/sessions`));
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Headers;
+    expect(headers.get("Authorization")).toBe("Bearer access-1");
+    expect(headers.get("X-Refresh-Token")).toBe("refresh-1");
+  });
+
+  it("authFetch uses href for a cross-realm URL", async () => {
+    setAccessToken("access-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await authFetch(createCrossRealmUrl(`${window.location.origin}/api/users`));
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(requireAuthorization(init)).toBe("Bearer access-1");
+  });
+
+  it("recognizes an auth endpoint passed as a Request without refreshing on 401", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
+
+    const response = await authFetch(new Request(`${window.location.origin}/api/auth/login`));
+
+    expect(response.status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(getRefreshToken()).toBe("refresh-1");
+  });
+
+  it("recognizes a cross-realm auth endpoint without refreshing on 401", async () => {
+    setAccessToken("expired");
+    setRefreshToken("refresh-1");
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: "UNAUTHORIZED" }, 401));
+
+    const response = await authFetch(
+      createCrossRealmRequest(`${window.location.origin}/api/auth/login`),
+    );
+
+    expect(response.status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(getRefreshToken()).toBe("refresh-1");
   });
 
   it("authFetch refreshes once on 401 and retries, without notifying auth loss", async () => {
@@ -418,4 +510,37 @@ function requireAuthorization(init: RequestInit | undefined): string | null {
 
 function requireBody(init: RequestInit | undefined): unknown {
   return init?.body !== undefined ? JSON.parse(String(init.body)) : undefined;
+}
+
+function withCrossRealm<T>(callback: (foreignWindow: Window) => T): T {
+  const iframe = document.createElement("iframe");
+  document.body.appendChild(iframe);
+  try {
+    const foreignWindow = iframe.contentWindow;
+    if (foreignWindow === null) {
+      throw new Error("cross-realm test window is unavailable");
+    }
+    return callback(foreignWindow);
+  } finally {
+    iframe.remove();
+  }
+}
+
+function createCrossRealmRequest(url: string): Request {
+  return withCrossRealm((foreignWindow) => {
+    const foreignGlobal = foreignWindow as Window & {
+      Object: typeof Object;
+    };
+    const request = foreignGlobal.Object.create(foreignGlobal.Object.prototype);
+    foreignGlobal.Object.defineProperty(request, "url", { value: url });
+    foreignGlobal.Object.defineProperty(request, Symbol.toStringTag, { value: "Request" });
+    return request as unknown as Request;
+  });
+}
+
+function createCrossRealmUrl(url: string): URL {
+  return withCrossRealm((foreignWindow) => {
+    const ForeignURL = (foreignWindow as Window & { URL: typeof URL }).URL;
+    return new ForeignURL(url) as unknown as URL;
+  });
 }
