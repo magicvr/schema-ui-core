@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-22
 updated: 2026-09-22
-version: 0.7.0
+version: 0.8.0
 ---
 
 # 执行记录 · GOAL-019
@@ -21,6 +21,7 @@ version: 0.7.0
 | E-005 | 2026-09-22 | 响应 A-005 审计投影与来源边界 | recorded | `02-execution/E-005-w18-a005-response.md` |
 | E-006 | 2026-09-22 | A-007 通过与 S6 完成投影 | recorded | `02-execution/E-006-w18-a007-s6-closeout.md` |
 | E-007 | 2026-09-22 | 用户关门裁决与目标结项 | recorded | `02-execution/E-007-w18-user-closeout.md` |
+| E-008 | 2026-09-22 | A-010 关门旁注勘误 | recorded | `02-execution/E-008-w18-a010-response.md` |
 
 ## 事实边界
 

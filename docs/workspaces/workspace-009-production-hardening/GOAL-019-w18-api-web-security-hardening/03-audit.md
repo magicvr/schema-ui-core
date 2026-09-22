@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-22
 updated: 2026-09-22
-version: 0.8.0
+version: 1.0.0
 ---
 
 # 审计 · GOAL-019
@@ -33,7 +33,13 @@ version: 0.8.0
 | A-007 | 2026-09-22 | independent | W18 final clean-context S6 review | pass | 0 | `03-audit/A-007-w18-final-s6-review.md` |
 | A-008 | 2026-09-22 | self | A-007 响应与 S6 完成记录 | pass | 0 | `03-audit/A-008-w18-a007-response.md` |
 | A-009 | 2026-09-22 | self | 用户关门裁决响应 | pass | 0 | `03-audit/A-009-w18-user-closeout.md` |
+| A-010 | 2026-09-22 | independent | W18 关门后代码复核（JWT / MFA 启动探针 / 跨 realm 凭据 / A-005 闭合） | pass | 0 | `03-audit/A-010-w18-post-close-independent.md` |
+| A-011 | 2026-09-22 | self | A-010 响应：关门旁注勘误 | pass | 0 | `03-audit/A-011-w18-a010-response.md` |
 
 ## 结论状态
 
 独立 Reviewer A-007 最终复审 `pass`、open_required=0；A-005 F-001/F-002 已 fixed，I-004 verified，S6 完成。用户已书面裁决 `ok，done`，GOAL-019 已正式结项；Root 与 VP-009 保持 active。
+
+A-010（Grok 4.7 · independent · close-out）复核当前代码与区分性回归后维持 `pass`，开放 required = 0。推荐项 F-001：`00-meta.md` 路线图 S6 旁注仍写「用户关门裁决待定」，与 D-004 已完成的关门不一致。
+
+A-011 响应已修正 S6 旁注为「D-004 用户已书面关门」。A-010 无 required，推荐项 F-001 fixed；目标继续保持 `done · 6/6 · 100%`。

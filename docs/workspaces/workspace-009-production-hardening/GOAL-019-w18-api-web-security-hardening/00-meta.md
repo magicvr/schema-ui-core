@@ -5,7 +5,7 @@ status: done
 parent: GOAL-001-production-hardening
 created: 2026-09-22
 updated: 2026-09-22
-version: 0.7.0
+version: 0.8.0
 progress: 100%
 ---
 
@@ -24,7 +24,7 @@ progress: 100%
 3. [x] S3：实施并验证 API 侧 required 修复
 4. [x] S4：实施并验证 Web 侧 required 修复
 5. [x] S5：完成跨层回归与 self 阶段审计
-6. [x] S6：由干净上下文 Reviewer 独立交叉审计；响应意见并完成关门判断（A-007 pass；用户关门裁决待定）
+6. [x] S6：由干净上下文 Reviewer 独立交叉审计；响应意见并完成关门判断（A-007 pass；D-004 用户已书面关门）
 
 `progress` 仅按以上 6 个显式检查点等权派生；不作为 finding 闭合、阶段放行或目标完成依据。
 
